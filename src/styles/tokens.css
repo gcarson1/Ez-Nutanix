@@ -1,0 +1,172 @@
+/* =====================================================================
+   Design tokens. Dark is the default (projector-first, matches the slide).
+   Light is available from the theme toggle.
+
+   Rules carried over from the design system:
+   - every length is a rem token on a fluid root (scales to 4K)
+   - lines, not boxes; square controls; only dialogs and slide cards round
+   - one primary action per view
+
+   Product-specific rules from the brief:
+   - purple is the structural/brand color (it replaces the monochrome --ink)
+   - status palette is restrained: ok = healthy, warn = degraded/rebuilding,
+     bad = failed/data at risk, flow = data in motion. Never color alone:
+     every status also carries an icon and a word.
+   Slide colors are documented in docs/design-tokens.md.
+   ===================================================================== */
+
+:root {
+  /* neutral ramp (dark) */
+  --bg: #0a0a0d;
+  --bg-2: #101015;
+  --bg-3: #17171e;
+  --sel: #1d1b29;
+  --line: #24232d;
+  --line-2: #393745;
+  --text: #f6f6f8;
+  --text-2: #d7d6de;
+  --muted: #a5a4b0;
+  --faint: #73727e;
+  --track: #26252f;
+  --s2: #7c7b88;
+  --s3: #3a3946;
+
+  /* brand */
+  --ink: #7855fa;
+  --ink-hover: #8a6cfb;
+  --ink-text: #ffffff;
+  --ink-soft: rgba(120, 85, 250, 0.16);
+  --ink-line: rgba(120, 85, 250, 0.55);
+  --ink-fg: #a993ff; /* purple used as text on the page background */
+
+  /* status (each paired with an icon + label in the UI) */
+  --ok: #3fcf83;
+  --ok-bg: rgba(63, 207, 131, 0.12);
+  --warn: #f3b43f;
+  --warn-bg: rgba(243, 180, 63, 0.13);
+  --bad: #ff6b6b;
+  --bad-bg: rgba(255, 107, 107, 0.13);
+  --flow: #5aaeff;
+  --flow-bg: rgba(90, 174, 255, 0.14);
+  /* design-system aliases */
+  --good: var(--ok);
+  --good-bg: var(--ok-bg);
+
+  /* slide (landing page) */
+  --slide-bg: #050507;
+  --slide-outer: #33227f;
+  --slide-outer-line: #4a37a6;
+  --slide-card: #1f1458;
+  --slide-card-hover: #2c1f75;
+  --slide-svc: #5235cf;
+  --slide-svc-hover: #6447e6;
+  --slide-nci: #7855fa;
+  --slide-nci-hover: #8b6cff;
+  --slide-gray: #e2e2e7;
+  --slide-gray-hover: #f0f0f4;
+  --slide-gray-text: #16161b;
+  --slide-text: #ffffff;
+  --slide-sub: rgba(255, 255, 255, 0.74);
+
+  --shadow: 0 0 0 1px var(--line-2), 0 24px 64px -16px rgba(0, 0, 0, 0.7);
+  --overlay: rgba(4, 4, 8, 0.6);
+
+  /* type */
+  --font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-11: 0.6875rem;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-28: 1.75rem;
+  --fs-36: 2.25rem;
+  --fs-44: 2.75rem;
+
+  /* space (4px grid at 16px root) */
+  --sp-px: 0.0625rem;
+  --sp-0h: 0.125rem;
+  --sp-1: 0.25rem;
+  --sp-1h: 0.375rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-7: 1.75rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* controls & layout */
+  --h-sm: 2rem;
+  --h-md: 2.25rem;
+  --h-lg: 2.75rem;
+  --radius: 0.5rem;
+  --radius-slide: 0.875rem;
+  --bar-h: 3.5rem;
+  --rail-w: 19.5rem;
+  --ctl-w: 17rem;
+  --main-max: 52rem;
+  --measure: 46rem;
+  --gutter: 2rem;
+  --frame: calc(var(--main-max) + var(--rail-w) + var(--gutter) * 2 + var(--sp-10));
+  --wide: 112rem;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 120ms;
+  --t-med: 220ms;
+  --t-slow: 420ms;
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-2: #fafafb;
+  --bg-3: #f3f3f6;
+  --sel: #f1eefe;
+  --line: #e9e9ee;
+  --line-2: #d6d5de;
+  --text: #0b0b10;
+  --text-2: #3d3c48;
+  --muted: #6b6a76;
+  --faint: #9f9eaa;
+  --track: #e9e9ee;
+  --s2: #8c8b97;
+  --s3: #d3d2db;
+
+  --ink: #6a45f0;
+  --ink-hover: #5a35e0;
+  --ink-text: #ffffff;
+  --ink-soft: rgba(106, 69, 240, 0.1);
+  --ink-line: rgba(106, 69, 240, 0.5);
+  --ink-fg: #5a35e0;
+
+  --ok: #13803f;
+  --ok-bg: #effbf3;
+  --warn: #a35a00;
+  --warn-bg: #fff7e8;
+  --bad: #c42a1c;
+  --bad-bg: #fef2f2;
+  --flow: #1a62c9;
+  --flow-bg: #edf4ff;
+
+  --slide-bg: #f6f5fa;
+  --slide-outer: #3a2a8c;
+  --slide-outer-line: #4b3aa8;
+  --slide-card: #22175e;
+  --slide-card-hover: #2f2280;
+  --slide-gray: #e4e3ea;
+  --slide-gray-hover: #ecebf2;
+
+  --shadow: 0 1px 2px rgba(9, 9, 11, 0.04), 0 16px 48px -12px rgba(9, 9, 11, 0.18);
+  --overlay: rgba(9, 9, 11, 0.4);
+  color-scheme: light;
+}
