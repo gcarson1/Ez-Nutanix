@@ -7,7 +7,9 @@ import {
   crossDay,
   demand,
   evaluate,
+  factorAt,
   monthlyCost,
+  paceEnd,
   provSteps,
   requestSteps,
   score,
@@ -127,6 +129,23 @@ describe('cost', () => {
     expect(budgetState(accrued(3000, over + 0.01, 30, surge), 4000)).toBe('over');
     expect(crossDay(3000, 4000, 'warn')).toBeNull();
     expect(crossDay(3000, 4000, 'over')).toBeNull();
+  });
+  it('several rate changes apply in order, and the pace forecast follows the current rate', () => {
+    const changes = [
+      { from: 18, factor: 0.6 },
+      { from: 5, factor: 2.5 },
+      { from: 13, factor: 1 },
+    ];
+    // 5 days at 100/day, 8 at 250, 5 at 100, 12 at 60
+    expect(accrued(3000, 30, 30, changes)).toBeCloseTo(500 + 2000 + 500 + 720);
+    expect(accrued(3000, 3, 30, changes)).toBeCloseTo(300);
+    expect(factorAt(4, changes)).toBe(1);
+    expect(factorAt(5, changes)).toBe(2.5);
+    expect(factorAt(20, changes)).toBe(0.6);
+    expect(paceEnd(3000, 0, 30, changes)).toBeCloseTo(3000);
+    expect(paceEnd(3000, 10, 30, changes)).toBeCloseTo(500 + 1250 + 20 * 250);
+    expect(paceEnd(3000, 30, 30, changes)).toBeCloseTo(accrued(3000, 30, 30, changes));
+    expect(crossDay(3000, 4000, 'warn', 30, changes, 0.5)).toBeCloseTo(5 + 1500 / 250);
   });
 });
 

@@ -12,7 +12,7 @@ export const content: ModuleContent = {
     'AIOps: instead of a fixed threshold, it learns what normal looks like for each hour. A spike at 3 a.m. is flagged even though it stays under a 70% alarm that would miss it; a spike on a busy afternoon is flagged and trips the alarm too; normal busy afternoons raise nothing.',
     'Intelligent Operations also forecasts capacity runway, so purchases are planned rather than reactive, and suggests right-sizing for over- and under-sized VMs.',
     'Self-Service: app teams order from a catalog; quota and approval policy are checked before anything is created, and the result arrives with owner, project and categories set. Over quota, the request is sent back with the reason.',
-    'Cost: showback per project at rates you choose, with an alert at 80% of budget, before the month closes. In NCM 2.0 Cost Governance runs entirely on-premises.',
+    'Cost: dev-test runs hot. Cost Governance meters it daily at your rates, sends the owner an overspend alert against the budget while there is time to act, and lists the idle and oversized VMs to stop or right-size. Self-Service stops it coming back: the project quota caps what dev-test can deploy, and approval and scheduler policies hold big requests and stop dev-test apps at night. In NCM 2.0 Cost Governance runs entirely on-premises.',
     'Security Compliance scans settings against a baseline, suggests a fix for each finding, and catches drift when someone changes a setting by hand. Tiers matter: Starter covers forecasting and right-sizing, Pro adds Cost Governance and Self-Service, Ultimate adds multi-VM blueprints, approvals and Security Compliance.',
   ],
   numbers: [
@@ -28,6 +28,10 @@ export const content: ModuleContent = {
       a: 'Not in NCM 2.0. Cost Governance now runs fully on-premises inside your data center, without a separate SaaS application. Older Beam deployments were SaaS, so check which version you are comparing.',
     },
     {
+      q: 'Does a budget stop the spending by itself?',
+      a: 'Not as far as the published material says. Cost Governance budgets track spend and send overspend alerts, and its recommendations show what to stop or right-size; we found no budget setting that switches resources off. The hard limit is the Self-Service project quota, which caps the CPU, memory and storage a project can deploy, with approval and scheduler policies on NCM Ultimate.',
+    },
+    {
       q: 'Can it manage our VMware estate too?',
       a: 'NCM 2.0 spans multiple Prism Centrals and VMware vCenters, and Intelligent Operations Starter lists ESXi on non-Nutanix infrastructure. Feature coverage differs between AHV and vCenter-managed environments, so map your use cases to the current feature matrix.',
     },
@@ -39,7 +43,7 @@ export const content: ModuleContent = {
   next: [
     'AIOps: pause on the 3 a.m. spike, flagged by the learned band while the fixed 70% alarm stays silent, then on the 2 p.m. spike, which both catch.',
     'Self-Service: 3-tier web app for the approval step, then App over quota to show a request sent back before anything is created.',
-    'Cost, dev-test runs hot: the owner gets the 80% alert days before the project goes over budget.',
+    'Cost: pause on each numbered step (the alert, the recommendations, the quota and policies) and compare where the month ends with the left-alone line.',
     'SecOps: watch findings get fixed, then a setting changed by hand caught by the next scan.',
     'Then open Nutanix Central & Prism Federation, where NCM 2.x runs.',
   ],

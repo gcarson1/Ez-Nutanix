@@ -1,4 +1,4 @@
-// Nutanix Cloud Manager (NCM) models: anomaly band, self-service request flow, cost showback
+// Nutanix Cloud Manager (NCM) models: anomaly band, self-service request flow, cost metered
 // over a month and compliance score. Pure and deterministic. All numbers are illustrative
 // inputs, not product defaults.
 import { makeRng } from './rng';
@@ -187,27 +187,53 @@ export function budgetState(cost: number, budget: number, warnAt = 0.8): BudgetS
   return 'ok';
 }
 
-/** From day `from` on, daily use is `factor` times the planned rate. */
+/** From day `from` on, daily use is `factor` times the planned rate, until the next change. */
 export interface Surge {
   from: number;
   factor: number;
 }
 
+/** One change, several (any order) or none. */
+type Changes = Surge | Surge[] | undefined;
+const changeList = (c: Changes): Surge[] => (!c ? [] : Array.isArray(c) ? [...c].sort((a, b) => a.from - b.from) : [c]);
+
+/** Daily use on `day` as a multiple of the planned rate. */
+export function factorAt(day: number, changes?: Changes): number {
+  let f = 1;
+  for (const c of changeList(changes)) if (day >= c.from) f = c.factor;
+  return f;
+}
+
 /**
  * Cost metered by `day` (0..days) for a project whose planned month costs `monthly`,
- * spent evenly across the month, with an optional surge.
+ * spent evenly across the month, with optional changes in the daily rate.
  */
-export function accrued(monthly: number, day: number, days = 30, surge?: Surge): number {
+export function accrued(monthly: number, day: number, days = 30, changes?: Changes): number {
   const d = Math.max(0, Math.min(days, day));
   const perDay = monthly / days;
-  if (!surge || d <= surge.from) return perDay * d;
-  return perDay * surge.from + perDay * surge.factor * (d - surge.from);
+  let total = 0;
+  let at = 0;
+  let f = 1;
+  for (const c of changeList(changes)) {
+    const to = Math.min(d, Math.max(at, c.from));
+    total += perDay * f * (to - at);
+    at = to;
+    if (c.from >= d) return total;
+    f = c.factor;
+  }
+  return total + perDay * f * (d - at);
+}
+
+/** Where the month ends if the rate on `day` holds for the rest of it. */
+export function paceEnd(monthly: number, day: number, days = 30, changes?: Changes): number {
+  const d = Math.max(0, Math.min(days, day));
+  return accrued(monthly, d, days, changes) + (monthly / days) * factorAt(d, changes) * (days - d);
 }
 
 /** First day (fractional) the metered cost reaches `state`, or null if it does not this month. */
-export function crossDay(monthly: number, budget: number, state: 'warn' | 'over', days = 30, surge?: Surge, warnAt = 0.8): number | null {
+export function crossDay(monthly: number, budget: number, state: 'warn' | 'over', days = 30, changes?: Changes, warnAt = 0.8): number | null {
   const reached = (d: number) => {
-    const s = budgetState(accrued(monthly, d, days, surge), budget, warnAt);
+    const s = budgetState(accrued(monthly, d, days, changes), budget, warnAt);
     return state === 'over' ? s === 'over' : s !== 'ok';
   };
   if (!reached(days)) return null;
