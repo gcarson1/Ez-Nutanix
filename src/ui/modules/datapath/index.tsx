@@ -1,16 +1,13 @@
-// Data Path: step-through write and read animations (RF2/RF3), the content-cache pools,
-// the data-locality sequence after a live migration, and an always-visible metadata strip.
-// All behavior comes from src/engine/datapath.ts; this file only draws it.
-import { useMemo, useState } from 'preact/hooks';
+// Data Path: looping write and read animations (RF2/RF3) and the data-locality sequence
+// after a live migration. All behavior comes from src/engine/datapath.ts; this file only
+// draws it.
+import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
-import { useClock } from '../../components/clock';
-import { Chip, Field, Follow, Illus, PlayBar, Seg, Stat, Tip } from '../../components/controls';
-import { Icon } from '../../components/Icon';
-import { go } from '../../shell/nav';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Illus, PlayBar, Tip } from '../../components/controls';
+import { Choice, Kpis, Show } from '../../components/show';
 import {
   DP_NODES,
-  LATENCY_LADDER,
-  cacheAccess,
   localitySequence,
   localitySummary,
   readSequence,
@@ -23,12 +20,11 @@ import {
   type Place,
   type ReadSource,
 } from '../../../engine/datapath';
-import { METADATA_COPIES, type RF } from '../../../engine/rules';
+import type { RF } from '../../../engine/rules';
 import './style.css';
 
 type Mode = 'wr' | 'ws' | 'rd' | 'loc';
 const MODES: readonly Mode[] = ['wr', 'ws', 'rd', 'loc'];
-const SOURCES: readonly ReadSource[] = ['cache', 'oplog', 'local', 'remote'];
 const SEED = 3;
 
 const THRESHOLD_TIP =
@@ -228,90 +224,6 @@ function CopyTile({ x, y, n }: { x: number; y: number; n: number }) {
   );
 }
 
-function MetadataStrip({ rf }: { rf: RF }) {
-  const copies = METADATA_COPIES[rf];
-  const cx = 70;
-  const cy = 40;
-  return (
-    <div class="dp-meta">
-      <svg viewBox="0 0 140 80" class="dp-ring" role="img" aria-label={`Metadata ring: ${copies} copies across ${DP_NODES} CVMs`}>
-        <circle cx={cx} cy={cy} r={28} class="dp-ring-c" />
-        {Array.from({ length: DP_NODES }, (_, i) => {
-          const a = (i / DP_NODES) * Math.PI * 2 - Math.PI / 2;
-          const on = i < copies;
-          return <circle key={i} cx={cx + Math.cos(a) * 28} cy={cy + Math.sin(a) * 28} r={7} class={on ? 'dp-ring-on' : 'dp-ring-off'} />;
-        })}
-      </svg>
-      <div class="dp-meta-t">
-        <div class="eyebrow">Metadata on every operation</div>
-        <p class="small">
-          Every read and write first looks up, or updates, where the data lives in a{' '}
-          <Tip text="A distributed metadata store spread across all CVMs. Updates are strictly consistent, so every CVM sees the same answer." detail="The metadata ring is based on a heavily modified Apache Cassandra. Stargate reaches it through a layer called Medusa, and Paxos keeps updates strictly consistent.">
-            distributed metadata store
-          </Tip>{' '}
-          that spans every CVM. With redundancy factor {rf} it keeps <b>{copies} copies</b>.{' '}
-          <Tip text="Cluster configuration (which nodes, disks and services exist) is kept separately with the same number of copies." detail="Cluster configuration is held by Zookeeper, managed by the Zeus layer: 3 Zookeeper servers under redundancy factor 2, 5 under redundancy factor 3.">
-            Cluster configuration
-          </Tip>{' '}
-          is kept separately, also with {copies} copies.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function Ladder({ hi }: { hi?: ReadSource }) {
-  const max = LATENCY_LADDER[LATENCY_LADDER.length - 1].units;
-  return (
-    <div class="dp-ladder">
-      {LATENCY_LADDER.map((l) => (
-        <div class={`dp-rung ${hi === l.source ? 'on' : ''}`} key={l.source}>
-          <span class="dp-rung-l">{l.label}</span>
-          <span class="dp-rung-bar">
-            <i style={{ width: `${(l.units / max) * 100}%` }} />
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CacheDemo({ cache, setCache, last }: { cache: CacheState; setCache: (c: CacheState, hit: string) => void; last: string }) {
-  const keys = ['A', 'B', 'C', 'D', 'E', 'F'];
-  return (
-    <div class="stack">
-      <p class="small muted">Read blocks and watch the pools. A second read of the same block promotes it to multi-touch, so one-off scans don’t push out hot data.</p>
-      <div class="hstack">
-        {keys.map((k) => (
-          <button
-            type="button"
-            class="btn"
-            key={k}
-            onClick={() => {
-              const r = cacheAccess(cache, k);
-              setCache(r.state, r.hit ? `${k}: hit in ${r.hit}-touch, now multi-touch` : `${k}: miss, added to single-touch`);
-            }}
-          >
-            Read {k}
-          </button>
-        ))}
-      </div>
-      <div class="dp-pools">
-        <div>
-          <span class="eyebrow">Single-touch</span>
-          <div class="dp-pool">{cache.single.length ? cache.single.map((k) => <b key={k}>{k}</b>) : <span class="faint">empty</span>}</div>
-        </div>
-        <div>
-          <span class="eyebrow">Multi-touch</span>
-          <div class="dp-pool">{cache.multi.length ? cache.multi.map((k) => <b key={k} class="m">{k}</b>) : <span class="faint">empty</span>}</div>
-        </div>
-      </div>
-      {last && <p class="small" role="status">{last}</p>}
-    </div>
-  );
-}
-
-// ── locality view ──
 function LocalityDiagram({ f }: { f: LocalityFrame }) {
   const n = f.local.length;
   const tw = 16;
@@ -377,235 +289,113 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
   );
 }
 
-function Spark({ frames, upto }: { frames: LocalityFrame[]; upto: number }) {
-  const w = 300;
-  const h = 70;
-  const max = LATENCY_LADDER[3].units;
-  const xs = (i: number) => 6 + (i / Math.max(1, frames.length - 1)) * (w - 12);
-  const ys = (v: number) => h - 8 - (v / max) * (h - 20);
-  const shown = frames.slice(0, upto + 1).map((f, i) => ({ f, i })).filter(({ f }) => f.phase !== 'migrate');
-  const mig = frames.findIndex((f) => f.phase === 'migrate');
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} class="dp-spark" role="img" aria-label="Read latency per read, illustrative">
-      <line x1={xs(mig)} x2={xs(mig)} y1={4} y2={h - 4} class="dp-spark-mig" />
-      <text x={xs(mig) + 4} y={12} class="dp-spark-t">
-        move
-      </text>
-      {shown.map(({ f, i }) => (
-        <rect key={i} x={xs(i) - 4} y={ys(f.latency)} width={8} height={h - 8 - ys(f.latency)} class={f.readRemote ? 'dp-spark-r' : 'dp-spark-l'} />
-      ))}
-      <line x1={0} x2={w} y1={h - 8} y2={h - 8} class="dp-spark-ax" />
-    </svg>
-  );
-}
-
-function LocalityView({ clock, frames }: { clock: ReturnType<typeof useClock>; frames: LocalityFrame[] }) {
-  const i = Math.min(frames.length - 1, Math.floor(clock.t));
-  const f = frames[i];
-  const sum = localitySummary(frames);
-  const remoteSoFar = frames.slice(0, i + 1).filter((x) => x.readRemote).length;
-  return (
-    <>
-      <div class="diagram-scroll">
-        <LocalityDiagram f={f} />
-      </div>
-      <div class="legend">
-        <span>
-          <i class="sw" style={{ background: 'var(--ink)' }} />
-          Copy on the VM’s node (local read)
-        </span>
-        <span>
-          <i class="sw" style={{ background: 'var(--s2)' }} />
-          Copy on another node
-        </span>
-        <span>
-          <i class="sw" style={{ border: '1.5px dashed var(--line-2)' }} />
-          Not on this node yet
-        </span>
-        <span>
-          <i class="sw" style={{ background: 'var(--flow)' }} />
-          Remote read over the network
-        </span>
-      </div>
-      <PlayBar clock={clock} label="Locality sequence" fmt={() => `read ${i + 1}/${frames.length}`} />
-      <Follow tone={f.readRemote ? 'flow' : f.phase === 'migrate' ? 'warn' : 'ok'} k={f.phase === 'before' ? 'Before the move' : f.phase === 'migrate' ? 'Live migration' : f.readRemote ? 'Remote read, then localize' : 'Local again'}>
-        <p>{f.text}</p>
-      </Follow>
-      <div class="dp-compare">
-        <div>
-          <div class="eyebrow">
-            Read latency per read <Illus why="Relative units on the same scale as the latency ladder. Real latency depends on media, network and load; the shape (a bump after the move that settles) is the point." />
-          </div>
-          <Spark frames={frames} upto={i} />
-        </div>
-        <div class="dp-compare-n">
-          <Stat k="Before move" v={`${sum.beforeLatency} units`} />
-          <Stat k="Right after move" v={`${sum.afterMoveLatency} units`} tone="flow" />
-          <Stat k="After localizing" v={`${sum.settledLatency} units`} tone="ok" />
-          <Stat k="Remote reads so far" v={`${remoteSoFar} of ${sum.remoteReads}`} />
-          <Stat k="Network read traffic" v={`${f.networkMB} MB`} tip="Illustrative: each hot extent is fetched over the network once, then served locally." />
-        </div>
-      </div>
-    </>
-  );
-}
+const SRC_WORD: Record<ReadSource, string> = { cache: 'Memory cache', oplog: 'OpLog', local: 'Local drive', remote: 'Another node' };
 
 export default function Datapath() {
   const [mode, setMode] = useEnum<Mode>('m', 'wr', MODES);
   const [rfS, setRf] = useEnum<'2' | '3'>('drf', '2', ['2', '3']);
-  const [src, setSrc] = useEnum<ReadSource>('src', 'local', SOURCES);
   const rf = Number(rfS) as RF;
-  const [cache, setCacheS] = useState<CacheState>({ single: ['B'], multi: ['A'] });
-  const [cacheMsg, setCacheMsg] = useState('');
+  const cache: CacheState = { single: ['B'], multi: ['A'] };
 
-  const steps = useMemo(() => (mode === 'rd' ? readSequence({ source: src, seed: SEED }) : mode === 'loc' ? [] : writeSequence({ rf, kind: mode === 'ws' ? 'sequential' : 'random', seed: SEED })), [mode, rf, src]);
+  const steps = useMemo(() => (mode === 'rd' ? readSequence({ source: 'local', seed: SEED }) : mode === 'loc' ? [] : writeSequence({ rf, kind: mode === 'ws' ? 'sequential' : 'random', seed: SEED })), [mode, rf]);
   const frames = useMemo(() => localitySequence({ extents: 8, seed: SEED }), []);
   const len = mode === 'loc' ? frames.length : steps.length;
-  const clock = useClock({ rate: mode === 'loc' ? 1.4 : 0.7, duration: len - 0.001, stepSize: 1, keys: true });
-  const resetFor = (fn: () => void) => {
-    fn();
-    clock.reset();
-  };
+  const clock = useClock({ rate: mode === 'loc' ? 1.4 : 0.6, duration: len - 0.001, keys: true, poster: len - 0.001 });
+  useRestartOn(clock, [mode, rf]);
 
   const i = Math.min(len - 1, Math.floor(clock.t));
   const frac = clock.t - Math.floor(clock.t);
   const step = steps[i];
+  const f = frames[i];
+  const sum = localitySummary(frames);
+
+  const isWrite = mode === 'wr' || mode === 'ws';
+  const copies = step ? new Set([...step.oplogCopies, ...step.extentCopies]).size : 0;
+  const tone = mode === 'loc' ? (f.readRemote ? 'flow' : f.phase === 'migrate' ? 'warn' : 'ok') : step.acked || step.servedFrom ? 'ok' : step.hops.some((h) => h.kind === 'replicate' || h.kind === 'network-read') ? 'flow' : 'ink';
+  const k = mode === 'loc' ? (f.phase === 'before' ? 'Before the move' : f.phase === 'migrate' ? 'Live migration' : f.readRemote ? 'Remote read, then copied here' : 'Local again') : step.title;
+  const text = mode === 'loc' ? f.text : step.text;
 
   return (
-    <div class="lab dp">
-      <div class="ctl">
-        <Field label="Scenario" tip="Pick which path to step through. Each one plays as a sequence you can pause, step and scrub.">
-          <div class="dp-modes" role="group" aria-label="Scenario">
-            {(
-              [
-                ['wr', 'Write: random or bursty'],
-                ['ws', 'Write: large sequential'],
-                ['rd', 'Read'],
-                ['loc', 'Locality after a move'],
-              ] as [Mode, string][]
-            ).map(([m, l]) => (
-              <button type="button" key={m} aria-pressed={mode === m} onClick={() => resetFor(() => setMode(m))}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </Field>
-        <Field
-          label="Replication factor"
-          tip="How many copies of every write the cluster keeps on different nodes. RF2 keeps 2, RF3 keeps 3."
-          value={`RF${rf}`}
-          why={mode === 'rd' || mode === 'loc' ? 'Reads use one copy, so the replication factor only changes the metadata strip here.' : null}
-        >
-          <Seg
-            label="Replication factor"
-            value={rfS}
-            onChange={(v) => resetFor(() => setRf(v))}
+    <Show
+      top={
+        <>
+          <Choice<Mode>
+            label="What to follow"
+            value={mode}
+            onChange={setMode}
             options={[
-              { value: '2', label: 'RF2' },
-              { value: '3', label: 'RF3' },
+              { value: 'wr', label: 'Small write' },
+              { value: 'ws', label: 'Large sequential write' },
+              { value: 'rd', label: 'Read' },
+              { value: 'loc', label: 'Read after a VM moves' },
             ]}
           />
-        </Field>
-        {mode === 'rd' && (
-          <Field label="Where the data is" tip="Choose where the requested data happens to be, and watch Stargate look in order until it finds it.">
-            <Seg
-              label="Where the data is"
-              value={src}
-              onChange={(v) => resetFor(() => setSrc(v))}
-              options={[
-                { value: 'cache', label: 'Cache' },
-                { value: 'oplog', label: 'OpLog' },
-                { value: 'local', label: 'Local' },
-                { value: 'remote', label: 'Remote' },
+          <Choice<'2' | '3'>
+            label="Copies"
+            value={rfS}
+            onChange={setRf}
+            why={isWrite ? null : 'Reads use one copy, so RF does not change this view.'}
+            options={[
+              { value: '2', label: 'RF2', disabled: !isWrite },
+              { value: '3', label: 'RF3', disabled: !isWrite },
+            ]}
+          />
+        </>
+      }
+      foot={
+        <>
+          <Follow tone={tone} k={k}>
+            <p>{text}</p>
+            {mode === 'ws' && step.id === 'classify' && (
+              <p class="rest">
+                <Tip text={THRESHOLD_TIP}>How a write counts as sequential</Tip> <Illus why="The diagram treats the whole write as one sequential stream. Real workloads mix patterns, and Stargate decides per virtual disk as I/O arrives." />
+              </p>
+            )}
+          </Follow>
+          {isWrite && (
+            <Kpis
+              items={[
+                { k: 'Copies written', v: `${copies} of ${rf}`, tone: copies === rf ? 'ok' : undefined },
+                { k: 'Path', v: mode === 'ws' ? 'Direct' : 'OpLog first', tip: mode === 'ws' ? 'Large sequential streams skip the OpLog and go straight to the extent store, still with all of their copies.' : 'Small and bursty writes land in the OpLog, a fast write buffer, and drain to the extent store later.' },
+                { k: 'App told “done”', v: step.acked ? 'Yes' : 'Not yet', tone: step.acked ? 'ok' : undefined },
               ]}
             />
-          </Field>
-        )}
-        {mode === 'ws' && (
-          <Field label="When is a write sequential?" note={<span>Large sequential streams skip the OpLog. <Tip text={THRESHOLD_TIP}>The threshold</Tip> is about 1.5 MB of outstanding writes per vDisk in current docs, and tunable.</span>}>
-            <span />
-          </Field>
-        )}
-        <Field label="Related" note="The Cluster Lab shows the same locality effect across a whole cluster.">
-          <button type="button" class="tbtn" onClick={() => go('nci/cluster')}>
-            Open Cluster & DSF Lab <Icon name="arrow" />
-          </button>
-        </Field>
-      </div>
-
-      <div class="stage">
-        {mode === 'loc' ? (
-          <LocalityView clock={clock} frames={frames} />
-        ) : (
-          <>
-            <div class="diagram-scroll">
-              <PathDiagram step={step} frac={clock.playing ? frac : 1} rf={rf} mode={mode} cache={cache} />
-            </div>
-            <PlayBar clock={clock} label="Data path sequence" fmt={() => `step ${i + 1}/${len}`} />
-            <Follow tone={step.acked || step.servedFrom ? 'ok' : step.hops.some((h) => h.kind === 'replicate' || h.kind === 'network-read') ? 'flow' : 'ink'} k={`Step ${i + 1} · ${step.title}`}>
-              <p>{step.text}</p>
-              {mode === 'ws' && step.id === 'classify' && (
-                <p class="rest">
-                  <Tip text={THRESHOLD_TIP}>How the threshold works</Tip> <Illus why="The diagram treats the whole write as one sequential stream. Real workloads mix patterns, and Stargate decides per virtual disk as I/O arrives." />
-                </p>
-              )}
-            </Follow>
-          </>
-        )}
-        <MetadataStrip rf={rf} />
-      </div>
-
-      <div class="rail">
-        {mode !== 'loc' && (
-          <div class="side-sec">
-            <div class="eyebrow">Steps</div>
-            <ol class="dp-steps">
-              {steps.map((s, k) => (
-                <li key={s.id} class={k === i ? 'cur' : k < i ? 'done' : ''}>
-                  <button type="button" onClick={() => (clock.pause(), clock.seek(k))}>
-                    {s.title}
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-        {(mode === 'wr' || mode === 'ws') && (
-          <div class="side-sec">
-            <div class="eyebrow">Write status</div>
-            <Stat k="Copies written" v={`${new Set([...step.oplogCopies, ...step.extentCopies]).size} of ${rf}`} />
-            <Stat k="Path" v={mode === 'ws' ? 'Extent store direct' : 'OpLog first'} />
-            <div style={{ marginTop: 'var(--sp-2)' }}>{step.acked ? <Chip tone="ok">Acknowledged</Chip> : <Chip tone="neutral" icon="info">Not yet acknowledged</Chip>}</div>
-          </div>
-        )}
-        {mode === 'rd' && (
-          <>
-            <div class="side-sec">
-              <div class="eyebrow">
-                Latency ladder <Illus why="Relative units, not measurements. The order (memory, then flash, then a network hop) holds; the gaps depend on media, network and load." />
-              </div>
-              <Ladder hi={step.servedFrom} />
-            </div>
-            <div class="side-sec">
-              <div class="eyebrow">Content cache pools</div>
-              <CacheDemo cache={cache} setCache={(c, m) => (setCacheS(c), setCacheMsg(m))} last={cacheMsg} />
-            </div>
-          </>
-        )}
-        {mode === 'loc' && (
-          <div class="side-sec">
-            <div class="eyebrow">What to notice</div>
-            <ul class="small dp-notes">
-              <li>The VM keeps running during the move. Only where its reads are served changes.</li>
-              <li>Reads of data not yet on the new node go remote over the network. Each hot extent is then copied to the new node.</li>
-              <li>New writes always place one copy on the node the VM runs on, so new data is local immediately.</li>
-              <li>
-                Which extents get localized, and when, is decided by AOS from the access pattern. <Illus why="Only two nodes are drawn, and other copies are left out. The sim localizes every hot extent on its first remote read and ignores cold data. The real system keeps the replica count at the configured RF while it moves data." />
-              </li>
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+          {mode === 'rd' && <Kpis items={[{ k: 'Served from', v: step.servedFrom ? SRC_WORD[step.servedFrom] : 'Looking…', tone: step.servedFrom ? 'ok' : undefined }, { k: 'Network hops', v: 0, tip: 'With data locality, one copy is on the node where the VM runs, so the read never leaves the server.' }]} />}
+          {mode === 'loc' && (
+            <Kpis
+              items={[
+                { k: 'Read latency now', v: `${f.latency} units`, tone: f.readRemote ? 'flow' : 'ok', tip: 'Relative units: memory, then flash, then a network hop. The shape (a bump after the move that settles) is the point, not the numbers.' },
+                { k: 'Before the move', v: `${sum.beforeLatency} units` },
+                { k: 'After it settles', v: `${sum.settledLatency} units`, tone: 'ok' },
+              ]}
+            />
+          )}
+        </>
+      }
+    >
+      <div class="diagram-scroll">{mode === 'loc' ? <LocalityDiagram f={f} /> : <PathDiagram step={step} frac={clock.playing ? frac : 1} rf={rf} mode={mode} cache={cache} />}</div>
+      {mode === 'loc' && (
+        <div class="legend">
+          <span>
+            <i class="sw" style={{ background: 'var(--ink)' }} />
+            Copy on the VM’s node (local read)
+          </span>
+          <span>
+            <i class="sw" style={{ background: 'var(--s2)' }} />
+            Copy on another node
+          </span>
+          <span>
+            <i class="sw" style={{ border: '1.5px dashed var(--line-2)' }} />
+            Not on this node yet
+          </span>
+          <span>
+            <i class="sw" style={{ background: 'var(--flow)' }} />
+            Remote read over the network
+          </span>
+        </div>
+      )}
+      <PlayBar clock={clock} label="Data path animation" fmt={() => (mode === 'loc' ? k : step.title)} />
+    </Show>
   );
 }

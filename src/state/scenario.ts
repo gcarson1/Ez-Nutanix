@@ -94,9 +94,6 @@ export interface Preset {
   id: string;
   label: string;
   cfg: Partial<ClusterConfig>;
-  /** Module to open for this preset (DR pair opens the DR module). */
-  path?: string;
-  params?: Record<string, string>;
 }
 
 export const PRESETS: Preset[] = [
@@ -104,7 +101,6 @@ export const PRESETS: Preset[] = [
   { id: 'start4', label: '4-node starter (RF2)', cfg: { nodes: 4, nodesPerBlock: 4, rf: 2, ft: 2, vms: 16 } },
   { id: 'prod8', label: '8-node production (RF2, block-aware)', cfg: { nodes: 8, nodesPerBlock: 2, blockAware: true, rf: 2, ft: 2, vms: 32 } },
   { id: 'rf3ec12', label: '12-node RF3 + EC-X', cfg: { nodes: 12, nodesPerBlock: 2, rf: 3, ft: 3, ecx: true, vms: 48 } },
-  { id: 'dr2', label: 'Two-site DR pair', cfg: {}, path: 'nci/dr', params: { preset: 'pair' } },
 ];
 
 /** Every cluster key, mapped to null: used by Reset and before applying a preset. */

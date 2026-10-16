@@ -94,7 +94,8 @@ export function useRun(cfg: ClusterConfig, acts: Act[], actKey: string, keys = t
   const sim = useSimTimeline(cfg, acts, actKey);
   const tRef = useRef(0);
   const r = clockRate(tRef.current, acts);
-  const clock = useClock({ rate: r.rate, duration: sim.duration, stepSize: 30, keys });
+  // Plays on its own and holds at the end; new actions land at the playhead and play on.
+  const clock = useClock({ rate: r.rate, duration: sim.duration, loop: false, keys });
   tRef.current = clock.t;
   const state = useMemo(() => sim.tl.at(clock.t), [sim.tl, clock.t]);
   const st = useMemo(() => deriveStatus(state), [state]);

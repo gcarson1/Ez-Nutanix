@@ -1,69 +1,23 @@
-// NCI hub: the stack from hardware up, a "what's in a node" cutaway, and the sub-modules.
-import { useState } from 'preact/hooks';
+// NCI hub: a "what's in a node" cutaway, centered, then the sub-modules.
 import { Icon } from '../../components/Icon';
-import { Follow } from '../../components/controls';
+import './style.css';
 import { go } from '../../shell/nav';
 
 const SUBS = [
-  { path: 'nci/cluster', icon: 'server', t: 'Cluster & DSF Lab', s: 'Build a cluster, watch data spread across every node, then add, remove and migrate.', pri: 'Centerpiece' },
-  { path: 'nci/datapath', icon: 'zap', t: 'Data Path', s: 'Step through a write and a read: OpLog, replication, extent store, cache and locality.', pri: 'Write & read' },
-  { path: 'nci/capacity', icon: 'shield', t: 'Protection & Capacity', s: 'RF2, RF3 and erasure coding: what you can store, and what failures you survive.', pri: 'Sizing' },
-  { path: 'nci/failures', icon: 'power', t: 'Failure Gauntlet', s: 'Break a drive, a CVM, a node, a block or a rack and watch detection and self-healing.', pri: 'Resilience' },
-  { path: 'nci/lcm', icon: 'upgrade', t: 'LCM Rolling Upgrade', s: 'Upgrade software and firmware one node at a time while workloads keep running.', pri: 'Day 2' },
-  { path: 'nci/network', icon: 'net', t: 'AHV Networking', s: 'Open vSwitch, bridges, bonds and VLANs: how a node connects to the network.', pri: 'Networking' },
-  { path: 'nci/flow', icon: 'lock', t: 'Flow', s: 'Microsegmentation by category, ransomware containment, and overlay VPCs.', pri: 'Security' },
-  { path: 'nci/dr', icon: 'globe', t: 'Disaster Recovery', s: 'Async, NearSync and synchronous replication, recovery plans and failover.', pri: 'Protection' },
-  { path: 'nci/snapshots', icon: 'clone', t: 'Snapshots & Clones', s: 'Metadata-only snapshots and instant clones with redirect-on-write.', pri: 'Data services' },
-  { path: 'nci/security', icon: 'shield', t: 'Data Security', s: 'Encryption at rest, key management, hardening and where Flow fits.', pri: 'Security' },
-  { path: 'nci/move', icon: 'move', t: 'Migration with Move', s: 'Bring VMs over from other hypervisors and clouds with minimal downtime.', pri: 'Adoption' },
-  { path: 'nci/edge', icon: 'edge', t: 'Edge & ROBO', s: '1-, 2- and 3-node clusters for small sites, managed centrally.', pri: 'Edge' },
-  { path: 'nci/scale', icon: 'plus', t: 'Scale-out vs 3-tier', s: 'Add a node, add a controller: linear growth and the honest overhead discussion.', pri: 'Architecture' },
+  { path: 'nci/cluster', icon: 'server', t: 'Cluster & DSF Lab', s: 'The full lab: build any cluster, then break, add, remove and migrate.', pri: 'Lab' },
+  { path: 'nci/datapath', icon: 'zap', t: 'Data Path', s: 'Follow a write or a read from the VM through the controller to its copies.', pri: 'Write & read' },
+  { path: 'nci/capacity', icon: 'shield', t: 'Protection & Capacity', s: 'RF2 or RF3: copies land on different nodes and heal after a failure.', pri: 'Sizing' },
+  { path: 'nci/failures', icon: 'power', t: 'Failure Gauntlet', s: 'Pick a failure, from one drive to two nodes at once, and watch the cluster heal.', pri: 'Resilience' },
+  { path: 'nci/lcm', icon: 'upgrade', t: 'LCM Rolling Upgrade', s: 'Updates one node at a time while every VM keeps running.', pri: 'Day 2' },
+  { path: 'nci/network', icon: 'net', t: 'AHV Networking', s: 'How a node’s bonded uplinks carry traffic, and what happens when a link fails.', pri: 'Networking' },
+  { path: 'nci/flow', icon: 'lock', t: 'Flow', s: 'Policies that allow or block traffic between apps, and quarantine.', pri: 'Security' },
+  { path: 'nci/dr', icon: 'globe', t: 'Disaster Recovery', s: 'Async, NearSync or Sync replication between sites, and a failover.', pri: 'Protection' },
+  { path: 'nci/snapshots', icon: 'clone', t: 'Snapshots & Clones', s: 'A snapshot copies the map, not the data; clones share blocks until they change.', pri: 'Data services' },
+  { path: 'nci/security', icon: 'shield', t: 'Data Security', s: 'Encryption at rest and its keys, against a stolen drive or node.', pri: 'Security' },
+  { path: 'nci/move', icon: 'move', t: 'Migration with Move', s: 'VMs copied over, kept in sync, then cut over with minimal downtime.', pri: 'Adoption' },
+  { path: 'nci/edge', icon: 'edge', t: 'Edge & ROBO', s: '1-, 2- and 3-node sites, and what each survives.', pri: 'Edge' },
+  { path: 'nci/scale', icon: 'plus', t: 'Scale-out vs 3-tier', s: 'Each node adds compute, storage and its own controller.', pri: 'Architecture' },
 ];
-
-type Layer = 'hw' | 'ahv' | 'cvm' | 'dsf' | 'flow' | 'dr';
-const LAYERS: { id: Layer; label: string; sub: string; path: string; text: string }[] = [
-  { id: 'dr', label: 'Disaster Recovery', sub: 'Snapshots, replication, recovery plans', path: 'nci/dr', text: 'Policy-based protection: pick an RPO, assign VMs by category, and recovery plans orchestrate failover to another site or cloud.' },
-  { id: 'flow', label: 'Flow', sub: 'Microsegmentation and virtual networking', path: 'nci/flow', text: 'Security policies follow VMs by category, and overlay networks (VPCs) are created in software without changing the physical network.' },
-  { id: 'dsf', label: 'AOS · Distributed Storage Fabric', sub: 'One storage pool from every node’s drives', path: 'nci/cluster', text: 'The CVMs pool every node’s local drives into one storage fabric and keep two or three copies (or parity) of all data on different nodes.' },
-  { id: 'cvm', label: 'Controller VM on every node', sub: 'Runs the AOS services', path: 'nci/datapath', text: 'Each node runs a Controller VM (CVM). Together they are the storage controller, so adding a node adds controller capacity as well as drives.' },
-  { id: 'ahv', label: 'AHV hypervisor', sub: 'Runs the VMs (ESXi also supported)', path: 'nci/network', text: 'AHV runs the virtual machines and is managed through Prism. Clusters can also run VMware ESXi; some features differ by hypervisor.' },
-  { id: 'hw', label: 'Any supported server', sub: 'CPU, memory, local NVMe / SSD / HDD, NICs', path: 'nci/scale', text: 'Standard x86 servers from Nutanix and major OEM vendors, with local drives instead of a separate storage array.' },
-];
-
-function Stack({ sel, onSel }: { sel: Layer; onSel: (l: Layer) => void }) {
-  const W = 640;
-  const h = 52;
-  const gap = 8;
-  return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${LAYERS.length * (h + gap)}`} role="group" aria-label="The NCI stack">
-      {LAYERS.map((l, i) => {
-        const y = i * (h + gap);
-        const on = l.id === sel;
-        const strong = l.id === 'cvm' || l.id === 'dsf';
-        return (
-          <g
-            key={l.id}
-            role="button"
-            tabIndex={0}
-            aria-pressed={on}
-            aria-label={l.label}
-            onClick={() => onSel(l.id)}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSel(l.id))}
-            onDblClick={() => go(l.path)}
-          >
-            <rect class={`hit ${strong ? 'ink-fill' : 'bg3'}`} x={0} y={y} width={W} height={h} stroke={on ? 'var(--text)' : 'var(--line-2)'} stroke-width={on ? 2 : 1} style={{ opacity: strong ? (on ? 1 : 0.85) : 1 }} />
-            <text x={16} y={y + 22} style={{ fontWeight: 600, fontSize: '15px', fill: strong ? '#fff' : undefined }}>
-              {l.label}
-            </text>
-            <text x={16} y={y + 40} class={strong ? '' : 'muted'} style={{ fontSize: '12.5px', fill: strong ? 'rgba(255,255,255,.78)' : undefined }}>
-              {l.sub}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
 
 function NodeCutaway() {
   // One node: hypervisor hosting user VMs and the CVM; CVM owns the local drives (passthrough).
@@ -121,31 +75,15 @@ function NodeCutaway() {
 }
 
 export default function NciHub() {
-  const [sel, setSel] = useState<Layer>('dsf');
-  const layer = LAYERS.find((l) => l.id === sel)!;
   return (
     <>
-      <div class="cols-2">
-        <div>
-          <h2 class="sec-h">The stack</h2>
-          <Stack sel={sel} onSel={setSel} />
-          <Follow tone="ink" k={layer.label}>
-            <p>{layer.text}</p>
-            <p>
-              <button type="button" class="tbtn" onClick={() => go(layer.path)}>
-                Open the related module <Icon name="arrow" />
-              </button>
-            </p>
-          </Follow>
-        </div>
-        <div>
-          <h2 class="sec-h">What’s in a node</h2>
-          <NodeCutaway />
-          <p class="field-note" style={{ marginTop: 'var(--sp-3)' }}>
-            Every node runs the hypervisor, the user VMs and one CVM. The CVM talks to the node’s drives directly, and all CVMs together form the cluster’s storage controller.
-          </p>
-        </div>
-      </div>
+      <section class="hub-node" aria-labelledby="hub-node-h">
+        <h2 class="sec-h" id="hub-node-h">
+          What’s in a node
+        </h2>
+        <NodeCutaway />
+        <p class="field-note">Every node runs the hypervisor, the user VMs and one CVM. The CVM talks to the node’s drives directly, and all CVMs together form the cluster’s storage controller.</p>
+      </section>
       <h2 class="sec-h">Explore</h2>
       <div class="subgrid">
         {SUBS.map((s) => (

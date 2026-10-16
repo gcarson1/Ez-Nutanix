@@ -78,7 +78,6 @@
 .cl-rail .meter.warn > span { background: var(--warn); }
 .cl-rail .meter.bad > span { background: var(--bad); }
 .cl-rail .reason { font-size: var(--fs-13); color: var(--text-2); margin-top: var(--sp-2); line-height: 1.45; }
-.cl-rail .events { max-height: 22rem; }
 .cl-mix { display: flex; height: 0.5rem; margin-top: var(--sp-2); background: var(--track); }
 .cl-mix span { display: block; height: 100%; }
 .cl-mix .op { background: var(--ink); }

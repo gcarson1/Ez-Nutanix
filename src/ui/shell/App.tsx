@@ -186,9 +186,7 @@ const SHORTCUTS: [string, string][] = [
   ['P', 'Presenter notes'],
   ['G', 'Glossary'],
   ['?', 'This list'],
-  ['Space', 'Play / pause the animation'],
-  ['← →', 'Step back / forward'],
-  ['R', 'Reset the animation'],
+  ['Space', 'Pause / play the animation'],
   ['T', 'Light / dark theme'],
   ['Esc', 'Close panel, or go back'],
 ];
@@ -312,14 +310,10 @@ function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);
   if (!p) return;
   const cur = getRoute().path;
-  const clusterViews = ['nci/cluster', 'nci/capacity', 'nci/failures', 'nci/lcm'];
-  if (p.path) {
-    go(p.path, p.params ?? {});
-  } else {
-    if (!clusterViews.includes(cur)) go('nci/cluster');
-    setParams(clearedScenario());
-    setScenario(p.cfg);
-  }
+  const clusterViews = ['nci/cluster', 'nci/capacity'];
+  if (!clusterViews.includes(cur)) go('nci/cluster');
+  setParams(clearedScenario());
+  setScenario(p.cfg);
   toast(`Preset: ${p.label}`);
 }
 
@@ -360,7 +354,6 @@ export function App() {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement;
       const typing = t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || (t.tagName === 'INPUT' && (t as HTMLInputElement).type !== 'range' && (t as HTMLInputElement).type !== 'checkbox'));
-      const onRange = t && t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'range';
       const s = state.current;
       if (e.key === 'Escape') {
         if (s.dialog) setDialog(null);
@@ -378,11 +371,8 @@ export function App() {
       else if (k === 't' || k === 'T') setTheme((x) => (x === 'dark' ? 'light' : 'dark'));
       else if (s.dialog) return;
       else if (k === ' ' && t.tagName !== 'BUTTON' && simKey('toggle')) e.preventDefault();
-      else if (k === 'ArrowRight' && !onRange && simKey('step+')) e.preventDefault();
-      else if (k === 'ArrowLeft' && !onRange && simKey('step-')) e.preventDefault();
-      else if ((k === 'r' || k === 'R') && simKey('reset')) e.preventDefault();
       else return;
-      if (k !== ' ' && !k.startsWith('Arrow')) e.preventDefault();
+      if (k !== ' ') e.preventDefault();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
