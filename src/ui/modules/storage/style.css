@@ -9,7 +9,6 @@
 .diagram .sto-ip { fill: var(--ink-soft); stroke: var(--ink-line); }
 .diagram .sto-reach { stroke: var(--ink-line); }
 .diagram .sto-tgt { fill: var(--bg-3); stroke: var(--line-2); }
-.diagram .sto-tgt.off { fill: var(--bg-2); stroke-dasharray: 5 4; }
 .diagram .sto-slot { fill: none; stroke: var(--line-2); stroke-dasharray: 2 2; }
 .diagram .sto-obj { fill: var(--ink); }
 .diagram .sto-obj.tiered { fill: var(--flow); }
