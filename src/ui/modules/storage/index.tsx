@@ -400,7 +400,7 @@ function Objects() {
               Apps and backup software speak S3
             </text>
             <text x={300} y={51} text-anchor="middle" class="mono muted" style={{ fontSize: '11.5px' }}>
-              PUT / GET https://objects.corp/backups/…
+              PUT / GET https://objects.example.com/backups/…
             </text>
             {Array.from({ length: workers }, (_, i) => (
               <g key={i}>

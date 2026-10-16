@@ -48,6 +48,7 @@ test('guided tour walks the panes', async ({ page }) => {
 
 test('presenter, glossary and shortcuts open from the keyboard', async ({ page }) => {
   await page.goto(`${FILE}#/nci/cluster`);
+  await expect(page.locator('.mod-head h1')).toBeVisible();
   await page.keyboard.press('p');
   await expect(page.getByRole('complementary', { name: /Presenter/ })).toBeVisible();
   await expect(page.getByText('Talk track')).toBeVisible();
