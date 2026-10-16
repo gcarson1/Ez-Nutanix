@@ -9,7 +9,7 @@ import { createCluster, DEFAULT_CONFIG, type ClusterConfig, type ClusterState } 
 import { deriveStatus, type ClusterStatus } from '../../../engine/status';
 import { describeAct, insights, scriptActs, type Act, type ScriptId } from '../../../engine/timeline';
 import type { RF } from '../../../engine/rules';
-import { useClock, useRestartOn } from '../../components/clock';
+import { useClock, useRestartOn, useStepKey } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import { ClusterDiagram } from '../cluster-lab/ClusterDiagram';
@@ -80,6 +80,7 @@ export default function Failures() {
   const st = useMemo(() => deriveStatus(s), [s]);
   const ins = insights(s);
   const line = nowLine(s, st, acts, clock.t, def.blurb);
+  useStepKey(clock, line.k);
   const heal = st.selfHeal;
   const healed = heal.state === 'rebuilding' || heal.state === 'waiting' || heal.state === 'blocked' ? Math.round(heal.progress * 100) : Math.round((st.items.healthy / Math.max(1, st.items.total)) * 100);
   const diagram = useMemo(() => <ClusterDiagram s={s} compact />, [s]);

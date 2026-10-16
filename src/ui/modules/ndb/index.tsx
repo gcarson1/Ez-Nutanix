@@ -60,7 +60,7 @@ const TM_END = 12.4;
 
 function TimeMachine() {
   const [mode, setMode] = useEnum<'clone' | 'restore'>('rm', 'clone', ['clone', 'restore']);
-  const clock = useClock({ rate: 1, duration: TM_END, keys: true, poster: TM_END - 0.5 });
+  const clock = useClock({ rate: 1, duration: TM_END, keys: true, poster: TM_END - 0.5, stops: TM_PH });
   useRestartOn(clock, [mode]);
   const t = clock.t;
   const ph = phaseAt(TM_PH, t);
@@ -214,7 +214,7 @@ const PV_END = 10;
 
 function Provisioning() {
   const [topo, setTopo] = useEnum<'single' | 'ha'>('tp', 'single', ['single', 'ha']);
-  const clock = useClock({ rate: 1, duration: PV_END, keys: true, poster: PV_END - 0.5 });
+  const clock = useClock({ rate: 1, duration: PV_END, keys: true, poster: PV_END - 0.5, stops: PV_PH });
   useRestartOn(clock, [topo]);
   const t = clock.t;
   const ph = phaseAt(PV_PH, t);
@@ -395,7 +395,7 @@ function patchWindows(db: DbServer): [number, number][] {
 }
 
 function Patching() {
-  const clock = useClock({ rate: 1, duration: PT_END, keys: true, poster: PT_END - 0.5 });
+  const clock = useClock({ rate: 1, duration: PT_END, keys: true, poster: PT_END - 0.5, stops: PT_PH });
   const t = clock.t;
   const ph = phaseAt(PT_PH, t);
   const v2 = t >= 0.8;

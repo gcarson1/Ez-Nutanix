@@ -176,7 +176,7 @@ function Maps({ k, t }: { k: number; t: number }) {
 }
 
 export default function Snapshots() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 0.5 });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 0.5, stops: T });
   const t = clock.t;
   const k = phaseAt(T, t);
   const st = STEPS[k];

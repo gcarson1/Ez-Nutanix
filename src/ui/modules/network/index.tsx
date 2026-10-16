@@ -237,7 +237,7 @@ export default function Network() {
   const [bond, setBond] = useEnum<BondMode>('bond', 'ab', BOND_ORDER);
   const [fail, setFail] = useEnum<LinkFail>('lf', 'none', ['none', 'one']);
   const pkts = useMemo(() => plan(bond, fail), [bond, fail]);
-  const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3 });
+  const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3, stops: fail === 'none' ? undefined : [FAIL_AT, MOVED_AT] });
   useRestartOn(clock, [bond, fail]);
   const t = clock.t;
 

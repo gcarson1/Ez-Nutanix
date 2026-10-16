@@ -217,7 +217,7 @@ export default function Ai() {
   const n = Number(repS);
   const plan = useMemo(() => planServing(n), [n]);
   const site = SITE[where];
-  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2 });
+  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2, stops: [T.start, plan.stop.from, plan.stop.to] });
   useRestartOn(clock, [where, n]);
   const t = clock.t;
   const phase = phaseAt([0, T.start, plan.stop.from, plan.stop.to], t);

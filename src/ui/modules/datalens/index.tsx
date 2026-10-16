@@ -1,12 +1,11 @@
-// Data Lens: a ransomware attack on a file server's shares, on a loop. Data Lens spots it and,
-// with auto-block, cuts the PC off right away; with alert only, the PC keeps going until an admin
-// acts. Then the hit files come back from the last clean snapshot. Logic is in engine/ransomware.ts.
+// Data Lens: a ransomware attack on a file server's shares, on a loop. Data Lens spots it and
+// auto-blocks the PC right away, then the hit files come back from the last clean snapshot.
+// Logic is in engine/ransomware.ts.
 import { useMemo } from 'preact/hooks';
-import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, prog } from '../../components/show';
-import { FILES, PER_SHARE, SHARES, SIM, attackState, encryptTime, restoreTime, timeline, type FileState, type Phase, type Response, type Timeline } from '../../../engine/ransomware';
+import { Kpis, Show, prog } from '../../components/show';
+import { FILES, PER_SHARE, SHARES, SIM, attackState, encryptTime, restoreTime, timeline, type FileState, type Phase, type Timeline } from '../../../engine/ransomware';
 import './style.css';
 
 // ── geometry ──
@@ -80,7 +79,7 @@ function dots(tl: Timeline, t: number) {
   return out;
 }
 
-function ShareDiagram({ tl, t, response }: { tl: Timeline; t: number; response: Response }) {
+function ShareDiagram({ tl, t }: { tl: Timeline; t: number }) {
   const s = attackState(tl, t);
   const infected = t >= SIM.attackStart;
   const attacking = infected && !s.blocked;
@@ -90,10 +89,10 @@ function ShareDiagram({ tl, t, response }: { tl: Timeline; t: number; response: 
   const dcx = DL.x + DL.w / 2;
   const restoring = s.phase === 'recovering';
   let resp: { cls: string; text: string } | null = null;
-  if (s.blocked) resp = { cls: 'ok-fill', text: response === 'block' ? '✓ PC blocked at once' : '✓ Admin blocked the PC' };
-  else if (s.alert) resp = response === 'block' ? { cls: 'ok-fill', text: 'Blocking the PC…' } : { cls: 'warn-fill', text: 'Waiting for an admin…' };
+  if (s.blocked) resp = { cls: 'ok-fill', text: '✓ PC blocked at once' };
+  else if (s.alert) resp = { cls: 'ok-fill', text: 'Blocking the PC…' };
   return (
-    <svg class="diagram dl-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A user’s PC is infected and encrypts files on three file shares. Data Lens watches the file activity, spots the attack and ${response === 'block' ? 'blocks the PC at once' : 'raises an alert; the PC keeps encrypting until an admin blocks it'}. The hit files are then restored from the last clean snapshot.`}>
+    <svg class="diagram dl-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A user’s PC is infected and encrypts files on three file shares. Data Lens watches the file activity, spots the attack and blocks the PC at once. The hit files are then restored from the last clean snapshot.`}>
       {/* PC */}
       <rect class={`dl-pc${attacking ? ' bad' : s.blocked ? ' off' : ''}`} x={PC.x} y={PC.y} width={PC.w} height={PC.h} />
       <text x={PC.x + PC.w / 2} y={PC.y + 28} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
@@ -170,7 +169,7 @@ function ShareDiagram({ tl, t, response }: { tl: Timeline; t: number; response: 
         </>
       )}
       <text x={dcx} y={DL.y + 180} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-        Response: {response === 'block' ? 'auto-block' : 'alert only'}
+        Response: auto-block
       </text>
       {resp && (
         <text x={dcx} y={DL.y + 202} text-anchor="middle" class={resp.cls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
@@ -191,7 +190,7 @@ function ShareDiagram({ tl, t, response }: { tl: Timeline; t: number; response: 
 
 const PHASE_WORD: Record<Phase, string> = { quiet: 'Normal day', attack: 'Attack', detected: 'Spotted', stopped: 'Stopped', recovering: 'Restoring', recovered: 'Recovered' };
 
-function caption(response: Response, tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; text: string } {
+function caption(tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; text: string } {
   const pct = Math.round((tl.hit / FILES) * 100);
   switch (phase) {
     case 'quiet':
@@ -199,13 +198,9 @@ function caption(response: Response, tl: Timeline, phase: Phase): { tone: Tone |
     case 'attack':
       return { tone: 'bad', k: 'Attack starts', text: 'A user’s PC is infected. It starts encrypting every file it can reach on the shares, one after another.' };
     case 'detected':
-      return response === 'block'
-        ? { tone: 'warn', k: 'Spotted', text: 'Data Lens sees one user rewriting files far faster than normal, a ransomware pattern. It raises an alert and blocks that PC.' }
-        : { tone: 'warn', k: 'Spotted, alert only', text: 'Data Lens raises an alert, but nothing stops the PC yet. It keeps encrypting until an admin reads the alert and blocks it.' };
+      return { tone: 'warn', k: 'Spotted', text: 'Data Lens sees one user rewriting files far faster than normal, a ransomware pattern. It raises an alert and blocks that PC.' };
     case 'stopped':
-      return response === 'block'
-        ? { tone: 'ok', k: 'Stopped', text: `The PC was cut off from the shares seconds after the attack began. Only ${tl.hit} of ${FILES} files (${pct}%) were hit.` }
-        : { tone: 'warn', k: 'Blocked, late', text: `By the time an admin blocked the PC, ${tl.hit} of ${FILES} files (${pct}%) were encrypted.` };
+      return { tone: 'ok', k: 'Stopped', text: `The PC was cut off from the shares seconds after the attack began. Only ${tl.hit} of ${FILES} files (${pct}%) were hit.` };
     case 'recovering':
       return { tone: 'flow', k: 'Restoring', text: 'One action restores the hit files from the last clean snapshot. The PC could never touch it: snapshots are read-only.' };
     case 'recovered':
@@ -214,26 +209,13 @@ function caption(response: Response, tl: Timeline, phase: Phase): { tone: Tone |
 }
 
 export default function Datalens() {
-  const [response, setResponse] = useEnum<Response>('rsp', 'block', ['alert', 'block']);
-  const tl = useMemo(() => timeline(response), [response]);
-  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.stopAt + 1 });
-  useRestartOn(clock, [response]);
+  const tl = useMemo(() => timeline('block'), []);
+  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.stopAt + 1, stops: [SIM.attackStart, tl.detectAt, tl.stopAt, tl.recoverAt, tl.recoveredAt] });
   const s = attackState(tl, clock.t);
-  const cap = caption(response, tl, s.phase);
+  const cap = caption(tl, s.phase);
 
   return (
     <Show
-      top={
-        <Choice<Response>
-          label="When Data Lens spots an attack"
-          value={response}
-          onChange={setResponse}
-          options={[
-            { value: 'alert', label: 'Alert only' },
-            { value: 'block', label: 'Auto-block' },
-          ]}
-        />
-      }
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>
@@ -243,7 +225,7 @@ export default function Datalens() {
             items={[
               { k: 'Files hit', v: s.hit, sub: `of ${FILES}`, tone: s.hit ? 'bad' : undefined },
               { k: 'Alert', v: s.alert ? 'Raised' : 'None', tone: s.alert ? 'warn' : undefined },
-              { k: 'PC blocked', v: s.blocked ? (response === 'block' ? 'Auto' : 'By admin') : 'No', tone: s.blocked ? 'ok' : undefined },
+              { k: 'PC blocked', v: s.blocked ? 'Auto' : 'No', tone: s.blocked ? 'ok' : undefined },
               { k: 'Restored', v: s.restored, sub: 'from the snapshot', tone: s.restored ? 'ok' : undefined },
             ]}
           />
@@ -251,7 +233,7 @@ export default function Datalens() {
       }
     >
       <div class="diagram-scroll">
-        <ShareDiagram tl={tl} t={clock.t} response={response} />
+        <ShareDiagram tl={tl} t={clock.t} />
       </div>
       <Legend
         items={[

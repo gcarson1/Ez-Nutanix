@@ -300,7 +300,7 @@ export default function Datapath() {
   const steps = useMemo(() => (mode === 'rd' ? readSequence({ source: 'local', seed: SEED }) : mode === 'loc' ? [] : writeSequence({ rf, kind: mode === 'ws' ? 'sequential' : 'random', seed: SEED })), [mode, rf]);
   const frames = useMemo(() => localitySequence({ extents: 8, seed: SEED }), []);
   const len = mode === 'loc' ? frames.length : steps.length;
-  const clock = useClock({ rate: mode === 'loc' ? 1.4 : 0.6, duration: len - 0.001, keys: true, poster: len - 0.001 });
+  const clock = useClock({ rate: mode === 'loc' ? 1.4 : 0.6, duration: len - 0.001, keys: true, poster: len - 0.001, stops: Array.from({ length: len }, (_, k) => k) });
   useRestartOn(clock, [mode, rf]);
 
   const i = Math.min(len - 1, Math.floor(clock.t));

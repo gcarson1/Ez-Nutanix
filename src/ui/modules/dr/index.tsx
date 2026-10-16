@@ -244,7 +244,7 @@ export default function Dr() {
   const [tier, setTier] = useEnum<Tier>('rep', 'async', TIERS);
   const [event, setEvent] = useEnum<DrEvent>('ev', 'unplanned', EVENTS);
   const s = useMemo(() => buildScene(tier, event), [tier, event]);
-  const clock = useClock({ rate: 1, duration: s.end, keys: true, poster: s.done + 0.6 });
+  const clock = useClock({ rate: 1, duration: s.end, keys: true, poster: s.done + 0.6, stops: s.phases.map((p) => p.t) });
   useRestartOn(clock, [tier, event]);
   const t = clock.t;
   const ph = s.phases[phaseAt(s.phases.map((p) => p.t), t)].id;

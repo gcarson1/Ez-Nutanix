@@ -98,7 +98,7 @@ export default function Cloud() {
   const [use, setUse] = useEnum<Use>('u', 'dr', USE_IDS);
   const U = USES[use];
   const P = PROV[prov];
-  const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[2].at + 2.6 });
+  const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[2].at + 2.6, stops: U.phases.map((p) => p.at) });
   useRestartOn(clock, [prov, use]);
   const t = clock.t;
   const i = phaseAt(

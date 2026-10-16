@@ -3,7 +3,7 @@
 // that fails its health check. All rollout logic is in engine/nkp-upgrade.ts.
 import { useMemo, useRef } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { useClock, useRestartOn, useStepKey } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt } from '../../components/show';
 import { FLEET, TIMING, clusterState, planRollout, waveGroups, type ClusterState, type ClusterStatus, type FleetCluster, type Plan } from '../../../engine/nkp-upgrade';
@@ -239,6 +239,7 @@ export default function Nkp() {
   const out = list.reduce((n, s) => n + s.unavailable, 0);
   const wave = phaseAt(plan.waves, t);
   const cap = caption(run, plan, t, wave);
+  useStepKey(clock, cap.k);
   const stopped = plan.haltAt !== null && t >= plan.haltAt;
   const word = run === 'fail' ? (t < plan.haltAt! ? 'Canary' : t < plan.end ? 'Check failed' : 'Rolled back') : t >= plan.end ? 'Done' : WAVE_LABEL[wave];
 

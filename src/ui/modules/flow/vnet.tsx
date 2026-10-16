@@ -163,7 +163,7 @@ function Packet({ p, addr, wrap, swapped }: { p: Pt; addr: string; wrap?: string
 export function VNet() {
   const [preset, setPreset] = useEnum<Preset>('vp', 'vpc', ['vpc', 'nat', 'fip']);
   const P = PRESETS[preset];
-  const clock = useClock({ rate: 1, duration: P.hops.length * HOP, keys: true, poster: P.poster * HOP + 1.2 });
+  const clock = useClock({ rate: 1, duration: P.hops.length * HOP, keys: true, poster: P.poster * HOP + 1.2, stops: P.hops.map((_, i) => i * HOP) });
   useRestartOn(clock, [preset]);
 
   const t = clock.t;

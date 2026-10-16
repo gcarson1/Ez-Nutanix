@@ -126,7 +126,7 @@ function Timeline({ t, now }: { t: number; now: number }) {
 }
 
 export default function Beacon() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: AT });
   const t = clock.t;
   const now = phaseAt([0, ...AT.slice(1)], t);
   const y = YEARS[now];
