@@ -1,60 +1,58 @@
-// Simulation clock for animated sequences: play/pause, single-step, speed, scrub, reset.
-// Respects prefers-reduced-motion by advancing in discrete steps instead of continuously.
-// Global shortcuts (Space, arrows, R) drive whichever clock registered last.
+// Animation clock: plays on its own and loops, with pause and scrub. There are no step,
+// speed or reset controls; scrubbing pauses, Play resumes from where the scrubber is.
+// With prefers-reduced-motion the clock starts paused and moves only when scrubbed or
+// played. Space toggles whichever clock registered last.
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-type Handler = { toggle: () => void; step: (dir: 1 | -1) => void; reset: () => void };
+type Handler = { toggle: () => void };
 const stack: Handler[] = [];
 
-export function simKey(action: 'toggle' | 'step+' | 'step-' | 'reset'): boolean {
+export function simKey(action: 'toggle'): boolean {
   const h = stack[stack.length - 1];
   if (!h) return false;
   if (action === 'toggle') h.toggle();
-  else if (action === 'step+') h.step(1);
-  else if (action === 'step-') h.step(-1);
-  else h.reset();
   return true;
 }
-
-export const SPEEDS = [0.5, 1, 2, 5] as const;
-export type Speed = (typeof SPEEDS)[number];
 
 export function prefersReducedMotion(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 export interface ClockOptions {
-  /** Sim seconds that pass per real second at 1x. */
+  /** Sim seconds that pass per real second. */
   rate: number;
-  /** Optional end time; the clock pauses there. */
+  /** Length of one loop in sim seconds. Without it the clock runs on forever. */
   duration?: number;
-  /** Size of one manual step, in sim seconds. */
-  stepSize: number;
-  /** Start playing on mount. */
+  /** Start playing on mount (default true, except with reduced motion). */
   autoplay?: boolean;
-  /** Register for global keyboard shortcuts (one clock per view). */
+  /** Start over after the end (default true). False holds the last frame. */
+  loop?: boolean;
+  /** Real seconds to hold the last frame before looping (default 1.8). */
+  hold?: number;
+  /** Register for the Space shortcut (one clock per view). */
   keys?: boolean;
+  /** Frame to show when the clock starts paused (reduced motion), in sim seconds. */
+  poster?: number;
 }
 
 export interface Clock {
   t: number;
   playing: boolean;
-  speed: Speed;
   duration?: number;
-  setSpeed: (s: Speed) => void;
   play: () => void;
   pause: () => void;
   toggle: () => void;
-  step: (dir: 1 | -1) => void;
   seek: (t: number) => void;
-  reset: () => void;
+  /** Back to the start; keeps playing if it was playing. */
+  restart: () => void;
 }
 
 export function useClock(opts: ClockOptions): Clock {
-  const [t, setT] = useState(0);
-  const [playing, setPlaying] = useState(!!opts.autoplay);
-  const [speed, setSpeed] = useState<Speed>(1);
-  const ref = useRef({ t: 0, playing: !!opts.autoplay, speed: 1 as Speed, opts });
+  const auto = opts.autoplay !== false && !prefersReducedMotion();
+  const t0 = auto ? 0 : opts.poster ?? 0;
+  const [t, setT] = useState(t0);
+  const [playing, setPlaying] = useState(auto);
+  const ref = useRef({ t: t0, playing: auto, held: 0, opts });
   ref.current.opts = opts;
 
   const clamp = (v: number) => {
@@ -64,27 +62,29 @@ export function useClock(opts: ClockOptions): Clock {
   const set = (v: number) => {
     ref.current.t = clamp(v);
     setT(ref.current.t);
-    const d = ref.current.opts.duration;
-    if (d !== undefined && ref.current.t >= d && ref.current.playing) {
-      ref.current.playing = false;
-      setPlaying(false);
-    }
   };
 
   useEffect(() => {
     if (!playing) return;
     let raf = 0;
-    let timer = 0;
-    if (prefersReducedMotion()) {
-      // Discrete steps, no continuous motion.
-      timer = window.setInterval(() => set(ref.current.t + ref.current.opts.stepSize), 1100);
-      return () => clearInterval(timer);
-    }
     let last = performance.now();
     const loop = (now: number) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      set(ref.current.t + dt * ref.current.opts.rate * ref.current.speed);
+      const o = ref.current.opts;
+      const d = o.duration;
+      if (d !== undefined && ref.current.t >= d) {
+        if (o.loop === false) {
+          ref.current.playing = false;
+          setPlaying(false);
+          return;
+        }
+        ref.current.held += dt;
+        if (ref.current.held >= (o.hold ?? 1.8)) {
+          ref.current.held = 0;
+          set(0);
+        }
+      } else set(ref.current.t + dt * o.rate);
       if (ref.current.playing) raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -94,15 +94,11 @@ export function useClock(opts: ClockOptions): Clock {
   const api: Clock = {
     t,
     playing,
-    speed,
     duration: opts.duration,
-    setSpeed: (s) => {
-      ref.current.speed = s;
-      setSpeed(s);
-    },
     play: () => {
       const d = ref.current.opts.duration;
       if (d !== undefined && ref.current.t >= d) set(0);
+      ref.current.held = 0;
       ref.current.playing = true;
       setPlaying(true);
     },
@@ -111,13 +107,12 @@ export function useClock(opts: ClockOptions): Clock {
       setPlaying(false);
     },
     toggle: () => (ref.current.playing ? api.pause() : api.play()),
-    step: (dir) => {
-      api.pause();
-      set(ref.current.t + dir * ref.current.opts.stepSize);
+    seek: (v) => {
+      ref.current.held = 0;
+      set(v);
     },
-    seek: (v) => set(v),
-    reset: () => {
-      api.pause();
+    restart: () => {
+      ref.current.held = 0;
       set(0);
     },
   };
@@ -126,11 +121,7 @@ export function useClock(opts: ClockOptions): Clock {
   apiRef.current = api;
   useEffect(() => {
     if (!opts.keys) return;
-    const h: Handler = {
-      toggle: () => apiRef.current.toggle(),
-      step: (d) => apiRef.current.step(d),
-      reset: () => apiRef.current.reset(),
-    };
+    const h: Handler = { toggle: () => apiRef.current.toggle() };
     stack.push(h);
     return () => {
       const i = stack.indexOf(h);
@@ -139,6 +130,18 @@ export function useClock(opts: ClockOptions): Clock {
   }, [opts.keys]);
 
   return api;
+}
+
+/** Restart the clock whenever one of `deps` changes (a new preset starts from the top). */
+export function useRestartOn(clock: Clock, deps: unknown[]) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    clock.restart();
+  }, deps);
 }
 
 export function fmtClock(sec: number): string {

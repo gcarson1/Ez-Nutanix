@@ -1,261 +1,237 @@
-// Migration with Nutanix Move: seed copy while the source runs, incremental syncs, then a
-// cutover with a short downtime window. Timeline math lives in engine/move.ts.
-import { useState } from 'preact/hooks';
-import { Chip, Field, Follow, Illus, PlayBar, Seg, Slider, Stat, Tip, fmtDur } from '../../components/controls';
-import { useClock } from '../../components/clock';
-import { Icon } from '../../components/Icon';
-import { useEnum, useNum } from '../../../state/route';
-import { go } from '../../shell/nav';
-import { naiveDowntime, phaseAt, planMove, type PhaseKind } from '../../../engine/move';
+// Migration with Nutanix Move: pick the source platform and watch one VM being copied while it
+// runs, kept in sync with only its changes, then cut over in a short window, on a loop.
+// Timeline math lives in engine/move.ts; this file maps its phases onto the animation.
+import { useEnum } from '../../../state/route';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { naiveDowntime, planMove, type MoveInput, type PhaseKind } from '../../../engine/move';
 import './style.css';
 
-type Src = 'esxi' | 'hyperv' | 'ec2' | 'azure' | 'vmc' | 'ahv';
-const SRC: Record<Src, { label: string; long: string }> = {
-  esxi: { label: 'VMware vSphere / ESXi', long: 'VMware vSphere (ESXi hosts via vCenter)' },
-  hyperv: { label: 'Microsoft Hyper-V', long: 'Microsoft Hyper-V' },
-  ec2: { label: 'AWS EC2', long: 'Native AWS EC2 instances' },
-  azure: { label: 'Azure VMs', long: 'Native Azure virtual machines' },
-  vmc: { label: 'VMware Cloud', long: 'VMware Cloud (VMC on AWS, Azure VMware Solution)' },
-  ahv: { label: 'Another AHV cluster', long: 'Another Nutanix AHV cluster' },
+type Src = 'esxi' | 'hyperv' | 'ec2' | 'azure';
+const SRC: Record<Src, { label: string; box: string; sub: string; cloud: boolean; note: string }> = {
+  esxi: { label: 'VMware ESXi', box: 'VMware vSphere', sub: 'ESXi hosts, through vCenter', cloud: false, note: 'From Move 6.3, ESXi to AHV can skip the copy entirely with supported external arrays (Dell PowerStore, Pure Storage).' },
+  hyperv: { label: 'Hyper-V', box: 'Microsoft Hyper-V', sub: 'Hyper-V hosts in your data center', cloud: false, note: 'The same seed, sync and cutover pattern applies to every source Move supports.' },
+  ec2: { label: 'AWS EC2', box: 'AWS EC2', sub: 'native instances in your AWS account', cloud: true, note: 'Check the Move support matrix for the exact source, target and versions before each wave.' },
+  azure: { label: 'Azure', box: 'Microsoft Azure', sub: 'native VMs in your Azure subscription', cloud: true, note: 'Check the Move support matrix for the exact source, target and versions before each wave.' },
 };
-type Tgt = 'ahv' | 'nc2aws' | 'nc2az' | 'nc2gcp' | 'nc2ovh';
-const TGT: Record<Tgt, string> = { ahv: 'AHV on-premises', nc2aws: 'NC2 on AWS', nc2az: 'NC2 on Azure', nc2gcp: 'NC2 on Google Cloud', nc2ovh: 'NC2 on OVHcloud' };
+const SRC_IDS = Object.keys(SRC) as Src[];
 
-const PH: Record<PhaseKind, { label: string; cls: string }> = {
-  seed: { label: 'Seed: full copy, source running', cls: 'flow-fill' },
-  sync: { label: 'Incremental sync', cls: 'flow-fill' },
-  idle: { label: 'Waiting for next sync', cls: 'bg3' },
-  final: { label: 'Cutover: final sync, source off', cls: 'warn-fill' },
-  boot: { label: 'Cutover: power on at target', cls: 'warn-fill' },
-  done: { label: 'Running on target', cls: 'ok-fill' },
-};
+/** One example VM. Every figure is an assumption, shown as such. */
+const BASE: Omit<MoveInput, 'cutoverAt'> = { vmGB: 800, mbps: 250, changeGBPerHour: 6, syncEveryMin: 60, bootMin: 5 };
+const SEED_MIN = (BASE.vmGB * 1024) / (BASE.mbps * 60);
+/** Cut over a quarter of an hour after the second incremental sync. */
+const PLAN = planMove({ ...BASE, cutoverAt: SEED_MIN + 2 * BASE.syncEveryMin + 15 }, 1000);
+const COLD = naiveDowntime({ ...BASE, cutoverAt: null });
 
-const fmtMin = (m: number) => (m < 1 ? '0 min' : fmtDur(m / 60));
+/** Seconds on screen for each kind of phase, whatever its real length. */
+const SHOW_S: Record<PhaseKind, number> = { seed: 5.5, idle: 0.9, sync: 1.8, final: 1.6, boot: 1.8, done: 3.4 };
+const SEGS = (() => {
+  let a = 0;
+  return PLAN.phases.map((p) => {
+    const s = { kind: p.kind, a, b: a + SHOW_S[p.kind] };
+    a = s.b;
+    return s;
+  });
+})();
+const STARTS = SEGS.map((s) => s.a);
+const END = SEGS[SEGS.length - 1].b;
+
+// The VM's disk as 24 blocks. Each later copy carries only the blocks that changed.
+const COLS = 8;
+const BLOCKS = 24;
+const CHANGED = [[2, 9, 15, 20], [5, 18], [11]];
+const CARRIERS = SEGS.filter((s) => s.kind === 'sync' || s.kind === 'final');
+const FLY = 1;
+const seedSeg = SEGS[0];
+const seedStart = (j: number) => seedSeg.a + (j * (seedSeg.b - seedSeg.a - FLY)) / (BLOCKS - 1);
+const flights = CHANGED.flatMap((set, k) =>
+  set.map((block, j) => {
+    const c = CARRIERS[k];
+    const fly = Math.min(FLY, c.b - c.a);
+    const start = c.a + (set.length > 1 ? (j * (c.b - c.a - fly)) / (set.length - 1) : 0);
+    return { block, mark: c.a - 1.6 + (j * 1.4) / set.length, start, end: start + fly };
+  }),
+);
+
+const WORD: Record<PhaseKind, string> = { seed: 'Seed copy', idle: 'In sync', sync: 'In sync', final: 'Cutover', boot: 'Power on', done: 'Migrated' };
+const fmtMin = (m: number) => fmtDur(m / 60);
+
+function caption(kind: PhaseKind, src: string): { tone: Tone | 'ink'; k: string; text: string } {
+  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy', text: `Move copies the whole VM to AHV while it keeps running on ${src}. Users notice nothing.` };
+  if (kind === 'idle' || kind === 'sync') return { tone: 'flow', k: 'Keeping in sync', text: `Each sync sends only the blocks that changed since the last one, about ${Math.round((BASE.changeGBPerHour * BASE.syncEveryMin) / 60)} GB here. The target stays close behind until you pick a window.` };
+  if (kind === 'final') return { tone: 'warn', k: 'Cutover', text: 'In the window you chose, the source VM shuts down so nothing changes, and the last few changes are copied.' };
+  if (kind === 'boot') return { tone: 'warn', k: 'Power on at the target', text: 'The VM powers on in AHV. Downtime is only this final sync plus the power-on.' };
+  return { tone: 'ok', k: 'Running on AHV', text: 'Users now work on the AHV copy. The source VM stays powered off until the app owner signs off.' };
+}
 
 export default function Migration() {
-  const [src, setSrc] = useEnum<Src>('src', 'esxi', ['esxi', 'hyperv', 'ec2', 'azure', 'vmc', 'ahv']);
-  const [tgt, setTgt] = useEnum<Tgt>('tgt', 'ahv', ['ahv', 'nc2aws', 'nc2az', 'nc2gcp', 'nc2ovh']);
-  const [gb, setGb] = useNum('gb', 800, 50, 4000);
-  const [mbps, setMbps] = useNum('mb', 250, 25, 1000);
-  const [chg, setChg] = useNum('cr', 6, 0, 200);
-  const [every, setEvery] = useNum('se', 60, 10, 240);
-  const [boot, setBoot] = useNum('bt', 5, 1, 30);
-  const [cut, setCut] = useState<number | null>(null);
-  const input = { vmGB: gb, mbps, changeGBPerHour: chg, syncEveryMin: every, cutoverAt: cut, bootMin: boot };
-  const seedMin = (gb * 1024) / (mbps * 60);
-  const horizon = Math.max(seedMin + every * 3.2, cut !== null ? cut + every * 0.6 + boot + 30 : 0);
-  const plan = planMove(input, horizon);
-  const clock = useClock({ rate: horizon / 18, duration: horizon, stepSize: Math.max(5, every / 2), keys: true });
+  const [src, setSrc] = useEnum<Src>('src', 'esxi', SRC_IDS);
+  const syncSeg = SEGS.filter((s) => s.kind === 'sync')[1];
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (syncSeg.a + syncSeg.b) / 2 });
+  useRestartOn(clock, [src]);
   const t = clock.t;
-  const ph = phaseAt(plan, t);
-  const cold = naiveDowntime(input);
-  const canCut = cut === null && t >= plan.seedEnd;
-  const reset = () => (setCut(null), clock.reset());
-  const sourceOff = plan.cutoverStart !== null && t >= plan.cutoverStart;
-  const onTarget = plan.doneAt !== null && t >= plan.doneAt;
-
-  const W = 920;
-  const l = 130;
-  const r = 20;
-  const sx = (m: number) => l + (m / horizon) * (W - l - r);
-  const ticks: number[] = [];
-  const step = horizon > 2000 ? 480 : horizon > 900 ? 240 : horizon > 400 ? 120 : 60;
-  for (let m = 0; m <= horizon; m += step) ticks.push(m);
-
-  let tone: 'ok' | 'warn' | 'bad' | 'flow' | 'ink' = 'ink';
-  let k = 'Ready';
-  let msg = 'Press Play. Move copies the VM while it keeps running on the source.';
-  if (!plan.converges) {
-    tone = 'bad';
-    k = 'Syncs cannot keep up';
-    msg = 'The VM changes data faster than the link can copy it, so each incremental sync is bigger than the last. Add bandwidth, migrate at a quieter time, or reduce the change rate before cutting over.';
-  } else if (onTarget) {
-    tone = 'ok';
-    k = 'Migrated';
-    msg = `The VM runs on ${TGT[tgt]}. Downtime was ${fmtMin(plan.downtimeMin!)}: the final small sync plus the power-on. Shutting down first and copying everything would have taken about ${fmtMin(cold)}.`;
-  } else if (sourceOff) {
-    tone = 'warn';
-    k = 'Cutover in progress';
-    msg = 'The source VM is shut down so nothing changes, the last changes are copied, and the VM powers on at the target.';
-  } else if (t >= plan.seedEnd) {
-    tone = 'flow';
-    k = 'In sync, waiting for you';
-    msg = `The seed is done. Move keeps the target current with incremental syncs; each one carries about ${plan.lastDeltaGB.toFixed(1)} GB. Cut over when it suits the business.`;
-  } else if (t > 0) {
-    tone = 'flow';
-    k = 'Seeding';
-    msg = 'Full copy in progress. Users keep working on the source VM.';
-  }
+  const seg = SEGS[phaseAt(STARTS, t)];
+  const cap = caption(seg.kind, SRC[src].box);
 
   return (
-    <>
-      <div class="lab">
-        <div class="ctl">
-          <Field label="Source" tip="Where the VMs run today. Move also migrates file shares (SMB v2+, NFS v3) into Nutanix Files.">
-            <Seg label="Source" value={src} onChange={(v) => (setSrc(v), reset())} options={(Object.keys(SRC) as Src[]).map((s) => ({ value: s, label: SRC[s].label }))} />
-          </Field>
-          <Field label="Target">
-            <Seg label="Target" value={tgt} onChange={(v) => (setTgt(v), reset())} options={(Object.keys(TGT) as Tgt[]).map((s) => ({ value: s, label: TGT[s] }))} />
-            <p class="field-note">Check the Move support matrix for your exact source and target pair and versions.</p>
-          </Field>
-          <Field label="VM data" value={`${gb} GB`}>
-            <Slider label="VM size" value={gb} min={50} max={4000} step={50} onChange={(v) => (setGb(v), reset())} />
-          </Field>
-          <Field label="Effective transfer rate" value={`${mbps} MB/s`} tip="What Move actually achieves end to end: network, source storage and target together.">
-            <Slider label="Transfer rate" value={mbps} min={25} max={1000} step={25} onChange={(v) => (setMbps(v), reset())} />
-          </Field>
-          <Field label="Change rate on the source" value={`${chg} GB/h`} tip="How much data the running VM rewrites per hour. Busy databases change more.">
-            <Slider label="Change rate" value={chg} min={0} max={200} step={1} onChange={(v) => (setChg(v), reset())} />
-          </Field>
-          <Field label="Incremental sync every" value={`${every} min`}>
-            <Slider label="Sync interval" value={every} min={10} max={240} step={10} onChange={(v) => (setEvery(v), reset())} />
-          </Field>
-          <Field label="Power-on and checks at target" value={`${boot} min`}>
-            <Slider label="Boot minutes" value={boot} min={1} max={30} onChange={(v) => (setBoot(v), reset())} />
-          </Field>
-          <div class="hstack" style={{ marginTop: 'var(--sp-3)' }}>
-            <Illus why="All rates and intervals are your assumptions. Move’s real sync scheduling and throughput depend on version, source platform and environment." />
-          </div>
-        </div>
-        <div class="stage">
-          <div class="spread">
-            <h2 class="sec-h" style={{ margin: 0 }}>
-              {SRC[src].label} → {TGT[tgt]}
-            </h2>
-            <Chip tone={onTarget ? 'ok' : sourceOff ? 'warn' : t > 0 ? 'flow' : 'neutral'}>{PH[ph.kind].label.split(':')[0]}</Chip>
-          </div>
-          <div class="diagram-scroll">
-            <svg class="diagram" viewBox={`0 0 ${W} 330`} role="img" aria-label={`Migration timeline: ${PH[ph.kind].label}`}>
-              {/* top: environments */}
-              <rect x={10} y={10} width={260} height={80} rx={4} class={sourceOff ? 'node-box down' : 'node-box'} />
-              <text x={24} y={34} style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                Source: {SRC[src].label}
-              </text>
-              <text x={24} y={56} class={sourceOff ? 'bad-fill' : 'ok-fill'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
-                {sourceOff ? '■ VM shut down' : '● VM running, users working'}
-              </text>
-              <text x={24} y={76} class="muted" style={{ fontSize: '11.5px' }}>
-                {gb} GB · changes {chg} GB/h
-              </text>
-              <rect x={330} y={22} width={260} height={56} rx={4} class="ink-fill" />
-              <text x={460} y={46} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '13.5px' }}>
-                Nutanix Move
-              </text>
-              <text x={460} y={64} text-anchor="middle" style={{ fill: 'rgba(255,255,255,.8)', fontSize: '11.5px' }}>
-                appliance VM · free for Nutanix customers
-              </text>
-              <rect x={650} y={10} width={260} height={80} rx={4} class="node-box" />
-              <text x={664} y={34} style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                Target: {TGT[tgt]}
-              </text>
-              <text x={664} y={56} class={onTarget ? 'ok-fill' : 'muted'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
-                {onTarget ? '● VM running' : t > 0 ? '○ copy in progress, VM off' : '○ empty'}
-              </text>
-              <line x1={270} x2={330} y1={50} y2={50} class={t > 0 && !onTarget ? 'xfer' : 'line'} stroke-width={2} stroke-dasharray="6 5" stroke-dashoffset={-t * 2} />
-              <line x1={590} x2={650} y1={50} y2={50} class={t > 0 && !onTarget ? 'xfer' : 'line'} stroke-width={2} stroke-dasharray="6 5" stroke-dashoffset={-t * 2} />
-
-              {/* timeline */}
-              {ticks.map((m) => (
-                <g key={m}>
-                  <line x1={sx(m)} x2={sx(m)} y1={124} y2={286} class="line" stroke-dasharray="2 4" />
-                  <text x={sx(m)} y={304} text-anchor="middle" class="mono muted" style={{ fontSize: '11px' }}>
-                    {m >= 60 ? `${(m / 60).toFixed(m % 60 ? 1 : 0)} h` : `${m} m`}
-                  </text>
-                </g>
-              ))}
-              <text x={0} y={152} style={{ fontWeight: 600, fontSize: '13px' }}>
-                Data copy
-              </text>
-              {plan.phases
-                .filter((p) => p.kind !== 'done' && p.end > p.start && p.start < horizon)
-                .map((p, i) => (
-                  <rect key={i} x={sx(p.start)} y={136} width={Math.max(p.kind === 'sync' || p.kind === 'final' ? 2 : 0, sx(Math.min(p.end, horizon)) - sx(p.start))} height={24} class={PH[p.kind].cls} style={{ opacity: p.kind === 'sync' ? 0.6 : p.kind === 'idle' ? 1 : 0.9 }} />
-                ))}
-              <text x={0} y={202} style={{ fontWeight: 600, fontSize: '13px' }}>
-                Source VM
-              </text>
-              <rect x={sx(0)} y={186} width={sx(plan.cutoverStart ?? horizon) - sx(0)} height={24} class="ok-fill" style={{ opacity: 0.55 }} />
-              <text x={0} y={252} style={{ fontWeight: 600, fontSize: '13px' }}>
-                Target VM
-              </text>
-              {plan.doneAt !== null && <rect x={sx(plan.doneAt)} y={236} width={sx(horizon) - sx(plan.doneAt)} height={24} class="ok-fill" style={{ opacity: 0.55 }} />}
-              {plan.cutoverStart !== null && plan.doneAt !== null && (
-                <g>
-                  <rect x={sx(plan.cutoverStart)} y={128} width={Math.max(3, sx(plan.doneAt) - sx(plan.cutoverStart))} height={140} class="warn-fill" style={{ opacity: 0.18 }} />
-                  <text x={sx(plan.cutoverStart) - 6} y={282} text-anchor="end" class="warn-fill halo" style={{ fontSize: '12px', fontWeight: 600 }}>
-                    downtime {fmtMin(plan.downtimeMin!)}
-                  </text>
-                </g>
-              )}
-              <line x1={sx(plan.seedEnd)} x2={sx(plan.seedEnd)} y1={124} y2={166} stroke="var(--text)" stroke-dasharray="3 2" />
-              <text x={sx(plan.seedEnd) + 4} y={120} class="muted" style={{ fontSize: '11px' }}>
-                seed done
-              </text>
-              <line x1={sx(Math.min(t, horizon))} x2={sx(Math.min(t, horizon))} y1={124} y2={290} stroke="var(--text)" stroke-width={2} />
-            </svg>
-          </div>
-          <PlayBar
-            clock={clock}
-            label="Migration"
-            fmt={(m) => `T+${fmtMin(m)}`}
-            extra={
-              <button type="button" class="btn" disabled={!canCut || !plan.converges} title={!canCut ? (cut !== null ? 'Cutover already scheduled' : 'Available once the seed is done') : undefined} onClick={() => (setCut(t), clock.play())}>
-                <Icon name="power" /> Cut over now
-              </button>
-            }
-          />
-          {cut === null && t < plan.seedEnd && <p class="field-note">“Cut over now” becomes available when the seed copy is done.</p>}
-          {cut !== null && (
-            <button type="button" class="tbtn" onClick={reset}>
-              Start over
-            </button>
-          )}
-          <Follow tone={tone} k={k}>
-            <p>{msg}</p>
+    <Show
+      top={<Choice<Src> label="Source platform" value={src} onChange={setSrc} options={SRC_IDS.map((s) => ({ value: s, label: SRC[s].label }))} />}
+      foot={
+        <>
+          <Follow tone={cap.tone} k={cap.k}>
+            <p>{cap.text}</p>
+            <p class="rest">{SRC[src].note}</p>
           </Follow>
-        </div>
-        <div class="rail">
-          <div class="side-sec">
-            <div class="eyebrow">Numbers</div>
-            <Stat k="Seed copy" v={fmtMin(plan.seedEnd)} />
-            <Stat k="Typical incremental" v={`${((chg * every) / 60).toFixed(1)} GB`} tip="What changes between two syncs." />
-            <Stat k="Downtime" v={plan.downtimeMin !== null ? fmtMin(plan.downtimeMin) : 'not cut over yet'} tone={plan.downtimeMin !== null ? 'ok' : undefined} />
-            <Stat k="Shut down, then copy all" v={fmtMin(cold)} tone="warn" tip="The downtime if the VM were stopped first and copied in one go." />
-          </div>
-          <div class="side-sec">
-            <div class="eyebrow">Move today</div>
-            <ul class="small mig-list">
-              <li>Sources: vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud (VMC, AVS), AHV, and file shares.</li>
-              <li>Targets: AHV on-premises and NC2 on AWS, Azure, Google Cloud and OVHcloud.</li>
-              <li>Move 6.3 (Jul 2026): zero-copy ESXi-to-AHV migration with supported external arrays (Dell PowerStore, Pure Storage).</li>
-              <li>Move 6.3.3 (Oct 2026): DirectPath, ESXi to AHV without VDDK, for new deployments.</li>
-            </ul>
-          </div>
-          <div class="side-sec">
-            <button type="button" class="tbtn" onClick={() => go('cloud')}>
-              Migrating to the cloud <Icon name="arrow" />
-            </button>
-          </div>
-        </div>
+          <Kpis
+            items={[
+              { k: 'Seed copy', v: fmtMin(PLAN.seedEnd), sub: 'while the VM runs' },
+              { k: 'Downtime', v: fmtMin(PLAN.downtimeMin!), tone: 'ok', sub: 'final sync + power-on' },
+              { k: 'Shut down, then copy all', v: fmtMin(COLD), tone: 'warn', sub: 'the downtime without syncs', tip: 'If the VM were stopped first and copied in one go.' },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <MoveDiagram src={src} kind={seg.kind} t={t} />
       </div>
-      <h2 class="sec-h">How a wave of migrations usually runs</h2>
-      <ol class="mig-steps">
-        <li>
-          <strong>Plan.</strong> Group VMs by application, so things that talk to each other move together. Map networks on both sides.
-        </li>
-        <li>
-          <strong>Seed.</strong> Move copies each VM while it runs. Nothing changes for users.
-        </li>
-        <li>
-          <strong>Keep in sync.</strong> Incremental syncs carry only what changed.
-        </li>
-        <li>
-          <strong>Cut over in a window.</strong> Shut down, final sync, power on at the target. <Tip text="Move can prepare the guest OS for the target, for example by installing drivers, automatically or manually depending on the OS and access you provide.">Guest preparation</Tip> happens before this so the VM boots cleanly.
-        </li>
-        <li>
-          <strong>Verify, then retire the source.</strong> Keep the source VM powered off until the app owner signs off.
-        </li>
-      </ol>
-    </>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Data block' },
+          { color: 'var(--warn)', label: 'Changed since the last copy' },
+          { color: 'var(--flow)', label: 'Being copied' },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="Migration animation"
+        fmt={() => WORD[seg.kind]}
+        extra={<Illus why="Example figures: an 800 GB VM, 250 MB/s effective transfer, 6 GB of changes an hour, a sync every hour and 5 minutes to power on and check. Move’s real throughput and sync scheduling depend on version, source platform and environment." />}
+      />
+    </Show>
+  );
+}
+
+// ── geometry ──
+const W = 960;
+const H = 284;
+const BOX = { y: 56, w: 300, h: 216 };
+const SRC_X = 10;
+const TGT_X = 650;
+const CARD_Y = 108;
+const BS = 26;
+const BG = 5;
+const GRID_Y = CARD_Y + 34;
+const LANE_Y = 166;
+
+const blockXY = (boxX: number, j: number) => ({ x: boxX + 26 + (j % COLS) * (BS + BG), y: GRID_Y + Math.floor(j / COLS) * (BS + BG) });
+
+function along(pts: { x: number; y: number }[], f: number) {
+  const seg = pts.slice(1).map((p, i) => Math.hypot(p.x - pts[i].x, p.y - pts[i].y));
+  let d = f * seg.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < seg.length; i++) {
+    if (d <= seg[i] || i === seg.length - 1) {
+      const r = seg[i] ? Math.min(1, d / seg[i]) : 0;
+      return { x: pts[i].x + (pts[i + 1].x - pts[i].x) * r, y: pts[i].y + (pts[i + 1].y - pts[i].y) * r };
+    }
+    d -= seg[i];
+  }
+  return pts[pts.length - 1];
+}
+
+function MoveDiagram({ src, kind, t }: { src: Src; kind: PhaseKind; t: number }) {
+  const S = SRC[src];
+  const sourceOn = kind !== 'final' && kind !== 'boot' && kind !== 'done';
+  const targetOn = kind === 'done';
+  const booting = kind === 'boot';
+  const users = sourceOn ? 'src' : targetOn ? 'tgt' : null;
+  const center = (p: { x: number; y: number }) => ({ x: p.x + BS / 2, y: p.y + BS / 2 });
+  const route = (j: number) => [center(blockXY(SRC_X, j)), { x: SRC_X + BOX.w, y: LANE_Y }, { x: 380, y: LANE_Y }, { x: 580, y: LANE_Y }, { x: TGT_X, y: LANE_Y }, center(blockXY(TGT_X, j))];
+
+  // what each block looks like on each side right now, and which copies are in the air
+  const srcCls: string[] = [];
+  const tgtCls: string[] = [];
+  const flying: { j: number; f: number }[] = [];
+  for (let j = 0; j < BLOCKS; j++) {
+    const s0 = seedStart(j);
+    const f = prog(t, s0, s0 + FLY);
+    srcCls.push('mig-blk');
+    tgtCls.push(f >= 1 ? 'mig-blk' : 'mig-empty');
+    if (f > 0 && f < 1) flying.push({ j, f });
+  }
+  for (const fl of flights) {
+    if (t >= fl.mark && t < fl.start) srcCls[fl.block] = 'mig-chg';
+    if (t > fl.start && t < fl.end) flying.push({ j: fl.block, f: prog(t, fl.start, fl.end) });
+    if (t >= fl.end && t < fl.end + 0.7) tgtCls[fl.block] = 'mig-new';
+  }
+
+  const panel = (x: number, side: 'src' | 'tgt') => {
+    const isSrc = side === 'src';
+    const on = isSrc ? sourceOn : targetOn;
+    const status = isSrc ? (sourceOn ? '● VM running, users working' : kind === 'done' ? '■ VM off, kept until sign-off' : '■ VM shut down') : targetOn ? '● VM running' : booting ? '◐ VM powering on' : '○ copy, powered off';
+    const statusCls = on ? 'ok-fill' : booting && !isSrc ? 'warn-fill' : 'muted';
+    return (
+      <g>
+        <rect x={x} y={BOX.y} width={BOX.w} height={BOX.h} class={isSrc && S.cloud ? 'frame-dash' : 'frame'} />
+        <text x={x + 16} y={BOX.y + 24} class="mig-t">
+          {isSrc ? S.box : 'Nutanix AHV'}
+        </text>
+        <text x={x + 16} y={BOX.y + 42} class="mig-xs muted">
+          {isSrc ? S.sub : 'on-premises, or NC2 in the cloud'}
+        </text>
+        <rect x={x + 14} y={CARD_Y} width={BOX.w - 28} height={150} class={`mig-card${on ? ' on' : booting && !isSrc ? ' boot' : ''}`} stroke-dasharray={!isSrc && !on && !booting ? '5 4' : undefined} />
+        <text x={x + 26} y={CARD_Y + 22} class="mig-s">
+          VM
+        </text>
+        <text x={x + BOX.w - 26} y={CARD_Y + 22} text-anchor="end" class={`mig-xs ${statusCls}`} style={{ fontWeight: 600 }}>
+          {status}
+        </text>
+        {(isSrc ? srcCls : tgtCls).map((c, j) => {
+          const p = blockXY(x, j);
+          return <rect key={j} x={p.x} y={p.y} width={BS} height={BS} class={c} style={isSrc && !sourceOn ? { opacity: 0.45 } : undefined} />;
+        })}
+        <text x={x + 26} y={GRID_Y + 3 * (BS + BG) + 12} class="mig-xs muted">
+          {isSrc ? 'its disk' : 'the copy of its disk'}
+        </text>
+      </g>
+    );
+  };
+
+  return (
+    <svg class="diagram mig-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Moving a VM from ${S.box} to Nutanix AHV with Nutanix Move: ${WORD[kind]}.`}>
+      <defs>
+        <marker id="mig-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="mig-ar" />
+        </marker>
+      </defs>
+      <rect x={W / 2 - 60} y={4} width={120} height={30} class="mig-users" />
+      <text x={W / 2} y={24} text-anchor="middle" class="mig-s" style={{ fontWeight: 600 }}>
+        Users
+      </text>
+      {users === 'src' && <path d={`M${W / 2 - 60} 19 H ${SRC_X + BOX.w / 2} V ${BOX.y - 4}`} class="mig-use" marker-end="url(#mig-ar)" />}
+      {users === 'tgt' && <path d={`M${W / 2 + 60} 19 H ${TGT_X + BOX.w / 2} V ${BOX.y - 4}`} class="mig-use" marker-end="url(#mig-ar)" />}
+      {!users && (
+        <text x={W / 2} y={52} text-anchor="middle" class="mig-s warn-fill" style={{ fontWeight: 600 }}>
+          Downtime: final sync + power-on
+        </text>
+      )}
+      {panel(SRC_X, 'src')}
+      {panel(TGT_X, 'tgt')}
+      <line x1={SRC_X + BOX.w} x2={380} y1={LANE_Y} y2={LANE_Y} class="mig-lane" />
+      <line x1={580} x2={TGT_X} y1={LANE_Y} y2={LANE_Y} class="mig-lane" />
+      {/* copies in flight pass behind the Move box */}
+      {flying.map(({ j, f }) => {
+        const p = along(route(j), ease(f));
+        return <rect key={j} x={p.x - 7} y={p.y - 7} width={14} height={14} class="mig-fly" />;
+      })}
+      <rect x={380} y={LANE_Y - 36} width={200} height={72} class="ink-fill" />
+      <text x={480} y={LANE_Y - 6} text-anchor="middle" class="mig-t" style={{ fill: '#fff' }}>
+        Nutanix Move
+      </text>
+      <text x={480} y={LANE_Y + 16} text-anchor="middle" class="mig-xs" style={{ fill: 'rgba(255,255,255,.85)' }}>
+        {kind === 'seed' ? 'copying everything' : kind === 'final' ? 'copying the last changes' : kind === 'boot' || kind === 'done' ? 'copy complete' : 'sending only changes'}
+      </text>
+    </svg>
   );
 }

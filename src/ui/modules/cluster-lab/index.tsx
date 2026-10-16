@@ -7,7 +7,7 @@ import { useBool, useNum, useStr, setParams } from '../../../state/route';
 import { normalizeConfig, blockCount, type ClusterConfig, type Media } from '../../../engine/cluster';
 import { rfAllowed, ecAllowed, blockAwareAllowed, rackAwareAllowed, edgeAdvisory, ecStrip, MIN_NODES, type RF } from '../../../engine/rules';
 import { decodeActs, encodeActs, describeAct, type Act } from '../../../engine/timeline';
-import { Field, Seg, Toggle, Slider, Tip, Illus, Legend, PlayBar, Chip, fmtTB } from '../../components/controls';
+import { Field, Seg, Toggle, Slider, Tip, Illus, Legend, PlayBar, Chip } from '../../components/controls';
 import { Icon } from '../../components/Icon';
 import { go } from '../../shell/nav';
 import { ClusterDiagram, type Sel } from './ClusterDiagram';
@@ -100,13 +100,18 @@ export default function ClusterLab() {
   const [sel, setSel] = useState<Sel | null>(null);
 
   const now = snap(clock.t);
-  const push = (a: Act) => setEv(encodeActs([...acts, a]));
+  const push = (a: Act) => {
+    setEv(encodeActs([...acts, a]));
+    // after the re-render, so a timeline that grows past its old end keeps playing from here
+    window.setTimeout(() => clock.play(), 0);
+  };
   const change = (patch: Partial<ClusterConfig>) => {
     const n = normalizeConfig({ ...cfg, ...patch });
     set({ ...patch, ft: n.ft, rf: n.rf, ecx: n.ecx, blockAware: n.blockAware, rackAware: n.rackAware });
     setParams({ ev: null, at: null, vm: null });
     setSel(null);
-    clock.reset();
+    clock.restart();
+    clock.play();
   };
 
   const blocks = blockCount(cfg);
@@ -117,7 +122,6 @@ export default function ClusterLab() {
   const edge = edgeAdvisory(cfg.nodes);
   const strip = cfg.ecx ? ecStrip(s.domain === 'block' ? blocks : s.domain === 'rack' ? Math.min(cfg.racks, blocks) : cfg.nodes, cfg.rf) : null;
   const present = s.nodes.filter((n) => n.state !== 'removed').length;
-  const cvms = s.nodes.filter((n) => n.state === 'up' || n.state === 'removing').length;
   const lastEv = s.events[s.events.length - 1];
   const vmOptions = s.vms.slice(0, 200);
 
@@ -321,7 +325,7 @@ export default function ClusterLab() {
             }}
             onClear={() => {
               setEv('');
-              clock.reset();
+              clock.restart();
             }}
           />
           <button type="button" class="btn" disabled={present >= 32} onClick={() => push({ t: now, k: 'add' })}>
@@ -364,15 +368,6 @@ export default function ClusterLab() {
             <p>{lastEv.text}</p>
           </div>
         )}
-        <div class="follow ink">
-          <div class="follow-k">Scale-out</div>
-          <p>
-            {present} node{present === 1 ? '' : 's'}, {cvms} CVM{cvms === 1 ? '' : 's'} serving I/O, {fmtTB(st.capacity.rawTB)} raw. Each node added brings its own CVM along with its drives, so storage controller capacity and raw capacity grow together, and rebuilds get more helpers.{' '}
-            <button type="button" class="tbtn" onClick={() => go('nci/failures')}>
-              Break things in the Failure Gauntlet <Icon name="arrow" />
-            </button>
-          </p>
-        </div>
       </div>
 
       <StatusRail s={s} st={st} />

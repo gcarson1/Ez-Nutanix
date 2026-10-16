@@ -11,7 +11,8 @@ export const content: ModuleContent = {
     'Move is free for Nutanix customers and has been around for about ten years, so it is a well-trodden path.',
     'Three phases: a seed copy while users keep working, incremental syncs that carry only changes, then a cutover.',
     'Downtime is only the cutover: a final small sync plus the power-on. Compare it with shutting down and copying everything.',
-    'Push the change rate up until syncs cannot keep up: that is the honest limit, and the fix is bandwidth or a quieter time.',
+    'Before the cutover, Move can prepare the guest OS for AHV, for example by installing drivers, automatically or manually depending on the OS and the access you give it.',
+    'The honest limit: if a VM changes data faster than the link can copy it, syncs never catch up. The fix is more bandwidth or a quieter time.',
     'Sources: vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud (VMC, AVS), AHV and file shares. Targets: AHV on-premises and NC2 on AWS, Azure, Google Cloud and OVHcloud.',
   ],
   numbers: [
@@ -34,7 +35,13 @@ export const content: ModuleContent = {
       a: 'Not necessarily. Many migrations keep IP addresses by extending or recreating the same networks on the target. That is a network design decision to make before the first wave.',
     },
   ],
-  next: ['Hybrid & Public Cloud', 'AHV Networking', 'Cluster & DSF Lab'],
+  next: [
+    'Start with VMware ESXi: point at the seed copy while users keep working on the source.',
+    'Pause while it is in sync to show that only changed blocks travel.',
+    'Let it reach the cutover and compare the downtime with shutting down and copying everything.',
+    'Switch the source to Hyper-V, AWS EC2 or Azure: the pattern is the same.',
+    'Then Hybrid & Public Cloud for NC2 targets, or AHV Networking for keeping IP addresses.',
+  ],
   honest: [
     'Move handles the copy and cutover; dependencies, networks and testing are still a project to plan, usually app by app.',
     'Very high change rates or thin links can stop incremental syncs from converging; fix bandwidth or timing first.',

@@ -1,14 +1,19 @@
-/* Data Lens module */
+/* Data Lens module (prefix dl-) */
 .diagram .dl-f { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
-.diagram .dl-f.edited { fill: var(--s2); stroke: var(--s2); }
 .diagram .dl-f.enc { fill: var(--bad); stroke: var(--bad); }
 .diagram .dl-f.rest { fill: var(--ok); stroke: var(--ok); }
-.diagram .dl-f.lost { fill: var(--warn); stroke: var(--warn); }
-.diagram .dl-client { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .dl-client.bad { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 2; }
-.diagram .dl-blockdot { fill: var(--bg); stroke: var(--ok); stroke-width: 2; }
+.diagram .dl-pc { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .dl-pc.bad { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 2; }
+.diagram .dl-pc.off { stroke-dasharray: 4 4; }
+.diagram .dl-srv { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .dl-link { stroke: var(--s2); }
+.diagram .dl-stop { fill: var(--bg); stroke: var(--ok); stroke-width: 2.5; }
 .diagram .dl-alert { fill: none; stroke: var(--line-2); stroke-dasharray: 4 4; }
 .diagram .dl-alert.on { fill: var(--warn-bg); stroke: var(--warn); stroke-dasharray: none; stroke-width: 2; }
 .diagram .dl-snap { fill: var(--bg-2); stroke: var(--line-2); }
 .diagram .dl-snap.on { stroke: var(--ok); stroke-width: 2; }
-.dl-narrow { max-width: 30rem; }
+.diagram .dl-dot { stroke: var(--bg); stroke-width: 1.5; }
+.diagram .dl-dot.norm { fill: var(--s2); }
+.diagram .dl-dot.bad { fill: var(--bad); }
+.diagram .dl-dot.ok { fill: var(--ok); }
+.diagram .dl-dot.ev { fill: var(--flow); }

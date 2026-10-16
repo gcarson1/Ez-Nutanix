@@ -1,27 +1,9 @@
 /* Scale-out vs 3-tier module (prefix scale-) */
-.scale-steps { margin: var(--sp-3) 0 0; padding-left: 1.25rem; font-size: var(--fs-13); color: var(--muted); }
-.scale-steps li + li { margin-top: var(--sp-1h); }
-.scale-steps li.past { color: var(--text-2); }
-.scale-steps li.on { color: var(--text); font-weight: 600; }
-.scale-list { margin-top: var(--sp-4); font-size: var(--fs-15); color: var(--text-2); }
-.scale-list li + li { margin-top: var(--sp-2); }
-.scale-chart { width: 100%; height: auto; display: block; margin-top: var(--sp-3); }
-.scale-over { width: 100%; height: auto; display: block; }
-.scale-axis { stroke: var(--line-2); stroke-width: 1; }
-.scale-axis.dash { stroke-dasharray: 3 3; }
-.scale-hci { stroke: var(--ok); stroke-width: 2.5; }
-.scale-t3 { stroke: var(--s2); stroke-width: 2.5; stroke-dasharray: 6 4; }
-.scale-dot { fill: var(--ok); }
-.scale-lbl { font-size: 11px; fill: var(--muted); font-family: var(--font); }
-.scale-hci-t { fill: var(--ok); }
-.scale-vm { fill: var(--bg-3); stroke: var(--line-2); }
-.scale-cvm { fill: var(--ink); }
-.scale-cvm-unset { fill: none; stroke: var(--ink-fg); stroke-dasharray: 3 3; }
 .scale-dia .scale-h { font-size: 14.5px; font-weight: 600; }
 .scale-dia .scale-s { font-size: 13px; }
 .scale-dia .scale-xs { font-size: 11.5px; }
-.scale-dia .ink-text-fill { fill: var(--ink-fg); }
+.scale-dia .scale-ink { fill: var(--ink-fg); font-weight: 600; }
+.scale-dia .scale-rule { stroke: var(--line-2); stroke-width: 1; }
 .scale-dia .scale-link { stroke: var(--line-2); stroke-width: 1; }
 .scale-dia .scale-link.strong { stroke: var(--s2); stroke-width: 3; }
-.scale-dia .scale-pending { opacity: 0.7; }
-@media (max-width: 900px) { .scale-lab > .stage { order: -1; } }
+.scale-dia .scale-io { fill: var(--flow); }

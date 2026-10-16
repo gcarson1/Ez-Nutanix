@@ -4,7 +4,7 @@ export const content: ModuleContent = {
   path: 'nci/scale',
   title: 'Scale-out vs 3-tier',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'Grow a node at a time: each node adds compute, drives and its own storage controller (the CVM). Compare that with hosts sharing an array’s controller pair, including the honest cost of the CVM.',
+  summary: 'Watch nodes join one at a time: each adds compute, drives and its own storage controller (the CVM). Underneath, a 3-tier design adds hosts that all share one array’s controller pair.',
   priority: 'P1',
   talk: [
     'Start small and add a node when you need it: rack it, add it from Prism with Expand Cluster, and the VMs keep running.',
@@ -32,7 +32,12 @@ export const content: ModuleContent = {
       a: 'Nodes come in different configurations, so each addition can be weighted toward drives or toward CPU and memory. Storage-only nodes add capacity without running VMs. Mixing node types needs some planning so that failures and rebuilds still fit.',
     },
   ],
-  next: ['Cluster & DSF Lab (add a node and watch data rebalance)', 'Protection & Capacity (usable capacity)', 'Data Path (why locality matters)'],
+  next: [
+    'Let it play: the scale-out controller count rises with every node while the 3-tier side stays at 2.',
+    'Pause on “Disk balancing” to show data spreading onto the new drives without a migration project.',
+    'Be upfront about the CVM: each node reserves CPU and memory for it; take the figure from sizing.',
+    'Then Protection & Capacity for usable capacity, or Data Path for why locality matters.',
+  ],
   honest: [
     'Each node reserves CPU and memory for its CVM. That overhead is real and belongs in every sizing; it depends on features and node size.',
     'Compute and storage grow together by default. If one grows much faster than the other, choose node configurations carefully or use storage-only nodes.',

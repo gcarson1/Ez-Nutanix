@@ -34,7 +34,13 @@ export const content: ModuleContent = {
       a: 'When the site can tolerate downtime from a node outage and the data is protected elsewhere by backup or replication (async from a single node is limited to a 6-hour RPO). Upgrades also mean shutting down the guest VMs. If the site cannot accept that, use two or three nodes.',
     },
   ],
-  next: ['LCM Rolling Upgrade (try 1 and 2 nodes)', 'Nutanix Central (fleet management)', 'Disaster Recovery (protect the site elsewhere)'],
+  next: [
+    'Start on “2 nodes + Witness” with “Node fails”: the survivor switches to single-node mode and HA restarts the VMs on it.',
+    'Keep “Node fails” and switch to 1 node (the site goes down), then to 3 nodes (it re-protects itself).',
+    'Pick “Link to the data center drops” to show the site keeps running on its own.',
+    'Point at the table underneath to compare what each size survives.',
+    'Then LCM Rolling Upgrade for upgrades, Nutanix Central for fleet management, or Disaster Recovery to protect the site elsewhere.',
+  ],
   honest: [
     'A single-node cluster has no node-level redundancy: a node outage takes the site down, and an SSD failure can make it read-only.',
     'Two-node clusters depend on a Witness in a separate failure domain, and on WAN reachability to it for automatic failover and maintenance.',

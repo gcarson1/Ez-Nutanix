@@ -1,6 +1,6 @@
-// Nutanix Cloud Manager (NCM) models: anomaly band, capacity runway, right-sizing,
-// self-service request evaluation, cost showback and compliance checks.
-// Pure and deterministic. All numbers are illustrative inputs, not product defaults.
+// Nutanix Cloud Manager (NCM) models: anomaly band, self-service request flow, cost showback
+// over a month and compliance score. Pure and deterministic. All numbers are illustrative
+// inputs, not product defaults.
 import { makeRng } from './rng';
 
 // ── AIOps: anomaly detection against a learned baseline band ──
@@ -31,6 +31,7 @@ export function cpuSeries(days: number, seed = 7): number[] {
 /**
  * Baseline per hour-of-day (and weekday/weekend) from earlier days, band = mean ± k·sd.
  * A point is an outlier when it falls outside the band. The first `learn` days only train.
+ * Outliers are left out of later baselines, so one spike does not widen the next day's band.
  */
 export function anomalyBand(series: number[], k: number, learn = 7): SeriesPoint[] {
   const pts: SeriesPoint[] = [];
@@ -40,7 +41,7 @@ export function anomalyBand(series: number[], k: number, learn = 7): SeriesPoint
     const weekend = day % 7 >= 5;
     const hist: number[] = [];
     for (let d = 0; d < day; d++) {
-      if ((d % 7 >= 5) !== weekend) continue;
+      if ((d % 7 >= 5) !== weekend || pts[d * 24 + hod].out) continue;
       hist.push(series[d * 24 + hod]);
     }
     if (day < learn || hist.length < 2) {
@@ -62,59 +63,19 @@ export function withSpike(series: number[], at: number, size: number, len = 3): 
   return series.map((v, h) => (h >= at && h < at + len ? Math.min(100, v + size) : v));
 }
 
-// ── capacity runway ──
-export interface Resource {
-  id: 'cpu' | 'mem' | 'sto';
-  label: string;
-  unit: string;
-  cap: number; // usable capacity after HA reserve
-  used: number;
-  growthPerDay: number;
-  perVm: number; // what one added VM consumes
-}
-
-export function runwayDays(r: Resource, addVms: number): number {
-  const used = r.used + addVms * r.perVm;
-  if (used >= r.cap) return 0;
-  if (r.growthPerDay <= 0) return Infinity;
-  return (r.cap - used) / r.growthPerDay;
-}
-
-export function runway(res: Resource[], addVms: number): { id: Resource['id']; days: number }[] {
-  return res.map((r) => ({ id: r.id, days: runwayDays(r, addVms) }));
-}
-
-export function limiting(res: Resource[], addVms: number): Resource['id'] {
-  const rw = runway(res, addVms);
-  return rw.reduce((a, b) => (b.days < a.days ? b : a)).id;
-}
-
-/** Largest number of VMs that still fits now (runway > 0). */
-export function maxVmsThatFit(res: Resource[]): number {
-  return Math.max(0, Math.min(...res.map((r) => Math.floor((r.cap - r.used) / r.perVm - 1e-9))));
-}
-
-// ── right-sizing ──
-export interface VmUsage {
-  name: string;
-  vcpu: number;
-  memGB: number;
-  cpuPeak: number; // % of allocated
-  memPeak: number; // % of allocated
-}
-
-export type SizeVerdict = 'over' | 'under' | 'inactive' | 'ok';
-
-export function rightsize(v: VmUsage): { verdict: SizeVerdict; vcpu: number; memGB: number } {
-  if (v.cpuPeak < 3 && v.memPeak < 10) return { verdict: 'inactive', vcpu: v.vcpu, memGB: v.memGB };
-  if (v.cpuPeak > 90 || v.memPeak > 92) {
-    return { verdict: 'under', vcpu: v.cpuPeak > 90 ? v.vcpu * 2 : v.vcpu, memGB: v.memPeak > 92 ? v.memGB * 2 : v.memGB };
-  }
-  // target ~70% peak, keep at least 1 vCPU / 2 GB, round vCPU to whole, memory to 2 GB
-  const vcpu = Math.max(1, Math.ceil((v.vcpu * v.cpuPeak) / 70));
-  const memGB = Math.max(2, Math.ceil((v.memGB * v.memPeak) / 70 / 2) * 2);
-  if (vcpu < v.vcpu || memGB < v.memGB) return { verdict: 'over', vcpu: Math.min(vcpu, v.vcpu), memGB: Math.min(memGB, v.memGB) };
-  return { verdict: 'ok', vcpu: v.vcpu, memGB: v.memGB };
+/** Contiguous stretches where `hit` is true, as [start, end) index pairs. One alert per stretch. */
+export function stretches(hit: boolean[]): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = [];
+  let start = -1;
+  hit.forEach((h, i) => {
+    if (h && start < 0) start = i;
+    if (!h && start >= 0) {
+      out.push({ start, end: i });
+      start = -1;
+    }
+  });
+  if (start >= 0) out.push({ start, end: hit.length });
+  return out;
 }
 
 // ── self-service ──
@@ -169,7 +130,7 @@ export function evaluate(p: Project, d: Demand, approvalsAvailable: boolean): Ve
 }
 
 export interface ProvStep {
-  id: string;
+  id: 'policy' | 'approve' | 'create' | 'config' | 'ready' | 'refused';
   label: string;
   dur: number; // seconds (illustrative)
 }
@@ -183,13 +144,20 @@ export function provSteps(item: CatalogItem, needsApproval: boolean): ProvStep[]
   return s;
 }
 
-export function stepAt(steps: ProvStep[], t: number): { idx: number; done: boolean } {
+/** The steps a request goes through: refused at the policy check, or provisioned. */
+export function requestSteps(item: CatalogItem, v: Verdict): ProvStep[] {
+  if (!v.ok) return [{ id: 'policy', label: 'Check quota and policy', dur: 2 }, { id: 'refused', label: 'Sent back with the reason', dur: 3 }];
+  return provSteps(item, v.needsApproval);
+}
+
+/** Which step is running at time t, and how far through it (0..1). */
+export function stepAt(steps: ProvStep[], t: number): { idx: number; frac: number; done: boolean } {
   let acc = 0;
   for (let i = 0; i < steps.length; i++) {
+    if (t < acc + steps[i].dur) return { idx: i, frac: Math.max(0, (t - acc) / steps[i].dur), done: false };
     acc += steps[i].dur;
-    if (t < acc) return { idx: i, done: false };
   }
-  return { idx: steps.length - 1, done: true };
+  return { idx: steps.length - 1, frac: 1, done: true };
 }
 
 // ── cost showback ──
@@ -219,6 +187,40 @@ export function budgetState(cost: number, budget: number, warnAt = 0.8): BudgetS
   return 'ok';
 }
 
+/** From day `from` on, daily use is `factor` times the planned rate. */
+export interface Surge {
+  from: number;
+  factor: number;
+}
+
+/**
+ * Cost metered by `day` (0..days) for a project whose planned month costs `monthly`,
+ * spent evenly across the month, with an optional surge.
+ */
+export function accrued(monthly: number, day: number, days = 30, surge?: Surge): number {
+  const d = Math.max(0, Math.min(days, day));
+  const perDay = monthly / days;
+  if (!surge || d <= surge.from) return perDay * d;
+  return perDay * surge.from + perDay * surge.factor * (d - surge.from);
+}
+
+/** First day (fractional) the metered cost reaches `state`, or null if it does not this month. */
+export function crossDay(monthly: number, budget: number, state: 'warn' | 'over', days = 30, surge?: Surge, warnAt = 0.8): number | null {
+  const reached = (d: number) => {
+    const s = budgetState(accrued(monthly, d, days, surge), budget, warnAt);
+    return state === 'over' ? s === 'over' : s !== 'ok';
+  };
+  if (!reached(days)) return null;
+  let lo = 0;
+  let hi = days;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (reached(mid)) hi = mid;
+    else lo = mid;
+  }
+  return hi;
+}
+
 // ── security compliance ──
 export interface Check {
   id: string;
@@ -228,9 +230,10 @@ export interface Check {
   sev: 'high' | 'medium' | 'low';
 }
 
+export const SEV_WEIGHT = { high: 3, medium: 2, low: 1 } as const;
+
 export function score(checks: Check[]): number {
-  const w = { high: 3, medium: 2, low: 1 } as const;
-  const tot = checks.reduce((s, c) => s + w[c.sev], 0);
-  const ok = checks.reduce((s, c) => s + (c.pass ? w[c.sev] : 0), 0);
+  const tot = checks.reduce((s, c) => s + SEV_WEIGHT[c.sev], 0);
+  const ok = checks.reduce((s, c) => s + (c.pass ? SEV_WEIGHT[c.sev] : 0), 0);
   return tot ? Math.round((ok / tot) * 100) : 100;
 }

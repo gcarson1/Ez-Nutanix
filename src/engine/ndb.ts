@@ -1,5 +1,5 @@
 // Nutanix Database Service (NDB) models: Time Machine recovery planning (snapshots plus
-// captured transaction logs) and thin-clone capacity. Pure and deterministic.
+// captured transaction logs) and how a database is patched. Pure and deterministic.
 // Times are minutes from the start of the window. Schedules are illustrative.
 
 export interface TmPolicy {
@@ -57,20 +57,6 @@ export function planRecovery(p: TmPolicy, now: number, target: number): Recovery
   }
   const base = snaps.filter((s) => s <= effective).pop()!;
   return { ok: reason === null, target, effective, snapshot: base, logMin: effective - base, lastCaptured: last, reason };
-}
-
-// ── thin clones ──
-export interface CloneCalc {
-  fullCopiesTB: number; // N independent full copies
-  thinTB: number; // source + only the changed blocks of each clone
-  savedTB: number;
-}
-
-/** Each clone shares the source snapshot and only stores the blocks it changes. */
-export function cloneCapacity(sourceTB: number, clones: number, changePct: number): CloneCalc {
-  const full = sourceTB * (1 + clones);
-  const thin = sourceTB + clones * sourceTB * (changePct / 100);
-  return { fullCopiesTB: full, thinTB: thin, savedTB: full - thin };
 }
 
 // ── patching ──

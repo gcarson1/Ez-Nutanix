@@ -1,146 +1,101 @@
-// Data Lens ransomware scenario on a file share. Pure and deterministic: state at sim time t.
+// Data Lens ransomware scenario on a file server's shares. Pure and deterministic: state at sim
+// time t.
 //
 // Modeled:
-// - A compromised client starts encrypting files on an SMB share at a steady rate.
-// - Signature detection matches known ransomware (Starter and Pro). Behavior-based detection
-//   flags unusual activity even for a new variant (Pro). A new variant on Starter goes unseen.
-// - On detection Data Lens raises an alert. With automatic blocking the client is cut off
-//   right away; without it, an admin has to act, which takes longer.
-// - Recovery restores the affected files from the last clean snapshot. Edits made after that
-//   snapshot to files that were then encrypted are lost: that is the snapshot's recovery point.
+// - A normal day, then a compromised PC starts encrypting files on the shares at a steady rate.
+// - After a handful of files, Data Lens recognizes the pattern (a known signature, or behavior
+//   analytics for a strain with no signature) and raises an alert.
+// - Auto-block cuts the PC off from the shares right away. Alert only leaves it to an admin,
+//   who blocks it later, so the PC keeps encrypting meanwhile.
+// - Recovery restores the hit files from the last clean snapshot, which the PC cannot touch.
 // Every number here is illustrative; real detection and response times vary.
 import { makeRng, shuffle } from './rng';
 
-export type Tier = 'starter' | 'pro';
-export type Variant = 'known' | 'new';
-export type Rate = 'slow' | 'fast';
+export type Response = 'alert' | 'block';
 
-export interface AttackInput {
-  tier: Tier;
-  variant: Variant;
-  autoBlock: boolean;
-  rate: Rate;
-  /** Sim time the presenter pressed "Recover", if they have. */
-  recoverAt?: number;
-  seed?: number;
-}
+export const SHARES = ['finance', 'hr', 'eng'] as const;
+export const PER_SHARE = 36;
+export const FILES = SHARES.length * PER_SHARE;
 
-export const FILES = 240;
 export const SIM = {
-  attackStart: 20,
-  perSec: { slow: 1, fast: 4 } as Record<Rate, number>,
-  /** Files encrypted before behavior analytics is confident it is an attack. */
-  behaviorFiles: 20,
-  /** Processing time from first evidence to alert. */
-  detectLatency: 10,
-  autoBlockDelay: 3,
-  manualBlockDelay: 90,
-  restorePerSec: 16,
-  /** Files users edited after the last snapshot (their newest edits live only on the share). */
-  editedSinceSnap: 18,
-  duration: 330,
+  /** Normal activity runs until the attack starts. */
+  attackStart: 4,
+  /** Files encrypted per sim second. */
+  perSec: 5,
+  /** Files encrypted before Data Lens is confident it is an attack. */
+  detectFiles: 8,
+  /** Processing time from that evidence to the alert. */
+  detectLatency: 1.5,
+  autoBlockDelay: 0.5,
+  /** Time for an admin to see the alert, check it and block the PC. */
+  adminDelay: 12,
+  /** Pause after the attack stops, before recovery starts. */
+  recoverGap: 2.5,
+  restorePerSec: 24,
+  /** Time the end state stays on screen. */
+  tail: 4,
 } as const;
 
 export interface Timeline {
-  /** Encryption order; the first `encryptedTotal` files in it get encrypted. */
+  /** Encryption order; the first `hit` files in it get encrypted. */
   order: number[];
-  /** Files edited since the last snapshot. */
-  edited: Set<number>;
-  detectAt: number | null;
-  blockAt: number | null;
+  /** Everyday edits before the attack: when, and which file. */
+  normal: { t: number; file: number }[];
+  detectAt: number;
+  blockAt: number;
   /** Time the attack stops: blocked, or ran out of files. */
   stopAt: number;
-  encryptedTotal: number;
-  detection: 'signature' | 'behavior' | 'none';
+  /** Files encrypted in total. */
+  hit: number;
+  recoverAt: number;
+  recoveredAt: number;
+  end: number;
 }
 
-export function timeline(i: AttackInput): Timeline {
-  const rng = makeRng(i.seed ?? 7);
-  const all = Array.from({ length: FILES }, (_, k) => k);
-  const order = shuffle(rng, all);
-  const edited = new Set(shuffle(rng, all).slice(0, SIM.editedSinceSnap));
-  const r = SIM.perSec[i.rate];
-  const fileTime = (n: number) => SIM.attackStart + n / r; // time the n-th file (1-based) is done
-  let detection: Timeline['detection'] = 'none';
-  let evidence: number | null = null;
-  if (i.variant === 'known') {
-    detection = 'signature';
-    evidence = fileTime(1);
-  } else if (i.tier === 'pro') {
-    detection = 'behavior';
-    evidence = fileTime(SIM.behaviorFiles);
-  }
-  const detectAt = evidence === null ? null : evidence + SIM.detectLatency;
-  const blockAt = detectAt === null ? null : detectAt + (i.autoBlock ? SIM.autoBlockDelay : SIM.manualBlockDelay);
-  const runOut = fileTime(FILES);
-  const stopAt = blockAt === null ? runOut : Math.min(blockAt, runOut);
-  const encryptedTotal = Math.min(FILES, Math.max(0, Math.floor((stopAt - SIM.attackStart) * r + 1e-9)));
-  return { order, edited, detectAt, blockAt: blockAt !== null && blockAt <= runOut ? blockAt : null, stopAt, encryptedTotal, detection };
+/** Time the n-th file in the order (0-based) is encrypted. */
+export const encryptTime = (n: number) => SIM.attackStart + (n + 1) / SIM.perSec;
+
+export function timeline(response: Response, seed = 7): Timeline {
+  const rng = makeRng(seed);
+  const order = shuffle(rng, Array.from({ length: FILES }, (_, k) => k));
+  const normal = [0.6, 1.4, 2.2, 3.1].map((t) => ({ t, file: Math.floor(rng() * FILES) }));
+  const detectAt = encryptTime(SIM.detectFiles - 1) + SIM.detectLatency;
+  const blockAt = detectAt + (response === 'block' ? SIM.autoBlockDelay : SIM.adminDelay);
+  const stopAt = Math.min(blockAt, encryptTime(FILES - 1));
+  const hit = Math.min(FILES, Math.floor((stopAt - SIM.attackStart) * SIM.perSec + 1e-9));
+  const recoverAt = stopAt + SIM.recoverGap;
+  const recoveredAt = recoverAt + hit / SIM.restorePerSec;
+  return { order, normal, detectAt, blockAt, stopAt, hit, recoverAt, recoveredAt, end: recoveredAt + SIM.tail };
 }
 
-export type FileState = 'clean' | 'edited' | 'encrypted' | 'restored' | 'lostEdit';
+/** Time the n-th hit file (0-based, in encryption order) is restored. */
+export const restoreTime = (tl: Timeline, n: number) => tl.recoverAt + (n + 1) / SIM.restorePerSec;
+
+export type FileState = 'clean' | 'encrypted' | 'restored';
+export type Phase = 'quiet' | 'attack' | 'detected' | 'stopped' | 'recovering' | 'recovered';
 
 export interface AttackState {
   files: FileState[];
+  /** Files encrypted right now. */
   encrypted: number;
+  /** Files hit so far, restored or not. */
+  hit: number;
   restored: number;
-  /** Files whose post-snapshot edits are gone after restore. */
-  lostEdits: number;
-  phase: 'quiet' | 'attack' | 'detected' | 'stopped' | 'recovering' | 'recovered';
+  phase: Phase;
   alert: boolean;
   blocked: boolean;
-  /** Recovery may start once the attack has stopped. */
-  canRecover: boolean;
 }
 
-export function attackState(i: AttackInput, tl: Timeline, t: number): AttackState {
-  const r = SIM.perSec[i.rate];
-  const done = t < SIM.attackStart ? 0 : Math.min(tl.encryptedTotal, Math.floor((t - SIM.attackStart) * r + 1e-9));
-  const recStart = i.recoverAt !== undefined && i.recoverAt >= tl.stopAt ? i.recoverAt : undefined;
-  const restoredN = recStart === undefined || t < recStart ? 0 : Math.min(tl.encryptedTotal, Math.floor((t - recStart) * SIM.restorePerSec));
-  const files: FileState[] = Array.from({ length: FILES }, (_, k) => (tl.edited.has(k) ? 'edited' : 'clean'));
-  let lostEdits = 0;
-  for (let n = 0; n < done; n++) {
-    const f = tl.order[n];
-    if (n < restoredN) {
-      const lost = tl.edited.has(f);
-      if (lost) lostEdits++;
-      files[f] = lost ? 'lostEdit' : 'restored';
-    } else files[f] = 'encrypted';
-  }
-  const encrypted = done - restoredN;
-  const alert = tl.detectAt !== null && t >= tl.detectAt;
-  const blocked = tl.blockAt !== null && t >= tl.blockAt;
-  let phase: AttackState['phase'] = 'quiet';
-  if (recStart !== undefined && t >= recStart) phase = restoredN >= tl.encryptedTotal ? 'recovered' : 'recovering';
+export function attackState(tl: Timeline, t: number): AttackState {
+  const hit = t < SIM.attackStart ? 0 : Math.min(tl.hit, Math.floor((t - SIM.attackStart) * SIM.perSec + 1e-9));
+  const restored = t < tl.recoverAt ? 0 : Math.min(hit, Math.floor((t - tl.recoverAt) * SIM.restorePerSec + 1e-9));
+  const files: FileState[] = new Array(FILES).fill('clean');
+  for (let n = 0; n < hit; n++) files[tl.order[n]] = n < restored ? 'restored' : 'encrypted';
+  let phase: Phase = 'quiet';
+  if (t >= tl.recoveredAt) phase = 'recovered';
+  else if (t >= tl.recoverAt) phase = 'recovering';
   else if (t >= tl.stopAt) phase = 'stopped';
-  else if (alert) phase = 'detected';
+  else if (t >= tl.detectAt) phase = 'detected';
   else if (t >= SIM.attackStart) phase = 'attack';
-  return { files, encrypted, restored: restoredN, lostEdits, phase, alert, blocked, canRecover: t >= tl.stopAt && recStart === undefined };
-}
-
-export interface AttackEvent {
-  t: number;
-  tone: 'ok' | 'warn' | 'bad' | 'flow' | 'neutral';
-  text: string;
-}
-
-export function attackEvents(i: AttackInput, tl: Timeline, t: number): AttackEvent[] {
-  const ev: AttackEvent[] = [{ t: 0, tone: 'neutral', text: 'Normal activity on the share. Last snapshot taken earlier today.' }];
-  ev.push({ t: SIM.attackStart, tone: 'bad', text: 'A compromised client starts encrypting files on the share.' });
-  if (tl.detectAt !== null)
-    ev.push({
-      t: tl.detectAt,
-      tone: 'warn',
-      text: tl.detection === 'signature' ? 'Alert: activity matches a known ransomware signature.' : 'Alert: behavior analytics flags abnormal mass file changes by one user.',
-    });
-  if (tl.blockAt !== null)
-    ev.push({ t: tl.blockAt, tone: 'ok', text: i.autoBlock ? 'Client blocked automatically. Encryption stops.' : 'Admin blocks the client after reviewing the alert. Encryption stops.' });
-  if (tl.blockAt === null)
-    ev.push({ t: tl.stopAt, tone: 'bad', text: tl.detectAt === null ? 'No alert raised. Every file on the share is now encrypted.' : 'Every file on the share was encrypted before the client was blocked.' });
-  if (i.recoverAt !== undefined && i.recoverAt >= tl.stopAt) {
-    ev.push({ t: i.recoverAt, tone: 'flow', text: 'Recovery started from the last clean snapshot.' });
-    ev.push({ t: i.recoverAt + tl.encryptedTotal / SIM.restorePerSec, tone: 'ok', text: 'Recovery complete. Affected files restored.' });
-  }
-  return ev.filter((e) => e.t <= t).sort((a, b) => a.t - b.t);
+  return { files, encrypted: hit - restored, hit, restored, phase, alert: t >= tl.detectAt, blocked: t >= tl.blockAt };
 }

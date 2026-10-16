@@ -1,0 +1,4 @@
+.hub-node { max-width: 46rem; margin: 0 auto; text-align: center; }
+.hub-node .sec-h { margin-top: 0; }
+.hub-node .field-note { margin: var(--sp-3) auto 0; max-width: 38rem; font-size: var(--fs-13); }
+.hub-node + .sec-h { margin-top: var(--sp-10); }

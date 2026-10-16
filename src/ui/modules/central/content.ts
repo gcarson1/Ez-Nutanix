@@ -5,15 +5,15 @@ export const content: ModuleContent = {
   title: 'Nutanix Central & Prism Federation',
   tag: 'Nutanix Central',
   summary:
-    'One console above every cluster and site. Prism Element runs each cluster, Prism Central manages a group of clusters, and Nutanix Central federates many Prism Centrals: fleet health, alerts, upgrades and access in one place.',
+    'One console above every cluster and site. Prism Element runs each cluster, Prism Central manages a group of clusters, and Nutanix Central federates many Prism Centrals so health and alerts from every region land in one place.',
   priority: 'P1',
   talk: [
     'Three levels: Prism Element is built into every cluster, Prism Central manages the clusters registered to it, and Nutanix Central sits above many Prism Central domains.',
-    '“Prism Federation” on the slide is our label for that multi-Prism-Central federation: one API surface, alerts rolled up, lifecycle management and identity across domains.',
-    'Register a cluster and it shows up in the fleet view with its health and capacity. Unregistered clusters still run; they just are not managed centrally.',
-    'Plan upgrades for the fleet: a canary first, then waves. Inside each cluster LCM still goes one node at a time, and a failed pre-check or a mid-upgrade failure stops the rollout instead of spreading it.',
+    'Through Prism Element you see one cluster. A warning in a store in Toronto is invisible from the New York cluster, so checking five clusters means five logins.',
+    'Register clusters to a Prism Central and their health, capacity and alerts flow up to it. A cluster registers to one Prism Central, often one per region.',
+    '“Prism Federation” on the slide is our label for federating many Prism Centrals under Nutanix Central: one view, one API surface, alerts rolled up, lifecycle management and identity across domains.',
     'Role-based access decides who sees what: a regional team sees only its region, an app team only its project, an auditor can look but not act. The same rules apply to the API.',
-    'Nutanix Central is available as SaaS or on-premises, and in 2026 it is the host for Cloud Manager 2.x.',
+    'Nutanix Central is available as SaaS or on-premises, and in 2026 it is the host for Cloud Manager 2.x. Rolling upgrades themselves are shown in the LCM module.',
   ],
   numbers: [
     { k: 'Prism Central domains (Nutanix Central on-prem)', v: 'Up to 25' },
@@ -33,10 +33,15 @@ export const content: ModuleContent = {
     },
     {
       q: 'Can one click upgrade every cluster at once?',
-      a: 'You can plan and launch upgrades across many clusters centrally, but it is wise to stage them, and inside each cluster LCM is still one node at a time with health and resiliency checks. The waves in this demo are an illustration of a good practice, not a fixed product schedule.',
+      a: 'You can plan and launch upgrades across many clusters centrally, but it is wise to stage them, and inside each cluster LCM is still one node at a time with health and resiliency checks. Staging waves is a good practice, not a fixed product schedule.',
     },
   ],
-  next: ['Cloud Manager', 'LCM Rolling Upgrade', 'Kubernetes Platform'],
+  next: [
+    'Start on Prism Element: each cluster runs itself, and the Toronto store’s warning is missed from New York.',
+    'Switch to Prism Central: the Americas clusters report up and the warning is seen, but EMEA is a second console.',
+    'Switch to Nutanix Central: both regions report to one place, one console instead of five.',
+    'Then open Cloud Manager, which runs on Nutanix Central, or LCM Rolling Upgrade for upgrades across clusters.',
+  ],
   honest: [
     '“Prism Federation” is not a product name; the capabilities shown come from Prism Central and Nutanix Central.',
     'Prism Central is an extra appliance to size, protect and upgrade; plan where it runs and how it is backed up.',

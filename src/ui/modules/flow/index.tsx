@@ -1,12 +1,12 @@
-// Flow: Network Security (microsegmentation) and Virtual Networking (overlay VPCs).
+// Flow: Network Security (microsegmentation) and Virtual Networking (overlay VPCs), one tab each.
 import './style.css';
 import { useEnum } from '../../../state/route';
 import { NetSec } from './netsec';
 import { VNet } from './vnet';
 
 const TABS = [
-  { id: 'sec', label: 'Flow Network Security' },
-  { id: 'net', label: 'Flow Virtual Networking' },
+  { id: 'sec', label: 'Network Security' },
+  { id: 'net', label: 'Virtual Networking' },
 ] as const;
 
 export default function Flow() {
@@ -22,8 +22,8 @@ export default function Flow() {
       </div>
       <p class="lede fl-lede">
         {tab === 'sec'
-          ? 'Microsegmentation: firewall rules written against categories (labels on VMs) instead of IP addresses, enforced on every host at each VM’s network interface.'
-          : 'Virtual networking: private networks (VPCs) created in software on top of the existing physical network, each free to reuse the same IP ranges.'}
+          ? 'Firewall rules written against labels on VMs instead of IP addresses, and checked on every host right at each VM’s network connection.'
+          : 'Private networks (VPCs) created in software on top of the existing physical network, each free to reuse the same IP ranges.'}
       </p>
       {tab === 'sec' ? <NetSec key="sec" /> : <VNet key="net" />}
     </>

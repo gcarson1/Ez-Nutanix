@@ -1,81 +1,142 @@
-// Enterprise AI (NAI) "deploy a model endpoint" wizard: choices in, a validated architecture out.
-// Pure. Facts behind the options are in docs/research/E-platform-services.md (row 7a).
+// Enterprise AI (NAI): where a model endpoint runs, and how one endpoint spreads requests over
+// its model replicas, including while one replica is stopped. Pure.
+// Facts behind the sites are in docs/research/E-platform-services.md (row 7a).
 
-export type Target = 'nkp' | 'eks' | 'aks' | 'gke';
-export type Source = 'nim' | 'hf' | 'upload';
+export type Where = 'dc' | 'cloud' | 'airgap';
+export const WHERES: readonly Where[] = ['dc', 'cloud', 'airgap'];
+export const REPLICA_OPTS = [1, 2, 4] as const;
 
-export interface EndpointChoice {
-  target: Target;
-  source: Source;
-  /** GPUs per replica. More than one means the model is split across GPUs (tensor parallel). */
-  gpus: 1 | 2 | 4;
+export interface Site {
+  label: string;
+  /** Heading of the boundary drawn around the endpoint. */
+  title: string;
+  /** The Kubernetes it runs on, in plain words. */
+  runsOn: string;
+  /** False when the site has no internet connection. */
+  online: boolean;
+  /** Where the model comes from, two short lines. */
+  model: [string, string];
+  modelHow: string;
+  /** Where prompts, answers and model files stay. */
+  stays: string;
+}
+
+export const SITE: Record<Where, Site> = {
+  dc: {
+    label: 'Your data center',
+    title: 'YOUR DATA CENTER',
+    runsOn: 'Kubernetes (NKP) on Nutanix servers with GPUs',
+    online: true,
+    model: ['NVIDIA NIM or', 'Hugging Face'],
+    modelHow: 'downloaded',
+    stays: 'Your data center',
+  },
+  cloud: {
+    label: 'Public cloud',
+    title: 'YOUR CLOUD ACCOUNT',
+    runsOn: 'Amazon EKS, Azure AKS or Google GKE, on cloud GPU instances',
+    online: true,
+    model: ['NVIDIA NIM or', 'Hugging Face'],
+    modelHow: 'downloaded',
+    stays: 'Your cloud account',
+  },
+  airgap: {
+    // Air-gapped means no outside connection, so it applies to your own data center (NKP), not a hyperscaler.
+    label: 'Air-gapped site',
+    title: 'AIR-GAPPED SITE · NO INTERNET',
+    runsOn: 'Kubernetes (NKP) on Nutanix servers with GPUs',
+    online: false,
+    // Pulling from Hugging Face needs the internet; air-gapped NIM or your own files do not.
+    model: ['Air-gapped NIM', 'or your own files'],
+    modelHow: 'brought into the site',
+    stays: 'Your site, offline',
+  },
+};
+
+/** Timing of the serving loop, in seconds. */
+export interface ServeTimes {
+  /** When the first request is sent. */
+  start: number;
+  /** Time between two requests. */
+  gap: number;
+  /** App to endpoint (and back). */
+  travel: number;
+  /** Endpoint to replica (and back). */
+  hop: number;
+  /** How long a replica works on one request. */
+  work: number;
+  /** Requests sent before a replica stops, and while it is stopped. */
+  busy: number;
+  during: number;
+  /** How long the replica stays stopped. */
+  stopFor: number;
+  /** Pause between the two batches. */
+  pause: number;
+}
+
+export const SERVE_TIMES: ServeTimes = { start: 2.2, gap: 0.5, travel: 0.6, hop: 0.35, work: 0.8, busy: 8, during: 6, stopFor: 3, pause: 0.6 };
+
+export interface Job {
+  id: number;
+  batch: 'busy' | 'stop';
+  /** The app sends it. */
+  sent: number;
+  /** It reaches the endpoint. */
+  arrive: number;
+  /** The endpoint sends it on to a replica. */
+  dispatch: number;
+  replica: number;
+  /** The replica works on it from begin to done. */
+  begin: number;
+  done: number;
+  /** The answer is back at the app. */
+  back: number;
+}
+
+export interface ServePlan {
   replicas: number;
-  /** Put the Agent Gateway (with its MCP Gateway) in front of the endpoint. */
-  gateway: boolean;
-  /** Site has no internet connection. */
-  airgap: boolean;
+  jobs: Job[];
+  /** One replica is stopped from `from` to `to`. */
+  stop: { replica: number; from: number; to: number };
+  /** Longest time a request waited at the endpoint, per batch. */
+  maxWait: { busy: number; stop: number };
+  end: number;
 }
 
-export const TARGET_LABEL: Record<Target, string> = {
-  nkp: 'NKP on Nutanix Cloud Infrastructure',
-  eks: 'Amazon EKS',
-  aks: 'Azure AKS',
-  gke: 'Google GKE',
-};
+/**
+ * Requests leave the endpoint in the order they arrived. Each goes to the replica that can take it
+ * soonest (ties go to the one idle longest), a replica works on one request at a time, and a
+ * stopped replica gets nothing that would overlap its stop.
+ */
+export function planServing(replicas: number, T: ServeTimes = SERVE_TIMES): ServePlan {
+  const R = Math.max(1, Math.round(replicas));
+  const free = Array.from({ length: R }, () => 0);
+  let last = 0;
+  const jobs: Job[] = [];
 
-export const SOURCE_LABEL: Record<Source, string> = {
-  nim: 'NVIDIA NIM',
-  hf: 'Hugging Face',
-  upload: 'Your own model (upload)',
-};
+  const run = (sends: number[], batch: Job['batch'], stop: { replica: number; from: number; to: number } | null) => {
+    for (const sent of sends) {
+      const arrive = sent + T.travel;
+      let best = { r: 0, d: Infinity };
+      for (let r = 0; r < R; r++) {
+        let d = Math.max(arrive, last, free[r] - T.hop);
+        if (stop && r === stop.replica && d < stop.to && d + T.hop + T.work > stop.from) d = Math.max(d, stop.to);
+        if (d < best.d - 1e-9 || (Math.abs(d - best.d) < 1e-9 && free[r] < free[best.r])) best = { r, d };
+      }
+      const { r, d } = best;
+      const begin = d + T.hop;
+      const done = begin + T.work;
+      free[r] = done;
+      last = d;
+      jobs.push({ id: jobs.length, batch, sent, arrive, dispatch: d, replica: r, begin, done, back: done + T.hop + T.travel });
+    }
+  };
 
-/** Why a choice is not available given the others, or null if it is. */
-export function airgapBlocked(c: Pick<EndpointChoice, 'target'>): string | null {
-  return c.target === 'nkp' ? null : 'Air-gapped means no outside connection, so it applies to your own data center (NKP on NCI), not a hyperscaler.';
-}
+  run(Array.from({ length: T.busy }, (_, i) => T.start + i * T.gap), 'busy', null);
+  const from = Math.max(...jobs.map((j) => j.done)) + T.pause;
+  const stop = { replica: 0, from, to: from + T.stopFor };
+  run(Array.from({ length: T.during }, (_, i) => from + 0.4 + i * T.gap), 'stop', stop);
 
-export function sourceBlocked(s: Source, c: Pick<EndpointChoice, 'airgap'>): string | null {
-  if (s === 'hf' && c.airgap) return 'Pulling a model from Hugging Face needs internet access. In an air-gapped site, upload the model files or use NIM in air-gapped mode.';
-  return null;
-}
-
-/** Normalize: drop any combination the UI would show as unavailable. */
-export function normalize(c: EndpointChoice): EndpointChoice {
-  const out = { ...c, replicas: Math.max(1, Math.min(3, Math.round(c.replicas))) };
-  if (airgapBlocked(out)) out.airgap = false;
-  if (sourceBlocked(out.source, out)) out.source = 'upload';
-  return out;
-}
-
-export interface Architecture {
-  choice: EndpointChoice;
-  totalGpus: number;
-  tensorParallel: boolean;
-  onPrem: boolean;
-  /** Plain-English lines describing the result, in reading order. */
-  notes: string[];
-}
-
-export function architecture(input: EndpointChoice): Architecture {
-  const c = normalize(input);
-  const onPrem = c.target === 'nkp';
-  const notes: string[] = [];
-  notes.push(
-    onPrem
-      ? 'The endpoint runs on Kubernetes in your own data center, so prompts, responses and model files stay on your infrastructure.'
-      : `The endpoint runs on ${TARGET_LABEL[c.target]} in your cloud account, in the region you choose.`,
-  );
-  notes.push(
-    c.source === 'nim'
-      ? 'The model comes as an NVIDIA NIM package, tuned for NVIDIA GPUs.'
-      : c.source === 'hf'
-        ? 'The model is pulled from Hugging Face when the endpoint is created.'
-        : 'You upload the model files yourself, so nothing is downloaded from outside.',
-  );
-  if (c.gpus > 1) notes.push(`Each replica splits the model across ${c.gpus} GPUs (tensor-parallel serving), for models too large for one GPU.`);
-  if (c.replicas > 1) notes.push(`${c.replicas} replicas share the traffic, so one replica can fail or be updated while the others keep serving.`);
-  notes.push('Apps call the endpoint over HTTPS with an API token. Role-based access control decides who can create endpoints and tokens.');
-  if (c.gateway) notes.push('The Agent Gateway sits in front: it tracks tokens and enforces quotas per app, and its MCP Gateway gives agents governed access to tools.');
-  if (c.airgap) notes.push('Air-gapped: once the model files are inside the site, the endpoint runs with no internet connection.');
-  return { choice: c, totalGpus: c.gpus * c.replicas, tensorParallel: c.gpus > 1, onPrem, notes };
+  const wait = (b: Job['batch']) => Math.max(0, ...jobs.filter((j) => j.batch === b).map((j) => j.dispatch - j.arrive));
+  return { replicas: R, jobs, stop, maxWait: { busy: wait('busy'), stop: wait('stop') }, end: Math.max(...jobs.map((j) => j.back)) + 0.6 };
 }

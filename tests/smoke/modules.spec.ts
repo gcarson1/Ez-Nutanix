@@ -66,11 +66,12 @@ for (const m of MODULES) {
     await page.goto(`${FILE}#/${m.content.path}`);
     await expect(page.locator('.mod-head h1')).toHaveText(m.content.title);
     await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
-    // Press play if the module has an animated sequence, let it run, and check for errors.
-    const play = page.locator('.playbar button.primary').first();
-    if (await play.count()) {
-      await play.click();
-      await page.waitForTimeout(1500);
+    // Animations autoplay: let them run, scrub one if there is a scrub bar, and check for errors.
+    await page.waitForTimeout(1500);
+    const scrub = page.locator('.playbar input.scrub').first();
+    if (await scrub.count()) {
+      await scrub.fill('0');
+      await expect(page.locator('.playbar .pbtn').first()).toHaveAttribute('aria-label', 'Play');
     }
     expect(errors).toEqual([]);
   });

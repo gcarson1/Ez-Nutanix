@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluate, matches, migrateVm, setQuarantine, simulateSpread, type FlowVm, type Policies } from '../../src/engine/flow';
+import { evaluate, matches, setQuarantine, type FlowVm, type Policies } from '../../src/engine/flow';
 
 const vm = (id: string, env: string, tier: string, host: string): FlowVm => ({
   id,
@@ -133,7 +133,8 @@ describe('policy follows the VM', () => {
   it('produces the same verdict after live migration, enforced on the new host', () => {
     const p = pol();
     const before = evaluate({ src: 'pweb1', dst: 'pdb', port: 5432 }, VMS, p);
-    const moved = migrateVm(VMS, 'pdb', 'h1');
+    // A live migration changes only the VM's host; its categories (and so its policies) go with it.
+    const moved = VMS.map((v) => (v.id === 'pdb' ? { ...v, host: 'h1' } : v));
     const after = evaluate({ src: 'pweb1', dst: 'pdb', port: 5432 }, moved, p);
     expect(before.allowed).toBe(false);
     expect(after.allowed).toBe(false);
@@ -141,33 +142,5 @@ describe('policy follows the VM', () => {
     expect(after.at).toBe('h1');
     const okAfter = evaluate({ src: 'papp', dst: 'pdb', port: 5432 }, moved, p);
     expect(okAfter.allowed).toBe(true);
-  });
-});
-
-describe('lateral movement', () => {
-  const ports = [445, 3389];
-  it('spreads everywhere when no policy applies', () => {
-    const none: Policies = { apps: [], isolations: [], quarantine: { vms: {}, forensicFrom: {} } };
-    const r = simulateSpread(VMS, none, 'pweb1', ports);
-    expect(r.infected.length).toBe(VMS.length);
-  });
-  it('is contained by enforced app and isolation policies', () => {
-    const r = simulateSpread(VMS, pol(), 'pweb1', ports);
-    expect(r.infected).toEqual(['pweb1']);
-  });
-  it('is not contained in monitor mode, but every hop is logged as would-deny', () => {
-    const r = simulateSpread(VMS, pol({ appMode: 'monitor', isoMode: 'monitor' }), 'pweb1', ports);
-    expect(r.infected.length).toBe(VMS.length);
-    expect(r.events.some((e) => e.verdict.wouldDrop)).toBe(true);
-  });
-  it('quarantining patient zero stops all of its traffic even on allowed ports', () => {
-    const p = pol();
-    p.quarantine = setQuarantine(p.quarantine, 'pweb1', 'strict');
-    const r = simulateSpread(VMS, p, 'pweb1', [8080]);
-    expect(r.infected).toEqual(['pweb1']);
-    expect(r.events.every((e) => !e.verdict.allowed)).toBe(true);
-  });
-  it('is deterministic', () => {
-    expect(simulateSpread(VMS, pol({ appMode: 'monitor' }), 'pweb1', ports)).toEqual(simulateSpread(VMS, pol({ appMode: 'monitor' }), 'pweb1', ports));
   });
 });

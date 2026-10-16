@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planMove, naiveDowntime, phaseAt, type MoveInput } from '../../src/engine/move';
+import { planMove, naiveDowntime, type MoveInput } from '../../src/engine/move';
 
 const base: MoveInput = { vmGB: 500, mbps: 200, changeGBPerHour: 5, syncEveryMin: 60, cutoverAt: null, bootMin: 5 };
 
@@ -25,7 +25,7 @@ describe('Move timeline', () => {
   it('phases are contiguous and ordered', () => {
     const p = planMove({ ...base, cutoverAt: 300 }, 2000);
     for (let i = 1; i < p.phases.length; i++) expect(p.phases[i].start).toBeCloseTo(p.phases[i - 1].end);
-    expect(phaseAt(p, 0).kind).toBe('seed');
+    expect(p.phases[0].kind).toBe('seed');
   });
   it('reports non-convergence when change rate exceeds bandwidth', () => {
     expect(planMove({ ...base, changeGBPerHour: 1000, mbps: 100 }, 100).converges).toBe(false);

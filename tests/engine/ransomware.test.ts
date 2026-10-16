@@ -1,63 +1,57 @@
 import { describe, it, expect } from 'vitest';
-import { FILES, SIM, attackEvents, attackState, timeline, type AttackInput } from '../../src/engine/ransomware';
+import { FILES, SIM, attackState, timeline, type Response } from '../../src/engine/ransomware';
 
-const ALL: AttackInput[] = [];
-for (const tier of ['starter', 'pro'] as const)
-  for (const variant of ['known', 'new'] as const)
-    for (const autoBlock of [true, false])
-      for (const rate of ['slow', 'fast'] as const) ALL.push({ tier, variant, autoBlock, rate });
+const BOTH: Response[] = ['alert', 'block'];
 
 describe('Data Lens ransomware scenario', () => {
-  it('encryption only grows until the attack stops, then holds still', () => {
-    for (const i of ALL) {
-      const tl = timeline(i);
-      let last = 0;
-      for (let t = 0; t <= SIM.duration; t += 0.5) {
-        const s = attackState(i, tl, t);
-        expect(s.encrypted).toBeGreaterThanOrEqual(last);
-        last = s.encrypted;
-        if (t >= tl.stopAt) expect(s.encrypted).toBe(tl.encryptedTotal);
+  it('files are hit only until the attack stops, then only restored', () => {
+    for (const r of BOTH) {
+      const tl = timeline(r);
+      let lastHit = 0;
+      let lastRestored = 0;
+      for (let t = 0; t <= tl.end; t += 0.05) {
+        const s = attackState(tl, t);
+        expect(s.hit).toBeGreaterThanOrEqual(lastHit);
+        expect(s.restored).toBeGreaterThanOrEqual(lastRestored);
+        lastHit = s.hit;
+        lastRestored = s.restored;
+        if (t >= tl.stopAt) expect(s.hit).toBe(tl.hit);
+        expect(s.files.filter((f) => f === 'encrypted')).toHaveLength(s.encrypted);
+        expect(s.files.filter((f) => f === 'restored')).toHaveLength(s.restored);
       }
     }
   });
 
-  it('a new variant on Starter raises no alert and encrypts the whole share', () => {
-    for (const i of ALL.filter((x) => x.tier === 'starter' && x.variant === 'new')) {
-      const tl = timeline(i);
-      expect(tl.detectAt).toBeNull();
-      expect(tl.encryptedTotal).toBe(FILES);
-      expect(attackState(i, tl, SIM.duration).alert).toBe(false);
+  it('the alert comes before the block, and the PC is blocked when the attack stops', () => {
+    for (const r of BOTH) {
+      const tl = timeline(r);
+      expect(tl.detectAt).toBeGreaterThan(SIM.attackStart);
+      expect(tl.blockAt).toBeGreaterThan(tl.detectAt);
+      expect(attackState(tl, tl.stopAt).blocked).toBe(true);
+      expect(attackState(tl, tl.detectAt - 0.01).alert).toBe(false);
     }
   });
 
-  it('detection with automatic blocking limits damage more than an admin acting by hand', () => {
-    for (const tier of ['starter', 'pro'] as const)
-      for (const variant of ['known', 'new'] as const) {
-        if (tier === 'starter' && variant === 'new') continue;
-        const auto = timeline({ tier, variant, autoBlock: true, rate: 'fast' });
-        const manual = timeline({ tier, variant, autoBlock: false, rate: 'fast' });
-        expect(auto.encryptedTotal).toBeLessThan(manual.encryptedTotal);
-        expect(auto.encryptedTotal).toBeLessThan(FILES);
-      }
+  it('auto-block hits far fewer files than waiting for an admin', () => {
+    const auto = timeline('block');
+    const manual = timeline('alert');
+    expect(auto.hit).toBeGreaterThan(0);
+    expect(auto.hit).toBeLessThan(manual.hit / 2);
+    expect(manual.hit).toBeLessThanOrEqual(FILES);
   });
 
-  it('recovery cannot start before the attack stops, and restores every encrypted file', () => {
-    const i: AttackInput = { tier: 'pro', variant: 'new', autoBlock: true, rate: 'fast' };
-    const tl = timeline(i);
-    const early = { ...i, recoverAt: tl.stopAt - 1 };
-    expect(attackState(early, timeline(early), SIM.duration).restored).toBe(0);
-    const ok = { ...i, recoverAt: tl.stopAt + 5 };
-    const end = attackState(ok, timeline(ok), SIM.duration);
-    expect(end.phase).toBe('recovered');
-    expect(end.encrypted).toBe(0);
-    expect(end.restored).toBe(tl.encryptedTotal);
-    const lostExpected = tl.order.slice(0, tl.encryptedTotal).filter((f) => tl.edited.has(f)).length;
-    expect(end.lostEdits).toBe(lostExpected);
-    expect(attackEvents(ok, timeline(ok), SIM.duration).slice(-1)[0]?.text).toMatch(/Recovery complete/);
+  it('recovery restores every hit file', () => {
+    for (const r of BOTH) {
+      const tl = timeline(r);
+      expect(attackState(tl, tl.recoverAt - 0.01).restored).toBe(0);
+      const end = attackState(tl, tl.recoveredAt);
+      expect(end.phase).toBe('recovered');
+      expect(end.encrypted).toBe(0);
+      expect(end.restored).toBe(tl.hit);
+    }
   });
 
   it('is deterministic for a seed', () => {
-    const i: AttackInput = { tier: 'pro', variant: 'known', autoBlock: false, rate: 'slow', seed: 3 };
-    expect(attackState(i, timeline(i), 100)).toEqual(attackState(i, timeline(i), 100));
+    expect(attackState(timeline('alert', 3), 12)).toEqual(attackState(timeline('alert', 3), 12));
   });
 });

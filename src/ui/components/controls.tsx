@@ -1,10 +1,10 @@
 // Shared controls in the design-system vocabulary: segmented choices, toggles, sliders,
 // labeled fields with "why disabled" text, status chips, explain-this tips, honest-fit
-// callouts, and the play bar for animated sequences.
+// callouts, and the play bar (pause + scrub) for looping animations.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from './Icon';
-import { SPEEDS, fmtClock, type Clock } from './clock';
+import { fmtClock, type Clock } from './clock';
 
 // ── explain-this tooltip ──
 export function Tip({ text, detail, children, align }: { text: string; detail?: string; children: ComponentChildren; align?: 'right' | 'up' }) {
@@ -252,25 +252,13 @@ export function Legend({ items }: { items: { cls?: string; color?: string; label
   );
 }
 
-// ── play bar ──
+// ── play bar: pause/play and a scrubber; animations autoplay and loop ──
 export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: { clock: Clock; label?: string; scrub?: boolean; fmt?: (t: number) => string; extra?: ComponentChildren }) {
   return (
-    <div class="playbar" aria-label={label ?? 'Simulation controls'}>
-      <button type="button" class="btn primary" onClick={clock.toggle} aria-label={clock.playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
+    <div class="playbar" aria-label={label ?? 'Animation controls'}>
+      <button type="button" class="btn pbtn" onClick={clock.toggle} aria-label={clock.playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
         <Icon name={clock.playing ? 'pause' : 'play'} />
-        {clock.playing ? 'Pause' : 'Play'}
       </button>
-      <button type="button" class="btn" onClick={() => clock.step(-1)} aria-label="Step back" title="Step back (Left arrow)">
-        <Icon name="stepback" />
-      </button>
-      <button type="button" class="btn" onClick={() => clock.step(1)} aria-label="Step forward" title="Step forward (Right arrow)">
-        <Icon name="step" />
-      </button>
-      <button type="button" class="tbtn" onClick={clock.reset} title="Reset (R)">
-        <Icon name="reset" />
-        Reset
-      </button>
-      <span class="clock" aria-live="off">{fmt(clock.t)}</span>
       {scrub && clock.duration !== undefined && (
         <input
           class="range scrub"
@@ -279,20 +267,14 @@ export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: {
           max={clock.duration}
           step={clock.duration / 400}
           value={clock.t}
-          aria-label="Timeline"
+          aria-label="Scrub the animation"
           onInput={(e) => {
             clock.pause();
             clock.seek(Number((e.target as HTMLInputElement).value));
           }}
         />
       )}
-      <div class="seg" role="group" aria-label="Speed">
-        {SPEEDS.map((s) => (
-          <button type="button" key={s} aria-pressed={clock.speed === s} onClick={() => clock.setSpeed(s)}>
-            {s}x
-          </button>
-        ))}
-      </div>
+      <span class="clock" aria-live="off">{fmt(clock.t)}</span>
       {extra}
     </div>
   );

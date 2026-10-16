@@ -201,61 +201,9 @@ export function evaluate(pkt: Packet, vms: FlowVm[], pol: Policies): Verdict {
   };
 }
 
-/** Live-migrate a VM: only its host changes; its categories (and so its policies) go with it. */
-export function migrateVm(vms: FlowVm[], id: string, host: string): FlowVm[] {
-  return vms.map((v) => (v.id === id ? { ...v, host } : v));
-}
-
 export function setQuarantine(q: QuarantineState, id: string, kind: 'strict' | 'forensic' | null): QuarantineState {
   const vmsQ = { ...q.vms };
   if (kind) vmsQ[id] = kind;
   else delete vmsQ[id];
   return { ...q, vms: vmsQ };
-}
-
-// ── lateral movement (ransomware) ──
-
-export interface SpreadEvent {
-  wave: number;
-  src: string;
-  dst: string;
-  port: number;
-  verdict: Verdict;
-  /** True when this attempt infected a new VM. */
-  infects: boolean;
-}
-
-export interface SpreadResult {
-  events: SpreadEvent[];
-  infected: string[];
-}
-
-/**
- * Breadth-first lateral movement from one or more infected VMs: every infected VM tries every other VM on each attack port.
- * An allowed attempt infects the target, which joins the next wave. Deterministic order.
- */
-export function simulateSpread(vms: FlowVm[], pol: Policies, patientZero: string | string[], ports: number[], maxWaves = 3): SpreadResult {
-  const start = Array.isArray(patientZero) ? patientZero : [patientZero];
-  const infected = new Set<string>(start);
-  const events: SpreadEvent[] = [];
-  let frontier = [...start];
-  for (let wave = 1; wave <= maxWaves && frontier.length; wave++) {
-    const next: string[] = [];
-    for (const s of frontier) {
-      for (const d of vms) {
-        if (d.id === s) continue;
-        for (const port of ports) {
-          const verdict = evaluate({ src: s, dst: d.id, port }, vms, pol);
-          const infects = verdict.allowed && !infected.has(d.id);
-          if (infects) {
-            infected.add(d.id);
-            next.push(d.id);
-          }
-          if (!infected.has(d.id) || infects || !verdict.allowed) events.push({ wave, src: s, dst: d.id, port, verdict, infects });
-        }
-      }
-    }
-    frontier = next;
-  }
-  return { events, infected: [...infected] };
 }

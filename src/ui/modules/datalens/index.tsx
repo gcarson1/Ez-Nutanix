@@ -1,345 +1,272 @@
-// Data Lens: a ransomware attack on a file share, detection and alerting, blocking the client,
-// and recovery from the last clean snapshot. Scenario logic lives in engine/ransomware.ts.
-import { useEffect, useMemo, useState } from 'preact/hooks';
-import { useBool, useEnum } from '../../../state/route';
-import { useClock, fmtClock } from '../../components/clock';
-import { Chip, Field, Follow, Illus, Legend, PlayBar, Seg, Stat, Toggle } from '../../components/controls';
-import { Icon } from '../../components/Icon';
-import { FILES, SIM, attackEvents, attackState, timeline, type FileState, type Rate, type Tier, type Variant } from '../../../engine/ransomware';
+// Data Lens: a ransomware attack on a file server's shares, on a loop. Data Lens spots it and,
+// with auto-block, cuts the PC off right away; with alert only, the PC keeps going until an admin
+// acts. Then the hit files come back from the last clean snapshot. Logic is in engine/ransomware.ts.
+import { useMemo } from 'preact/hooks';
+import { useEnum } from '../../../state/route';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, prog } from '../../components/show';
+import { FILES, PER_SHARE, SHARES, SIM, attackState, encryptTime, restoreTime, timeline, type FileState, type Phase, type Response, type Timeline } from '../../../engine/ransomware';
 import './style.css';
 
-const COLS = 20;
-const CELL = 18;
+// ── geometry ──
+const W = 960;
+const H = 300;
+const COLS = 6;
+const CELL = 15;
 const CG = 3;
+const GRID = COLS * (CELL + CG) - CG;
+const PC = { x: 0, y: 100, w: 160, h: 100 };
+const SRV = { x: 280, y: 40, w: 410, h: 178 };
+const SNAP = { x: 280, y: 236, w: 410, h: 56 };
+const DL = { x: 770, y: 40, w: 190, h: 252 };
+const LINK_Y = 150;
+const GRID_Y = 96;
+const gridX = (s: number) => SRV.x + 18 + s * (GRID + 31);
+const FLIGHT = 0.5;
+const EVENT = 0.4;
 
-const FILE_CLS: Record<FileState, string> = {
-  clean: 'dl-f',
-  edited: 'dl-f edited',
-  encrypted: 'dl-f enc',
-  restored: 'dl-f rest',
-  lostEdit: 'dl-f lost',
-};
+const FILE_CLS: Record<FileState, string> = { clean: 'dl-f', encrypted: 'dl-f enc', restored: 'dl-f rest' };
 
-function ShareDiagram({ files, attacking, blocked, alert, detection, tier, recovering, narrow }: {
-  files: FileState[];
-  attacking: boolean;
-  blocked: boolean;
-  alert: boolean;
-  detection: 'signature' | 'behavior' | 'none';
-  tier: Tier;
-  recovering: boolean;
-  narrow: boolean;
-}) {
-  const gw = COLS * (CELL + CG) - CG;
-  const rows = Math.ceil(FILES / COLS);
-  const gh = rows * (CELL + CG) - CG;
-  // Wide: client | share | Data Lens in a row. Narrow (phone): client and Data Lens on top, share below.
-  const gx = narrow ? 21 : 250;
-  const gy = narrow ? 334 : 78;
-  const cl = narrow ? { x: 0, y: 0, w: 200, h: 100 } : { x: 0, y: 150, w: 180, h: 100 };
-  const dl = narrow ? { x: 230, y: 0, w: 230 } : { x: 770, y: 34, w: 240 };
-  const W = narrow ? 460 : 1010;
-  const H = narrow ? gy + gh + 108 : 440;
-  const link = narrow ? { x1: 100, y1: 100, x2: 100, y2: gy - 44 } : { x1: 180, y1: 200, x2: gx - 14, y2: 200 };
-  const mx = (link.x1 + link.x2) / 2;
-  const my = (link.y1 + link.y2) / 2;
-  const act = narrow ? { x1: 345, y1: gy - 44, x2: 345, y2: dl.y + 256 } : { x1: gx + gw + 14, y1: 150, x2: dl.x, y2: 150 };
-  const ccx = cl.x + cl.w / 2;
-  const dcx = dl.x + dl.w / 2;
+function cell(f: number): { x: number; y: number } {
+  const s = Math.floor(f / PER_SHARE);
+  const k = f % PER_SHARE;
+  return { x: gridX(s) + (k % COLS) * (CELL + CG), y: GRID_Y + Math.floor(k / COLS) * (CELL + CG) };
+}
+
+function along(pts: [number, number][], f: number): [number, number] {
+  const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
+  let d = Math.max(0, Math.min(1, f)) * seg.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < seg.length; i++) {
+    if (d <= seg[i] || i === seg.length - 1) {
+      const r = seg[i] ? d / seg[i] : 0;
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * r, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * r];
+    }
+    d -= seg[i];
+  }
+  return pts[pts.length - 1];
+}
+
+/** Dots in flight at time t: file operations from the PC, activity events to Data Lens, restores from the snapshot. */
+function dots(tl: Timeline, t: number) {
+  const out: { x: number; y: number; cls: string; r: number }[] = [];
+  const fromPc = (f: number, k: number, cls: string) => {
+    const c = cell(f);
+    const [x, y] = along([[PC.x + PC.w, LINK_Y], [SRV.x, LINK_Y], [c.x + CELL / 2, c.y + CELL / 2]], k);
+    out.push({ x, y, cls, r: 4.5 });
+  };
+  const event = (ta: number) => {
+    if (t < ta || t > ta + EVENT) return;
+    out.push({ x: SRV.x + SRV.w + (DL.x - SRV.x - SRV.w) * prog(t, ta, ta + EVENT), y: LINK_Y, cls: 'dl-dot ev', r: 3.5 });
+  };
+  for (const n of tl.normal) {
+    if (t >= n.t - FLIGHT && t <= n.t) fromPc(n.file, prog(t, n.t - FLIGHT, n.t), 'dl-dot norm');
+    event(n.t);
+  }
+  for (let n = 0; n < tl.hit; n++) {
+    const te = encryptTime(n);
+    if (te - FLIGHT > t) break;
+    if (t <= te) fromPc(tl.order[n], prog(t, te - FLIGHT, te), 'dl-dot bad');
+    event(te);
+  }
+  if (t >= tl.recoverAt)
+    for (let n = 0; n < tl.hit; n++) {
+      const tr = restoreTime(tl, n);
+      if (t < tr - FLIGHT || t > tr) continue;
+      const c = cell(tl.order[n]);
+      const k = prog(t, tr - FLIGHT, tr);
+      out.push({ x: c.x + CELL / 2, y: SNAP.y + (c.y + CELL / 2 - SNAP.y) * k, cls: 'dl-dot ok', r: 3.5 });
+    }
+  return out;
+}
+
+function ShareDiagram({ tl, t, response }: { tl: Timeline; t: number; response: Response }) {
+  const s = attackState(tl, t);
+  const infected = t >= SIM.attackStart;
+  const attacking = infected && !s.blocked;
+  const pcWord = s.blocked ? '✓ Blocked' : infected ? '✕ Infected' : 'Working normally';
+  const pcSub = s.blocked ? 'cut off from the shares' : infected ? 'encrypting files' : 'opens and saves files';
+  const mx = (PC.x + PC.w + SRV.x) / 2;
+  const dcx = DL.x + DL.w / 2;
+  const restoring = s.phase === 'recovering';
+  let resp: { cls: string; text: string } | null = null;
+  if (s.blocked) resp = { cls: 'ok-fill', text: response === 'block' ? '✓ PC blocked at once' : '✓ Admin blocked the PC' };
+  else if (s.alert) resp = response === 'block' ? { cls: 'ok-fill', text: 'Blocking the PC…' } : { cls: 'warn-fill', text: 'Waiting for an admin…' };
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="A file share under ransomware attack, with Data Lens watching file activity and a snapshot used for recovery">
-      {/* client */}
-      <rect class={`dl-client${attacking && !blocked ? ' bad' : ''}`} x={cl.x} y={cl.y} width={cl.w} height={cl.h} />
-      <text x={ccx} y={cl.y + 36} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
-        Client PC
+    <svg class="diagram dl-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A user’s PC is infected and encrypts files on three file shares. Data Lens watches the file activity, spots the attack and ${response === 'block' ? 'blocks the PC at once' : 'raises an alert; the PC keeps encrypting until an admin blocks it'}. The hit files are then restored from the last clean snapshot.`}>
+      {/* PC */}
+      <rect class={`dl-pc${attacking ? ' bad' : s.blocked ? ' off' : ''}`} x={PC.x} y={PC.y} width={PC.w} height={PC.h} />
+      <text x={PC.x + PC.w / 2} y={PC.y + 28} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
+        User’s PC
       </text>
-      <text x={ccx} y={cl.y + 56} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-        {attacking ? 'compromised user account' : 'normal user'}
+      <text x={PC.x + PC.w / 2} y={PC.y + 52} text-anchor="middle" class={s.blocked ? 'ok-fill' : infected ? 'bad-fill' : 'muted'} style={{ fontSize: '13px', fontWeight: 600 }}>
+        {pcWord}
       </text>
-      <text x={ccx} y={cl.y + 78} text-anchor="middle" class={blocked ? 'ok-fill' : attacking ? 'bad-fill' : 'muted'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
-        {blocked ? '✓ Blocked from share' : attacking ? '✕ Encrypting files' : 'Opening and editing files'}
+      <text x={PC.x + PC.w / 2} y={PC.y + 72} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        {pcSub}
       </text>
-      {/* client → share link */}
-      <line {...link} class={blocked ? 'line' : attacking ? 'bad-stroke' : 'flow-stroke'} stroke-width={2} stroke-dasharray={blocked ? '4 4' : undefined} />
-      {blocked && (
+      {/* PC → shares */}
+      <line x1={PC.x + PC.w} y1={LINK_Y} x2={SRV.x} y2={LINK_Y} class={s.blocked ? 'line' : attacking ? 'bad-stroke' : 'dl-link'} stroke-width={2} stroke-dasharray={s.blocked ? '4 4' : undefined} />
+      <text x={mx} y={LINK_Y - 22} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+        file access (SMB)
+      </text>
+      {s.blocked && (
         <g>
-          <circle cx={mx} cy={my} r={13} class="dl-blockdot" />
-          <path d={`M${mx - 9} ${my + 9} l18 -18`} class="ok-stroke" stroke-width={2.25} />
+          <circle cx={mx} cy={LINK_Y} r={13} class="dl-stop" />
+          <path d={`M${mx - 9} ${LINK_Y + 9} l18 -18`} class="ok-stroke" stroke-width={2.5} />
         </g>
       )}
-      <text x={narrow ? mx + 20 : mx} y={narrow ? my + 4 : my - 10 - (blocked ? 16 : 0)} text-anchor={narrow ? 'start' : 'middle'} class="muted" style={{ fontSize: '11px' }}>
-        SMB
+      {/* file server and its shares */}
+      <rect class="dl-srv" x={SRV.x} y={SRV.y} width={SRV.w} height={SRV.h} />
+      <text x={SRV.x + 18} y={SRV.y + 24} style={{ fontWeight: 600, fontSize: '14px' }}>
+        File server · {SHARES.length} shares
       </text>
-
-      {/* share */}
-      <rect class="frame" x={gx - 14} y={gy - 44} width={gw + 28} height={gh + 58} />
-      <text x={gx} y={gy - 22} style={{ fontWeight: 600, fontSize: '14px' }}>
-        File share on Nutanix Files
-      </text>
-      <text x={gx + gw} y={gy - 22} text-anchor="end" class="muted mono" style={{ fontSize: '12px' }}>
+      <text x={SRV.x + SRV.w - 18} y={SRV.y + 24} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
         {FILES} files
       </text>
-      {files.map((f, i) => (
-        <rect key={i} class={FILE_CLS[f]} x={gx + (i % COLS) * (CELL + CG)} y={gy + Math.floor(i / COLS) * (CELL + CG)} width={CELL} height={CELL} />
+      {SHARES.map((name, i) => (
+        <text key={name} x={gridX(i)} y={GRID_Y - 8} class="mono" style={{ fontSize: '12px' }}>
+          \\{name}
+        </text>
       ))}
-
-      {/* share → Data Lens: activity events */}
-      <line {...act} class="flow-stroke" stroke-width={1.5} stroke-dasharray="4 3" />
-      <text x={narrow ? act.x1 + 8 : (act.x1 + act.x2) / 2} y={narrow ? (act.y1 + act.y2) / 2 + 4 : act.y1 - 8} text-anchor={narrow ? 'start' : 'middle'} class="muted" style={{ fontSize: '11px' }}>
-        file activity
-      </text>
-      {/* Data Lens */}
-      <rect class="ink-fill" x={dl.x} y={dl.y} width={dl.w} height={46} />
-      <text x={dcx} y={dl.y + 29} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '15px' }}>
-        Data Lens
-      </text>
-      <rect class="bg2" x={dl.x} y={dl.y + 46} width={dl.w} height={210} stroke="var(--line-2)" />
-      <text x={dl.x + 14} y={dl.y + 72} style={{ fontSize: '13px', fontWeight: 600 }}>
-        Signature detection
-      </text>
-      <text x={dl.x + 14} y={dl.y + 90} class="muted" style={{ fontSize: '12px' }}>
-        known ransomware · Starter and Pro
-      </text>
-      <text x={dl.x + 14} y={dl.y + 118} style={{ fontSize: '13px', fontWeight: 600 }} class={tier === 'pro' ? '' : 'faint'}>
-        Behavior analytics
-      </text>
-      <text x={dl.x + 14} y={dl.y + 136} class="muted" style={{ fontSize: '12px' }}>
-        {tier === 'pro' ? 'unusual activity, new variants · Pro' : 'not in Starter'}
-      </text>
-      <rect class={`dl-alert ${alert ? 'on' : ''}`} x={dl.x + 14} y={dl.y + 156} width={dl.w - 28} height={84} />
-      <text x={dcx} y={dl.y + 188} text-anchor="middle" class={alert ? 'warn-fill' : 'muted'} style={{ fontSize: '14px', fontWeight: 600 }}>
-        {alert ? '⚠ Ransomware alert' : attacking && detection === 'none' ? 'No alert' : 'No alerts'}
-      </text>
-      <text x={dcx} y={dl.y + 210} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-        {alert ? (detection === 'signature' ? 'matched a known signature' : 'abnormal mass changes') : attacking && detection === 'none' ? 'new variant, no signature yet' : 'watching activity'}
-      </text>
-      <text x={dcx} y={dl.y + 228} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-        {alert ? (blocked ? 'client blocked' : 'waiting for block') : ''}
-      </text>
-
+      {s.files.map((f, i) => {
+        const c = cell(i);
+        return <rect key={i} class={FILE_CLS[f]} x={c.x} y={c.y} width={CELL} height={CELL} />;
+      })}
       {/* snapshot */}
-      <rect class={`dl-snap${recovering ? ' on' : ''}`} x={gx - 14} y={gy + gh + 40} width={gw + 28} height={64} />
-      <text x={gx} y={gy + gh + 66} style={{ fontWeight: 600, fontSize: '14px' }}>
+      <rect class={`dl-snap${restoring ? ' on' : ''}`} x={SNAP.x} y={SNAP.y} width={SNAP.w} height={SNAP.h} />
+      <text x={SNAP.x + 18} y={SNAP.y + 23} style={{ fontWeight: 600, fontSize: '13.5px' }}>
         Last clean snapshot
       </text>
-      <text x={gx} y={gy + gh + 86} class="muted" style={{ fontSize: '12px' }}>
-        {narrow ? 'Taken before the attack. Read-only.' : 'Taken before the attack. Read-only, so the client cannot encrypt it.'}
+      <text x={SNAP.x + 18} y={SNAP.y + 42} class="muted" style={{ fontSize: '12px' }}>
+        Taken before the attack. Read-only, so the PC cannot touch it.
       </text>
-      {recovering && (
-        <g>
-          <path d={`M${gx + gw - 40} ${gy + gh + 40} V ${gy + gh + 18}`} class="ok-stroke" stroke-width={2.5} />
-          <path d={`M${gx + gw - 47} ${gy + gh + 24} l7 -7 l7 7`} class="ok-stroke" fill="none" stroke-width={2.5} />
-          <text x={gx + gw - 52} y={gy + gh + 66} text-anchor="end" class="ok-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
-            Restoring
+      {/* shares → Data Lens */}
+      <line x1={SRV.x + SRV.w} y1={LINK_Y} x2={DL.x} y2={LINK_Y} class="flow-stroke" stroke-width={1.5} stroke-dasharray="4 3" />
+      <text x={(SRV.x + SRV.w + DL.x) / 2} y={LINK_Y - 22} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+        activity
+      </text>
+      {/* Data Lens */}
+      <rect class="bg2" x={DL.x} y={DL.y} width={DL.w} height={DL.h} stroke="var(--line-2)" />
+      <rect class="ink-fill" x={DL.x} y={DL.y} width={DL.w} height={40} />
+      <text x={dcx} y={DL.y + 26} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '15px' }}>
+        Data Lens
+      </text>
+      <text x={dcx} y={DL.y + 62} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        watches every file operation
+      </text>
+      <rect class={`dl-alert${s.alert ? ' on' : ''}`} x={DL.x + 12} y={DL.y + 78} width={DL.w - 24} height={76} />
+      <text x={dcx} y={DL.y + 106} text-anchor="middle" class={s.alert ? 'warn-fill' : 'muted'} style={{ fontSize: '14px', fontWeight: 600 }}>
+        {s.alert ? '⚠ Ransomware alert' : 'No alerts'}
+      </text>
+      {s.alert && (
+        <>
+          <text x={dcx} y={DL.y + 126} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+            one user is rewriting
           </text>
-        </g>
+          <text x={dcx} y={DL.y + 142} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+            files far too fast
+          </text>
+        </>
       )}
+      <text x={dcx} y={DL.y + 180} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        Response: {response === 'block' ? 'auto-block' : 'alert only'}
+      </text>
+      {resp && (
+        <text x={dcx} y={DL.y + 202} text-anchor="middle" class={resp.cls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          {resp.text}
+        </text>
+      )}
+      {(s.phase === 'recovering' || s.phase === 'recovered') && (
+        <text x={dcx} y={DL.y + 230} text-anchor="middle" class={s.phase === 'recovered' ? 'ok-fill' : 'flow-fill'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          {s.phase === 'recovered' ? '✓ Files restored' : '↺ Restoring from snapshot'}
+        </text>
+      )}
+      {dots(tl, t).map((d, i) => (
+        <circle key={i} class={d.cls} cx={d.x} cy={d.y} r={d.r} />
+      ))}
     </svg>
   );
 }
 
-function useNarrow(px = 700): boolean {
-  const q = typeof matchMedia !== 'undefined' ? matchMedia(`(max-width: ${px}px)`) : null;
-  const [n, setN] = useState(!!q?.matches);
-  useEffect(() => {
-    if (!q) return;
-    const on = () => setN(q.matches);
-    q.addEventListener('change', on);
-    return () => q.removeEventListener('change', on);
-  }, []);
-  return n;
+const PHASE_WORD: Record<Phase, string> = { quiet: 'Normal day', attack: 'Attack', detected: 'Spotted', stopped: 'Stopped', recovering: 'Restoring', recovered: 'Recovered' };
+
+function caption(response: Response, tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; text: string } {
+  const pct = Math.round((tl.hit / FILES) * 100);
+  switch (phase) {
+    case 'quiet':
+      return { tone: 'ink', k: 'A normal day', text: 'People open and save files on the shares. Data Lens watches every file operation in the background.' };
+    case 'attack':
+      return { tone: 'bad', k: 'Attack starts', text: 'A user’s PC is infected. It starts encrypting every file it can reach on the shares, one after another.' };
+    case 'detected':
+      return response === 'block'
+        ? { tone: 'warn', k: 'Spotted', text: 'Data Lens sees one user rewriting files far faster than normal, a ransomware pattern. It raises an alert and blocks that PC.' }
+        : { tone: 'warn', k: 'Spotted, alert only', text: 'Data Lens raises an alert, but nothing stops the PC yet. It keeps encrypting until an admin reads the alert and blocks it.' };
+    case 'stopped':
+      return response === 'block'
+        ? { tone: 'ok', k: 'Stopped', text: `The PC was cut off from the shares seconds after the attack began. Only ${tl.hit} of ${FILES} files (${pct}%) were hit.` }
+        : { tone: 'warn', k: 'Blocked, late', text: `By the time an admin blocked the PC, ${tl.hit} of ${FILES} files (${pct}%) were encrypted.` };
+    case 'recovering':
+      return { tone: 'flow', k: 'Restoring', text: 'One action restores the hit files from the last clean snapshot. The PC could never touch it: snapshots are read-only.' };
+    case 'recovered':
+      return { tone: 'ok', k: 'Recovered', text: 'Every hit file is back as it was at that snapshot. Changes made to those files since then are lost, so how often you take snapshots sets how much you can lose.' };
+  }
 }
 
 export default function Datalens() {
-  const [tier, setTier] = useEnum<Tier>('tr', 'pro', ['starter', 'pro']);
-  const [variant, setVariant] = useEnum<Variant>('v', 'new', ['known', 'new']);
-  const [autoBlock, setAutoBlock] = useBool('ab', true);
-  const [rate, setRate] = useEnum<Rate>('rt', 'fast', ['slow', 'fast']);
-  const [recoverAt, setRecoverAt] = useState<number | undefined>(undefined);
-
-  const narrow = useNarrow();
-  const input = { tier, variant, autoBlock, rate, recoverAt };
-  const tl = useMemo(() => timeline({ tier, variant, autoBlock, rate }), [tier, variant, autoBlock, rate]);
-  const duration = recoverAt !== undefined ? recoverAt + tl.encryptedTotal / SIM.restorePerSec + 6 : tl.stopAt + 24;
-  const clock = useClock({ rate: 6, duration, stepSize: 2, keys: true });
-  useEffect(() => {
-    setRecoverAt(undefined);
-    clock.reset();
-  }, [tier, variant, autoBlock, rate]);
-  useEffect(() => {
-    if (recoverAt !== undefined && clock.t < recoverAt) setRecoverAt(undefined);
-  }, [clock.t]);
-
-  const s = attackState(input, tl, clock.t);
-  const log = attackEvents(input, tl, clock.t).slice().reverse();
-  const attacking = clock.t >= SIM.attackStart && !s.blocked && clock.t < tl.stopAt;
-  const detectSec = tl.detectAt === null ? null : Math.round(tl.detectAt - SIM.attackStart);
-  const pct = Math.round((tl.encryptedTotal / FILES) * 100);
-
-  // Start playing once the longer duration is in place (the clock reads it on render).
-  useEffect(() => {
-    if (recoverAt !== undefined) clock.play();
-  }, [recoverAt]);
-  const recover = () => setRecoverAt(clock.t);
+  const [response, setResponse] = useEnum<Response>('rsp', 'block', ['alert', 'block']);
+  const tl = useMemo(() => timeline(response), [response]);
+  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.stopAt + 1 });
+  useRestartOn(clock, [response]);
+  const s = attackState(tl, clock.t);
+  const cap = caption(response, tl, s.phase);
 
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field
-          label="Data Lens tier"
-          tip="Starter covers basic ransomware detection and blocking. Pro adds behavior-based detection."
-          detail="From Nutanix’s software page: Starter has basic ransomware detection and blocking; Pro adds advanced, behavior-based detection, user behavior analytics and permission reporting. Check current licensing."
-          value={tier === 'pro' ? 'Pro' : 'Starter'}
-        >
-          <Seg
-            label="Data Lens tier"
-            value={tier}
-            onChange={setTier}
-            options={[
-              { value: 'starter', label: 'Starter' },
-              { value: 'pro', label: 'Pro' },
-            ]}
-          />
-        </Field>
-        <Field
-          label="Ransomware"
-          tip="Known strains match Data Lens’s signature list. A new variant has no signature yet."
-          detail="Data Lens checks activity against a list of over 65,000 known ransomware signatures. Behavior-based detection looks at who is changing what, how fast, to catch strains with no signature."
-          value={variant === 'known' ? 'Known' : 'New variant'}
-          note={variant === 'new' && tier === 'starter' ? 'A new variant on Starter has no signature to match, so no alert is raised.' : undefined}
-        >
-          <Seg
-            label="Ransomware"
-            value={variant}
-            onChange={setVariant}
-            options={[
-              { value: 'known', label: 'Known strain' },
-              { value: 'new', label: 'New variant' },
-            ]}
-          />
-        </Field>
-        <Field label="Response" tip="Block the offending client automatically when an attack is detected, or alert only and let an admin act." value={autoBlock ? 'Auto-block' : 'Alert only'}>
-          <Toggle on={autoBlock} onChange={setAutoBlock}>
-            Block the client automatically
-          </Toggle>
-        </Field>
-        <Field label="Attack speed" tip="How fast the compromised client encrypts files." value={rate === 'fast' ? 'Fast' : 'Slow'}>
-          <Seg
-            label="Attack speed"
-            value={rate}
-            onChange={setRate}
-            options={[
-              { value: 'slow', label: 'Slow' },
-              { value: 'fast', label: 'Fast' },
-            ]}
-          />
-        </Field>
-      </div>
-
-      <div class="stage">
-        <div class={narrow ? 'dl-narrow' : 'diagram-scroll'}>
-          <ShareDiagram narrow={narrow} files={s.files} attacking={attacking} blocked={s.blocked} alert={s.alert} detection={tl.detection} tier={tier} recovering={s.phase === 'recovering'} />
-        </div>
-        <Legend
-          items={[
-            { color: 'var(--bg-3)', label: 'Clean file' },
-            { color: 'var(--bad)', label: 'Encrypted' },
-            { color: 'var(--ok)', label: 'Restored' },
-            { color: 'var(--warn)', label: 'Restored, newest edits lost' },
-            { color: 'var(--s2)', label: 'Edited since last snapshot' },
+    <Show
+      top={
+        <Choice<Response>
+          label="When Data Lens spots an attack"
+          value={response}
+          onChange={setResponse}
+          options={[
+            { value: 'alert', label: 'Alert only' },
+            { value: 'block', label: 'Auto-block' },
           ]}
         />
-        <PlayBar
-          clock={clock}
-          label="Attack simulation controls"
-          fmt={(t) => `${fmtClock(t)} sim`}
-          extra={
-            s.canRecover ? (
-              <button type="button" class="btn primary" onClick={recover}>
-                <Icon name="rebuild" />
-                Recover from snapshot
-              </button>
-            ) : undefined
-          }
-        />
-        {s.phase === 'quiet' && (
-          <Follow tone="ink" k="Press Play">
-            <p>A normal day on a shared drive. In a few seconds a user’s PC is compromised and starts encrypting files over SMB. Watch what Data Lens sees and does.</p>
+      }
+      foot={
+        <>
+          <Follow tone={cap.tone} k={cap.k}>
+            <p>{cap.text}</p>
           </Follow>
-        )}
-        {(s.phase === 'attack' || s.phase === 'detected') && (
-          <Follow tone="bad" k={s.alert ? 'Detected' : 'Under attack'}>
-            <p>
-              {s.encrypted} files encrypted so far.{' '}
-              {s.alert ? (autoBlock ? 'Blocking the client now.' : 'Alert raised. The client keeps encrypting until an admin blocks it.') : tl.detection === 'none' ? 'No signature matches this variant and Starter has no behavior analytics, so nothing raises an alert.' : 'Data Lens is analyzing the activity.'}
-            </p>
-          </Follow>
-        )}
-        {s.phase === 'stopped' && (
-          <Follow tone={tl.blockAt !== null ? 'warn' : 'bad'} k={tl.blockAt !== null ? 'Attack stopped' : 'Share fully encrypted'}>
-            <p>
-              {tl.encryptedTotal} of {FILES} files ({pct}%) were encrypted.{' '}
-              {tl.blockAt !== null ? `Data Lens caught it ${detectSec} s after it began.` : 'No alert was raised; in real life someone would notice when files stop opening.'} The snapshot is untouched, so press <strong>Recover from snapshot</strong>.
-            </p>
-          </Follow>
-        )}
-        {s.phase === 'recovering' && (
-          <Follow tone="flow" k="Recovering">
-            <p>Restoring the affected files from the last clean snapshot. Untouched files stay as they are.</p>
-          </Follow>
-        )}
-        {s.phase === 'recovered' && (
-          <Follow tone="ok" k="Recovered">
-            <p>
-              All {tl.encryptedTotal} encrypted files are back to their snapshot version. {s.lostEdits ? `${s.lostEdits} of them had been edited after that snapshot; those latest edits are lost. That gap is the snapshot schedule’s recovery point.` : 'None of them had been edited after the snapshot, so nothing was lost.'}
-            </p>
-          </Follow>
-        )}
+          <Kpis
+            items={[
+              { k: 'Files hit', v: s.hit, sub: `of ${FILES}`, tone: s.hit ? 'bad' : undefined },
+              { k: 'Alert', v: s.alert ? 'Raised' : 'None', tone: s.alert ? 'warn' : undefined },
+              { k: 'PC blocked', v: s.blocked ? (response === 'block' ? 'Auto' : 'By admin') : 'No', tone: s.blocked ? 'ok' : undefined },
+              { k: 'Restored', v: s.restored, sub: 'from the snapshot', tone: s.restored ? 'ok' : undefined },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <ShareDiagram tl={tl} t={clock.t} response={response} />
       </div>
-
-      <div class="rail">
-        <div class="side-sec">
-          <div class="spread" style={{ marginBottom: 'var(--sp-3)' }}>
-            <strong>Share</strong>
-            {s.phase === 'recovered' ? (
-              <Chip tone="ok">Recovered</Chip>
-            ) : s.phase === 'recovering' ? (
-              <Chip tone="flow">Restoring</Chip>
-            ) : s.encrypted > 0 ? (
-              <Chip tone="bad">Encrypted files</Chip>
-            ) : (
-              <Chip tone="ok">Healthy</Chip>
-            )}
-          </div>
-          <Stat k="Encrypted now" v={s.encrypted} tone={s.encrypted ? 'bad' : 'neutral'} />
-          <Stat k="Restored" v={s.restored} tone={s.restored ? 'ok' : 'neutral'} />
-          <Stat k="Newest edits lost" v={s.lostEdits} tone={s.lostEdits ? 'warn' : 'neutral'} tip="Files edited after the last snapshot and then encrypted. Restore brings back the snapshot version." />
-          <Stat k="Time to alert" v={s.alert ? `${detectSec} s` : clock.t >= tl.stopAt ? 'no alert' : '—'} tone={!s.alert && clock.t >= tl.stopAt ? 'bad' : 'neutral'} tip="From the first encrypted file to the Data Lens alert." />
-          <p class="small muted" style={{ marginTop: 'var(--sp-2)' }}>
-            <Illus why="Detection, response and restore times are invented for the demo. Real times depend on the attack, the share and the deployment." />
-          </p>
-        </div>
-        <div class="side-sec">
-          <strong>Events</strong>
-          <ul class="events" style={{ marginTop: 'var(--sp-2)' }}>
-            {log.map((e, i) => (
-              <li key={i}>
-                <span class="t">{fmtClock(e.t)}</span>
-                <span class={`${e.tone}-text`}>
-                  <Icon name={e.tone === 'ok' ? 'ok' : e.tone === 'bad' ? 'bad' : e.tone === 'warn' ? 'warn' : e.tone === 'flow' ? 'rebuild' : 'info'} />
-                </span>
-                <span>{e.text}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div class="side-sec">
-          <strong>Where it runs</strong>
-          <p class="small muted" style={{ marginTop: 'var(--sp-2)' }}>
-            As a SaaS service, or on-premises. Data Lens 2.0 (GA April 2026) runs fully on-premises, including air-gapped sites. On-Prem 2.1 (August 2026) added Nutanix Objects.
-          </p>
-        </div>
-      </div>
-    </div>
+      <Legend
+        items={[
+          { color: 'var(--line-2)', label: 'Clean file' },
+          { color: 'var(--bad)', label: 'Encrypted' },
+          { color: 'var(--ok)', label: 'Restored' },
+          { color: 'var(--flow)', label: 'File activity Data Lens sees' },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="Ransomware attack animation"
+        fmt={() => PHASE_WORD[s.phase]}
+        extra={<Illus why="Detection, response and restore times are invented for the demo; real times depend on the attack, the shares and the deployment. Behavior-based detection, which catches strains with no known signature, is a Pro feature." />}
+      />
+    </Show>
   );
 }

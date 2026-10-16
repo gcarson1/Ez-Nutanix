@@ -1,16 +1,7 @@
-/* Hybrid & public cloud module */
-.cld-prov { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-5); }
-.cld-tile { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); border: 1px solid var(--line-2); background: var(--bg); text-align: left; transition: background var(--t-fast), border-color var(--t-fast); }
-.cld-tile:hover { background: var(--bg-3); }
-.cld-tile[aria-pressed='true'] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--ink-soft); }
-.cld-tile .n { font-weight: 700; font-size: var(--fs-20); letter-spacing: -0.02em; }
-.cld-list { padding-left: var(--sp-4); margin: var(--sp-2) 0 0; }
-.cld-list li + li { margin-top: var(--sp-1); }
-.cld-tblwrap { overflow-x: auto; }
-.cld-tblwrap .tbl { min-width: 40rem; }
-.tbl .cld-on { background: var(--ink-soft); }
-@media (max-width: 600px) {
-  .cld-prov { gap: var(--sp-2); }
-  .cld-tile { flex-direction: column; align-items: flex-start; padding: var(--sp-3); }
-  .cld-tile .n { font-size: var(--fs-16); }
-}
+/* Hybrid & public cloud module (prefix cld-) */
+.cld-dia .cld-t { font-size: 15px; font-weight: 650; }
+.cld-dia .cld-s { font-size: 13px; }
+.cld-dia .cld-xs { font-size: 11.5px; }
+.cld-dia .cld-cloud { fill: var(--bg-2); stroke: var(--line-2); stroke-dasharray: 6 4; }
+.cld-dia .cld-replica { fill: none; stroke: var(--flow); stroke-dasharray: 3 3; }
+.cld-dia .cld-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }

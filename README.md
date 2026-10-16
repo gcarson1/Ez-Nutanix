@@ -1,6 +1,6 @@
 # Nutanix Architecture Explorer
 
-An interactive, single-file explainer of the Nutanix platform for live customer presentations. The landing page is a live version of the "One Platform For All Apps, Data & AI Anywhere" slide: every pane opens a module that shows how that part of the platform works, with simulations you can change and break on the spot.
+An interactive, single-file explainer of the Nutanix platform for live customer presentations. The landing page is a live version of the "One Platform For All Apps, Data & AI Anywhere" slide: every pane opens a module that shows how that part of the platform works, with short looping animations and a few presets per module, plus one full lab you can change and break on the spot.
 
 The build is one `index.html` with all code, styles and fonts inlined. It makes no network calls, so it works offline, on locked-down customer networks and as an email attachment.
 
@@ -23,16 +23,16 @@ Send `dist/index.html` to customers as is. It opens from disk in any current bro
 | P | Presenter notes for the current view: talk track, key numbers, likely questions with honest answers, what to click next |
 | G | Glossary |
 | ? | Shortcut list |
-| Space | Play or pause the current animation |
-| ← → | Step back or forward |
-| R | Reset the animation |
+| Space | Pause or resume the current animation |
 | T | Light or dark theme |
 | Esc | Close a panel, or go back one level |
 
 Tips:
 
 - Start with the **Guided tour** on the landing page. It walks the panes bottom-up: infrastructure, then services, then Nutanix Central.
-- Use **Presets** in the top bar to jump to a cluster that matches the customer (3-node edge, 4-node starter, 8-node block-aware production, 12-node RF3 with EC-X, two-site DR pair).
+- Animations start on their own and loop. Drag the scrub bar to pause on a moment; press Play (or Space) to carry on.
+- Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is the one place with every knob.
+- Use **Presets** in the top bar to load a cluster into the lab that matches the customer (3-node edge, 4-node starter, 8-node block-aware production, 12-node RF3 with EC-X).
 - Everything you change is kept in the address bar. **Copy link** sends the customer exactly the scenario you showed. **PNG** saves the current diagram.
 - Every module ends with an **Honest fit** callout. Use it: it answers the hard questions before they are asked.
 - Anything simplified carries an **Illustrative** tag; hover it to see what was simplified.

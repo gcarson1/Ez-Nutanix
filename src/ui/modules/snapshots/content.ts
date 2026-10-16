@@ -33,10 +33,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Play the sequence and pause on the snapshot step: the physical block count does not change.',
-    'Step to the clone step and click each clone row to show it points at the same blocks.',
-    'Raise change per clone and watch only the new blocks add capacity.',
-    'Open Database Service for database clones built on the same mechanism, or Disaster Recovery for replicating snapshots offsite.',
+    'Let one loop play and pause on the snapshot: the number of stored blocks does not change.',
+    'Pause after the new writes: only the changed blocks add space, and the snapshot still points at the old ones.',
+    'Pause on the clones: each shares every block until it writes its own.',
+    'Then open Database Service for database clones built on the same mechanism, or Disaster Recovery for copying snapshots to another site.',
   ],
   honest: [
     'A snapshot keeps old blocks alive. The more the live disk changes, the more space the snapshot holds on to until it is deleted.',

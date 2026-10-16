@@ -1,500 +1,537 @@
-// Nutanix Unified Storage: Files (FSVMs, one namespace, failover), Volumes (iSCSI block),
-// Objects (S3-compatible, tiering). A side panel maps each service down to the DSF.
-import { Chip, Field, Follow, Illus, Seg, Slider, Stat, Tip, Toggle } from '../../components/controls';
-import { useBool, useEnum, useNum } from '../../../state/route';
-import { go } from '../../shell/nav';
-import { Icon } from '../../components/Icon';
-import { filesAvailable, iscsiTargets, loadPerFsvm, makeFiles, ownership, tierSplit } from '../../../engine/unistore';
+// Nutanix Unified Storage: Files (an FSVM fails and a survivor takes over its folders), Volumes
+// (an iSCSI host is redirected to a healthy CVM) and Objects (a lifecycle rule tiers old objects
+// off the cluster). Each tab is one looping picture; the models are in engine/unistore.ts.
+import { useMemo } from 'preact/hooks';
+import { useEnum } from '../../../state/route';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { iscsiTargets, loadPerFsvm, makeFiles, ownership, tierSplit } from '../../../engine/unistore';
 import './style.css';
 
 type Svc = 'files' | 'vol' | 'obj';
+type Cap = { tone: Tone | 'ink'; k: string; text: string };
 
-const toggleBit = (m: number, i: number) => m ^ (1 << i);
-const bits = (m: number, n: number) => Array.from({ length: n }, (_, i) => i).filter((i) => m & (1 << i));
-const kd = (fn: () => void) => (e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), fn());
+const W = 960;
 
-// ── down to the DSF ──
-const MAP: Record<Svc, { top: string; mid: string; low: string }> = {
-  files: { top: 'Shares (SMB / NFS), one namespace', mid: 'File server VMs (FSVMs); each owns volume groups', low: 'Volume groups = iSCSI vDisks' },
-  vol: { top: 'Volume group, attached to a VM or host', mid: 'Served by every CVM’s Stargate via the Data Services IP', low: 'Each disk in the group = one vDisk (a LUN)' },
-  obj: { top: 'Buckets over the S3 API', mid: 'Object worker VMs on the Microservices Platform', low: 'Object data and metadata in vDisks' },
-};
+/** Point at fraction f along a polyline. */
+function along(pts: [number, number][], f: number): [number, number] {
+  const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
+  let d = Math.max(0, Math.min(1, f)) * seg.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < seg.length; i++) {
+    if (d <= seg[i] || i === seg.length - 1) {
+      const r = seg[i] ? d / seg[i] : 0;
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * r, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * r];
+    }
+    d -= seg[i];
+  }
+  return pts[pts.length - 1];
+}
 
-function DsfMap({ svc }: { svc: Svc }) {
-  const m = MAP[svc];
-  const rows = [m.top, m.mid, m.low, 'Storage container: RF, compression, erasure coding', 'Extents spread across every node’s drives'];
+/** The fabric under every service: one strip at the bottom of each picture. */
+function Fabric({ y, h, note }: { y: number; h: number; note: string }) {
   return (
-    <div class="side-sec">
-      <div class="eyebrow">
-        <Tip text="All three services are built on the same Distributed Storage Fabric (DSF), so they inherit its replication, self-healing and data-efficiency settings.">Down to the DSF</Tip>
-      </div>
-      <ol class="sto-map">
-        {rows.map((r, i) => (
-          <li key={i} class={i < 3 ? 'svc' : 'dsf'}>
-            {r}
-          </li>
-        ))}
-      </ol>
-      <p class="field-note">Same fabric for files, block and objects: one place to protect, size and upgrade.</p>
-      <div class="hstack" style={{ marginTop: 'var(--sp-2)' }}>
-        <Illus why="Layering simplified for one screen. See the Cluster & DSF Lab for how extents and replicas are placed." />
-        <button type="button" class="tbtn" onClick={() => go('nci/cluster')}>
-          Cluster & DSF Lab <Icon name="arrow" />
-        </button>
-      </div>
-    </div>
+    <g>
+      <rect class="sto-dsf" x={20} y={y} width={W - 40} height={h} />
+      <text x={36} y={y + h - 10} class="muted" style={{ fontSize: '11.5px', letterSpacing: '0.06em' }}>
+        DISTRIBUTED STORAGE FABRIC
+      </text>
+      <text x={W - 36} y={y + h - 10} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+        {note}
+      </text>
+    </g>
   );
 }
 
 // ── Files ──
-const SIZE = { s: 1, m: 2, l: 4 } as const;
+const F = { fail: 3, take: 4, taken: 5.2, back: 9.5, give: 10.3, given: 11.5, end: 13.5 };
+const F_STARTS = [0, F.fail, F.take, F.taken, F.back, F.give, F.given];
+const NS = { x: W / 2 - 210, y: 8, w: 420, h: 50 };
+const FS_Y = 96;
+const FS_H = 190;
+const CHIP_H = 24;
 
 function Files() {
-  const [n, setN] = useNum('fv', 3, 1, 6);
-  const [size, setSize] = useEnum<'s' | 'm' | 'l'>('fs', 'm', ['s', 'm', 'l']);
-  const [proto, setProto] = useEnum<'smb' | 'nfs'>('pr', 'smb', ['smb', 'nfs']);
-  const [downM, setDownM] = useNum('fd', 0, 0, 63);
-  const down = bits(downM, n);
-  const st = { ...makeFiles(n), down };
-  const own = ownership(st);
-  const load = loadPerFsvm(st);
-  const avail = filesAvailable(st);
-  const moved = own.filter((o) => o.moved);
-  const path = proto === 'smb' ? '\\\\files01\\corp\\' : 'files01:/corp/';
-  const W = 920;
-  const colW = Math.min(250, (W - 40) / n - 14);
-  const rowH = Math.min(22, 186 / Math.max(1, ...load));
-  const x0 = (W - (n * colW + (n - 1) * 14)) / 2;
-  const fx = (i: number) => x0 + i * (colW + 14);
-  const kill = (i: number) => setDownM(toggleBit(downM, i));
+  const [nS, setN] = useEnum<'3' | '1'>('fv', '3', ['3', '1']);
+  const n = Number(nS);
+  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1 });
+  useRestartOn(clock, [n]);
+  const t = clock.t;
+  const ph = phaseAt(F_STARTS, t);
+  const failed = n === 1 ? 0 : 1;
+  const down = t >= F.fail && t < F.back;
+  const base = useMemo(() => makeFiles(n), [n]);
+  const home = useMemo(() => ownership(base), [base]);
+  const taken = useMemo(() => ownership({ ...base, down: [failed] }), [base, failed]);
+  // Takeover only happens with a survivor: it slides in after the failure and back after the return.
+  const ha = n > 1;
+  const k = !ha ? 0 : t < F.take ? 0 : t < F.taken ? ease(prog(t, F.take, F.taken)) : t < F.give ? 1 : t < F.given ? 1 - ease(prog(t, F.give, F.given)) : 0;
+  const load = loadPerFsvm({ ...base, down: down ? [failed] : [] });
+  const unreachable = (home: number) => down && home === failed && !(ha && t >= F.taken);
+  const reachable = home.filter((o) => !unreachable(o.home)).length;
 
-  let tone: 'ok' | 'warn' | 'bad' = 'ok';
-  let k = 'All shares online';
-  let msg = `${n} FSVMs serve one namespace. Clients connect to ${path} and never need to know which FSVM holds a folder.`;
-  if (!avail) {
-    tone = 'bad';
-    k = 'Shares unavailable';
-    msg = n === 1 ? 'A single-FSVM file server has no high availability. With its only FSVM down, nothing can take over until it returns.' : 'Every FSVM is down, so no survivor is left to take over.';
-  } else if (down.length) {
-    tone = 'warn';
-    k = 'Failover: a survivor took over';
-    msg = `FSVM-${down.map((d) => d + 1).join(', FSVM-')} ${down.length > 1 ? 'are' : 'is'} down. ${down.length > 1 ? 'Surviving FSVMs took over their volume groups and IP addresses' : 'A surviving FSVM took over its volume group and IP address'}, so ${moved.length} folders stay reachable at the same path. When the FSVM returns it takes them back.`;
-  }
+  const colW = n === 1 ? 420 : 270;
+  const gap = 30;
+  const x0 = (W - (n * colW + (n - 1) * gap)) / 2;
+  const fx = (i: number) => x0 + i * (colW + gap);
+  const chipCols = n === 1 ? 3 : 2;
+  const chipW = (colW - 20 - (chipCols - 1) * 8) / chipCols;
+  const slot = (fs: number, s: number) => ({ x: fx(fs) + 10 + (s % chipCols) * (chipW + 8), y: FS_Y + 56 + Math.floor(s / chipCols) * (CHIP_H + 6) });
+  const homeSlot = home.map((o, i) => slot(o.home, home.slice(0, i).filter((q) => q.home === o.home).length));
+  const ownCount = (fs: number) => home.filter((o) => o.home === fs).length;
+  const takenSlot = taken.map((o, i) => (o.moved ? slot(o.servedBy!, ownCount(o.servedBy!) + taken.slice(0, i).filter((q) => q.moved && q.servedBy === o.servedBy).length) : homeSlot[i]));
+  const survivor = taken.find((o) => o.moved)?.servedBy ?? null;
 
+  const cap: Cap = ha
+    ? [
+        { tone: 'ink' as const, k: 'One namespace', text: 'Three file server VMs (FSVMs) share the work. Users connect to one path and never need to know which FSVM serves a folder.' },
+        { tone: 'bad' as const, k: 'An FSVM fails', text: `FSVM-${failed + 1} goes down. Its folders are out of reach for a moment.` },
+        { tone: 'warn' as const, k: 'Takeover', text: `FSVM-${(survivor ?? 0) + 1} takes over FSVM-${failed + 1}’s volume group and IP address, so its folders come back at the same path.` },
+        { tone: 'ok' as const, k: 'Still serving', text: 'Every folder is reachable. Users may have seen a short pause or reconnect, but the path never changed.' },
+        { tone: 'flow' as const, k: `FSVM-${failed + 1} is back`, text: `FSVM-${failed + 1} is running again and ready to take its work back.` },
+        { tone: 'flow' as const, k: 'Handing back', text: `FSVM-${failed + 1} takes its volume group and IP address back, and the work is spread evenly again.` },
+        { tone: 'ok' as const, k: 'Back to normal', text: 'All three FSVMs serve their own folders again. Nobody had to change a path or a drive mapping.' },
+      ][ph]
+    : t < F.fail
+      ? { tone: 'ink', k: 'One FSVM', text: 'A single file server VM serves every folder. It works, but nothing can take over if it fails.' }
+      : down
+        ? { tone: 'bad', k: 'No high availability', text: 'The only FSVM is down, so every folder is out of reach until it comes back. Three FSVMs is the minimum for high availability.' }
+        : { tone: 'ok', k: 'Back', text: 'The FSVM is back and serves every folder again.' };
+  const word = ha ? ['Normal', 'Failure', 'Takeover', 'Serving', 'Return', 'Hand back', 'Normal'][ph] : t < F.fail ? 'Normal' : down ? 'Down' : 'Back';
+
+  const H = FS_Y + FS_H + 94;
+  const DSF_Y = FS_Y + FS_H + 26;
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field label="Scale out: FSVMs" value={n} tip="A file server is a set of file server VMs (FSVMs). Three is the standard minimum for high availability." why={n === 1 ? 'One FSVM works, but has no high availability and no distributed shares.' : null}>
-          <Slider label="FSVMs" value={n} min={1} max={6} onChange={(v) => (setN(v), setDownM(0))} />
-        </Field>
-        <Field label="Scale up: FSVM size" tip="Give each FSVM more vCPU and memory to serve more clients and throughput.">
-          <Seg label="FSVM size" value={size} onChange={setSize} options={[{ value: 's', label: 'Smaller' }, { value: 'm', label: 'Medium' }, { value: 'l', label: 'Larger' }]} />
-        </Field>
-        <Field label="Protocol">
-          <Seg label="Protocol" value={proto} onChange={setProto} options={[{ value: 'smb', label: 'SMB' }, { value: 'nfs', label: 'NFS' }]} />
-          <p class="field-note">SMB 2/3 and NFS v3/v4. Encrypted NFS (TLS) arrived in Files 5.4.</p>
-        </Field>
-        <Field label="Break something" note="Or click an FSVM in the diagram.">
-          <div class="hstack">
-            {Array.from({ length: n }, (_, i) => (
-              <Toggle key={i} on={down.includes(i)} onChange={() => kill(i)}>
-                FSVM-{i + 1} down
-              </Toggle>
-            ))}
-          </div>
-        </Field>
-      </div>
-      <div class="stage">
-        <div class="diagram-scroll">
-          <svg class="diagram" viewBox={`0 0 ${W} 470`} role="group" aria-label="Nutanix Files: clients, one namespace, file server VMs and their volume groups">
-            <rect x={W / 2 - 220} y={10} width={440} height={50} rx={4} class="bg3" stroke="var(--line-2)" />
-            <text x={W / 2} y={32} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
-              Clients see one namespace
-            </text>
-            <text x={W / 2} y={50} text-anchor="middle" class="mono" style={{ fontSize: '12.5px' }}>
-              {path}
-            </text>
-            {Array.from({ length: n }, (_, i) => {
-              const x = fx(i);
-              const isDown = down.includes(i);
-              const mine = own.filter((o) => o.servedBy === i);
-              return (
-                <g key={i} role="button" tabIndex={0} aria-pressed={isDown} aria-label={`FSVM-${i + 1}, ${isDown ? 'down' : 'running'}; click to ${isDown ? 'recover' : 'fail'}`} onClick={() => kill(i)} onKeyDown={kd(() => kill(i))}>
-                  <path d={`M${W / 2} 60 V 80 H ${x + colW / 2} V 96`} fill="none" class={isDown ? 'line' : 'ink-stroke'} stroke-dasharray={isDown ? '4 4' : undefined} />
-                  <rect class={`hit node-box${isDown ? ' down' : ''}`} x={x} y={96} width={colW} height={250} rx={4} />
-                  <rect x={x} y={96} width={colW} height={30} class={isDown ? 'bad-fill' : 'ink-fill'} rx={4} />
-                  <text x={x + colW / 2} y={116} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '13px' }}>
-                    FSVM-{i + 1} {isDown ? '✕ down' : ''}
-                  </text>
-                  {!isDown && (
-                    <text x={x + colW / 2} y={142} text-anchor="middle" class="muted mono" style={{ fontSize: n > 4 ? '9.5px' : '11px' }}>
-                      {(() => {
-                        const took = own.some((o) => o.servedBy === i && o.moved);
-                        const sz = ({ s: 'smaller', m: 'medium', l: 'larger' } as const)[size];
-                        if (n > 3) return took ? '+ taken-over IP' : `${sz} · IP .${11 + i}`;
-                        return `${sz} · IP .${11 + i}${took ? ' + taken-over IP' : ''}`;
-                      })()}
-                    </text>
-                  )}
-                  {mine.map((o, j) => (
-                    <g key={o.name}>
-                      <rect x={x + 10} y={154 + j * rowH} width={colW - 20} height={rowH - 3} class={o.moved ? 'warn-fill' : 'bg3'} style={{ opacity: o.moved ? 0.25 : 1 }} />
-                      <text x={x + 16} y={154 + j * rowH + rowH * 0.62} class="mono" style={{ fontSize: rowH < 18 ? '10px' : '12px', fontWeight: o.moved ? 600 : 400 }}>
-                        /{o.name}
-                        {o.moved ? `  ← FSVM-${o.home + 1}` : ''}
-                      </text>
-                    </g>
-                  ))}
-                  {isDown && (
-                    <text x={x + colW / 2} y={200} text-anchor="middle" class="bad-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
-                      {avail ? 'folders moved' : 'not served'}
-                    </text>
-                  )}
-                  {/* its volume group on the DSF */}
-                  <path d={`M${x + colW / 2} 346 V 384`} fill="none" class={isDown ? 'line' : 'flow-stroke'} stroke-dasharray={isDown ? '3 3' : undefined} stroke-width={1.5} />
-                </g>
-              );
-            })}
-            <rect x={20} y={384} width={W - 40} height={74} rx={4} class="bg2" stroke="var(--line-2)" />
-            <text x={36} y={404} class="muted" style={{ fontSize: '11.5px', letterSpacing: '0.06em' }}>
-              DISTRIBUTED STORAGE FABRIC · ONE STORAGE CONTAINER
-            </text>
-            {Array.from({ length: n }, (_, i) => {
-              const x = fx(i);
-              const owner = down.includes(i) ? own.find((o) => o.home === i)?.servedBy ?? null : i;
-              return (
-                <g key={i}>
-                  <rect x={x + 6} y={414} width={colW - 12} height={32} class="disk" />
-                  <text x={x + colW / 2} y={434} text-anchor="middle" class="mono" style={{ fontSize: '11px' }}>
-                    VG-{i + 1} {owner === null ? '· no owner' : owner !== i ? `→ FSVM-${owner + 1}` : ''}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-        <Follow tone={tone} k={k}>
-          <p>{msg}</p>
-        </Follow>
-        <div class="cols-2" style={{ marginTop: 'var(--sp-5)' }}>
-          <div class="small">
-            <strong>Also in Files.</strong> Smart DR replicates shares to another file server (RPO of a few minutes); Metro file server sync gives zero RPO with the Advanced Replication add-on. Smart Tiering moves cold files to S3 targets such as Nutanix Objects, AWS S3, Azure Blob, Wasabi, and (since NUS 5.3) Google Cloud Storage and OVHcloud.
-          </div>
-          <div class="small">
-            <strong>Security.</strong> Data Lens adds ransomware detection, audit trails and permission analytics for Files and Objects.{' '}
-            <button type="button" class="tbtn" style={{ height: 'auto', padding: 0 }} onClick={() => go('datalens')}>
-              Open Data Lens <Icon name="arrow" />
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="rail">
-        <div class="side-sec">
-          <div class="eyebrow">File server</div>
-          <div class="hstack" style={{ marginBottom: 'var(--sp-2)' }}>
-            <Chip tone={tone}>{avail ? (down.length ? 'Degraded, serving' : 'Online') : 'Unavailable'}</Chip>
-          </div>
-          <Stat k="Folders" v={own.length} />
-          <Stat k="FSVMs up" v={`${n - down.length} of ${n}`} tone={down.length ? 'warn' : 'ok'} />
-          <Stat
-            k="Relative serving capacity"
-            tip="FSVMs up × size. Scale out or up to serve more clients. Illustrative."
-            v={`${(n - down.length) * SIZE[size]}×`}
+    <Show
+      top={
+        <Choice<'3' | '1'>
+          label="File server"
+          value={nS}
+          onChange={setN}
+          options={[
+            { value: '3', label: '3 FSVMs' },
+            { value: '1', label: '1 FSVM' },
+          ]}
+        />
+      }
+      foot={
+        <>
+          <Follow tone={cap.tone} k={cap.k}>
+            <p>{cap.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: 'Folders reachable', v: `${reachable} of ${home.length}`, tone: reachable === home.length ? 'ok' : 'bad' },
+              { k: 'FSVMs up', v: `${n - (down ? 1 : 0)} of ${n}`, tone: down ? 'warn' : 'ok' },
+              ...(ha ? [{ k: 'Folders per FSVM', v: load.join(' · '), tip: 'How many top-level folders each FSVM serves right now.' }] : []),
+            ]}
           />
-          <div class="sto-load">
-            {load.map((l, i) => (
-              <div key={i} class="mrow-top small">
-                <span>FSVM-{i + 1}</span>
-                <span class="mono">{down.includes(i) ? 'down' : `${l} folders`}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <DsfMap svc="files" />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ha ? 'Nutanix Files: users see one path. Three file server VMs serve the folders. When one fails, another takes over its volume group and IP address, and hands them back when it returns.' : 'Nutanix Files with a single file server VM: when it fails, every folder is out of reach until it returns.'}>
+          <rect class="sto-ns" x={NS.x} y={NS.y} width={NS.w} height={NS.h} />
+          <text x={W / 2} y={NS.y + 21} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
+            Users see one path
+          </text>
+          <text x={W / 2} y={NS.y + 39} text-anchor="middle" class="mono" style={{ fontSize: '12.5px' }}>
+            \\files01\corp
+          </text>
+          {Array.from({ length: n }, (_, i) => {
+            const isDown = down && i === failed;
+            const x = fx(i);
+            const ip = i === survivor && k > 0.5 ? `IP .${11 + i} + .${11 + failed}` : isDown ? 'IP moved away' : `IP .${11 + i}`;
+            return (
+              <g key={i}>
+                <path d={`M${W / 2} ${NS.y + NS.h} V ${FS_Y - 18} H ${x + colW / 2} V ${FS_Y}`} fill="none" class={isDown ? 'bad-stroke' : 'line'} stroke-dasharray={isDown ? '4 4' : undefined} />
+                <rect class={`node-box${isDown ? ' down' : ''}`} x={x} y={FS_Y} width={colW} height={FS_H} />
+                <rect x={x} y={FS_Y} width={colW} height={30} class={isDown ? 'bad-fill' : 'ink-fill'} />
+                <text x={x + 12} y={FS_Y + 20} style={{ fill: '#fff', fontWeight: 600, fontSize: '13.5px' }}>
+                  FSVM-{i + 1}
+                </text>
+                <text x={x + colW - 12} y={FS_Y + 20} text-anchor="end" style={{ fill: '#fff', fontWeight: 600, fontSize: '12.5px' }}>
+                  {isDown ? '✕ down' : 'running'}
+                </text>
+                <text x={x + 12} y={FS_Y + 46} class={i === survivor && k > 0.5 ? 'warn-fill mono' : 'muted mono'} style={{ fontSize: '12px' }}>
+                  {ip}
+                </text>
+              </g>
+            );
+          })}
+          {home.map((o, i) => {
+            const a = homeSlot[i];
+            const b = takenSlot[i];
+            const x = a.x + (b.x - a.x) * k;
+            const y = a.y + (b.y - a.y) * k;
+            const lost = unreachable(o.home) && k < 0.02;
+            const moving = taken[i].moved && k > 0;
+            return (
+              <g key={o.name}>
+                <rect class={`sto-chip${lost ? ' lost' : moving ? ' moved' : ''}`} x={x} y={y} width={chipW} height={CHIP_H} />
+                <text x={x + 8} y={y + 16} class={`mono${lost ? ' faint' : ''}`} style={{ fontSize: '12px' }}>
+                  /{o.name}
+                </text>
+                {lost && (
+                  <text x={x + chipW - 8} y={y + 16} text-anchor="end" class="bad-fill" style={{ fontSize: '12px', fontWeight: 700 }}>
+                    ✕
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          {/* requests: users opening files in each folder */}
+          {home.map((o, i) => {
+            const period = 2.4;
+            const q = (t + i * 0.37) % period;
+            if (q > 0.8) return null;
+            if (unreachable(o.home)) return null;
+            const s = k > 0.5 ? takenSlot[i] : homeSlot[i];
+            const tx = s.x + chipW / 2;
+            const [dx, dy] = along([[W / 2, NS.y + NS.h], [W / 2, FS_Y - 18], [tx, FS_Y - 18], [tx, s.y]], q / 0.8);
+            return <circle key={o.name} class="sto-dot" cx={dx} cy={dy} r={4} />;
+          })}
+          <Fabric y={DSF_Y} h={64} note="each FSVM keeps its folders in its own volume group" />
+          {Array.from({ length: n }, (_, i) => {
+            const x = fx(i);
+            const owner = down && i === failed ? (ha && t >= F.taken ? survivor : null) : i;
+            const vx = x + colW / 2;
+            const ox = owner === null ? vx : fx(owner) + colW / 2 + (owner !== i ? 30 : 0);
+            return (
+              <g key={i}>
+                <path d={`M${vx} ${DSF_Y + 10} C ${vx} ${DSF_Y - 10}, ${ox} ${DSF_Y - 8}, ${ox} ${FS_Y + FS_H}`} fill="none" class={owner === null ? 'line' : owner !== i ? 'warn-stroke' : 'flow-stroke'} stroke-width={1.5} stroke-dasharray={owner === null ? '3 3' : undefined} />
+                <rect class="disk" x={vx - 60} y={DSF_Y + 10} width={120} height={24} />
+                <text x={vx} y={DSF_Y + 26} text-anchor="middle" class="mono" style={{ fontSize: '11.5px' }}>
+                  VG-{i + 1} {owner === null ? '· no owner' : owner !== i ? `→ FSVM-${owner + 1}` : ''}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
       </div>
-    </div>
+      <PlayBar clock={clock} label="File server failover animation" fmt={() => word} />
+    </Show>
   );
 }
 
 // ── Volumes ──
+const V = { work: 1.6, fail: 5, relog: 6, back: 7.4, end: 11.5 };
+const V_STARTS = [0, V.work, V.fail, V.relog, V.back];
+const CVMS = 4;
+const HOSTS = 2;
+const HOST_Y = 10;
+const IP_Y = 100;
+const CVM_Y = 192;
+const VG_Y = 296;
+const cvmW = 190;
+const cvmX = (i: number) => (W - (CVMS * cvmW + (CVMS - 1) * 30)) / 2 + i * (cvmW + 30);
+const hostX = (c: number) => [180, 580][c];
+const HOST_W = 200;
+
+function sessionPath(c: number, cvm: number): [number, number][] {
+  const hx = hostX(c) + HOST_W / 2;
+  const cx = cvmX(cvm) + cvmW / 2;
+  const pts: [number, number][] = [[hx, HOST_Y + 52], [hx, IP_Y + 36]];
+  for (let s = 1; s <= 8; s++) {
+    const u = s / 8;
+    pts.push([hx + (cx - hx) * ease(u), IP_Y + 36 + (CVM_Y - IP_Y - 36) * u]);
+  }
+  return pts;
+}
+
 function Volumes() {
-  const cvms = 4;
-  const [clients, setClients] = useNum('vc', 2, 1, 4);
-  const [disks, setDisks] = useNum('vd', 4, 1, 8);
-  const [kind, setKind] = useEnum<'ext' | 'vm'>('vk', 'ext', ['ext', 'vm']);
-  const [downM, setDownM] = useNum('cd', 0, 0, 15);
-  const down = bits(downM, cvms);
-  const tg = iscsiTargets(clients, cvms, down);
-  const W = 920;
-  const cX = (i: number) => 40 + i * 220;
-  const kill = (i: number) => setDownM(toggleBit(downM, i));
-  const redirected = tg.filter((t, c) => t !== c % cvms).length;
+  const clock = useClock({ rate: 1, duration: V.end, keys: true, poster: V.back + 1.5 });
+  const t = clock.t;
+  const ph = phaseAt(V_STARTS, t);
+  const before = useMemo(() => iscsiTargets(HOSTS, CVMS, []), []);
+  const after = useMemo(() => iscsiTargets(HOSTS, CVMS, [0]), []);
+  const cvmDown = t >= V.fail;
+  const lostHost = before.findIndex((c) => c === 0);
+  // Every CVM but one stays up, so each host always has a CVM to go to.
+  const target = (c: number) => (t >= V.relog ? after[c] : before[c]) ?? 0;
+  const connected = (c: number) => (c === lostHost ? !cvmDown || t >= V.back : true) && t >= V.work;
+  const nConn = Array.from({ length: HOSTS }, (_, c) => c).filter(connected).length;
+  const newCvm = after[lostHost]!;
+
+  const cap: Cap = [
+    { tone: 'ink' as const, k: 'One address', text: 'Hosts outside the cluster log in to one Data Services IP. The cluster points each host to a CVM that will serve it.' },
+    { tone: 'ok' as const, k: 'Connected', text: 'Each host’s disk reads and writes go to its CVM. Every CVM can reach every disk in the volume group, because the data is spread across all nodes.' },
+    { tone: 'bad' as const, k: 'A CVM fails', text: `CVM-1 goes down and Host ${lostHost + 1} loses its session.` },
+    { tone: 'warn' as const, k: 'Redirected', text: `Host ${lostHost + 1} logs in again to the same address and is sent to a healthy CVM. No multipath setup is needed on the host.` },
+    { tone: 'ok' as const, k: 'Back to work', text: `Host ${lostHost + 1} carries on through CVM-${newCvm + 1}. The data never moved: CVM-${newCvm + 1} reads and writes the same disks.` },
+  ][ph];
+
+  const H = VG_Y + 92;
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field label="Who connects" tip="Volume groups can be attached directly to VMs in the cluster or to external hosts over iSCSI.">
-          <Seg label="Client" value={kind} onChange={setKind} options={[{ value: 'ext', label: 'External hosts' }, { value: 'vm', label: 'In-cluster VMs' }]} />
-        </Field>
-        <Field label="Clients" value={clients}>
-          <Slider label="Clients" value={clients} min={1} max={4} onChange={setClients} />
-        </Field>
-        <Field label="Disks in the volume group" value={disks} tip="Each disk is presented as a LUN; on the DSF each is a vDisk.">
-          <Slider label="Disks" value={disks} min={1} max={8} onChange={setDisks} />
-        </Field>
-        <Field label="Break something" note="Or click a CVM.">
-          <div class="hstack">
-            {Array.from({ length: cvms }, (_, i) => (
-              <Toggle key={i} on={down.includes(i)} onChange={() => kill(i)}>
-                CVM-{i + 1} down
-              </Toggle>
-            ))}
-          </div>
-        </Field>
-      </div>
-      <div class="stage">
-        <div class="diagram-scroll">
-          <svg class="diagram" viewBox={`0 0 ${W} 430`} role="group" aria-label="Nutanix Volumes: iSCSI clients log in to the Data Services IP and are redirected to a CVM">
-            {Array.from({ length: clients }, (_, c) => {
-              const x = 40 + c * 220;
-              const t = tg[c];
-              return (
-                <g key={c}>
-                  <rect x={x} y={14} width={190} height={50} rx={4} class="vm" />
-                  <text x={x + 95} y={36} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13px' }}>
-                    {kind === 'ext' ? `Host ${c + 1} (bare metal)` : `VM ${c + 1} (in cluster)`}
-                  </text>
-                  <text x={x + 95} y={54} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
-                    iSCSI initiator{kind === 'ext' ? ', no MPIO needed' : ''}
-                  </text>
-                  {t !== null && (
-                    <path d={`M${x + 95} 64 V 104 M${x + 95} 140 C ${x + 95} 180, ${cX(t) + 95} 180, ${cX(t) + 95} 214`} fill="none" class={t !== c % cvms ? 'warn-stroke' : 'flow-stroke'} stroke-width={2} />
-                  )}
-                </g>
-              );
-            })}
-            {kind === 'ext' && (
-              <>
-                <rect x={40} y={104} width={W - 80} height={36} rx={4} class="ink-soft" stroke="var(--ink-line)" />
-                <text x={W / 2} y={127} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13px' }}>
-                  Data Services IP: one address for the cluster; logins are redirected to a healthy CVM
+    <Show
+      foot={
+        <>
+          <Follow tone={cap.tone} k={cap.k}>
+            <p>{cap.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: 'Hosts connected', v: `${nConn} of ${HOSTS}`, tone: nConn === HOSTS ? 'ok' : 'warn' },
+              { k: 'CVMs up', v: `${CVMS - (cvmDown ? 1 : 0)} of ${CVMS}`, tone: cvmDown ? 'warn' : 'ok' },
+              { k: 'Data moved', v: 'None', tone: 'ok', tip: 'A redirected session is served by another CVM. The disks stay where they are; every CVM can reach them.' },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Nutanix Volumes: hosts log in to one Data Services IP and are sent to a CVM. When that CVM fails, the host logs in again and is redirected to a healthy CVM that reaches the same disks.">
+          {Array.from({ length: HOSTS }, (_, c) => {
+            const cvm = target(c);
+            const pts = sessionPath(c, cvm);
+            const broken = c === lostHost && cvmDown && t < V.back;
+            const loggingIn = t < V.work || (c === lostHost && t >= V.relog && t < V.back);
+            const live = connected(c);
+            const p0 = t < V.work ? 0 : V.relog;
+            const p1 = t < V.work ? V.work : V.back;
+            return (
+              <g key={c}>
+                <rect class="vm" x={hostX(c)} y={HOST_Y} width={HOST_W} height={52} />
+                <text x={hostX(c) + HOST_W / 2} y={HOST_Y + 22} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+                  Host {c + 1}
                 </text>
-              </>
-            )}
-            {kind === 'vm' && (
-              <text x={W / 2} y={127} text-anchor="middle" class="muted" style={{ fontSize: '12.5px' }}>
-                In-cluster VMs reach the volume group through the hypervisor and the local CVM
-              </text>
-            )}
-            {Array.from({ length: cvms }, (_, i) => {
-              const isDown = down.includes(i);
-              const x = cX(i);
-              const serving = tg.filter((t) => t === i).length;
-              return (
-                <g key={i} role="button" tabIndex={0} aria-pressed={isDown} aria-label={`CVM-${i + 1} ${isDown ? 'down' : 'up'}`} onClick={() => kill(i)} onKeyDown={kd(() => kill(i))}>
-                  <rect class={`hit node-box${isDown ? ' down' : ''}`} x={x} y={214} width={190} height={70} rx={4} />
-                  <rect x={x + 12} y={226} width={70} height={46} class={isDown ? 'cvm down' : 'cvm'} />
-                  <text x={x + 47} y={254} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '12px' }}>
-                    CVM-{i + 1}
-                  </text>
-                  <text x={x + 92} y={246} style={{ fontSize: '12px', fontWeight: 600 }} class={isDown ? 'bad-fill' : ''}>
-                    {isDown ? '✕ down' : 'Stargate'}
-                  </text>
-                  <text x={x + 92} y={264} class="muted" style={{ fontSize: '11.5px' }}>
-                    {isDown ? '' : `${serving} session${serving === 1 ? '' : 's'}`}
-                  </text>
-                </g>
-              );
-            })}
-            <rect x={40} y={310} width={W - 80} height={104} rx={4} class="bg2" stroke="var(--line-2)" />
-            <text x={56} y={332} class="muted" style={{ fontSize: '11.5px', letterSpacing: '0.06em' }}>
-              VOLUME GROUP “ORA-DATA” ON THE DSF · EACH DISK IS A vDISK
-            </text>
-            {Array.from({ length: disks }, (_, d) => (
+                <text x={hostX(c) + HOST_W / 2} y={HOST_Y + 40} text-anchor="middle" class={broken ? (t < V.relog ? 'bad-fill' : 'warn-fill') : 'muted'} style={{ fontSize: '12px', fontWeight: broken ? 600 : 400 }}>
+                  {broken ? (t < V.relog ? '✕ lost its session' : 'logging in again') : 'server outside the cluster'}
+                </text>
+                {(live || loggingIn || broken) && (
+                  <polyline points={pts.map((p) => p.join(',')).join(' ')} fill="none" class={broken && t < V.relog ? 'bad-stroke' : c === lostHost && t >= V.relog ? 'warn-stroke' : 'flow-stroke'} stroke-width={2} stroke-dasharray={broken || loggingIn ? '5 4' : undefined} />
+                )}
+                {loggingIn &&
+                  (() => {
+                    const [x, y] = along(pts, ease(prog(t, p0, p1)));
+                    return <circle class="sto-dot login" cx={x} cy={y} r={5} />;
+                  })()}
+                {live &&
+                  !loggingIn &&
+                  [0, 0.33, 0.66].map((off) => {
+                    const [x, y] = along(pts, (t * 0.9 + off + c * 0.15) % 1);
+                    return <circle key={off} class="sto-dot" cx={x} cy={y} r={4} />;
+                  })}
+              </g>
+            );
+          })}
+          <rect class="sto-ip" x={40} y={IP_Y} width={W - 80} height={36} />
+          <text x={W / 2} y={IP_Y + 23} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+            Data Services IP: one address for the whole cluster
+          </text>
+          {Array.from({ length: CVMS }, (_, i) => {
+            const isDown = cvmDown && i === 0;
+            const x = cvmX(i);
+            const sessions = Array.from({ length: HOSTS }, (_, c) => c).filter((c) => connected(c) && target(c) === i).length;
+            return (
+              <g key={i}>
+                <rect class={`node-box${isDown ? ' down' : ''}`} x={x} y={CVM_Y} width={cvmW} height={64} />
+                <rect class={isDown ? 'cvm down' : 'cvm'} x={x + 10} y={CVM_Y + 10} width={72} height={44} />
+                <text x={x + 46} y={CVM_Y + 37} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '12.5px' }}>
+                  CVM-{i + 1}
+                </text>
+                <text x={x + 94} y={CVM_Y + 28} class={isDown ? 'bad-fill' : ''} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                  {isDown ? '✕ down' : 'up'}
+                </text>
+                <text x={x + 94} y={CVM_Y + 46} class="muted" style={{ fontSize: '12px' }}>
+                  {isDown ? '' : `${sessions} host${sessions === 1 ? '' : 's'}`}
+                </text>
+                <line x1={x + cvmW / 2} y1={CVM_Y + 64} x2={x + cvmW / 2} y2={VG_Y} class={isDown ? 'line' : 'sto-reach'} stroke-dasharray="3 3" />
+              </g>
+            );
+          })}
+          <Fabric y={VG_Y} h={78} note="every CVM can reach every disk" />
+          <text x={36} y={VG_Y + 34} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+            Volume group
+          </text>
+          {Array.from({ length: 4 }, (_, d) => {
+            const x = 170 + d * 190;
+            return (
               <g key={d}>
-                <rect x={56 + d * 104} y={346} width={92} height={50} class="disk" />
-                <text x={102 + d * 104} y={368} text-anchor="middle" class="mono" style={{ fontSize: '11.5px' }}>
-                  LUN {d}
-                </text>
-                <text x={102 + d * 104} y={385} text-anchor="middle" class="muted mono" style={{ fontSize: '10.5px' }}>
-                  vDisk
+                <rect class="disk" x={x} y={VG_Y + 12} width={150} height={34} />
+                <text x={x + 75} y={VG_Y + 34} text-anchor="middle" class="mono" style={{ fontSize: '12px' }}>
+                  Disk {d + 1}
                 </text>
               </g>
-            ))}
-          </svg>
-        </div>
-        <Follow tone={tg.includes(null) ? 'bad' : redirected ? 'warn' : 'ok'} k={tg.includes(null) ? 'No CVM left' : redirected ? 'Redirected' : 'Connected'}>
-          <p>
-            {tg.includes(null)
-              ? 'With every CVM down the cluster itself is down; there is nothing to redirect to.'
-              : redirected
-                ? `${redirected} session(s) lost their CVM and logged in again through the same address; the cluster redirected them to a healthy CVM. The data never moved: every CVM can serve any vDisk.`
-                : 'Each session is served by a CVM. Because all CVMs can reach every vDisk, any of them can take a session over.'}
-          </p>
-        </Follow>
-        <p class="small" style={{ marginTop: 'var(--sp-4)' }}>
-          <strong>Typical uses:</strong> shared-disk clusters such as Oracle RAC and Windows failover clustering, bare-metal servers that need block storage, and containers. External (non-cluster) hosts as a primary use need NCI Pro or higher, or NUS Pro.
-        </p>
+            );
+          })}
+        </svg>
       </div>
-      <div class="rail">
-        <div class="side-sec">
-          <div class="eyebrow">Sessions</div>
-          {tg.map((t, c) => (
-            <div key={c} class="mrow-top small" style={{ padding: 'var(--sp-1) 0' }}>
-              <span>{kind === 'ext' ? 'Host' : 'VM'} {c + 1}</span>
-              <span class={`mono ${t === null ? 'bad-text' : t !== c % cvms ? 'warn-text' : ''}`}>{t === null ? 'no path' : `CVM-${t + 1}`}</span>
-            </div>
-          ))}
-          <div class="hstack" style={{ marginTop: 'var(--sp-2)' }}>
-            <Illus why="Session placement here is simplified. AOS balances sessions across CVMs and redirects on login." />
-          </div>
-        </div>
-        <DsfMap svc="vol" />
-      </div>
-    </div>
+      <PlayBar clock={clock} label="iSCSI redirection animation" fmt={() => ['Log in', 'Working', 'CVM fails', 'Log in again', 'Working'][ph]} />
+    </Show>
   );
 }
 
 // ── Objects ──
-const SPAN = 365;
-const TARGETS = { nos: 'another Nutanix Objects store', aws: 'AWS S3', s3: 'any S3-compatible endpoint' } as const;
+type Rule = 'off' | '90' | '30';
+const YEAR = 365;
+const TILES = 24;
+const TOTAL_TB = 200;
+const ARRIVE = 8;
+const MOVE = 12;
+const arriveAt = (i: number) => (i + 0.5) * (YEAR / TILES);
+const BKT = { x: 40, y: 84, w: 540, h: 150 };
+const TGT = { x: 660, y: 84, w: 260, h: 150 };
+const SRC = { x: 40, y: 8, w: 540, h: 46 };
+const TILE_W = 16;
+const TILE_GAP = 4.6;
+const bucketTile = (i: number) => ({ x: BKT.x + 20 + i * (TILE_W + TILE_GAP), y: BKT.y + 54 });
+const targetTile = (i: number) => ({ x: TGT.x + 18 + (i % 8) * 29, y: TGT.y + 62 + Math.floor(i / 8) * 26 });
 
 function Objects() {
-  const [workers, setWorkers] = useNum('ow', 3, 3, 8);
-  const [tier, setTier] = useBool('ot', true);
-  const [days, setDays] = useNum('od', 90, 7, 360);
-  const [tgt, setTgt] = useEnum<'nos' | 'aws' | 's3'>('tg', 'aws', ['nos', 'aws', 's3']);
-  const [worm, setWorm] = useBool('ol', false);
-  const total = 200;
-  const split = tierSplit(total, tier ? days : null, SPAN);
-  const W = 920;
-  const wx = (i: number) => 40 + i * ((560 - 40) / workers);
-  const ww = (560 - 40) / workers - 10;
+  const [rule, setRule] = useEnum<Rule>('ot', '90', ['off', '90', '30']);
+  const days = rule === 'off' ? null : Number(rule);
+  const clock = useClock({ rate: 24, duration: YEAR + 30, keys: true, poster: YEAR });
+  useRestartOn(clock, [rule]);
+  const d = clock.t;
+  const today = Math.min(YEAR, d);
+  const written = (TOTAL_TB * today) / YEAR;
+  const split = tierSplit(written, days, today);
+  const month = Math.min(12, Math.floor(today / (YEAR / 12)) + 1);
+
+  const cap: Cap =
+    days === null
+      ? d >= YEAR
+        ? { tone: 'ink', k: 'After one year', text: `All ${TOTAL_TB} TB is still on the cluster. A lifecycle rule would move older objects to cheaper capacity elsewhere.` }
+        : { tone: 'ink', k: 'No rule', text: 'Apps and backup software write objects over the S3 API. Without a lifecycle rule, every object stays on the cluster as the bucket grows.' }
+      : d >= YEAR
+        ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB lives on cheaper storage. Reading a tiered object is slower and may cost cloud egress.` }
+        : today < days
+          ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
+          : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket moves objects older than ${days} days to cheaper S3 storage. The cluster keeps the recent data, which is read most.` };
+
+  const H = BKT.y + BKT.h + 78;
+  const DSF_Y = BKT.y + BKT.h + 16;
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field label="Object worker VMs" value={workers} tip="Objects runs as a set of worker VMs; at least three. Add workers to scale out.">
-          <Slider label="Workers" value={workers} min={3} max={8} onChange={setWorkers} />
-        </Field>
-        <Field label="Lifecycle tiering" tip="A bucket rule moves objects older than N days to another S3 endpoint.">
-          <Toggle on={tier} onChange={setTier}>
-            Tier objects older than {days} days
-          </Toggle>
-        </Field>
-        <Field label="Age threshold" value={`${days} days`} why={!tier ? 'Turn tiering on first.' : null}>
-          <Slider label="Days" value={days} min={7} max={360} step={1} onChange={setDays} />
-        </Field>
-        <Field label="Tier to">
-          <Seg label="Target" value={tgt} onChange={setTgt} options={[{ value: 'aws', label: 'AWS S3' }, { value: 'nos', label: 'Nutanix Objects' }, { value: 's3', label: 'S3-compatible' }]} />
-        </Field>
-        <Field label="Immutability" tip="WORM and S3 Object Lock stop objects from being changed or deleted until retention expires; useful against ransomware and for compliance.">
-          <Toggle on={worm} onChange={setWorm}>
-            WORM / Object Lock on the bucket
-          </Toggle>
-        </Field>
-      </div>
-      <div class="stage">
-        <div class="diagram-scroll">
-          <svg class="diagram" viewBox={`0 0 ${W} 400`} role="img" aria-label="Nutanix Objects: S3 clients, object workers, buckets on the DSF and tiering to an external S3 target">
-            <rect x={40} y={14} width={520} height={46} rx={4} class="bg3" stroke="var(--line-2)" />
-            <text x={300} y={34} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
-              Apps and backup software speak S3
+    <Show
+      top={
+        <Choice<Rule>
+          label="Lifecycle rule"
+          value={rule}
+          onChange={setRule}
+          options={[
+            { value: 'off', label: 'No rule' },
+            { value: '90', label: 'Tier after 90 days' },
+            { value: '30', label: 'Tier after 30 days' },
+          ]}
+        />
+      }
+      foot={
+        <>
+          <Follow tone={cap.tone} k={cap.k}>
+            <p>{cap.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: 'Written so far', v: `${Math.round(written)} TB` },
+              { k: 'On the cluster', v: `${Math.round(split.localTB)} TB` },
+              { k: 'On cheaper storage', v: `${Math.round(split.remoteTB)} TB`, tone: split.remoteTB > 0.5 ? 'flow' : undefined },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster over a year. ${days === null ? 'With no lifecycle rule every object stays on the cluster.' : `A lifecycle rule moves objects older than ${days} days to cheaper S3 storage.`}`}>
+          <defs>
+            <marker id="sto-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" class="flow-fill" />
+            </marker>
+          </defs>
+          <rect class="sto-ns" x={SRC.x} y={SRC.y} width={SRC.w} height={SRC.h} />
+          <text x={SRC.x + SRC.w / 2} y={SRC.y + 28} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+            Apps and backup software write over the S3 API
+          </text>
+          <path d={`M${SRC.x + SRC.w / 2} ${SRC.y + SRC.h} V ${BKT.y}`} class="line" />
+          <rect class="node-box" x={BKT.x} y={BKT.y} width={BKT.w} height={BKT.h} />
+          <text x={BKT.x + 20} y={BKT.y + 26} style={{ fontWeight: 600, fontSize: '14px' }}>
+            Bucket on the cluster
+          </text>
+          <text x={BKT.x + BKT.w - 20} y={BKT.y + 26} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+            object workers · 3 or more VMs
+          </text>
+          <rect class={days === null ? 'sto-tgt off' : 'sto-tgt'} x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} />
+          <text x={TGT.x + TGT.w / 2} y={TGT.y + 26} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
+            Cheaper S3 storage
+          </text>
+          <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+            AWS S3 or any S3-compatible target
+          </text>
+          {days !== null && <path d={`M${BKT.x + BKT.w + 4} ${BKT.y + BKT.h / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />}
+          {days !== null && (
+            <text text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+              <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 26}>
+                older than
+              </tspan>
+              <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 10}>
+                {days} days
+              </tspan>
             </text>
-            <text x={300} y={51} text-anchor="middle" class="mono muted" style={{ fontSize: '11.5px' }}>
-              PUT / GET https://objects.example.com/backups/…
-            </text>
-            {Array.from({ length: workers }, (_, i) => (
+          )}
+          {Array.from({ length: TILES }, (_, i) => {
+            const a = arriveAt(i);
+            const b = bucketTile(i);
+            if (d < a) return null;
+            const tierAt = days === null ? Infinity : a + days;
+            const src = { x: SRC.x + SRC.w / 2 - TILE_W / 2, y: SRC.y + SRC.h };
+            let x = b.x;
+            let y = b.y;
+            let h = 56;
+            let cls = 'sto-obj';
+            if (d < a + ARRIVE) {
+              const q = ease(prog(d, a, a + ARRIVE));
+              x = src.x + (b.x - src.x) * q;
+              y = src.y + (b.y - src.y) * q;
+            } else if (d >= tierAt) {
+              const tt = targetTile(i);
+              const q = ease(prog(d, tierAt, tierAt + MOVE));
+              x = b.x + (tt.x - b.x) * q;
+              y = b.y + (tt.y - b.y) * q;
+              h = 56 + (20 - 56) * q;
+              cls = 'sto-obj tiered';
+            }
+            return (
               <g key={i}>
-                <path d={`M300 60 V 76 H ${wx(i) + ww / 2} V 92`} fill="none" class="ink-stroke" />
-                <rect x={wx(i)} y={92} width={ww} height={48} rx={4} class="ink-fill" />
-                <text x={wx(i) + ww / 2} y={121} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '11.5px' }}>
-                  worker {i + 1}
-                </text>
+                {d >= tierAt && <rect class="sto-slot" x={b.x} y={b.y} width={TILE_W} height={56} />}
+                <rect class={cls} x={x} y={y} width={TILE_W} height={h} />
               </g>
-            ))}
-            <rect x={40} y={164} width={520} height={110} rx={4} class="node-box" />
-            <text x={56} y={186} style={{ fontWeight: 600, fontSize: '13px' }}>
-              Bucket “backups” {worm ? '(Object Lock on)' : ''} · {split.localTB.toFixed(0)} TB on cluster
-            </text>
-            {Array.from({ length: 24 }, (_, i) => {
-              const age = (i / 24) * SPAN; // older to the right
-              const remote = tier && age >= days;
-              return <rect key={i} x={56 + i * 20.5} y={200} width={17} height={56} class={remote ? 'tile-dim tile-rep' : 'tile-local'} />;
-            })}
-            <text x={56} y={268} class="muted" style={{ fontSize: '11px' }}>
-              newest
-            </text>
-            <text x={544} y={268} text-anchor="end" class="muted" style={{ fontSize: '11px' }}>
-              1 year old
-            </text>
-            <rect x={40} y={300} width={520} height={80} rx={4} class="bg2" stroke="var(--line-2)" />
-            <text x={56} y={322} class="muted" style={{ fontSize: '11.5px', letterSpacing: '0.06em' }}>
-              DISTRIBUTED STORAGE FABRIC
-            </text>
-            <text x={56} y={346} style={{ fontSize: '12.5px' }}>
-              Object data lands in vDisks; RF, erasure coding and compression
-            </text>
-            <text x={56} y={364} style={{ fontSize: '12.5px' }}>
-              of the storage container apply.
-            </text>
-            {/* external target */}
-            <rect x={640} y={164} width={250} height={110} rx={4} class={tier ? 'bg3' : 'bg2'} stroke="var(--line-2)" stroke-dasharray={tier ? undefined : '5 4'} />
-            <text x={765} y={192} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13px' }}>
-              {TARGETS[tgt]}
-            </text>
-            <text x={765} y={222} text-anchor="middle" class="mono" style={{ fontSize: '20px', fontWeight: 600 }}>
-              {split.remoteTB.toFixed(0)} TB
-            </text>
-            <text x={765} y={246} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
-              {tier ? `objects older than ${days} days` : 'no tiering rule'}
-            </text>
-            {tier && <path d="M560 228 H 636" class="xfer" marker-end="url(#sto-arr)" />}
-            <defs>
-              <marker id="sto-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-                <path d="M0 0 L10 5 L0 10 z" class="flow-fill" />
-              </marker>
-            </defs>
-          </svg>
-        </div>
-        <Follow tone={tier ? 'flow' : 'ink'} k={tier ? 'Tiering' : 'All on cluster'}>
-          <p>
-            {tier
-              ? `${split.remoteTB.toFixed(0)} of ${total} TB is older than ${days} days and lives on ${TARGETS[tgt]}. The cluster keeps the recent, frequently read data.`
-              : `All ${total} TB stays on the cluster. Add a lifecycle rule to move older objects to cheaper capacity elsewhere.`}
-          </p>
-          {worm && <p class="rest">Object Lock is on: locked objects cannot be overwritten or deleted until their retention ends. Check how a tiering rule and your retention settings interact before relying on both.</p>}
-        </Follow>
-        <p class="small" style={{ marginTop: 'var(--sp-4)' }}>
-          <strong>Also:</strong> versioning, legal hold, streaming replication between object stores, a multi-cluster global namespace and S3 Select. Objects 5.4 removed the load-balancer VMs on AHV and added rolling upgrades.
-        </p>
+            );
+          })}
+          <text x={BKT.x + 20} y={BKT.y + BKT.h - 14} class="muted" style={{ fontSize: '11.5px' }}>
+            ← older
+          </text>
+          <text x={BKT.x + BKT.w - 20} y={BKT.y + BKT.h - 14} text-anchor="end" class="muted" style={{ fontSize: '11.5px' }}>
+            newer →
+          </text>
+          <Fabric y={DSF_Y} h={56} note="the bucket gets the container’s copies, erasure coding and compression" />
+          <text x={36} y={DSF_Y + 22} style={{ fontSize: '12.5px' }}>
+            Object data and metadata live in vDisks, like any VM’s data.
+          </text>
+        </svg>
       </div>
-      <div class="rail">
-        <div class="side-sec">
-          <div class="eyebrow">Object store</div>
-          <Stat k="Workers" v={workers} />
-          <Stat k="On cluster" v={`${split.localTB.toFixed(0)} TB`} />
-          <Stat k={`On ${tgt === 'nos' ? 'Objects' : tgt === 'aws' ? 'AWS S3' : 'S3 target'}`} v={`${split.remoteTB.toFixed(0)} TB`} tone={tier ? 'flow' : undefined} />
-          <div class="hstack" style={{ marginTop: 'var(--sp-2)' }}>
-            <Illus why="Assumes objects arrive evenly over a year. Real age profiles vary." />
-          </div>
-        </div>
-        <DsfMap svc="obj" />
-      </div>
-    </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Two weeks of objects, on the cluster' },
+          { color: 'var(--flow)', label: 'Moved to cheaper storage' },
+        ]}
+      />
+      <PlayBar clock={clock} label="Object tiering over one year" fmt={() => (d >= YEAR ? 'One year' : `Month ${month}`)} />
+    </Show>
   );
 }
+
+const TABS: [Svc, string][] = [
+  ['files', 'Files · SMB / NFS'],
+  ['vol', 'Volumes · iSCSI block'],
+  ['obj', 'Objects · S3'],
+];
 
 export default function Storage() {
   const [tab, setTab] = useEnum<Svc>('tab', 'files', ['files', 'vol', 'obj']);
   return (
     <>
       <div class="tabs" role="tablist" aria-label="Storage services">
-        {(
-          [
-            ['files', 'Files · SMB / NFS'],
-            ['vol', 'Volumes · iSCSI block'],
-            ['obj', 'Objects · S3'],
-          ] as const
-        ).map(([id, l]) => (
+        {TABS.map(([id, l]) => (
           <button type="button" role="tab" key={id} aria-selected={tab === id} onClick={() => setTab(id)}>
             {l}
           </button>

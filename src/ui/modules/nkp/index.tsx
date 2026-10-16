@@ -1,355 +1,285 @@
-// Kubernetes Platform (NKP): a fleet of clusters across data center, edge and cloud, and a
-// Kubernetes version upgrade rolled across it. All rollout logic is in engine/nkp-upgrade.ts.
-import { useEffect, useMemo, useState } from 'preact/hooks';
-import { useBool, useEnum } from '../../../state/route';
-import { useClock, fmtClock } from '../../components/clock';
-import { Chip, Field, Follow, Illus, PlayBar, Seg, Stat, Tip, Toggle, type Tone } from '../../components/controls';
-import { Icon } from '../../components/Icon';
-import {
-  FLEET,
-  TIMING,
-  clusterState,
-  editionNeeded,
-  events,
-  planRollout,
-  type ClusterState,
-  type ClusterStatus,
-  type Edition,
-  type FleetCluster,
-  type Site,
-  type Strategy,
-} from '../../../engine/nkp-upgrade';
+// Kubernetes Platform (NKP): a Kubernetes version upgrade rolled across a fleet of clusters at
+// the edge, in the data center and in the cloud, on a loop. Pick a healthy rollout or a canary
+// that fails its health check. All rollout logic is in engine/nkp-upgrade.ts.
+import { useMemo, useRef } from 'preact/hooks';
+import { useEnum } from '../../../state/route';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt } from '../../components/show';
+import { FLEET, TIMING, clusterState, planRollout, waveGroups, type ClusterState, type ClusterStatus, type FleetCluster, type Plan } from '../../../engine/nkp-upgrade';
 import './style.css';
+
+type Run = 'ok' | 'fail';
 
 const FROM = '1.34';
 const TO = '1.35';
+const GROUPS = waveGroups();
+const WAVE_LABEL = ['Canary', 'Other edge sites', 'Data center', 'Public cloud'];
+const WHERE: Record<FleetCluster['infra'], string> = { ahv: 'on AHV', vsphere: 'on vSphere', aws: 'on AWS' };
+const SITE: Record<FleetCluster['site'], string> = { edge: 'Edge site', dc: 'Data center', cloud: 'Public cloud' };
 
-const SITES: { id: Site; label: string }[] = [
-  { id: 'dc', label: 'Data center' },
-  { id: 'edge', label: 'Edge sites' },
-  { id: 'cloud', label: 'Public cloud' },
-];
-
-const INFRA_LABEL: Record<FleetCluster['infra'], string> = {
-  nci: 'NKP on NCI (AHV)',
-  vsphere: 'NKP on vSphere',
-  aws: 'NKP-built on AWS',
-  eks: 'Attached Amazon EKS',
+const STATUS: Record<ClusterStatus, { tone: Tone; text: (s: ClusterState, c: FleetCluster) => string }> = {
+  waiting: { tone: 'neutral', text: () => 'Waiting' },
+  upgrading: { tone: 'flow', text: (s, c) => `→ Upgrading · node ${(s.current?.index ?? 0) + 1} of ${c.cp + c.workers}` },
+  checking: { tone: 'warn', text: () => '… Health check' },
+  done: { tone: 'ok', text: () => `✓ On ${TO}` },
+  failed: { tone: 'bad', text: () => '✕ New node failed its check' },
+  rolledBack: { tone: 'warn', text: () => `↺ Rolled back · still on ${FROM}` },
+  halted: { tone: 'neutral', text: () => '■ Not started' },
 };
 
-const ED_LABEL: Record<Edition, string> = { starter: 'Starter', pro: 'Pro', ultimate: 'Ultimate' };
+// ── geometry ──
+const W = 960;
+const GAP = 28;
+const COL_W = (W - GAP * 3) / 4;
+const BAR_H = 46;
+const HEAD_Y = 86;
+const BOX_Y = 104;
+const BOX_H = 112;
+const BOX_GAP = 14;
+const SQ = 20;
+const SQ_GAP = 5;
+const LEG_Y = BOX_Y + 2 * BOX_H + BOX_GAP + 30;
+const H = LEG_Y + 14;
+const colX = (w: number) => w * (COL_W + GAP);
 
-const STATUS: Record<ClusterStatus, { tone: Tone; word: string; mark: string }> = {
-  waiting: { tone: 'neutral', word: 'Waiting', mark: '·' },
-  upgrading: { tone: 'flow', word: 'Upgrading', mark: '→' },
-  checking: { tone: 'warn', word: 'Health check', mark: '…' },
-  done: { tone: 'ok', word: `On ${TO}`, mark: '✓' },
-  failed: { tone: 'bad', word: 'Check failed', mark: '✕' },
-  halted: { tone: 'neutral', word: 'Not started', mark: '■' },
-  skipped: { tone: 'neutral', word: 'Not in rollout', mark: '–' },
-};
-
-const PHASE_SHORT = { join: 'new one joining', drain: 'draining', remove: 'leaving' } as const;
-
-function versionOf(s: ClusterState, c: FleetCluster): string {
-  if (c.attached) return 'provider-managed';
-  if (s.status === 'done' || s.status === 'failed' || s.status === 'checking') return TO;
-  if (s.status === 'upgrading') return `${FROM} → ${TO}`;
-  return FROM;
+/** Sim seconds per real second: slow through the canary so the node swap can be read, faster after. */
+function rateAt(run: Run, plan: Plan, t: number): number {
+  if (run === 'fail') return 80;
+  return t < plan.waves[1] ? 160 : 400;
 }
 
-const COL_W = 300;
-const GAP = 24;
-const BOX_H = 114;
-const BOX_GAP = 12;
-const TOP = 96;
-const SQ = 22;
-const SQ_GAP = 4;
+function version(s: ClusterState): string {
+  if (s.status === 'upgrading') return `${FROM} → ${TO}`;
+  return s.status === 'checking' || s.status === 'done' ? TO : FROM;
+}
 
-function ClusterBox({ c, s, x, y, edition }: { c: FleetCluster; s: ClusterState; x: number; y: number; edition: Edition }) {
+function ClusterBox({ c, s, x, y }: { c: FleetCluster; s: ClusterState; x: number; y: number }) {
   const st = STATUS[s.status];
   const total = c.cp + c.workers;
-  const off = s.status === 'skipped';
-  const squares = [];
-  for (let i = 0; i < total; i++) {
-    const role = i < c.cp ? 'C' : 'W';
-    let cls = 'nkp-node old';
-    if (c.attached) cls = 'nkp-node ext';
-    else if (i < s.replaced) cls = 'nkp-node new';
-    else if (s.current && i === s.current.index) cls = `nkp-node old ${s.current.phase}`;
-    squares.push(
-      <g key={i}>
-        <rect class={cls} x={x + 12 + i * (SQ + SQ_GAP)} y={y + 46} width={SQ} height={SQ} />
-        <text x={x + 12 + i * (SQ + SQ_GAP) + SQ / 2} y={y + 61} text-anchor="middle" class={`mono nkp-nl${cls.includes('new') ? ' on' : ''}`}>
-          {role}
+  const sx = (i: number) => x + 12 + i * (SQ + SQ_GAP);
+  const sy = y + 52;
+  const cur = s.current;
+  const label = (i: number) => (i < c.cp ? 'C' : 'W');
+  const squares = Array.from({ length: total }, (_, i) => {
+    let cls = i < s.replaced ? 'new' : 'old';
+    let op = 1;
+    if (cur && i === cur.index && (cur.phase === 'drain' || cur.phase === 'remove')) cls = 'old drain';
+    if (cur && i === cur.index && cur.phase === 'remove') op = 1 - cur.p;
+    return (
+      <g key={i} style={{ opacity: op }}>
+        <rect class={`nkp-node ${cls}`} x={sx(i)} y={sy} width={SQ} height={SQ} />
+        <text x={sx(i) + SQ / 2} y={sy + 14} text-anchor="middle" class={`nkp-nl${cls === 'new' ? ' on' : ''}`}>
+          {label(i)}
         </text>
-      </g>,
+      </g>
     );
-  }
-  // Surge node: the replacement that joins before the old node leaves.
-  if (s.current) {
-    const i = total;
-    const joining = s.current.phase === 'join';
-    squares.push(
-      <g key="surge">
-        <rect class={`nkp-node ${joining ? 'joining' : 'new'}`} x={x + 12 + i * (SQ + SQ_GAP)} y={y + 46} width={SQ} height={SQ} />
-        <text x={x + 12 + i * (SQ + SQ_GAP) + SQ / 2} y={y + 61} text-anchor="middle" class={`mono nkp-nl${joining ? '' : ' on'}`}>
-          +
+  });
+  // The replacement node: joins at the end of the row, then slides into the old node's place.
+  let surge = null;
+  let pods = null;
+  if (cur) {
+    const p = cur.p;
+    const endX = sx(total);
+    let gx = endX;
+    let cls = 'new';
+    let op = 1;
+    let mark = label(cur.index);
+    if (cur.phase === 'join') {
+      cls = 'joining';
+      op = 0.35 + 0.65 * p;
+    } else if (cur.phase === 'remove') gx = endX + (sx(cur.index) - endX) * ease(p);
+    else if (cur.phase === 'fail' || cur.phase === 'back') {
+      cls = 'failed';
+      mark = '✕';
+      if (cur.phase === 'back') op = 1 - p;
+    }
+    surge = (
+      <g style={{ opacity: op }}>
+        <rect class={`nkp-node ${cls}`} x={gx} y={sy} width={SQ} height={SQ} />
+        <text x={gx + SQ / 2} y={sy + 14} text-anchor="middle" class={`nkp-nl${cls === 'new' || cls === 'failed' ? ' on' : ''}`}>
+          {mark}
         </text>
-      </g>,
+      </g>
     );
+    if (cur.phase === 'drain') {
+      // Pods leave the draining node for the new one, under the row of nodes.
+      pods = [0, 0.5].map((off) => {
+        const q = (p * 2 + off) % 1;
+        const k = ease(q);
+        const px = sx(cur.index) + SQ / 2 + (endX - sx(cur.index)) * k;
+        const py = sy + SQ + 5 + Math.sin(Math.PI * q) * 9;
+        return <circle key={off} class="nkp-pod" cx={px} cy={py} r={3.5} />;
+      });
+    }
   }
-  const need = editionNeeded(c);
-  const sub = off ? (c.attached && edition === 'ultimate' ? 'Upgraded by the cloud provider' : `Needs NKP ${ED_LABEL[need]}`) : s.current ? `Node ${s.current.index + 1}/${total} · ${s.current.role === 'cp' ? 'control plane' : 'worker'} · ${PHASE_SHORT[s.current.phase]}` : '';
+  const off = s.status === 'halted';
   return (
-    <g class={off ? 'nkp-off' : ''}>
+    <g class={off ? 'nkp-off' : undefined}>
       <rect class={`nkp-box ${st.tone}`} x={x} y={y} width={COL_W} height={BOX_H} />
-      <text x={x + 12} y={y + 22} style={{ fontWeight: 600, fontSize: '15px' }}>
+      <text x={x + 12} y={y + 22} style={{ fontWeight: 600, fontSize: '14px' }}>
         {c.name}
       </text>
-      <text x={x + COL_W - 12} y={y + 22} text-anchor="end" class="mono" style={{ fontSize: '13px' }}>
-        {versionOf(s, c)}
+      <text x={x + COL_W - 12} y={y + 22} text-anchor="end" class="mono" style={{ fontSize: '12.5px' }}>
+        {version(s)}
       </text>
-      <text x={x + 12} y={y + 38} class="muted" style={{ fontSize: '12px' }}>
-        {INFRA_LABEL[c.infra]}
+      <text x={x + 12} y={y + 40} class="muted" style={{ fontSize: '12px' }}>
+        {SITE[c.site]} · {WHERE[c.infra]}
       </text>
       {squares}
-      <text x={x + 12} y={y + 86} class={`nkp-st ${st.tone}`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
-        {st.mark} {st.word}
-      </text>
-      <text x={x + 12} y={y + 103} class="muted" style={{ fontSize: '11.5px' }}>
-        {sub}
+      {surge}
+      {pods}
+      <text x={x + 12} y={y + 98} class={`nkp-st ${st.tone}`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        {st.text(s, c)}
       </text>
     </g>
   );
 }
 
-function useNarrow(px = 700): boolean {
-  const q = typeof matchMedia !== 'undefined' ? matchMedia(`(max-width: ${px}px)`) : null;
-  const [n, setN] = useState(!!q?.matches);
-  useEffect(() => {
-    if (!q) return;
-    const on = () => setN(q.matches);
-    q.addEventListener('change', on);
-    return () => q.removeEventListener('change', on);
-  }, []);
-  return n;
-}
-
-const LEGEND = [
-  { cls: 'nkp-node old', label: `Node on ${FROM}` },
-  { cls: 'nkp-node new', label: `Node on ${TO}` },
-  { cls: 'nkp-node joining', label: 'New node joining' },
-  { cls: 'nkp-node old drain', label: 'Old node draining' },
+const LEGEND: { cls: string; label: string; w: number }[] = [
+  { cls: 'old', label: `Node on ${FROM}`, w: 130 },
+  { cls: 'new', label: `Node on ${TO}`, w: 130 },
+  { cls: 'joining', label: 'New node joining', w: 150 },
+  { cls: 'old drain', label: 'Old node draining', w: 150 },
+  { cls: 'failed', label: 'Failed its health check', w: 190 },
 ];
 
-function FleetDiagram({ states, edition, narrow }: { states: Map<string, ClusterState>; edition: Edition; narrow: boolean }) {
-  const fleetOn = edition === 'ultimate';
-  const W = narrow ? COL_W : COL_W * 3 + GAP * 2;
-  // Box positions: three site columns side by side, or stacked on a phone.
-  const pos = new Map<string, { x: number; y: number }>();
-  const heads: { site: (typeof SITES)[number]; x: number; y: number }[] = [];
-  let y = TOP;
-  let bottom = TOP;
-  SITES.forEach((site, col) => {
-    const list = FLEET.filter((c) => c.site === site.id);
-    const x = narrow ? 0 : col * (COL_W + GAP);
-    const y0 = narrow ? y : TOP;
-    heads.push({ site, x, y: y0 });
-    list.forEach((c, i) => pos.set(c.id, { x, y: y0 + i * (BOX_H + BOX_GAP) }));
-    const end = y0 + list.length * (BOX_H + BOX_GAP);
-    bottom = Math.max(bottom, end);
-    y = end + 34;
-  });
-  const legendRows = narrow ? 3 : 1;
-  const H = bottom + 10 + legendRows * 22;
-  const title = fleetOn ? (narrow ? 'NKP fleet management' : 'NKP fleet management: one place for versions, policy and apps') : 'No fleet view in this edition';
-  const subtitle = fleetOn
-    ? narrow
-      ? 'versions, policy and apps in one place'
-      : 'Upgrades driven through Cluster API, one node at a time per cluster'
-    : narrow
-      ? 'fleet management is in NKP Ultimate'
-      : 'Fleet management is part of NKP Ultimate; each cluster is upgraded as its own task';
-  const legendItems = [...LEGEND.map((l) => ({ ...l, w: 150 })), { cls: '', label: 'C = control plane · W = worker', w: 220 }];
+function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: Map<string, ClusterState>; t: number }) {
+  const wave = phaseAt(plan.waves, t);
+  const rate = rateAt(run, plan, t);
+  const cyc = (t / (rate * 0.9)) % 1;
+  const legend = LEGEND.filter((l) => (run === 'fail' ? l.cls !== 'new' && l.cls !== 'old drain' : l.cls !== 'failed'));
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Fleet of Kubernetes clusters across data center, edge and cloud, with upgrade status for each cluster">
-      <rect class={fleetOn ? 'ink-fill' : 'bg3'} x={0} y={0} width={W} height={48} stroke={fleetOn ? 'none' : 'var(--line-2)'} />
-      <text x={W / 2} y={21} text-anchor="middle" style={{ fontWeight: 600, fontSize: '15px', fill: fleetOn ? '#fff' : undefined }}>
-        {title}
+    <svg class="diagram nkp-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A fleet of ${FLEET.length} Kubernetes clusters upgraded from ${FROM} to ${TO} in waves: one canary edge cluster, the other edge sites, the data center, then the cloud. Inside each cluster a new node joins before an old one drains and leaves.${run === 'fail' ? ' Here the canary’s new node fails its health check, so the rollout stops and the canary stays on the old version.' : ''}`}>
+      <defs>
+        <marker id="nkp-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" class="nkp-mk" />
+        </marker>
+      </defs>
+      <rect class="ink-fill" x={0} y={0} width={W} height={BAR_H} />
+      <text x={W / 2} y={29} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '15px' }}>
+        NKP fleet management · Kubernetes {FROM} → {TO}, one wave at a time
       </text>
-      <text x={W / 2} y={39} text-anchor="middle" style={{ fontSize: '12px', fill: fleetOn ? 'rgba(255,255,255,.8)' : 'var(--muted)' }}>
-        {subtitle}
-      </text>
-      {heads.map(({ site, x, y: hy }) => (
-        <g key={site.id}>
-          {!narrow && <line x1={x + COL_W / 2} y1={48} x2={x + COL_W / 2} y2={hy - 22} class="line" stroke-dasharray={fleetOn ? undefined : '3 4'} />}
-          <text x={x} y={hy - 8} class="muted" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>
-            {site.label.toUpperCase()}
-          </text>
-        </g>
-      ))}
-      {FLEET.map((c) => {
-        const p = pos.get(c.id)!;
-        return <ClusterBox key={c.id} c={c} s={states.get(c.id)!} x={p.x} y={p.y} edition={edition} />;
+      {GROUPS.map((g, w) => {
+        const cx = colX(w) + COL_W / 2;
+        const halted = !Number.isFinite(plan.clusters.find((p) => p.id === g[0].id)!.start);
+        const doneW = g.every((c) => states.get(c.id)!.status === 'done');
+        const active = !halted && !doneW && w === wave && t < plan.end;
+        const tone = doneW ? 'ok' : active ? 'flow' : halted && plan.haltAt !== null && t >= plan.haltAt ? 'off' : 'neutral';
+        return (
+          <g key={w}>
+            <line x1={cx} y1={BAR_H} x2={cx} y2={HEAD_Y - 18} class={active ? 'flow-stroke' : 'line'} stroke-width={active ? 2 : 1.25} stroke-dasharray={active ? '4 3' : undefined} />
+            {active && <circle cx={cx} cy={BAR_H + (HEAD_Y - 18 - BAR_H) * cyc} r={4} class="flow-fill" />}
+            <text x={cx} y={HEAD_Y} text-anchor="middle" class={`nkp-head ${tone}`}>
+              {doneW ? '✓ ' : ''}
+              {w + 1} · {WAVE_LABEL[w]}
+            </text>
+            {w < GROUPS.length - 1 && <line x1={colX(w) + COL_W + 4} y1={HEAD_Y - 5} x2={colX(w + 1) - 6} y2={HEAD_Y - 5} class="nkp-arrow" marker-end="url(#nkp-ar)" />}
+            {g.map((c, i) => (
+              <ClusterBox key={c.id} c={c} s={states.get(c.id)!} x={colX(w)} y={BOX_Y + i * (BOX_H + BOX_GAP)} />
+            ))}
+          </g>
+        );
       })}
-      {legendItems.map((l, i) => {
-        const perRow = narrow ? 2 : 5;
-        const row = Math.floor(i / perRow);
-        const colI = i % perRow;
-        const lx = narrow ? colI * 150 : legendItems.slice(0, i).reduce((n, it) => n + it.w, 0);
-        const ly = bottom + 20 + row * 22;
+      {legend.map((l, i) => {
+        const lx = legend.slice(0, i).reduce((n, it) => n + it.w, 0);
         return (
           <g key={l.label}>
-            {l.cls && <rect class={l.cls} x={lx} y={ly - 11} width={14} height={14} />}
-            <text x={lx + (l.cls ? 20 : 0)} y={ly} style={{ fontSize: '12px' }} class="muted">
+            <rect class={`nkp-node ${l.cls}`} x={lx} y={LEG_Y - 11} width={14} height={14} />
+            <text x={lx + 20} y={LEG_Y} class="muted" style={{ fontSize: '12px' }}>
               {l.label}
             </text>
           </g>
         );
       })}
+      <text x={W} y={LEG_Y} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+        C = control plane · W = worker
+      </text>
     </svg>
   );
 }
 
-export default function Nkp() {
-  const [edition, setEdition] = useEnum<Edition>('ed', 'ultimate', ['starter', 'pro', 'ultimate']);
-  const [strategy, setStrategy] = useEnum<Strategy>('st', 'waves', ['serial', 'waves']);
-  const [canaryFails, setCanaryFails] = useBool('cf', false);
-  const plan = useMemo(() => planRollout({ edition, strategy, canaryFails }), [edition, strategy, canaryFails]);
-  const duration = Math.max(plan.end, 1);
-  // Pace by the full rollout, so a halted one plays at the same speed.
-  const fullEnd = useMemo(() => planRollout({ edition, strategy, canaryFails: false }).end, [edition, strategy]);
-  const clock = useClock({ rate: Math.max(fullEnd, 1) / 40, duration, stepSize: TIMING.node / 2, keys: true });
-  useEffect(() => clock.reset(), [edition, strategy, canaryFails]);
+function caption(run: Run, plan: Plan, t: number, wave: number): { tone: Tone | 'ink'; k: string; text: string } {
+  const canary = FLEET.find((c) => c.id === GROUPS[0][0].id)!.name;
+  const canaryText = `One small edge cluster, ${canary}, goes first. A new node on ${TO} joins and is checked, then one old node drains so its apps move over, and leaves. Control plane first, then workers.`;
+  if (run === 'fail') {
+    if (t < plan.haltAt!) return { tone: 'flow', k: 'Canary first', text: canaryText };
+    if (t < plan.end) return { tone: 'bad', k: 'Health check failed', text: `The new ${TO} node in ${canary} fails its health check. The rollout stops here, before any old node is drained.` };
+    return { tone: 'warn', k: 'Stopped and rolled back', text: `The failed node is removed. The old nodes never left, so ${canary} is still on ${FROM} and serving. The other ${FLEET.length - 1} clusters were never touched.` };
+  }
+  if (t >= plan.end) return { tone: 'ok', k: 'Fleet upgraded', text: `All ${FLEET.length} clusters are on ${TO}, rolled out from one place. No cluster ever had more than one node out of service, so apps kept running.` };
+  if (wave === 0) {
+    const checking = t >= plan.clusters.find((p) => p.wave === 0)!.nodesEnd;
+    return checking ? { tone: 'warn', k: 'Health check', text: `${canary} is fully on ${TO}. Its health check has to pass before any other cluster is touched.` } : { tone: 'flow', k: 'Canary first', text: canaryText };
+  }
+  const text = [
+    '',
+    'The canary passed, so the other edge sites go next. Clusters in the same wave upgrade side by side.',
+    'Bigger clusters take longer, but it is still one node at a time, so each cluster keeps all but one node serving.',
+    'Clusters in the public cloud are upgraded the same way, from the same place.',
+  ][wave];
+  return { tone: 'flow', k: `Wave ${wave + 1}: ${WAVE_LABEL[wave].toLowerCase()}`, text };
+}
 
-  const narrow = useNarrow();
+export default function Nkp() {
+  const [run, setRun] = useEnum<Run>('ro', 'ok', ['ok', 'fail']);
+  const plan = useMemo(() => planRollout({ canaryFails: run === 'fail' }), [run]);
+  const tail = run === 'fail' ? 3 * 80 : 400;
+  const poster = run === 'fail' ? plan.haltAt! + 0.2 * TIMING.node : plan.waves[2] + 2.5 * TIMING.node;
+  // The clock reads its rate on every frame, so the rollout runs slowly through the canary and faster after.
+  const tRef = useRef(0);
+  const clock = useClock({ rate: rateAt(run, plan, tRef.current), duration: plan.end + tail, keys: true, poster });
+  tRef.current = clock.t;
+  useRestartOn(clock, [run]);
   const t = clock.t;
+
   const states = new Map(FLEET.map((c, i) => [c.id, clusterState(c, plan.clusters[i], t, plan)]));
   const list = [...states.values()];
-  const inRollout = plan.clusters.filter((p) => p.wave >= 0).length;
   const done = list.filter((s) => s.status === 'done').length;
-  const busy = list.filter((s) => s.status === 'upgrading' || s.status === 'checking').length;
-  const draining = list.reduce((n, s) => n + s.unavailable, 0);
-  const failed = list.some((s) => s.status === 'failed');
-  const finished = t >= plan.end && !plan.halted;
-  const log = events(plan, FLEET, t, FROM, TO).slice().reverse();
-  const canaryName = FLEET.find((c) => plan.clusters.find((p) => p.id === c.id)?.wave === 0)?.name ?? 'the first cluster';
+  const out = list.reduce((n, s) => n + s.unavailable, 0);
+  const wave = phaseAt(plan.waves, t);
+  const cap = caption(run, plan, t, wave);
+  const stopped = plan.haltAt !== null && t >= plan.haltAt;
+  const word = run === 'fail' ? (t < plan.haltAt! ? 'Canary' : t < plan.end ? 'Check failed' : 'Rolled back') : t >= plan.end ? 'Done' : WAVE_LABEL[wave];
 
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field
-          label="NKP edition"
-          tip="The edition decides where NKP can deploy clusters and whether you get fleet management."
-          detail="Starter: NCI (AHV) only. Pro: adds vSphere, pre-provisioned bare metal and public cloud. Ultimate: adds fleet management, including attaching EKS and AKS clusters. Check current licensing for details."
-          value={ED_LABEL[edition]}
-          note={edition === 'starter' ? 'Starter is included with NCI Pro and Ultimate and runs on AHV only.' : edition === 'pro' ? 'Pro reaches vSphere and public cloud. Fleet management needs Ultimate.' : 'Ultimate adds fleet management across all sites, including attached cloud clusters.'}
-        >
-          <Seg label="NKP edition" value={edition} onChange={setEdition} options={(['starter', 'pro', 'ultimate'] as Edition[]).map((e) => ({ value: e, label: ED_LABEL[e] }))} />
-        </Field>
-        <Field
-          label="Rollout plan"
-          tip="The order clusters are upgraded in. Both plans start with one small canary cluster."
-          detail="A canary is a low-risk cluster upgraded first so problems show up before the rest of the fleet is touched. This ordering is a common practice, shown here as an example."
-          value={strategy === 'waves' ? 'Waves' : 'One at a time'}
-          note={strategy === 'waves' ? 'Canary, then remaining edge sites, then data center, then cloud. Clusters in a wave upgrade side by side.' : 'One cluster at a time. Slower, smallest blast radius.'}
-        >
-          <Seg
-            label="Rollout plan"
-            value={strategy}
-            onChange={setStrategy}
-            options={[
-              { value: 'waves', label: 'Waves' },
-              { value: 'serial', label: 'One at a time' },
+    <Show
+      top={
+        <Choice<Run>
+          label="Rollout"
+          value={run}
+          onChange={setRun}
+          options={[
+            { value: 'ok', label: 'Healthy rollout' },
+            { value: 'fail', label: 'Canary fails' },
+          ]}
+        />
+      }
+      foot={
+        <>
+          <Follow tone={cap.tone} k={cap.k}>
+            <p>{cap.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: `Clusters on ${TO}`, v: `${done} of ${FLEET.length}`, tone: done === FLEET.length ? 'ok' : undefined },
+              { k: 'Nodes out of service', v: out, tip: 'Nodes draining or leaving right now, across the whole fleet. Never more than one per cluster.' },
+              { k: 'Rollout', v: stopped ? 'Stopped' : t >= plan.end ? 'Complete' : 'Running', tone: stopped ? 'bad' : t >= plan.end ? 'ok' : 'flow' },
+              { k: 'Apps', v: 'Running', tone: 'ok', tip: 'Each cluster keeps all but one node serving while it upgrades, and a failed new node never takes an old one out.' },
             ]}
           />
-        </Field>
-        <Field label="What-if" tip="Make the canary fail its post-upgrade health check, to see the rollout stop.">
-          <Toggle on={canaryFails} onChange={setCanaryFails}>
-            Canary fails its health check
-          </Toggle>
-        </Field>
-        <Field label="Kubernetes version" tip="Kubernetes upgrades go one minor version at a time." detail={`The versions here are an example. NKP 2.18 (July 2026) ships Kubernetes 1.35; the versions offered depend on the NKP release.`}>
-          <span class="mono nkp-ver">
-            {FROM} → {TO} <Illus why="Example versions. Node replacement times are illustrative; real times depend on node size, workloads and pod disruption rules." />
-          </span>
-        </Field>
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <FleetDiagram run={run} plan={plan} states={states} t={t} />
       </div>
-
-      <div class="stage">
-        <div class={narrow ? 'nkp-narrow' : 'diagram-scroll'}>
-          <FleetDiagram states={states} edition={edition} narrow={narrow} />
-        </div>
-        <PlayBar clock={clock} label="Fleet upgrade controls" fmt={(s) => `${fmtClock(s)} sim`} />
-        {failed ? (
-          <Follow tone="bad" k="Rollout stopped">
-            <p>
-              {canaryName} is on {TO} but failed its health check. Nothing else was touched: every other cluster is still on {FROM} and serving normally. Investigate the canary, then decide whether to continue.
-            </p>
-          </Follow>
-        ) : finished ? (
-          <Follow tone="ok" k="Fleet upgraded">
-            <p>
-              {done} of {inRollout} clusters in the rollout are on {TO}. No cluster ever had more than one node out of service, so workloads kept running throughout.
-              {edition === 'ultimate' && ' The attached EKS cluster keeps following Amazon’s upgrade process.'}
-            </p>
-          </Follow>
-        ) : t === 0 ? (
-          <Follow tone="ink" k="Press Play">
-            <p>
-              Upgrade the fleet from Kubernetes {FROM} to {TO}. Inside each cluster, a new node at the new version joins, one old node is drained so its pods move, and then it is removed. Control-plane nodes go first, then workers.
-            </p>
-          </Follow>
-        ) : (
-          <Follow tone="flow" k="Rolling">
-            <p>
-              {busy} cluster{busy === 1 ? '' : 's'} upgrading right now, {draining} node{draining === 1 ? '' : 's'} draining across the whole fleet. Each cluster always keeps all but one node serving.
-            </p>
-          </Follow>
-        )}
-      </div>
-
-      <div class="rail">
-        <div class="side-sec">
-          <div class="spread" style={{ marginBottom: 'var(--sp-3)' }}>
-            <strong>Fleet</strong>
-            {failed ? <Chip tone="bad">Halted</Chip> : finished ? <Chip tone="ok">Complete</Chip> : t > 0 ? <Chip tone="flow">Rolling</Chip> : <Chip tone="neutral">Ready</Chip>}
-          </div>
-          <Stat k={`Clusters on ${TO}`} v={`${done} / ${inRollout}`} tone={finished ? 'ok' : 'neutral'} />
-          <Stat k="Upgrading now" v={busy} />
-          <Stat k="Nodes draining now" v={draining} tip="Nodes cordoned and draining across the fleet at this moment. Never more than one per cluster." />
-          <Stat k="Not in this rollout" v={FLEET.length - inRollout} tip="Clusters this edition does not cover, or attached clusters whose provider runs the upgrade." />
-        </div>
-        <div class="side-sec">
-          <strong>Events</strong>
-          <ul class="events" style={{ marginTop: 'var(--sp-2)' }}>
-            {log.map((e, i) => (
-              <li key={i}>
-                <span class="t">{fmtClock(e.t)}</span>
-                <span class={`${e.tone}-text`}>
-                  <Icon name={e.tone === 'ok' ? 'ok' : e.tone === 'bad' ? 'bad' : e.tone === 'warn' ? 'warn' : e.tone === 'flow' ? 'flow' : 'info'} />
-                </span>
-                <span>{e.text}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div class="side-sec">
-          <strong>Also set from one place</strong>
-          <ul class="nkp-list">
-            <li>
-              <Tip text="Platform apps (monitoring, logging, service mesh and others) deployed to many clusters from a catalog.">Platform apps</Tip>
-            </li>
-            <li>
-              <Tip text="Access control and multitenancy across clusters, so teams see only their workspaces.">Access and tenancy</Tip>
-            </li>
-            <li>
-              <Tip text="Flow Network Security microsegmentation extends from VMs to containers on NKP.">Flow microsegmentation</Tip>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+      <PlayBar
+        clock={clock}
+        label="Fleet upgrade animation"
+        fmt={() => word}
+        extra={<Illus why="Example versions and timings. Upgrading a canary first, then waves, is a common practice shown as an example. Inside a cluster, a new node joins before an old one leaves, as in a Cluster API rolling update." />}
+      />
+    </Show>
   );
 }

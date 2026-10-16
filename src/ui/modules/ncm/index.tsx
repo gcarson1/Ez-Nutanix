@@ -1,75 +1,102 @@
-// Nutanix Cloud Manager (NCM): AIOps (Intelligent Operations), Self-Service, Cost Governance,
-// Security Compliance. Each tab is a working mock with license tiers marked.
-import { useMemo, useState } from 'preact/hooks';
-import { Icon } from '../../components/Icon';
-import { Chip, Field, Follow, Illus, PlayBar, Seg, Slider, Stat, Tip, Toggle, type Tone } from '../../components/controls';
-import { useClock } from '../../components/clock';
-import { useBool, useEnum, useNum } from '../../../state/route';
+// Nutanix Cloud Manager (NCM): one tab per component (AIOps, Self-Service, Cost, SecOps).
+// Each tab is one looping picture with at most one preset choice. The models live in
+// src/engine/ncm.ts; this file only animates them.
+import { useMemo } from 'preact/hooks';
+import { useEnum } from '../../../state/route';
 import {
+  accrued,
   anomalyBand,
   budgetState,
   cpuSeries,
+  crossDay,
   demand,
   evaluate,
-  limiting,
-  maxVmsThatFit,
   monthlyCost,
-  provSteps,
-  rightsize,
-  runway,
+  requestSteps,
   score,
+  SEV_WEIGHT,
   stepAt,
+  stretches,
   withSpike,
+  type BudgetState,
   type CatalogItem,
   type Check,
   type Project,
-  type Resource,
-  type Size,
+  type ProvStep,
+  type Surge,
   type Usage,
-  type VmUsage,
 } from '../../../engine/ncm';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
-type Tier = 'Starter' | 'Pro' | 'Ultimate';
-const TIER_TIP: Record<Tier, string> = {
-  Starter: 'Included from NCM Starter: reporting, dashboards, capacity forecasting, right-sizing and low-code automation.',
-  Pro: 'Needs NCM Pro or higher. Pro adds Cost Governance, Self-Service marketplace, single-VM blueprints and runbooks.',
+type Line = { tone: Tone | 'ink'; k: string; text: string };
+
+const TIER_TIP = {
+  Pro: 'Needs NCM Pro or higher. Pro adds Cost Governance, the Self-Service marketplace, single-VM blueprints and runbooks.',
   Ultimate: 'Needs NCM Ultimate: multi-VM app blueprints, approvals and scheduling, and Security Compliance.',
-};
-function TierTag({ t }: { t: Tier }) {
-  return (
-    <Tip text={TIER_TIP[t]}>
-      <span class={`ncm-tier ${t.toLowerCase()}`}>NCM {t}{t !== 'Ultimate' ? '+' : ''}</span>
-    </Tip>
-  );
-}
+} as const;
+
+const W = 960;
 
 // ───────────────────────── AIOps ─────────────────────────
 const DAYS = 21;
 const LEARN = 14;
-const K: Record<'tight' | 'normal' | 'wide', number> = { tight: 2, normal: 3, wide: 4.5 };
+const K_SIGMA = 3;
+const FIXED = 70;
+const SPIKE = 35;
+const DRAW_FROM = 0.8;
+const DRAW_DUR = 8;
+const AI_END = DRAW_FROM + DRAW_DUR + 0.6;
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-function AnomalyChart({ pts }: { pts: ReturnType<typeof anomalyBand> }) {
-  const view = pts.slice(LEARN * 24);
-  const W = 900;
-  const H = 260;
-  const l = 44;
-  const r = 12;
-  const t = 16;
+type Spike = 'night' | 'day';
+const SPIKES: Record<Spike, { at: number; label: string; when: string }> = {
+  night: { at: 3 * 24 + 2, label: 'Spike at 3 a.m.', when: 'at 3 a.m.' },
+  day: { at: 3 * 24 + 13, label: 'Spike at 2 p.m.', when: 'on a busy afternoon' },
+};
+
+function useWeek(spike: Spike) {
+  return useMemo(() => {
+    const series = withSpike(cpuSeries(DAYS, 11), LEARN * 24 + SPIKES[spike].at, SPIKE);
+    const pts = anomalyBand(series, K_SIGMA, LEARN).slice(LEARN * 24);
+    const flagged = stretches(pts.map((p) => p.out));
+    const fixed = stretches(pts.map((p) => p.v > FIXED));
+    const first = flagged[0];
+    const peak = first ? Math.max(...pts.slice(first.start, first.end).map((p) => p.v)) : 0;
+    const flagAt = first ? DRAW_FROM + (first.start / (pts.length - 1)) * DRAW_DUR : AI_END;
+    return { pts, flagged, fixed, peak, flagAt };
+  }, [spike]);
+}
+
+function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: number; t: number; spike: Spike }) {
+  const { pts, flagged, fixed } = wk;
+  const H = 290;
+  const l = 48;
+  const r = 16;
+  const top = 18;
   const b = 34;
-  const sx = (i: number) => l + (i / (view.length - 1)) * (W - l - r);
-  const sy = (v: number) => t + (1 - v / 100) * (H - t - b);
-  const hiPath = view.map((p, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)} ${sy(Math.min(100, p.hi)).toFixed(1)}`).join(' ');
-  const loPath = view
+  const n = pts.length;
+  const sx = (i: number) => l + (i / (n - 1)) * (W - l - r);
+  const sy = (v: number) => top + (1 - v / 100) * (H - top - b);
+  const hi = pts.map((p, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)} ${sy(Math.min(100, p.hi)).toFixed(1)}`).join(' ');
+  const lo = pts
     .map((p, i) => ({ p, i }))
     .reverse()
     .map(({ p, i }) => `L${sx(i).toFixed(1)} ${sy(Math.max(0, p.lo)).toFixed(1)}`)
     .join(' ');
-  const line = view.map((p, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)} ${sy(p.v).toFixed(1)}`).join(' ');
-  const mean = view.map((p, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)} ${sy(p.mean).toFixed(1)}`).join(' ');
-  const outs = view.map((p, i) => ({ p, i })).filter((x) => x.p.out);
+  const last = Math.floor(hc);
+  const drawn = pts.slice(0, last + 1).map((p, i) => [sx(i), sy(p.v)] as const);
+  if (last < n - 1) {
+    const f = hc - last;
+    drawn.push([sx(hc), sy(pts[last].v + (pts[last + 1].v - pts[last].v) * f)]);
+  }
+  const line = drawn.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+  const shown = flagged.filter((s) => s.start <= hc);
+  const missed = spike === 'night' && shown.length > 0 && !fixed.some((s) => s.start <= hc);
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU usage over 7 days with a learned normal band; ${outs.length} points flagged as anomalies`}>
+    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU over one week with the learned normal band and a fixed ${FIXED}% alarm line. A spike ${SPIKES[spike].when} is ${flagged.length ? 'flagged as unusual' : 'not flagged'}; the fixed alarm ${fixed.length ? 'fires' : 'stays silent'}.`}>
       {[0, 25, 50, 75, 100].map((v) => (
         <g key={v}>
           <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
@@ -78,667 +105,686 @@ function AnomalyChart({ pts }: { pts: ReturnType<typeof anomalyBand> }) {
           </text>
         </g>
       ))}
-      {Array.from({ length: 7 }, (_, d) => (
-        <text key={d} x={sx(d * 24 + 12)} y={H - 12} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d]}
+      {WEEKDAYS.map((d, i) => (
+        <text key={d} x={sx(i * 24 + 12)} y={H - 10} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+          {d}
         </text>
       ))}
-      <path d={`${hiPath} ${loPath} Z`} class="ncm-band" />
-      <path d={mean} fill="none" class="ink-stroke" stroke-width={1} stroke-dasharray="4 3" style={{ opacity: 0.7 }} />
-      <path d={line} fill="none" stroke="var(--text)" stroke-width={1.6} />
-      {outs.map(({ p, i }) => (
-        <g key={i}>
-          <circle cx={sx(i)} cy={sy(p.v)} r={5} class="bad-fill" stroke="var(--bg)" stroke-width={1.5} />
-        </g>
-      ))}
-      {outs.length > 0 && (
-        <text x={Math.min(W - 150, sx(outs[0].i) + 10)} y={Math.max(28, sy(outs[0].p.v) - 10)} class="halo bad-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
-          ✕ Outside normal band
+      <path d={`${hi} ${lo} Z`} class="ncm-band" style={{ opacity: prog(t, 0, DRAW_FROM) }} />
+      <line x1={l} x2={W - r} y1={sy(FIXED)} y2={sy(FIXED)} class="ncm-fixed" />
+      <text x={W - r} y={sy(FIXED) - 6} text-anchor="end" class="muted halo" style={{ fontSize: '12px' }}>
+        A fixed {FIXED}% alarm
+      </text>
+      {t >= DRAW_FROM && <path d={line} class="ncm-cpu" />}
+      {t >= DRAW_FROM && hc < n - 1 && <line x1={sx(hc)} x2={sx(hc)} y1={top} y2={H - b} class="ncm-cursor" />}
+      {shown.map((s) => {
+        const seg = pts.slice(s.start, s.end);
+        const k = seg.reduce((m, p, i) => (p.v > seg[m].v ? i : m), 0);
+        const x = sx(s.start + k);
+        const y = sy(seg[k].v);
+        const right = x < W / 2;
+        return (
+          <g key={s.start}>
+            <circle cx={x} cy={y} r={7} class="bad-fill" stroke="var(--bg)" stroke-width={2} />
+            <text x={right ? x + 14 : x - 14} y={y + 5} text-anchor={right ? 'start' : 'end'} class="bad-fill halo" style={{ fontSize: '13px', fontWeight: 600 }}>
+              ✕ Unusual for this hour
+            </text>
+          </g>
+        );
+      })}
+      {missed && (
+        <text x={sx(flagged[0].start) + 14} y={sy(FIXED) + 18} class="warn-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          Under {FIXED}%: the fixed alarm stays silent
         </text>
       )}
     </svg>
   );
 }
 
-const RES: Resource[] = [
-  { id: 'cpu', label: 'CPU', unit: 'vCPU', cap: 960, used: 610, growthPerDay: 1.2, perVm: 4 },
-  { id: 'mem', label: 'Memory', unit: 'GB', cap: 6144, used: 4100, growthPerDay: 6, perVm: 16 },
-  { id: 'sto', label: 'Storage', unit: 'TB', cap: 180, used: 112, growthPerDay: 0.12, perVm: 0.2 },
-];
-
-const VMS: VmUsage[] = [
-  { name: 'sql-prod-01', vcpu: 16, memGB: 128, cpuPeak: 38, memPeak: 64 },
-  { name: 'web-03', vcpu: 8, memGB: 16, cpuPeak: 12, memPeak: 30 },
-  { name: 'build-agent-2', vcpu: 4, memGB: 8, cpuPeak: 97, memPeak: 70 },
-  { name: 'old-reporting', vcpu: 4, memGB: 16, cpuPeak: 1, memPeak: 6 },
-  { name: 'app-12', vcpu: 4, memGB: 16, cpuPeak: 62, memPeak: 66 },
-  { name: 'vdi-gold', vcpu: 8, memGB: 32, cpuPeak: 22, memPeak: 41 },
-];
-const VERDICT: Record<string, { tone: Tone; w: string }> = {
-  over: { tone: 'flow', w: 'Over-provisioned' },
-  under: { tone: 'warn', w: 'Constrained' },
-  inactive: { tone: 'neutral', w: 'Inactive' },
-  ok: { tone: 'ok', w: 'Right-sized' },
-};
-
 function AiOps() {
-  const [sens, setSens] = useEnum<'tight' | 'normal' | 'wide'>('k', 'normal', ['tight', 'normal', 'wide']);
-  const [spike, setSpike] = useBool('sp', true);
-  const [spAt, setSpAt] = useNum('sa', 4 * 24 + 2, 0, 7 * 24 - 4);
-  const [spSize, setSpSize] = useNum('sz', 40, 5, 70);
-  const [add, setAdd] = useNum('add', 20, 0, 150);
-  const [apply, setApply] = useBool('ap', false);
-  const pts = useMemo(() => {
-    const base = cpuSeries(DAYS, 11);
-    return anomalyBand(spike ? withSpike(base, LEARN * 24 + spAt, spSize) : base, K[sens], LEARN);
-  }, [sens, spike, spAt, spSize]);
-  const outs = pts.filter((p) => p.out).length;
-  const rw = runway(RES, add);
-  const lim = limiting(RES, add);
-  const fit = maxVmsThatFit(RES);
-  const recs = VMS.map((v) => ({ v, r: rightsize(v) }));
-  const freed = recs.reduce((s, { v, r }) => s + (r.verdict === 'over' ? v.vcpu - r.vcpu : r.verdict === 'inactive' ? v.vcpu : 0), 0);
-  const freedMem = recs.reduce((s, { v, r }) => s + (r.verdict === 'over' ? v.memGB - r.memGB : r.verdict === 'inactive' ? v.memGB : 0), 0);
-  const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][Math.floor(spAt / 24)];
+  const [spike, setSpike] = useEnum<Spike>('sp', 'night', ['night', 'day']);
+  const wk = useWeek(spike);
+  const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END });
+  useRestartOn(clock, [spike]);
+  const t = clock.t;
+  const hc = prog(t, DRAW_FROM, DRAW_FROM + DRAW_DUR) * (wk.pts.length - 1);
+  const phase = phaseAt([0, DRAW_FROM, wk.flagAt], t);
+  const flaggedNow = wk.flagged.filter((s) => s.start <= hc).length;
+  const firedNow = wk.fixed.filter((s) => s.start <= hc).length;
+  const passed = flaggedNow > 0;
+  const peak = Math.round(wk.peak);
+  const S = SPIKES[spike];
+  const lines: Line[] = [
+    { tone: 'ink', k: 'Normal, learned', text: 'The shaded band is what normal CPU looks like for each hour of the week, learned from the two weeks before.' },
+    { tone: 'ink', k: 'Busy afternoons are normal', text: 'Weekday afternoons run hot every day, so they stay inside the band and raise nothing.' },
+    spike === 'night'
+      ? { tone: 'bad', k: `Flagged ${S.when}`, text: `CPU jumps to ${peak}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` }
+      : { tone: 'bad', k: `Flagged ${S.when}`, text: `CPU jumps to ${peak}% on a busy afternoon, above normal even for that hour, so it is flagged. A fixed ${FIXED}% alarm catches this one too; the learned band matters most when trouble hides under the threshold.` },
+  ];
+  const line = lines[phase];
   return (
-    <>
-      <div class="lab">
-        <div class="ctl">
-          <Field label="Band width" tip="How far from the learned normal a value must be before it is flagged. Narrow catches more and is noisier." value={`±${K[sens]}σ`}>
-            <Seg label="Band width" value={sens} onChange={setSens} options={[{ value: 'tight', label: 'Tight' }, { value: 'normal', label: 'Normal' }, { value: 'wide', label: 'Wide' }]} />
-          </Field>
-          <Field label="Inject a CPU spike">
-            <Toggle on={spike} onChange={setSpike}>
-              Spike on {dayName} {String(spAt % 24).padStart(2, '0')}:00
-            </Toggle>
-          </Field>
-          <Field label="When" value={`${dayName} ${String(spAt % 24).padStart(2, '0')}:00`} why={!spike ? 'Turn the spike on first.' : null}>
-            <Slider label="Spike time" value={spAt} min={0} max={7 * 24 - 4} onChange={setSpAt} />
-          </Field>
-          <Field label="Size" value={`+${spSize} pts`} why={!spike ? 'Turn the spike on first.' : null}>
-            <Slider label="Spike size" value={spSize} min={5} max={70} onChange={setSpSize} />
-            <p class="field-note">A small spike in the busy afternoon can stay inside the band; the same spike at 3 a.m. is flagged.</p>
-          </Field>
-        </div>
-        <div class="stage">
-          <div class="spread">
-            <h2 class="sec-h" style={{ margin: 0 }}>
-              Anomaly detection
-            </h2>
-            <span class="hstack">
-              <Illus why="Mock data. The band here is learned per hour of day (weekday or weekend) from the previous two weeks. Intelligent Operations uses its own machine-learned baselines." />
-            </span>
-          </div>
-          <p class="small muted">VM CPU over the last week. The shaded band is what “normal” looks like for each hour, learned from the two weeks before.</p>
-          <div class="diagram-scroll">
-            <AnomalyChart pts={pts} />
-          </div>
-          <div class="legend">
-            <span>
-              <i class="sw" style={{ background: 'var(--ink-soft)', border: '1px solid var(--ink-line)' }} />
-              Learned normal band
-            </span>
-            <span>
-              <i class="sw" style={{ background: 'var(--text)', height: '2px' }} />
-              Observed
-            </span>
-            <span>
-              <i class="sw" style={{ background: 'var(--bad)', borderRadius: '50%' }} />
-              Anomaly
-            </span>
-          </div>
-          <Follow tone={outs ? 'bad' : 'ok'} k={outs ? `${outs} point(s) flagged` : 'Within normal'}>
-            <p>
-              {outs
-                ? 'The value left the band for this time of day, so it is raised as an anomaly. A fixed threshold set high enough to stay quiet on busy afternoons would miss a spike like this at night.'
-                : 'Nothing left the learned band. Busy afternoons are expected, so they do not raise alerts.'}
-            </p>
+    <Show
+      top={<Choice<Spike> label="This week" value={spike} onChange={setSpike} options={(['night', 'day'] as Spike[]).map((s) => ({ value: s, label: SPIKES[s].label }))} />}
+      foot={
+        <>
+          <Follow tone={line.tone} k={line.k}>
+            <p>{line.text}</p>
           </Follow>
-        </div>
-        <div class="rail">
-          <div class="side-sec">
-            <div class="eyebrow">Licensing</div>
-            <p class="small">
-              Part of <strong>Intelligent Operations</strong>, the AIOps component of NCM.
-            </p>
-            <p class="small muted" style={{ marginTop: 'var(--sp-2)' }}>
-              Capacity forecasting and right-sizing: <TierTag t="Starter" />
-            </p>
-            <p class="small muted" style={{ marginTop: 'var(--sp-2)' }}>
-              ML self-tuning and SQL Server monitoring: <TierTag t="Pro" />
-            </p>
-            <p class="field-note" style={{ marginTop: 'var(--sp-2)' }}>
-              Tier for each capability changes over releases; check the current NCM feature matrix.
-            </p>
-          </div>
-        </div>
+          <Kpis
+            items={[
+              { k: 'Flagged as unusual', v: flaggedNow, tone: flaggedNow ? 'bad' : 'neutral' },
+              { k: `Fixed ${FIXED}% alarm`, v: firedNow ? 'Fired' : passed ? 'Silent' : '—', tone: passed ? (firedNow ? 'ok' : 'warn') : 'neutral', sub: passed && !firedNow ? 'missed the spike' : undefined },
+              { k: 'Learned from', v: '2 weeks', sub: 'of history, per hour' },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <WeekChart wk={wk} hc={hc} t={t} spike={spike} />
       </div>
-
-      <div class="cols-2" style={{ marginTop: 'var(--sp-8)' }}>
-        <div>
-          <h2 class="sec-h">
-            Capacity runway <TierTag t="Starter" />
-          </h2>
-          <Field label="What if I add VMs?" value={`${add} VMs`} tip="Each added VM: 4 vCPU, 16 GB memory, 200 GB storage." note={<>Fits right now: up to {fit} more VMs of this size.</>}>
-            <Slider label="VMs to add" value={add} min={0} max={150} step={5} onChange={setAdd} />
-          </Field>
-          <div class="ncm-runway">
-            {RES.map((r) => {
-              const d = rw.find((x) => x.id === r.id)!.days;
-              const shown = Math.min(d, 365);
-              const tone: Tone = d <= 0 ? 'bad' : d < 90 ? 'warn' : 'ok';
-              return (
-                <div class="mrow" key={r.id}>
-                  <div class="mrow-top">
-                    <span>
-                      {r.label}
-                      {r.id === lim && <span class="small muted"> · limits first</span>}
-                    </span>
-                    <span class={`pct ${tone}-text`}>{d <= 0 ? 'Out now' : d > 365 ? '> 1 year' : `${Math.floor(d)} days`}</span>
-                  </div>
-                  <div class="meter thick">
-                    <span style={{ width: `${(shown / 365) * 100}%`, background: `var(--${tone})` }} />
-                  </div>
-                  <span class="mrow-sub">
-                    {(r.used + add * r.perVm).toFixed(r.id === 'sto' ? 1 : 0)} of {r.cap} {r.unit} usable after HA reserve · grows {r.growthPerDay} {r.unit}/day
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <div class="hstack" style={{ marginTop: 'var(--sp-2)' }}>
-            <Illus why="Straight-line growth for clarity. The product forecasts from observed trends and seasonality." />
-          </div>
-        </div>
-        <div>
-          <h2 class="sec-h">
-            Right-sizing <TierTag t="Starter" />
-          </h2>
-          <div class="ncm-tblwrap">
-            <table class="tbl">
-              <thead>
-                <tr>
-                  <th>VM</th>
-                  <th class="num">Now</th>
-                  <th class="num">Peak CPU / mem</th>
-                  <th>Finding</th>
-                  <th class="num">Suggest</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recs.map(({ v, r }) => (
-                  <tr key={v.name}>
-                    <td class="mono">{v.name}</td>
-                    <td class="num">
-                      {v.vcpu} vCPU · {v.memGB} GB
-                    </td>
-                    <td class="num">
-                      {v.cpuPeak}% / {v.memPeak}%
-                    </td>
-                    <td>
-                      <Chip tone={VERDICT[r.verdict].tone}>{VERDICT[r.verdict].w}</Chip>
-                    </td>
-                    <td class="num">{r.verdict === 'inactive' ? 'Review / power off' : r.verdict === 'ok' ? '—' : `${r.vcpu} vCPU · ${r.memGB} GB`}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div class="hstack" style={{ marginTop: 'var(--sp-3)' }}>
-            <Toggle on={apply} onChange={setApply}>
-              Apply the suggestions
-            </Toggle>
-          </div>
-          {apply && (
-            <Follow tone="ok" k="Reclaimed">
-              <p>
-                {freed} vCPU and {freedMem} GB memory freed for new workloads. The constrained VM gets more instead of less.
-              </p>
-            </Follow>
-          )}
-        </div>
-      </div>
-    </>
+      <Legend
+        items={[
+          { color: 'var(--ink-line)', label: 'Normal for each hour (learned)' },
+          { color: 'var(--text)', label: 'CPU this week' },
+          { color: 'var(--bad)', label: 'Flagged as unusual' },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="Anomaly detection animation"
+        fmt={() => (t < DRAW_FROM ? 'Learning' : hc >= wk.pts.length - 1 ? 'Week done' : `${WEEKDAYS[Math.min(6, Math.floor(hc / 24))]} ${String(Math.floor(hc) % 24).padStart(2, '0')}:00`)}
+        extra={<Illus why="Mock data. The band here is learned per hour of day (weekday or weekend) from the previous two weeks. Intelligent Operations uses its own machine-learned baselines, and also forecasts capacity runway and suggests right-sizing." />}
+      />
+    </Show>
   );
 }
 
 // ───────────────────────── Self-Service ─────────────────────────
-const CATALOG: CatalogItem[] = [
-  { id: 'linux', label: 'Linux VM', vms: 1, vcpu: 4, memGB: 8, diskGB: 100, multiVm: false },
-  { id: 'win', label: 'Windows VM', vms: 1, vcpu: 4, memGB: 16, diskGB: 150, multiVm: false },
-  { id: 'app', label: '3-tier web app', vms: 4, vcpu: 4, memGB: 16, diskGB: 200, multiVm: true },
-];
-const PROJECTS: Project[] = [
-  { id: 'web', label: 'web-shop', quota: { vcpu: 48, memGB: 192, diskGB: 3000 }, used: { vcpu: 28, memGB: 96, diskGB: 1400 }, approvalAbove: 8 },
-  { id: 'data', label: 'data-team', quota: { vcpu: 32, memGB: 128, diskGB: 2000 }, used: { vcpu: 26, memGB: 100, diskGB: 1700 }, approvalAbove: 8 },
-];
+const LINUX: CatalogItem = { id: 'linux', label: 'Linux VM', vms: 1, vcpu: 4, memGB: 8, diskGB: 100, multiVm: false };
+const APP: CatalogItem = { id: 'app', label: '3-tier web app', vms: 4, vcpu: 4, memGB: 16, diskGB: 200, multiVm: true };
+const WEB: Project = { id: 'web', label: 'web-shop', quota: { vcpu: 48, memGB: 192, diskGB: 3000 }, used: { vcpu: 28, memGB: 96, diskGB: 1400 }, approvalAbove: 8 };
+const DATA: Project = { id: 'data', label: 'data-team', quota: { vcpu: 32, memGB: 128, diskGB: 2000 }, used: { vcpu: 26, memGB: 100, diskGB: 1700 }, approvalAbove: 8 };
+const APP_ROLES = ['Load balancer', 'Web', 'App', 'Database'];
 
-function QuotaBar({ label, used, add, quota, unit }: { label: string; used: number; add: number; quota: number; unit: string }) {
-  const over = used + add > quota;
+type Req = 'vm' | 'app' | 'over';
+const REQS: Record<Req, { item: CatalogItem; project: Project; label: string }> = {
+  vm: { item: LINUX, project: WEB, label: 'Linux VM' },
+  app: { item: APP, project: WEB, label: '3-tier web app' },
+  over: { item: APP, project: DATA, label: 'App over quota' },
+};
+const STEP_WORD: Record<ProvStep['id'], string> = { policy: 'Check', approve: 'Approval', create: 'Create', config: 'Configure', ready: 'Ready', refused: 'Sent back' };
+
+const BOX = { req: { x: 12, w: 176 }, chk: { x: 258, w: 176 }, apr: { x: 504, w: 156 } } as const;
+const BY = 40;
+const BH = 88;
+const CL = { x: 696, y: 12, w: 252, h: 262 };
+const QY = 190;
+const QW = 648;
+
+function Provision({ req, t, steps, v }: { req: Req; t: number; steps: ProvStep[]; v: ReturnType<typeof evaluate> }) {
+  const { item, project: p } = REQS[req];
+  const at = stepAt(steps, t);
+  const id = steps[at.idx].id;
+  const idx = (s: ProvStep['id']) => steps.findIndex((x) => x.id === s);
+  const past = (s: ProvStep['id']) => idx(s) >= 0 && (at.idx > idx(s) || at.done);
+  const now = (s: ProvStep['id']) => !at.done && id === s;
+  const d = demand(item, 'M');
+  const tokenY = BY + BH / 2;
+
+  // the request token, drawn only while it travels along an arrow
+  let token: { x: number; bad?: boolean } | null = null;
+  const right = (k: keyof typeof BOX) => BOX[k].x + BOX[k].w;
+  const move = (a: number, b: number, f: number, bad = false) => (f > 0 && f < 1 ? { x: a + (b - a) * ease(f), bad } : null);
+  if (now('policy')) token = move(right('req'), BOX.chk.x, prog(at.frac, 0, 0.55));
+  else if (now('refused')) token = move(BOX.chk.x, right('req'), prog(at.frac, 0, 0.5), true);
+  else if (now('approve')) token = move(right('chk'), BOX.apr.x, prog(at.frac, 0, 0.35));
+  else if (now('create')) token = move(v.needsApproval ? right('apr') : right('chk'), CL.x, prog(at.frac, 0, 0.3));
+
+  const checked = past('policy');
+  const refused = checked && !v.ok;
+  const checking = now('policy') && at.frac >= 0.55;
+  const vmsShown = past('create') ? item.vms : now('create') ? Math.floor(prog(at.frac, 0.3, 1) * item.vms + 1e-9) : 0;
+  const configFrac = past('config') ? 1 : now('config') ? at.frac : 0;
+  const ready = past('ready') || (now('ready') && at.frac > 0.2);
+
+  const usedW = (p.used.vcpu / p.quota.vcpu) * QW;
+  const addW = Math.min(QW - usedW, (d.vcpu / p.quota.vcpu) * QW);
+  const overW = refused ? Math.min(28, ((p.used.vcpu + d.vcpu - p.quota.vcpu) / p.quota.vcpu) * QW) : 0;
+
+  const box = (k: keyof typeof BOX, title: string, sub: string, status: string, cls: string, statusCls: string, dashed = false) => (
+    <g class={cls}>
+      <rect class={`ss-box${dashed ? ' dashed' : ''}`} x={BOX[k].x} y={BY} width={BOX[k].w} height={BH} />
+      <text x={BOX[k].x + 14} y={BY + 26} class="ss-h">
+        {title}
+      </text>
+      <text x={BOX[k].x + 14} y={BY + 46} class="muted" style={{ fontSize: '12px' }}>
+        {sub}
+      </text>
+      <text x={BOX[k].x + 14} y={BY + 72} class={statusCls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        {status}
+      </text>
+    </g>
+  );
+
   return (
-    <div class="mrow" style={{ padding: 'var(--sp-2) 0' }}>
-      <div class="mrow-top">
-        <span>{label}</span>
-        <span class={`pct${over ? ' bad-text' : ''}`}>
-          {used + add} / {quota} {unit}
-        </span>
-      </div>
-      <div class="ncm-qbar">
-        <span style={{ width: `${Math.min(100, (used / quota) * 100)}%` }} />
-        <span class={over ? 'over' : 'add'} style={{ left: `${Math.min(100, (used / quota) * 100)}%`, width: `${Math.min(100 - (used / quota) * 100, (add / quota) * 100)}%` }} />
-      </div>
-    </div>
+    <svg class="diagram" viewBox={`0 0 ${W} 290`} role="img" aria-label={`${item.label} requested by project ${p.label}: ${v.ok ? `checked against quota${v.needsApproval ? ', approved' : ''}, created and configured` : 'refused at the quota check'}.`}>
+      <defs>
+        <marker id="ss-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" class="ss-mk" />
+        </marker>
+      </defs>
+      {[
+        [BOX.req.x + BOX.req.w, BOX.chk.x],
+        [BOX.chk.x + BOX.chk.w, BOX.apr.x],
+        [BOX.apr.x + BOX.apr.w, CL.x],
+      ].map(([a, b], i) => (
+        <line key={i} x1={a + 4} x2={b - 6} y1={tokenY} y2={tokenY} class={`ss-arrow${refused && i > 0 ? ' off' : ''}`} marker-end="url(#ss-ar)" />
+      ))}
+
+      {box('req', 'App team', `project ${p.label}`, refused && (now('refused') ? at.frac > 0.5 : true) ? '✕ Sent back' : `orders: ${item.label}`, '', refused && (at.done || at.frac > 0.5) ? 'bad-fill' : 'muted')}
+      {box(
+        'chk',
+        'Quota and policy',
+        'checked first',
+        checked ? (v.ok ? '✓ Fits the quota' : '✕ Over the quota') : checking ? 'Checking…' : 'Waiting',
+        '',
+        checked ? (v.ok ? 'ok-fill' : 'bad-fill') : checking ? 'ncm-ink' : 'muted',
+      )}
+      {box(
+        'apr',
+        'Approval',
+        `${d.vcpu} vCPU, limit ${p.approvalAbove}`,
+        refused ? 'Not reached' : !v.needsApproval ? 'Not needed' : past('approve') ? '✓ Approved' : now('approve') && at.frac > 0.35 ? 'Waiting for an admin' : 'Waiting',
+        refused ? 'ss-dim' : '',
+        !v.needsApproval ? 'muted' : past('approve') ? 'ok-fill' : now('approve') && at.frac > 0.35 ? 'warn-fill' : 'muted',
+        !v.needsApproval,
+      )}
+
+      {/* the cluster where the VMs land */}
+      <g class={refused ? 'ss-dim' : ''}>
+        <rect class="node-box" x={CL.x} y={CL.y} width={CL.w} height={CL.h} />
+        <text x={CL.x + 14} y={CL.y + 24} class="ss-h">
+          Cluster
+        </text>
+        <text x={CL.x + 14} y={CL.y + 42} class="muted" style={{ fontSize: '12px' }}>
+          {refused ? 'nothing created' : `${item.vms} VM${item.vms > 1 ? 's' : ''} from the blueprint`}
+        </text>
+        {Array.from({ length: item.vms }, (_, k) => {
+          const col = k % 2;
+          const row = Math.floor(k / 2);
+          const x = CL.x + 12 + col * 118;
+          const y = CL.y + 56 + row * 80;
+          const shown = k < vmsShown;
+          const role = item.multiVm ? APP_ROLES[k] : item.label;
+          return (
+            <g key={k} style={{ opacity: shown ? 1 : 0.35 }}>
+              <rect x={x} y={y} width={110} height={70} class={shown && ready ? 'vm hl' : 'vm'} stroke-dasharray={shown ? undefined : '4 3'} />
+              <text x={x + 10} y={y + 22} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                {role}
+              </text>
+              <text x={x + 10} y={y + 40} class="mono muted" style={{ fontSize: '11px' }}>
+                {item.vcpu} vCPU · {item.memGB} GB
+              </text>
+              {shown && !ready && configFrac > 0 && (
+                <>
+                  <rect x={x + 10} y={y + 52} width={90} height={6} class="bg3" />
+                  <rect x={x + 10} y={y + 52} width={90 * configFrac} height={6} class="flow-fill" />
+                </>
+              )}
+              {shown && ready && (
+                <text x={x + 10} y={y + 60} class="ok-fill" style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                  ✓ Running
+                </text>
+              )}
+              {shown && configFrac === 0 && (
+                <text x={x + 10} y={y + 60} class="muted" style={{ fontSize: '11.5px' }}>
+                  Created
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {ready && (
+          <text x={CL.x + 14} y={CL.y + CL.h - 14} class="ok-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
+            ✓ Owner, project, categories set
+          </text>
+        )}
+      </g>
+
+      {token && <rect x={token.x - 13} y={tokenY - 9} width={26} height={18} rx={3} class={token.bad ? 'bad-fill' : 'ink-fill'} />}
+
+      {/* the project's vCPU quota */}
+      <text x={12} y={QY - 10} class="muted" style={{ fontSize: '12px' }}>
+        Project {p.label} · vCPU quota
+      </text>
+      <rect x={12} y={QY} width={QW} height={18} class="bg3" />
+      <rect x={12} y={QY} width={usedW} height={18} class="ss-used" />
+      {checked && <rect x={12 + usedW} y={QY} width={addW} height={18} class={v.ok ? 'flow-fill' : 'bad-fill'} />}
+      {refused && <rect x={12 + QW} y={QY} width={overW} height={18} class="ss-over" />}
+      <line x1={12 + QW} x2={12 + QW} y1={QY - 6} y2={QY + 24} class="ss-limit" />
+      <text x={12} y={QY + 40} class="mono" style={{ fontSize: '12.5px' }}>
+        {checked ? (v.ok ? `${p.used.vcpu} used + ${d.vcpu} for this request = ${v.after.vcpu} of ${p.quota.vcpu} vCPU` : `${p.used.vcpu} used, needs ${d.vcpu}, only ${p.quota.vcpu - p.used.vcpu} left of ${p.quota.vcpu}`) : `${p.used.vcpu} of ${p.quota.vcpu} vCPU used`}
+      </text>
+    </svg>
   );
 }
 
 function SelfService() {
-  const [itemId, setItem] = useEnum<'linux' | 'win' | 'app'>('it', 'linux', ['linux', 'win', 'app']);
-  const [size, setSize] = useEnum<Size>('sz', 'M', ['S', 'M', 'L']);
-  const [proj, setProj] = useEnum<'web' | 'data'>('pj', 'web', ['web', 'data']);
-  const [tier, setTier] = useEnum<'Pro' | 'Ultimate'>('tr', 'Ultimate', ['Pro', 'Ultimate']);
-  const [started, setStarted] = useState(false);
-  const item = CATALOG.find((c) => c.id === itemId)!;
-  const p = PROJECTS.find((x) => x.id === proj)!;
-  const blockedByTier = item.multiVm && tier === 'Pro';
-  const d = demand(item, size);
-  const v = evaluate(p, d, tier === 'Ultimate');
-  const steps = provSteps(item, v.needsApproval);
+  const [req, setReq] = useEnum<Req>('rq', 'app', ['vm', 'app', 'over']);
+  const { item, project: p } = REQS[req];
+  const d = demand(item, 'M');
+  const v = evaluate(p, d, true);
+  const steps = useMemo(() => requestSteps(item, v), [req]);
   const total = steps.reduce((s, x) => s + x.dur, 0);
-  const clock = useClock({ rate: 1, duration: total, stepSize: 1, keys: true });
+  const clock = useClock({ rate: 1.5, duration: total, keys: true, poster: total });
+  useRestartOn(clock, [req]);
   const at = stepAt(steps, clock.t);
-  const can = v.ok && !blockedByTier;
-  const reset = () => {
-    setStarted(false);
-    clock.reset();
+  const id = steps[at.idx].id;
+  const left = p.quota.vcpu - p.used.vcpu;
+  const LINES: Record<ProvStep['id'], Line> = {
+    policy: { tone: 'ink', k: 'Checking quota and policy', text: `The ${p.label} team orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
+    approve: { tone: 'warn', k: 'Waiting for approval', text: `The app asks for ${d.vcpu} vCPU, over the project’s ${p.approvalAbove} vCPU approval limit, so a project admin approves it first.` },
+    create: { tone: 'flow', k: 'Creating from the blueprint', text: `The blueprint creates ${item.vms > 1 ? `${item.vms} VMs` : 'the VM'} on the cluster, already inside the project.` },
+    config: { tone: 'flow', k: 'Configuring', text: 'Install and configuration tasks from the blueprint run inside the VMs.' },
+    ready: { tone: 'ok', k: 'Ready, no ticket', text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
+    refused: { tone: 'bad', k: 'Sent back', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. The request is refused before anything is created, and the reason goes back to the team.` },
   };
-  const change = <T,>(fn: (x: T) => void) => (x: T) => {
-    fn(x);
-    reset();
-  };
-  const live = started && can;
-  const done = live && at.done;
-  const vmsUp = live ? (at.done ? item.vms : steps[at.idx].id === 'create' ? Math.max(0, Math.floor(((clock.t - steps.slice(0, at.idx).reduce((s, x) => s + x.dur, 0)) / steps[at.idx].dur) * item.vms)) : steps.findIndex((s) => s.id === 'create') < at.idx ? item.vms : 0) : 0;
-
+  const line = LINES[id];
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field label="Catalog item" tip="Items in the marketplace are published from blueprints: what to deploy and how to configure it.">
-          <Seg
-            label="Catalog item"
-            value={itemId}
-            onChange={change(setItem)}
-            options={CATALOG.map((c) => ({ value: c.id as 'linux' | 'win' | 'app', label: c.label }))}
+    <Show
+      top={<Choice<Req> label="Request" value={req} onChange={setReq} options={(['vm', 'app', 'over'] as Req[]).map((r) => ({ value: r, label: REQS[r].label }))} />}
+      foot={
+        <>
+          <Follow tone={line.tone} k={line.k}>
+            <p>{line.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              v.ok
+                ? { k: 'Project vCPU after', v: `${v.after.vcpu} of ${p.quota.vcpu}`, tone: 'ok' }
+                : { k: 'Project vCPU left', v: `${left} of ${p.quota.vcpu}`, tone: 'bad', sub: `needs ${d.vcpu}` },
+              { k: 'Approval', v: !v.ok ? '—' : v.needsApproval ? 'Needed' : 'Not needed', sub: v.ok && v.needsApproval ? `over ${p.approvalAbove} vCPU` : undefined },
+              { k: 'License', v: item.multiVm ? 'NCM Ultimate' : 'NCM Pro', tip: item.multiVm ? TIER_TIP.Ultimate : TIER_TIP.Pro },
+            ]}
           />
-        </Field>
-        <Field label="Size" value={`${d.vcpu} vCPU · ${d.memGB} GB`}>
-          <Seg label="Size" value={size} onChange={change(setSize)} options={(['S', 'M', 'L'] as Size[]).map((s) => ({ value: s, label: s }))} />
-        </Field>
-        <Field label="Project" tip="Projects group people, quotas and the infrastructure they may use.">
-          <Seg label="Project" value={proj} onChange={change(setProj)} options={PROJECTS.map((x) => ({ value: x.id as 'web' | 'data', label: x.label }))} />
-        </Field>
-        <Field label="License tier" tip="Changes what the catalog may offer." why={blockedByTier ? 'Multi-VM app blueprints need NCM Ultimate.' : null}>
-          <Seg label="Tier" value={tier} onChange={change(setTier)} options={[{ value: 'Pro', label: 'NCM Pro' }, { value: 'Ultimate', label: 'NCM Ultimate' }]} />
-        </Field>
-        <Field label="Request" why={!v.ok ? 'Over the project quota. Pick a smaller size or another project.' : null}>
-          <button
-            type="button"
-            class="btn primary"
-            disabled={!can || live}
-            onClick={() => {
-              setStarted(true);
-              clock.seek(0);
-              clock.play();
-            }}
-          >
-            Request {item.label}
-          </button>
-        </Field>
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <Provision req={req} t={clock.t} steps={steps} v={v} />
       </div>
-      <div class="stage">
-        <h2 class="sec-h">
-          {item.label} in project {p.label} {item.multiVm ? <TierTag t="Ultimate" /> : <TierTag t="Pro" />}
-        </h2>
-        <svg class="diagram" viewBox="0 0 900 190" role="img" aria-label={`${item.vms} VM(s) being provisioned`}>
-          <rect class="frame" x={1} y={1} width={898} height={188} rx={4} />
-          <text x={16} y={26} class="muted" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>
-            PROJECT {p.label.toUpperCase()} · CLUSTER NYC-PROD
-          </text>
-          {Array.from({ length: item.vms }, (_, i) => {
-            const up = i < vmsUp;
-            const role = item.multiVm ? ['Load balancer', 'Web', 'App', 'Database'][i] : item.label;
-            const x = 24 + i * 214;
-            return (
-              <g key={i}>
-                <rect x={x} y={48} width={196} height={112} rx={4} class={up ? 'vm hl' : 'vm'} stroke-dasharray={up ? undefined : '5 4'} style={{ opacity: up ? 1 : 0.6 }} />
-                <text x={x + 14} y={76} style={{ fontWeight: 600, fontSize: '14px' }}>
-                  {role}
-                </text>
-                <text x={x + 14} y={98} class="muted mono" style={{ fontSize: '11.5px' }}>
-                  {Math.max(1, item.vcpu * ({ S: 0.5, M: 1, L: 2 } as const)[size])} vCPU · {Math.max(1, item.memGB * ({ S: 0.5, M: 1, L: 2 } as const)[size])} GB
-                </text>
-                <text x={x + 14} y={140} class={up ? (done ? 'ok-fill' : 'flow-fill') : 'muted'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
-                  {up ? (done ? '✓ Running, configured' : '→ Configuring') : 'Not created'}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-        <ol class="ncm-steps">
-          {steps.map((s, i) => {
-            const st = !live ? 'todo' : at.done || i < at.idx ? 'done' : i === at.idx ? 'now' : 'todo';
-            return (
-              <li key={s.id} class={st}>
-                <span class="ic" aria-hidden="true">
-                  {st === 'done' ? '✓' : st === 'now' ? '→' : String(i + 1)}
-                </span>
-                {s.label}
-                {s.id === 'approve' && <Illus why="Approval is granted automatically after a few seconds in this demo." />}
-              </li>
-            );
-          })}
-        </ol>
-        {live && <PlayBar clock={clock} label="Provisioning" scrub={false} fmt={(t) => `${t.toFixed(0)} s`} />}
-        {live && (
-          <button type="button" class="tbtn" onClick={reset}>
-            New request
-          </button>
-        )}
-        <Follow tone={!v.ok || blockedByTier ? 'bad' : done ? 'ok' : live ? 'flow' : 'ink'} k={!v.ok ? 'Request refused' : blockedByTier ? 'Not in this tier' : done ? 'Ready' : live ? 'Provisioning' : 'Ready to request'}>
-          {!v.ok ? (
-            <ul>
-              {v.reasons.map((r) => (
-                <li key={r}>{r}</li>
-              ))}
-            </ul>
-          ) : blockedByTier ? (
-            <p>Multi-VM application blueprints are an NCM Ultimate feature. Single-VM items work in Pro.</p>
-          ) : done ? (
-            <p>The requester gets a working {item.multiVm ? 'application' : 'VM'} without a ticket, inside the quota, with ownership and categories already set.</p>
-          ) : (
-            <p>
-              {v.needsApproval ? `This request is over ${p.approvalAbove} vCPU, so the project’s approval policy adds an approval step. ` : ''}Quota and policy are checked before anything is created.
-            </p>
-          )}
-        </Follow>
-        <p class="field-note" style={{ marginTop: 'var(--sp-3)' }}>
-          Durations are compressed for the demo. <Illus why="Real provisioning time depends on the blueprint, image size and configuration tasks." />
-        </p>
-      </div>
-      <div class="rail">
-        <div class="side-sec">
-          <div class="eyebrow">Project quota: {p.label}</div>
-          <QuotaBar label="vCPU" used={p.used.vcpu} add={live || !v.ok ? d.vcpu : 0} quota={p.quota.vcpu} unit="" />
-          <QuotaBar label="Memory" used={p.used.memGB} add={live || !v.ok ? d.memGB : 0} quota={p.quota.memGB} unit="GB" />
-          <QuotaBar label="Storage" used={p.used.diskGB} add={live || !v.ok ? d.diskGB : 0} quota={p.quota.diskGB} unit="GB" />
-        </div>
-        <div class="side-sec">
-          <div class="eyebrow">By tier</div>
-          <p class="small">
-            <TierTag t="Pro" /> Marketplace, single-VM blueprints, runbooks.
-          </p>
-          <p class="small" style={{ marginTop: 'var(--sp-2)' }}>
-            <TierTag t="Ultimate" /> Multi-VM app blueprints, approvals and scheduling.
-          </p>
-          <p class="field-note" style={{ marginTop: 'var(--sp-2)' }}>Self-Service was formerly called Calm.</p>
-        </div>
-      </div>
-    </div>
+      <PlayBar
+        clock={clock}
+        label="Self-service request animation"
+        fmt={() => STEP_WORD[id]}
+        extra={<Illus why="Durations are compressed. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
+      />
+    </Show>
   );
 }
 
 // ───────────────────────── Cost ─────────────────────────
+const RATES = { vcpuMonth: 20, memGBMonth: 3, tbMonth: 40 };
 const USAGE: Usage[] = [
   { project: 'web-shop', vcpu: 180, memGB: 720, tb: 22, budget: 9000 },
   { project: 'data-team', vcpu: 240, memGB: 1900, tb: 85, budget: 15000 },
-  { project: 'vdi', vcpu: 400, memGB: 1600, tb: 40, budget: 14000 },
-  { project: 'dev-test', vcpu: 120, memGB: 480, tb: 18, budget: 4000 },
+  { project: 'vdi', vcpu: 400, memGB: 1600, tb: 40, budget: 19000 },
+  { project: 'dev-test', vcpu: 80, memGB: 320, tb: 12, budget: 4000 },
 ];
+const MONTH = 30;
+const HOT: { project: string; surge: Surge } = { project: 'dev-test', surge: { from: 8, factor: 2 } };
+const TRACK_MAX = 1.4; // the bar runs to 140% of budget
+type Month = 'plan' | 'hot';
+
+interface CostEvent {
+  day: number;
+  project: string;
+  state: Exclude<BudgetState, 'ok'>;
+}
+
+function useMonth(month: Month) {
+  return useMemo(() => {
+    const rows = USAGE.map((u) => {
+      const surge = month === 'hot' && u.project === HOT.project ? HOT.surge : undefined;
+      const monthly = monthlyCost(u, RATES);
+      return { u, monthly, surge, warn: crossDay(monthly, u.budget, 'warn', MONTH, surge), over: crossDay(monthly, u.budget, 'over', MONTH, surge) };
+    });
+    const events: CostEvent[] = rows
+      .flatMap((r) => [
+        ...(r.warn !== null ? [{ day: r.warn, project: r.u.project, state: 'warn' as const }] : []),
+        ...(r.over !== null ? [{ day: r.over, project: r.u.project, state: 'over' as const }] : []),
+      ])
+      .sort((a, b) => a.day - b.day);
+    return { rows, events };
+  }, [month]);
+}
+
+function Showback({ m, day }: { m: ReturnType<typeof useMonth>; day: number }) {
+  const L = 130;
+  const TWd = 600;
+  const top = 56;
+  const rowH = 64;
+  const H = top + m.rows.length * rowH + 8;
+  const sx = (f: number) => L + (Math.min(f, TRACK_MAX) / TRACK_MAX) * TWd;
+  return (
+    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Spend so far for ${m.rows.length} projects against their monthly budgets, day ${Math.ceil(day)} of ${MONTH}.`}>
+      <text x={0} y={16} class="muted" style={{ fontSize: '12.5px' }}>
+        Rates you set: ${RATES.vcpuMonth} per vCPU · ${RATES.memGBMonth} per GB of memory · ${RATES.tbMonth} per TB, each month
+      </text>
+      <line x1={sx(1)} x2={sx(1)} y1={top - 6} y2={H - 4} class="ss-limit" />
+      <text x={sx(1)} y={top - 10} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
+        Budget
+      </text>
+      <line x1={sx(0.8)} x2={sx(0.8)} y1={top - 2} y2={H - 4} class="line" stroke-dasharray="3 3" />
+      <text x={sx(0.8)} y={top - 10} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+        80%
+      </text>
+      {m.rows.map((r, i) => {
+        const y = top + i * rowH;
+        const spent = accrued(r.monthly, day, MONTH, r.surge);
+        const st = budgetState(spent, r.u.budget);
+        const f = spent / r.u.budget;
+        return (
+          <g key={r.u.project}>
+            <text x={0} y={y + 24} style={{ fontSize: '14px', fontWeight: 600 }}>
+              {r.u.project}
+            </text>
+            <rect x={L} y={y + 8} width={TWd} height={24} class="bg3" />
+            <rect x={L} y={y + 8} width={sx(f) - L} height={24} class={`${st === 'over' ? 'bad' : st === 'warn' ? 'warn' : 'ok'}-fill`} style={{ opacity: 0.85 }} />
+            <text x={L} y={y + 50} class="mono muted" style={{ fontSize: '11.5px' }}>
+              ${Math.round(spent).toLocaleString('en-US')} of ${r.u.budget.toLocaleString('en-US')}
+            </text>
+            <text x={L + TWd + 18} y={y + 25} class={st === 'over' ? 'bad-fill' : st === 'warn' ? 'warn-fill' : 'ok-fill'} style={{ fontSize: '13px', fontWeight: 600 }}>
+              {st === 'over' ? '✕ Over budget' : st === 'warn' ? '⚠ 80% alert sent' : '✓ On track'}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 function Cost() {
-  const [cpuR, setCpuR] = useNum('rc', 20, 5, 60);
-  const [memR, setMemR] = useNum('rm', 3, 1, 10);
-  const [tbR, setTbR] = useNum('rt', 40, 10, 150);
-  const [growth, setGrowth] = useNum('gr', 0, -30, 60);
-  const rates = { vcpuMonth: cpuR, memGBMonth: memR, tbMonth: tbR };
-  const rows = USAGE.map((u) => {
-    const g = 1 + growth / 100;
-    const cost = monthlyCost({ ...u, vcpu: u.vcpu * g, memGB: u.memGB * g, tb: u.tb * g }, rates);
-    return { u, cost, st: budgetState(cost, u.budget) };
-  });
-  const max = Math.max(...rows.map((r) => Math.max(r.cost, r.u.budget)));
-  const W = 900;
-  const l = 110;
-  const rowH = 50;
-  const sx = (v: number) => (v / max) * (W - l - 120);
-  const toneOf = (s: string): Tone => (s === 'over' ? 'bad' : s === 'warn' ? 'warn' : 'ok');
-  const total = rows.reduce((s, r) => s + r.cost, 0);
+  const [month, setMonth] = useEnum<Month>('mo', 'hot', ['plan', 'hot']);
+  const m = useMonth(month);
+  const clock = useClock({ rate: 3, duration: MONTH + 1, keys: true, poster: MONTH + 1 });
+  useRestartOn(clock, [month]);
+  const day = Math.min(MONTH, clock.t);
+  const phase = phaseAt([0, ...m.events.map((e) => e.day), MONTH + 0.01], clock.t);
+  const ev = phase > 0 && phase <= m.events.length ? m.events[phase - 1] : null;
+  const total = m.rows.reduce((s, r) => s + accrued(r.monthly, day, MONTH, r.surge), 0);
+  const alerts = m.events.filter((e) => e.day <= day).length;
+  const warnDay = (p: string) => Math.ceil(m.events.find((e) => e.project === p && e.state === 'warn')?.day ?? 0);
+  let line: Line;
+  if (clock.t > MONTH)
+    line = { tone: 'ink', k: 'Month closed', text: `Showback by project for the month: $${Math.round(total).toLocaleString('en-US')} in total, at your own rates. ${alerts ? `${alerts} budget alert${alerts > 1 ? 's' : ''} went out before the month closed.` : 'No project crossed 80% of its budget.'}` };
+  else if (!ev) line = { tone: 'ink', k: 'Metered every day', text: 'Each project’s use of CPU, memory and storage is metered daily, priced at the rates you set and compared with its budget. In NCM 2.0 this runs on-premises.' };
+  else if (ev.state === 'warn')
+    line = { tone: 'warn', k: '80% alert', text: `${ev.project} passed 80% of its budget on day ${Math.ceil(ev.day)}, so its owner gets an alert with ${MONTH - Math.ceil(ev.day)} days of the month still to go.` };
+  else line = { tone: 'bad', k: 'Over budget', text: `${ev.project} went over its budget on day ${Math.ceil(ev.day)}. Its owner has known since day ${warnDay(ev.project)}, not from the invoice.` };
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field label="Rate: vCPU per month" value={`$${cpuR}`} tip="You set the unit rates, so showback reflects your own cost model.">
-          <Slider label="vCPU rate" value={cpuR} min={5} max={60} onChange={setCpuR} />
-        </Field>
-        <Field label="Rate: GB memory per month" value={`$${memR}`}>
-          <Slider label="Memory rate" value={memR} min={1} max={10} onChange={setMemR} />
-        </Field>
-        <Field label="Rate: TB storage per month" value={`$${tbR}`}>
-          <Slider label="Storage rate" value={tbR} min={10} max={150} step={5} onChange={setTbR} />
-        </Field>
-        <Field label="Usage change this month" value={`${growth > 0 ? '+' : ''}${growth}%`} tip="What if every project grows (or shrinks) by this much?">
-          <Slider label="Usage change" value={growth} min={-30} max={60} step={5} onChange={setGrowth} />
-        </Field>
-        <div class="hstack" style={{ marginTop: 'var(--sp-3)' }}>
-          <Illus why="Rates, usage and budgets are made-up examples. Cost Governance meters actual consumption and uses the rates you configure." />
-        </div>
+    <Show
+      top={
+        <Choice<Month>
+          label="This month"
+          value={month}
+          onChange={setMonth}
+          options={[
+            { value: 'plan', label: 'As planned' },
+            { value: 'hot', label: 'dev-test runs hot' },
+          ]}
+        />
+      }
+      foot={
+        <>
+          <Follow tone={line.tone} k={line.k}>
+            <p>{line.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: 'Spent so far', v: `$${(total / 1000).toFixed(1)}k`, sub: `${m.rows.length} projects` },
+              { k: 'Budget alerts sent', v: alerts, tone: alerts ? 'warn' : 'ok' },
+              { k: 'License', v: 'NCM Pro', tip: TIER_TIP.Pro },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <Showback m={m} day={day} />
       </div>
-      <div class="stage">
-        <h2 class="sec-h">
-          Showback by project <TierTag t="Pro" />
-        </h2>
-        <div class="diagram-scroll">
-          <svg class="diagram" viewBox={`0 0 ${W} ${rows.length * rowH + 30}`} role="img" aria-label="Monthly cost against budget for each project">
-            {rows.map((r, i) => {
-              const y = 10 + i * rowH;
-              return (
-                <g key={r.u.project}>
-                  <text x={0} y={y + 20} style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                    {r.u.project}
-                  </text>
-                  <rect x={l} y={y + 4} width={sx(r.cost)} height={24} class={`${r.st === 'over' ? 'bad' : r.st === 'warn' ? 'warn' : 'ok'}-fill`} style={{ opacity: 0.8 }} />
-                  <line x1={l + sx(r.u.budget)} x2={l + sx(r.u.budget)} y1={y} y2={y + 32} stroke="var(--text)" stroke-width={2} />
-                  <text x={l + sx(r.u.budget) + 4} y={y + 42} class="muted" style={{ fontSize: '11px' }}>
-                    budget ${r.u.budget.toLocaleString()}
-                  </text>
-                  <text x={l + Math.max(sx(r.cost), sx(r.u.budget)) + 10} y={y + 21} class="mono" style={{ fontSize: '12.5px', fontWeight: 600 }}>
-                    ${Math.round(r.cost).toLocaleString()}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-        <div class="ncm-tblwrap" style={{ marginTop: 'var(--sp-4)' }}>
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th class="num">vCPU</th>
-              <th class="num">Memory</th>
-              <th class="num">Storage</th>
-              <th class="num">Cost / month</th>
-              <th>Budget</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const g = 1 + growth / 100;
-              return (
-                <tr key={r.u.project}>
-                  <td>{r.u.project}</td>
-                  <td class="num">{Math.round(r.u.vcpu * g)}</td>
-                  <td class="num">{Math.round(r.u.memGB * g)} GB</td>
-                  <td class="num">{(r.u.tb * g).toFixed(1)} TB</td>
-                  <td class="num">${Math.round(r.cost).toLocaleString()}</td>
-                  <td>
-                    <Chip tone={toneOf(r.st)}>{r.st === 'over' ? 'Over budget' : r.st === 'warn' ? '80%+ used' : 'On track'}</Chip>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        </div>
-        <Follow tone={rows.some((r) => r.st === 'over') ? 'bad' : rows.some((r) => r.st === 'warn') ? 'warn' : 'ok'} k="Budget alerts">
-          <p>
-            {rows.filter((r) => r.st !== 'ok').length
-              ? `${rows.filter((r) => r.st !== 'ok').map((r) => r.u.project).join(', ')} crossed a budget threshold, so the owners get an alert before the month closes, not after.`
-              : 'Every project is under 80% of its budget.'}
-          </p>
-        </Follow>
-      </div>
-      <div class="rail">
-        <div class="side-sec">
-          <div class="eyebrow">This month</div>
-          <div class="bignum">${Math.round(total / 1000)}k</div>
-          <Stat k="Projects over budget" v={rows.filter((r) => r.st === 'over').length} tone={rows.some((r) => r.st === 'over') ? 'bad' : 'ok'} />
-        </div>
-        <div class="side-sec">
-          <div class="eyebrow">Where the cost data lives</div>
-          <p class="small">
-            In NCM 2.0 (2026), Cost Governance runs fully on-premises, inside your own data center, with no separate SaaS portal. Metering, budgets and chargeback stay on infrastructure you control.
-          </p>
-          <p class="field-note" style={{ marginTop: 'var(--sp-2)' }}>Cost Governance was formerly called Beam.</p>
-        </div>
-      </div>
-    </div>
+      <PlayBar
+        clock={clock}
+        label="Monthly showback animation"
+        fmt={(t) => (t > MONTH ? 'Month closed' : `Day ${Math.max(1, Math.ceil(t))} of ${MONTH}`)}
+        extra={<Illus why="Rates, usage and budgets are made-up examples, and use is spread evenly over the month. Cost Governance (formerly Beam) meters actual consumption and uses the rates you configure." />}
+      />
+    </Show>
   );
 }
 
 // ───────────────────────── SecOps ─────────────────────────
-const BASELINES: Record<'hard' | 'reg', Omit<Check, 'pass'>[]> = {
-  hard: [
-    { id: 'pw', label: 'Default admin passwords changed', fix: 'Rotate the default credentials on hosts and CVMs.', sev: 'high' },
-    { id: 'dare', label: 'Data-at-rest encryption enabled', fix: 'Enable software encryption on the storage containers, with a key manager.', sev: 'high' },
-    { id: 'ssh', label: 'Password SSH login disabled', fix: 'Switch cluster lockdown on and use key-based access.', sev: 'medium' },
-    { id: 'syslog', label: 'Logs forwarded to the SIEM', fix: 'Add the remote syslog server for audit and system logs.', sev: 'medium' },
-    { id: 'ver', label: 'Software on a supported release', fix: 'Plan an LCM upgrade to a supported release.', sev: 'low' },
-  ],
-  reg: [
-    { id: 'seg', label: 'Cardholder VMs isolated by security policy', fix: 'Apply a Flow isolation policy to the PCI category.', sev: 'high' },
-    { id: 'mfa', label: 'Admin access through the identity provider', fix: 'Remove local admin accounts and use directory or SAML login.', sev: 'high' },
-    { id: 'audit', label: 'Audit trail retained 12 months', fix: 'Raise log retention on the SIEM target.', sev: 'medium' },
-    { id: 'snap', label: 'Protected by a DR policy', fix: 'Add the category to a protection policy.', sev: 'medium' },
-  ],
+type Base = 'hard' | 'reg';
+type BaseCheck = Omit<Check, 'pass'> & { short: string; failsAtFirst: boolean };
+const BASELINES: Record<Base, { label: string; name: string; checks: BaseCheck[]; drift: { id: string; text: string } }> = {
+  hard: {
+    label: 'Platform hardening',
+    name: 'platform hardening',
+    checks: [
+      { id: 'pw', short: 'No default passwords', label: 'Default admin passwords changed', fix: 'Rotate the default credentials on hosts and CVMs.', sev: 'high', failsAtFirst: false },
+      { id: 'dare', short: 'Encryption at rest', label: 'Data-at-rest encryption enabled', fix: 'Enable software encryption on the storage containers, with a key manager.', sev: 'high', failsAtFirst: true },
+      { id: 'ssh', short: 'Password SSH off', label: 'Password SSH login disabled', fix: 'Switch cluster lockdown on and use key-based access.', sev: 'medium', failsAtFirst: true },
+      { id: 'syslog', short: 'Logs sent to SIEM', label: 'Logs forwarded to the SIEM', fix: 'Add the remote syslog server for audit and system logs.', sev: 'medium', failsAtFirst: false },
+      { id: 'ver', short: 'Supported release', label: 'Software on a supported release', fix: 'Plan an LCM upgrade to a supported release.', sev: 'low', failsAtFirst: true },
+    ],
+    drift: { id: 'ssh', text: 'Weeks later someone turns password SSH login back on to troubleshoot, and forgets to turn it off.' },
+  },
+  reg: {
+    label: 'Card data (PCI)',
+    name: 'card-data regulatory',
+    checks: [
+      { id: 'seg', short: 'Card data isolated', label: 'Cardholder VMs isolated by security policy', fix: 'Apply a Flow isolation policy to the PCI category.', sev: 'high', failsAtFirst: true },
+      { id: 'mfa', short: 'Admin login via IdP', label: 'Admin access through the identity provider', fix: 'Remove local admin accounts and use directory or SAML login.', sev: 'high', failsAtFirst: false },
+      { id: 'audit', short: 'Audit kept 12 months', label: 'Audit trail retained 12 months', fix: 'Raise log retention on the SIEM target.', sev: 'medium', failsAtFirst: true },
+      { id: 'snap', short: 'DR policy in place', label: 'Protected by a DR policy', fix: 'Add the category to a protection policy.', sev: 'medium', failsAtFirst: false },
+    ],
+    drift: { id: 'mfa', text: 'Weeks later someone adds a local admin account for a contractor, outside the identity provider.' },
+  },
 };
-const INITIAL_FAIL = new Set(['dare', 'ssh', 'ver', 'seg', 'audit']);
 
-function SecOps() {
-  const [base, setBase] = useEnum<'hard' | 'reg'>('bl', 'hard', ['hard', 'reg']);
-  const [scanned, setScanned] = useState(false);
-  const [fixed, setFixed] = useState<string[]>([]);
-  const checks: Check[] = BASELINES[base].map((c) => ({ ...c, pass: !INITIAL_FAIL.has(c.id) || fixed.includes(c.id) }));
-  const sc = score(checks);
-  const fails = checks.filter((c) => !c.pass);
+const SCAN0 = 0.4;
+const SCAN_EACH = 0.55;
+const FIX_EACH = 1.5;
+const RESCAN_EACH = 0.25;
+
+type TileState = 'idle' | 'scan' | 'pass' | 'fail' | 'fixing' | 'fixed' | 'changed' | 'caught';
+
+function secTimeline(base: Base) {
+  const B = BASELINES[base];
+  const n = B.checks.length;
+  const scanEnd = SCAN0 + n * SCAN_EACH;
+  const fails = B.checks.filter((c) => c.failsAtFirst);
+  const fix0 = scanEnd + 1.6;
+  const fixEnd = fix0 + fails.length * FIX_EACH;
+  const drift = fixEnd + 1.6;
+  const rescan = drift + 1.6;
+  const caught = rescan + n * RESCAN_EACH;
+  return { scanEnd, fix0, fixEnd, drift, rescan, caught, end: caught + 2.2, fails };
+}
+
+function tileState(base: Base, i: number, t: number, tl: ReturnType<typeof secTimeline>): TileState {
+  const B = BASELINES[base];
+  const c = B.checks[i];
+  const s0 = SCAN0 + i * SCAN_EACH;
+  if (t < s0) return 'idle';
+  if (t < s0 + SCAN_EACH) return 'scan';
+  const isDrift = c.id === B.drift.id;
+  if (isDrift && t >= tl.drift) {
+    const r = tl.rescan + i * RESCAN_EACH;
+    return t >= r + RESCAN_EACH ? 'caught' : 'changed';
+  }
+  if (!c.failsAtFirst) return 'pass';
+  const j = tl.fails.indexOf(c);
+  const f0 = tl.fix0 + j * FIX_EACH;
+  if (t < f0) return 'fail';
+  if (t < f0 + FIX_EACH * 0.7) return 'fixing';
+  return 'fixed';
+}
+
+const STATE_TEXT: Record<TileState, string> = {
+  idle: 'Not scanned',
+  scan: 'Scanning…',
+  pass: '✓ Pass',
+  fail: '✕ Fail',
+  fixing: '→ Fixing',
+  fixed: '✓ Fixed',
+  changed: '⚠ Changed by hand',
+  caught: '✕ Drift caught',
+};
+
+function Compliance({ base, t, tl }: { base: Base; t: number; tl: ReturnType<typeof secTimeline> }) {
+  const B = BASELINES[base];
+  const n = B.checks.length;
+  const states = B.checks.map((_, i) => tileState(base, i, t, tl));
+  const scanned = t >= tl.scanEnd;
+  const passing = (s: TileState) => s === 'pass' || s === 'fixed' || s === 'changed';
+  const sc = score(B.checks.map((c, i) => ({ ...c, pass: passing(states[i]) })));
+  const cols = n > 4 ? 3 : 2;
+  const X0 = 290;
+  const gap = 16;
+  const tw = (W - X0 - 8 - gap * (cols - 1)) / cols;
+  const th = 104;
+  const H = 270;
+  const C = 2 * Math.PI * 92;
+  const tot = B.checks.reduce((a, c) => a + SEV_WEIGHT[c.sev], 0);
+  const arcCls = (s: TileState, sev: Check['sev']) =>
+    s === 'idle' || s === 'scan' ? 'sec-arc-idle' : passing(s) ? 'ok-stroke' : s === 'fixing' ? 'flow-stroke' : sev === 'high' ? 'bad-stroke' : 'warn-stroke';
+  const tileCls = (s: TileState, sev: Check['sev']) =>
+    s === 'scan' ? 'sec-tile scan' : s === 'fail' || s === 'caught' ? `sec-tile ${sev === 'high' ? 'bad' : 'warn'}` : s === 'fixing' ? 'sec-tile fix' : s === 'changed' ? 'sec-tile changed' : passing(s) ? 'sec-tile ok' : 'sec-tile';
+  const textCls = (s: TileState, sev: Check['sev']) =>
+    s === 'idle' ? 'muted' : s === 'changed' ? 'warn-fill' : s === 'scan' ? 'ncm-ink' : s === 'fixing' ? 'flow-fill' : passing(s) ? 'ok-fill' : sev === 'high' ? 'bad-fill' : 'warn-fill';
+  let before = 0;
   return (
-    <div class="lab">
-      <div class="ctl">
-        <Field label="Baseline" tip="A baseline is the list of settings your policy requires. Findings are measured against it.">
-          <Seg label="Baseline" value={base} onChange={(b) => (setBase(b), setScanned(false))} options={[{ value: 'hard', label: 'Platform hardening' }, { value: 'reg', label: 'Regulatory (card data)' }]} />
-        </Field>
-        <Field label="Scan">
-          <div class="hstack">
-            <button type="button" class="btn primary" onClick={() => setScanned(true)}>
-              <Icon name="search" /> {scanned ? 'Re-scan' : 'Scan the cluster'}
-            </button>
-            {fixed.length > 0 && (
-              <button type="button" class="tbtn" onClick={() => (setFixed([]), setScanned(false))}>
-                Reset
-              </button>
-            )}
-          </div>
-        </Field>
-        <div class="hstack" style={{ marginTop: 'var(--sp-3)' }}>
-          <Illus why="Example checks written for this demo. Security Compliance ships its own checks and regulatory reports." />
-        </div>
-      </div>
-      <div class="stage">
-        <h2 class="sec-h">
-          Compliance against the baseline <TierTag t="Ultimate" />
-        </h2>
-        {!scanned ? (
-          <p class="lede">Run a scan to compare the cluster with the {base === 'hard' ? 'hardening' : 'regulatory'} baseline.</p>
-        ) : (
-          <ul class="ncm-checks">
-            {checks.map((c) => (
-              <li key={c.id} class={c.pass ? 'pass' : 'fail'}>
-                <Chip tone={c.pass ? 'ok' : c.sev === 'high' ? 'bad' : 'warn'}>{c.pass ? 'Pass' : `Fail · ${c.sev}`}</Chip>
-                <div>
-                  <div class="t">{c.label}</div>
-                  {!c.pass && <div class="small muted">Suggested fix: {c.fix}</div>}
-                </div>
-                {!c.pass && (
-                  <button type="button" class="btn" onClick={() => setFixed([...fixed, c.id])}>
-                    Remediate
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        {scanned && (
-          <Follow tone={fails.length ? 'warn' : 'ok'} k={fails.length ? `${fails.length} finding(s)` : 'Compliant'}>
-            <p>
-              {fails.length
-                ? 'Each finding comes with a suggested remediation. Some can be applied automatically, others need a change window or a decision.'
-                : 'Every check passes. Keep scanning: drift happens when settings are changed by hand.'}
-            </p>
-          </Follow>
-        )}
-      </div>
-      <div class="rail">
-        <div class="side-sec">
-          <div class="eyebrow">Score</div>
-          <svg class="diagram" viewBox="0 0 200 200" role="img" aria-label={scanned ? `Compliance score ${sc} of 100` : 'Not scanned yet'} style={{ maxWidth: '12rem' }}>
-            <circle cx={100} cy={100} r={80} fill="none" stroke="var(--track)" stroke-width={16} />
-            {scanned &&
-              checks.map((c, i) => {
-                const w = { high: 3, medium: 2, low: 1 } as const;
-                const tot = checks.reduce((a, b) => a + w[b.sev], 0);
-                const before = checks.slice(0, i).reduce((a, b) => a + w[b.sev], 0);
-                const C = 2 * Math.PI * 80;
-                return (
-                  <circle
-                    key={c.id}
-                    cx={100}
-                    cy={100}
-                    r={80}
-                    fill="none"
-                    class={c.pass ? 'ok-stroke' : c.sev === 'high' ? 'bad-stroke' : 'warn-stroke'}
-                    stroke-width={16}
-                    stroke-dasharray={`${(w[c.sev] / tot) * C - 3} ${C}`}
-                    stroke-dashoffset={-(before / tot) * C}
-                    transform="rotate(-90 100 100)"
-                  />
-                );
-              })}
-            <text x={100} y={108} text-anchor="middle" class="mono" style={{ fontSize: '40px', fontWeight: 600 }}>
-              {scanned ? sc : '—'}
+    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Compliance scan against the ${B.name} baseline: ${n} checks, score ${scanned ? sc : 'not yet known'} of 100.`}>
+      <circle cx={130} cy={128} r={92} fill="none" stroke="var(--track)" stroke-width={18} />
+      {B.checks.map((c, i) => {
+        const w = SEV_WEIGHT[c.sev];
+        const off = before;
+        before += w;
+        return (
+          <circle
+            key={c.id}
+            cx={130}
+            cy={128}
+            r={92}
+            fill="none"
+            class={arcCls(states[i], c.sev)}
+            stroke-width={18}
+            stroke-dasharray={`${(w / tot) * C - 4} ${C}`}
+            stroke-dashoffset={-(off / tot) * C}
+            transform="rotate(-90 130 128)"
+          />
+        );
+      })}
+      <text x={130} y={140} text-anchor="middle" class="mono" style={{ fontSize: '44px', fontWeight: 600 }}>
+        {scanned ? sc : '—'}
+      </text>
+      <text x={130} y={164} text-anchor="middle" class="muted" style={{ fontSize: '13px' }}>
+        score of 100
+      </text>
+      <text x={130} y={H - 8} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+        Each arc is one check, sized by severity
+      </text>
+      {B.checks.map((c, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = X0 + col * (tw + gap);
+        const y = 12 + row * (th + 16);
+        const s = states[i];
+        const scanF = s === 'scan' ? prog(t, SCAN0 + i * SCAN_EACH, SCAN0 + (i + 1) * SCAN_EACH) : 0;
+        return (
+          <g key={c.id}>
+            <rect class={tileCls(s, c.sev)} x={x} y={y} width={tw} height={th} />
+            <text x={x + 14} y={y + 28} style={{ fontSize: '14px', fontWeight: 600 }}>
+              {c.short}
             </text>
-            <text x={100} y={132} text-anchor="middle" class="muted" style={{ fontSize: '13px' }}>
-              of 100
+            <text x={x + 14} y={y + 47} class="muted" style={{ fontSize: '11.5px' }}>
+              {c.sev} severity
             </text>
-          </svg>
-          <p class="field-note">Each arc is one check, sized by severity (high 3, medium 2, low 1). Green passes, amber and red fail.</p>
-        </div>
-        <div class="side-sec">
-          <div class="eyebrow">What it is</div>
-          <p class="small">Security Compliance (formerly Security Central) monitors configuration against baselines and regulatory frameworks, suggests remediation, and helps plan network security policies.</p>
-        </div>
-      </div>
-    </div>
+            <text x={x + 14} y={y + 80} class={textCls(s, c.sev)} style={{ fontSize: '13px', fontWeight: 600 }}>
+              {STATE_TEXT[s]}
+            </text>
+            {s === 'scan' && <rect x={x} y={y + th - 4} width={tw * scanF} height={4} class="ink-fill" />}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
+function SecOps() {
+  const [base, setBase] = useEnum<Base>('bl', 'hard', ['hard', 'reg']);
+  const B = BASELINES[base];
+  const tl = useMemo(() => secTimeline(base), [base]);
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.scanEnd + 0.8 });
+  useRestartOn(clock, [base]);
+  const t = clock.t;
+  const phase = phaseAt([0, tl.scanEnd, tl.fix0, tl.fixEnd, tl.drift, tl.caught], t);
+  const states = B.checks.map((_, i) => tileState(base, i, t, tl));
+  const open = states.filter((s) => s === 'fail' || s === 'caught' || s === 'fixing').length;
+  const passing = (s: TileState) => s === 'pass' || s === 'fixed' || s === 'changed';
+  const sc = score(B.checks.map((c, i) => ({ ...c, pass: passing(states[i]) })));
+  const fixing = tl.fails.find((c) => states[B.checks.indexOf(c)] === 'fixing') ?? tl.fails.find((c) => states[B.checks.indexOf(c)] === 'fail');
+  const drifted = B.checks.find((c) => c.id === B.drift.id)!;
+  const lines: Line[] = [
+    { tone: 'ink', k: 'Scanning', text: `Security Compliance compares the cluster’s settings with the ${B.name} baseline, one check at a time.` },
+    { tone: 'warn', k: `${tl.fails.length} findings`, text: 'Each finding comes with a suggested fix and a severity. High-severity findings weigh most in the score.' },
+    { tone: 'flow', k: `Fixing: ${fixing?.label ?? ''}`, text: `${fixing?.fix ?? ''} Some fixes are applied automatically, others need a change window or a decision.` },
+    { tone: 'ok', k: 'Compliant', text: 'Every check in the baseline passes.' },
+    { tone: 'warn', k: 'Changed by hand', text: `${B.drift.text} Nothing has looked yet.` },
+    { tone: drifted.sev === 'high' ? 'bad' : 'warn', k: 'Drift caught', text: `The next scan catches “${drifted.label}” failing again, so compliance does not quietly decay between audits.` },
+  ];
+  const line = lines[phase];
+  return (
+    <Show
+      top={
+        <Choice<Base>
+          label="Baseline"
+          value={base}
+          onChange={setBase}
+          options={(['hard', 'reg'] as Base[]).map((b) => ({ value: b, label: BASELINES[b].label }))}
+        />
+      }
+      foot={
+        <>
+          <Follow tone={line.tone} k={line.k}>
+            <p>{line.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: 'Score', v: t >= tl.scanEnd ? sc : '—', tone: t < tl.scanEnd ? 'neutral' : sc === 100 ? 'ok' : 'warn', sub: 'of 100' },
+              { k: 'Open findings', v: t >= tl.scanEnd ? open : '—', tone: t < tl.scanEnd ? 'neutral' : open ? 'warn' : 'ok' },
+              { k: 'License', v: 'NCM Ultimate', tip: TIER_TIP.Ultimate },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <Compliance base={base} t={t} tl={tl} />
+      </div>
+      <PlayBar
+        clock={clock}
+        label="Compliance scan animation"
+        fmt={() => ['Scanning', 'Findings', 'Fixing', 'Compliant', 'Drift', 'Caught'][phase]}
+        extra={<Illus why="Example checks written for this demo. Security Compliance (formerly Security Central) ships its own checks and regulatory reports." />}
+      />
+    </Show>
+  );
+}
+
+// ───────────────────────── tabs ─────────────────────────
 type TabId = 'ai' | 'ss' | 'cost' | 'sec';
 const TABS: { id: TabId; label: string }[] = [
   { id: 'ai', label: 'AIOps' },

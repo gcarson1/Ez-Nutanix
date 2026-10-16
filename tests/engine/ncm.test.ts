@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { cpuSeries, anomalyBand, withSpike, runwayDays, maxVmsThatFit, limiting, rightsize, evaluate, demand, provSteps, stepAt, monthlyCost, budgetState, score, type Resource, type Project, type CatalogItem } from '../../src/engine/ncm';
+import {
+  accrued,
+  anomalyBand,
+  budgetState,
+  cpuSeries,
+  crossDay,
+  demand,
+  evaluate,
+  monthlyCost,
+  provSteps,
+  requestSteps,
+  score,
+  stepAt,
+  stretches,
+  withSpike,
+  type CatalogItem,
+  type Project,
+} from '../../src/engine/ncm';
 
 describe('anomaly band', () => {
   it('is deterministic', () => {
@@ -20,38 +37,32 @@ describe('anomaly band', () => {
     expect(n(4)).toBeLessThanOrEqual(n(2));
     expect(n(2)).toBeLessThanOrEqual(n(1.5));
   });
-});
-
-describe('capacity runway', () => {
-  const res: Resource[] = [
-    { id: 'cpu', label: 'CPU', unit: 'vCPU', cap: 400, used: 200, growthPerDay: 1, perVm: 4 },
-    { id: 'mem', label: 'Memory', unit: 'GB', cap: 3000, used: 2000, growthPerDay: 4, perVm: 16 },
-    { id: 'sto', label: 'Storage', unit: 'TB', cap: 100, used: 60, growthPerDay: 0.1, perVm: 0.2 },
-  ];
-  it('adding VMs never lengthens runway', () => {
-    for (const r of res) expect(runwayDays(r, 10)).toBeLessThanOrEqual(runwayDays(r, 0));
+  it('a flagged spike does not widen the next day’s band', () => {
+    const learn = 14;
+    const at = learn * 24 + 3 * 24 + 2;
+    const base = anomalyBand(cpuSeries(21, 11), 3, learn);
+    const spiked = anomalyBand(withSpike(cpuSeries(21, 11), at, 35), 3, learn);
+    expect(Math.abs(spiked[at + 24].hi - base[at + 24].hi)).toBeLessThan(1);
+    expect(spiked[at + 24].hi).toBeLessThan(spiked[at].v);
   });
-  it('max VMs that fit leaves positive runway, one more does not fit', () => {
-    const m = maxVmsThatFit(res);
-    expect(Math.min(...res.map((r) => runwayDays(r, m)))).toBeGreaterThan(0);
-    expect(Math.min(...res.map((r) => runwayDays(r, m + 1)))).toBe(0);
-  });
-  it('identifies the limiting resource', () => {
-    expect(limiting(res, 0)).toBe('cpu');
-    expect(limiting(res.map((r) => (r.id === 'mem' ? { ...r, growthPerDay: 10 } : r)), 0)).toBe('mem');
+  it('a night spike stays under a fixed afternoon-safe threshold but leaves the learned band', () => {
+    const learn = 14;
+    const at = learn * 24 + 3 * 24 + 2; // a Thursday, 2 to 4 a.m.
+    const pts = anomalyBand(withSpike(cpuSeries(21, 11), at, 35), 3, learn).slice(learn * 24);
+    const flagged = stretches(pts.map((p) => p.out));
+    expect(flagged.length).toBe(1);
+    expect(flagged[0].start).toBe(at - learn * 24);
+    expect(Math.max(...pts.map((p) => p.v))).toBeLessThan(70);
   });
 });
 
-describe('right-sizing', () => {
-  it('never recommends more than allocated for an over-provisioned VM', () => {
-    const r = rightsize({ name: 'a', vcpu: 8, memGB: 32, cpuPeak: 20, memPeak: 30 });
-    expect(r.verdict).toBe('over');
-    expect(r.vcpu).toBeLessThanOrEqual(8);
-    expect(r.memGB).toBeLessThanOrEqual(32);
-  });
-  it('flags constrained and inactive VMs', () => {
-    expect(rightsize({ name: 'b', vcpu: 2, memGB: 4, cpuPeak: 97, memPeak: 60 }).verdict).toBe('under');
-    expect(rightsize({ name: 'c', vcpu: 2, memGB: 4, cpuPeak: 1, memPeak: 5 }).verdict).toBe('inactive');
+describe('stretches', () => {
+  it('groups neighbouring hits into one alert', () => {
+    expect(stretches([false, true, true, false, true])).toEqual([
+      { start: 1, end: 3 },
+      { start: 4, end: 5 },
+    ]);
+    expect(stretches([false, false])).toEqual([]);
   });
 });
 
@@ -69,16 +80,25 @@ describe('self-service', () => {
     expect(evaluate(p, demand({ ...item, vms: 1 }, 'L'), true).needsApproval).toBe(false);
     expect(evaluate({ ...p, approvalAbove: 4 }, demand({ ...item, vms: 1 }, 'L'), true).needsApproval).toBe(true);
   });
-  it('step timeline ends done', () => {
+  it('step timeline ends done and reports progress inside a step', () => {
     const s = provSteps(item, true);
     const total = s.reduce((a, b) => a + b.dur, 0);
-    expect(stepAt(s, 0).idx).toBe(0);
+    expect(stepAt(s, 0)).toEqual({ idx: 0, frac: 0, done: false });
+    expect(stepAt(s, s[0].dur / 2).frac).toBeCloseTo(0.5);
     expect(stepAt(s, total).done).toBe(true);
     expect(s.some((x) => x.id === 'approve')).toBe(true);
   });
+  it('a refused request stops at the policy check and creates nothing', () => {
+    const v = evaluate(p, demand(item, 'M'), true);
+    const s = requestSteps(item, v);
+    expect(s.map((x) => x.id)).toEqual(['policy', 'refused']);
+    const ok = requestSteps(item, evaluate(p, demand(item, 'S'), true));
+    expect(ok[ok.length - 1].id).toBe('ready');
+    expect(ok.some((x) => x.id === 'create')).toBe(true);
+  });
 });
 
-describe('cost and compliance', () => {
+describe('cost', () => {
   it('cost is linear in usage and budget states are ordered', () => {
     const r = { vcpuMonth: 10, memGBMonth: 2, tbMonth: 30 };
     expect(monthlyCost({ project: 'a', vcpu: 10, memGB: 10, tb: 1, budget: 0 }, r)).toBe(100 + 20 + 30);
@@ -86,7 +106,32 @@ describe('cost and compliance', () => {
     expect(budgetState(85, 100)).toBe('warn');
     expect(budgetState(101, 100)).toBe('over');
   });
-  it('score is 100 when all checks pass', () => {
+  it('metered cost reaches the planned month at month end and never goes down', () => {
+    expect(accrued(3000, 30)).toBeCloseTo(3000);
+    expect(accrued(3000, 15)).toBeCloseTo(1500);
+    let last = 0;
+    for (let d = 0; d <= 30; d++) {
+      const a = accrued(3000, d, 30, { from: 8, factor: 2.5 });
+      expect(a).toBeGreaterThanOrEqual(last);
+      last = a;
+    }
+    expect(last).toBeGreaterThan(3000);
+  });
+  it('crossing days match the budget state and the alert comes before going over', () => {
+    const surge = { from: 8, factor: 2.5 };
+    const warn = crossDay(3000, 4000, 'warn', 30, surge)!;
+    const over = crossDay(3000, 4000, 'over', 30, surge)!;
+    expect(warn).toBeLessThan(over);
+    expect(budgetState(accrued(3000, warn + 0.01, 30, surge), 4000)).not.toBe('ok');
+    expect(budgetState(accrued(3000, warn - 0.01, 30, surge), 4000)).toBe('ok');
+    expect(budgetState(accrued(3000, over + 0.01, 30, surge), 4000)).toBe('over');
+    expect(crossDay(3000, 4000, 'warn')).toBeNull();
+    expect(crossDay(3000, 4000, 'over')).toBeNull();
+  });
+});
+
+describe('compliance', () => {
+  it('score is 100 when all checks pass and weighs by severity', () => {
     expect(score([{ id: 'a', label: '', fix: '', pass: true, sev: 'high' }])).toBe(100);
     expect(score([{ id: 'a', label: '', fix: '', pass: false, sev: 'high' }, { id: 'b', label: '', fix: '', pass: true, sev: 'low' }])).toBe(25);
   });
