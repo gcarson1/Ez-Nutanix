@@ -1,0 +1,35 @@
+/* Protection & Capacity module (prefix cp-) */
+.cp-head { display: flex; gap: var(--sp-10); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--sp-4); }
+.cp-eff-n { color: var(--ink-fg); }
+.cp-bar { max-width: 40rem; }
+.diagram .cp-raw { fill: var(--s3); }
+.diagram .cp-sys { fill: var(--s2); }
+.diagram .cp-res { fill: var(--warn); }
+.diagram .cp-prot { fill: var(--ink-line); }
+.diagram .cp-use { fill: var(--ok); }
+.diagram .cp-eff { fill: var(--ink-fg); }
+.diagram .cp-rule { stroke: var(--line); }
+.diagram .cp-seg-t { fill: var(--bg); }
+.diagram .cp-blk-on { stroke: var(--ink-fg); stroke-width: 1.5; }
+.cp-place { min-width: 0; }
+.cp-place-h { margin-bottom: var(--sp-3); align-items: flex-start; }
+.cp-place-h p { max-width: 36rem; color: var(--text-2); }
+.cp-place-h .btn { height: var(--h-sm); padding: 0 var(--sp-3); font-size: var(--fs-13); }
+.cp-matrix td { vertical-align: middle; }
+.cp-matrix td.small { color: var(--text-2); }
+.cp-inline { height: auto; padding: 0; font-size: inherit; vertical-align: baseline; }
+.cp-gates { gap: var(--sp-6); margin-top: var(--sp-4); }
+.cp-gate { border-top: 2px solid var(--line-2); padding-top: var(--sp-3); }
+.cp-gate > * + * { margin-top: var(--sp-2); }
+.cp-gate-t { font-size: var(--fs-16); }
+.cp-gate .btn { margin-top: var(--sp-3); }
+.cp-gate-m { height: 0.375rem; }
+.cp-gate-m i { display: block; height: 100%; }
+.cp-rules { padding-left: var(--sp-4); color: var(--text-2); }
+.cp-rules li + li { margin-top: var(--sp-2); }
+.cp .stage > .field { max-width: 26rem; }
+@media (max-width: 600px) {
+  .cp-head { gap: var(--sp-5); }
+  .cp-matrix th:nth-child(3), .cp-matrix td:nth-child(3) { display: none; }
+}
+.cp-share { margin-top: var(--sp-2); }

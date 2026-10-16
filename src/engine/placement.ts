@@ -90,6 +90,25 @@ export function pickTarget(
   opts: PickOptions = {},
 ): { member: Member; domainOk: boolean } | null {
   const existing = opts.existing ?? item.members.filter((m) => memberLive(state, m));
+  // Single-node cluster: there is no second node, so copies go to different drives of the
+  // one node (drive-level protection only).
+  const present = state.nodes.filter((n) => n.state !== 'removed');
+  // Same for a two-node cluster running on one survivor (single-node mode).
+  const survivors = present.filter(acceptsData);
+  const singleMode = present.length === 1 || (present.length === 2 && state.cfg.nodes === 2 && survivors.length === 1);
+  if (singleMode) {
+    const only = survivors[0] ?? present[0];
+    if (!acceptsData(only)) return null;
+    const usedDisks = new Set(item.members.map((m) => m.disk));
+    const pool = state.disks.filter(
+      (d) => d.node === only.id && d.state === 'ok' && !usedDisks.has(d.id) && (usage.get(d.id) || 0) + item.memberGB <= d.capGB * MAX_FILL,
+    );
+    if (!pool.length) return null;
+    let best = pool[0];
+    for (const d of pool) if ((usage.get(d.id) || 0) / d.capGB < (usage.get(best.id) || 0) / best.capGB) best = d;
+    const role = opts.role ?? (item.kind === 'rf' ? 'replica' : 'data');
+    return { member: { node: only.id, disk: best.id, role }, domainOk: true };
+  }
   const usedNodes = new Set(item.members.map((m) => m.node)); // incl. offline copies: never co-locate
   const usedDomains = new Set(existing.map((m) => domainKey(state.nodes[m.node], state.domain)));
   const exclude = new Set(opts.exclude || []);

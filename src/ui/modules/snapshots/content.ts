@@ -1,0 +1,47 @@
+import type { ModuleContent } from '../../../content/types';
+
+export const content: ModuleContent = {
+  path: 'nci/snapshots',
+  title: 'Snapshots & Clones',
+  tag: 'Nutanix Cloud Infrastructure',
+  summary: 'Snapshots copy a map of where the data lives, not the data itself, and clones start out sharing every block. Space is used only by what changes afterwards.',
+  priority: 'P1',
+  talk: [
+    'A virtual disk is a map: each logical block points to where the data physically lives in the storage fabric.',
+    'A snapshot copies the map, not the data. That is why it completes almost immediately and starts out using no extra data space.',
+    'After the snapshot, new writes go to new blocks and only the live disk’s map changes (redirect-on-write). The snapshot keeps pointing at the old blocks.',
+    'A clone is a new writable disk built from a snapshot’s map. It is ready at once and shares every block until it changes one.',
+    'Space grows only with change: the VM’s new writes, and each clone’s own changes. That is what makes many test and development copies affordable.',
+  ],
+  numbers: [
+    { k: 'Data copied to take a snapshot', v: 'None (map only)' },
+    { k: 'New space for a fresh clone', v: 'None until it is written' },
+    { k: 'Space a snapshot costs over time', v: 'Old blocks the live disk has since replaced' },
+  ],
+  qa: [
+    {
+      q: 'Are snapshots a backup?',
+      a: 'Not on their own. A local snapshot lives on the same cluster as the data, so it does not protect against losing the cluster. Replicate snapshots to another site or cloud, or use a backup product, for that. Snapshots are excellent for fast local restore points and clones.',
+    },
+    {
+      q: 'Do lots of snapshots slow the VM down?',
+      a: 'Taking a snapshot does not copy data, and writes after it go to new blocks without copying the old ones aside. The system still manages snapshot metadata in the background, so keep retention to what you need. Effects depend on workload and version.',
+    },
+    {
+      q: 'How much space will my clones use?',
+      a: 'As much as they change. A clone that rewrites 10% of its disk uses about 10% of the disk’s size in new space, times the replication factor. A clone that rewrites everything ends up as large as a full copy.',
+    },
+  ],
+  next: [
+    'Play the sequence and pause on the snapshot step: the physical block count does not change.',
+    'Step to the clone step and click each clone row to show it points at the same blocks.',
+    'Raise change per clone and watch only the new blocks add capacity.',
+    'Open Database Service for database clones built on the same mechanism, or Disaster Recovery for replicating snapshots offsite.',
+  ],
+  honest: [
+    'A snapshot keeps old blocks alive. The more the live disk changes, the more space the snapshot holds on to until it is deleted.',
+    'Local snapshots are not an offsite backup. Replicate them or back them up to protect against losing the cluster.',
+    'Clones that rewrite most of their data end up using about as much space as full copies.',
+    'This view is simplified: real block sizes are much smaller, and snapshot chains are managed in the background by the platform.',
+  ],
+};

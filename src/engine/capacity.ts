@@ -1,6 +1,6 @@
 // Capacity math: raw -> usable, with RF, EC-X on write-cold data, a rebuild reserve and an
 // optional data-reduction ratio. Formulas are documented in docs/facts.md and unit tested.
-import { ecStrip, ecOverhead, MIN_BLOCKS, type RF } from './rules';
+import { ecStrip, ecOverhead, minBlocks, minRacks, type RF } from './rules';
 
 export type ReservePolicy = 'none' | 'auto' | 'n1' | 'n2' | 'block';
 
@@ -45,10 +45,10 @@ export interface CapacityResult {
 }
 
 /** Recommended rebuild reserve in nodes (facts: CAP-3). */
-export function recommendedReserve(input: Pick<CapacityInput, 'nodes' | 'rf' | 'nodesPerBlock' | 'blockAware'>): { nodes: number; why: string } {
+export function recommendedReserve(input: Pick<CapacityInput, 'nodes' | 'rf' | 'nodesPerBlock' | 'blockAware'> & { ecx?: boolean }): { nodes: number; why: string } {
   const { nodes, rf, nodesPerBlock, blockAware } = input;
   const blocks = Math.ceil(nodes / nodesPerBlock);
-  if (blockAware && nodesPerBlock > 1 && blocks >= MIN_BLOCKS[rf]) {
+  if (blockAware && nodesPerBlock > 1 && blocks >= minBlocks(rf, !!input.ecx)) {
     const n = nodesPerBlock * (rf - 1);
     return { nodes: n, why: `Block awareness: keep ${rf === 2 ? 'one block' : 'two blocks'} (${n} nodes) of free space so a whole-block loss can fully self-heal.` };
   }
@@ -76,8 +76,13 @@ export function computeCapacity(input: CapacityInput): CapacityResult {
     reserveNodes = 2;
     reserveWhy = 'N+2: two nodes of free space held back for re-protection.';
   } else if (input.reserve === 'block') {
-    reserveNodes = input.nodesPerBlock;
-    reserveWhy = `One block (${input.nodesPerBlock} nodes) of free space held back for re-protection.`;
+    // Same rule as the automatic block-aware reserve: one block per failure tolerated.
+    const blocksHeld = input.rf - 1;
+    reserveNodes = input.nodesPerBlock * blocksHeld;
+    reserveWhy =
+      blocksHeld === 1
+        ? `One block (${input.nodesPerBlock} node${input.nodesPerBlock === 1 ? '' : 's'}) of free space held back so a whole-block loss can re-protect.`
+        : `Two blocks (${reserveNodes} nodes) of free space held back, since RF3 tolerates two block failures.`;
   }
   reserveNodes = Math.min(reserveNodes, Math.max(0, nodes - 1));
   const reserveTB = reserveNodes * perNodeTB * (1 - Math.max(0, input.systemOverheadPct) / 100);
@@ -138,12 +143,14 @@ export interface SurvivalRow {
 }
 
 /** "What failure can this survive?" matrix. */
-export function survivalMatrix(o: { rf: RF; nodes: number; nodesPerBlock: number; blockAware: boolean; racks: number; rackAware: boolean }): SurvivalRow[] {
+export function survivalMatrix(o: { rf: RF; nodes: number; nodesPerBlock: number; blockAware: boolean; racks: number; rackAware: boolean; ecx?: boolean }): SurvivalRow[] {
   const tol = o.rf - 1;
   const blocks = Math.ceil(o.nodes / o.nodesPerBlock);
-  const blockOk = o.nodesPerBlock === 1 || (o.blockAware && blocks >= MIN_BLOCKS[o.rf]);
+  const minB = minBlocks(o.rf, !!o.ecx);
+  const minR = minRacks(o.rf, !!o.ecx);
+  const blockOk = o.nodesPerBlock === 1 || (o.blockAware && blocks >= minB);
   const racksUsed = Math.min(o.racks, blocks);
-  const rackOk = o.rackAware && racksUsed >= MIN_BLOCKS[o.rf];
+  const rackOk = o.rackAware && racksUsed >= minR;
   return [
     { domain: 'Drive', survives: tol, why: `Copies of any piece of data sit on different nodes, so ${tol === 1 ? 'any one drive' : 'any two drives'} can fail (several drives in one node count as one node).` },
     { domain: 'Node', survives: tol, why: `RF${o.rf} keeps ${o.rf} copies on different nodes.` },
@@ -154,12 +161,14 @@ export function survivalMatrix(o: { rf: RF; nodes: number; nodesPerBlock: number
         ? o.nodesPerBlock === 1
           ? 'One node per block: a block failure is a node failure.'
           : `Block awareness keeps copies in different blocks (${blocks} blocks).`
-        : `Copies may share a block. Needs block awareness and at least ${MIN_BLOCKS[o.rf]} blocks.`,
+        : `Copies may share a block. Needs block awareness and at least ${minB} blocks${o.ecx ? ' with erasure coding' : ''}.`,
     },
     {
       domain: 'Rack',
       survives: rackOk ? tol : 0,
-      why: rackOk ? `Rack awareness keeps copies in different racks (${racksUsed} racks).` : `Copies may share a rack. Needs rack awareness and at least ${MIN_BLOCKS[o.rf]} racks.`,
+      why: rackOk
+        ? `Rack awareness keeps copies in different racks (${racksUsed} racks).`
+        : `Copies may share a rack. Needs rack awareness and at least ${minR} racks${o.ecx ? ' with erasure coding' : ''}.`,
     },
   ];
 }

@@ -104,12 +104,12 @@ describe('failure and self-healing', () => {
     expect(s.events.some((e) => e.kind === 'ok' && /Re-protection complete/.test(e.text))).toBe(true);
   });
 
-  it('does not start rebuilding before the detection delay', () => {
+  it('starts re-protection as soon as the failure is detected', () => {
     let s = createCluster({ nodes: 6, seed: 5 });
     s = applyFailure(s, { kind: 'node', node: 0 });
-    s = advance(s, TIMING.rebuildDelayS - 10);
     expect(s.rebuild.startedAt).toBeNull();
-    s = advance(s, 30);
+    expect(TIMING.rebuildDelayS).toBeLessThanOrEqual(10);
+    s = advance(s, 20);
     expect(s.rebuild.startedAt).not.toBeNull();
   });
 

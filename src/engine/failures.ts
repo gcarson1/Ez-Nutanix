@@ -4,17 +4,27 @@ import type { ClusterState, NodeState, SimEvent, SimNode } from './cluster';
 import { makeNode, makeDisks, assignZookeeper } from './cluster';
 import { MIN_NODES } from './rules';
 import { storageLive } from './placement';
+import { itemState } from './status';
 
 /** Illustrative timings (sim seconds). Real values depend on AOS version; see docs/facts.md. */
 export const TIMING = {
-  /** Host heartbeat loss before AHV HA restarts VMs elsewhere. */
-  haDetectS: 40,
+  /**
+   * Host failure until AHV HA starts restarting VMs elsewhere: the Acropolis leader notices
+   * at about 20 s, then waits a 40 s timeout (facts: TIM-1).
+   */
+  haDetectS: 60,
   /** Spacing between successive VM restarts in the sim's restart queue. */
-  haStaggerS: 6,
+  haStaggerS: 5,
+  /** Restarts are spread over at most this long, so all finish by about 120 s (facts: TIM-1). */
+  haWindowS: 55,
   /** Time to boot a restarted VM. */
   vmBootS: 45,
-  /** How long a node/CVM must be unreachable before re-protection of its data starts. */
-  rebuildDelayS: 60,
+  /** Detection only: re-protection starts as soon as the failure is detected (facts: TIM-2). */
+  rebuildDelayS: 5,
+  /** Two-node cluster: the survivor switches to single-node mode in about 30 to 60 s (facts: EDGE-3). */
+  singleNodeModeS: 45,
+  /** Two-node cluster: a returning node must be stable for 15 minutes before resync (facts: EDGE-3). */
+  twoNodeRejoinS: 15 * 60,
   /** After this long down, a CVM is detached from the metadata ring and its share re-replicated. */
   detachS: 30 * 60,
   /** Short resync when a CVM returns (writes made while it was away are brought up to date). */
@@ -39,6 +49,7 @@ export function clone(state: ClusterState): ClusterState {
     events: state.events.slice(),
     transfers: state.transfers.slice(),
     rebuild: { ...state.rebuild },
+    ha: state.ha ? state.ha.slice() : [],
   };
 }
 
@@ -51,14 +62,17 @@ function takeDown(s: ClusterState, n: SimNode, st: NodeState) {
   const wasLive = storageLive(n);
   n.state = st;
   if (wasLive || n.downSince === null) n.downSince = s.time;
+  n.detectedAt = null;
   // VMs: a powered-off or isolated host loses its VMs; HA restarts them on survivors.
   // A CVM-only failure leaves the hypervisor and its VMs running (I/O is autopathed).
   if (st === 'down' || st === 'isolated') {
     let order = 0;
+    const queued = (s.ha || []).filter((r) => r.restartedAt === null && !r.failed).length;
     for (const vm of s.vms) {
       if (vm.node !== n.id || vm.state !== 'running') continue;
       vm.state = 'restarting';
-      vm.restartAt = s.time + TIMING.haDetectS + order * TIMING.haStaggerS;
+      vm.restartAt = s.time + TIMING.haDetectS + Math.min(order * TIMING.haStaggerS, TIMING.haWindowS);
+      (s.ha ||= []).push({ vm: vm.id, from: n.id, order: queued + order + 1, failedAt: s.time, dueAt: vm.restartAt, to: null, restartedAt: null, failed: false });
       order++;
     }
   }
@@ -114,6 +128,19 @@ export function applyFailure(state: ClusterState, f: Failure): ClusterState {
   }
   if (s.rebuild.startedAt === null) s.rebuild.doneGB = 0;
   s.rebuild.blocked = null;
+  // Say so plainly when the failure leaves some data with no copy online.
+  const before = state.items.reduce((a, it) => a + (itemState(state, it) === 'unavailable' ? 1 : 0), 0);
+  const after = s.items.reduce((a, it) => a + (itemState(s, it) === 'unavailable' ? 1 : 0), 0);
+  if (after > before) {
+    const gone = s.items.filter((it) => it.members.length < it.need).length;
+    log(
+      s,
+      'loss',
+      `${after - before} sampled data item${after - before === 1 ? '' : 's'} now ${after - before === 1 ? 'has' : 'have'} no copy online: that data is unavailable${
+        gone ? `, and ${gone} lost every copy for good` : ' until a failed node returns'
+      }.`,
+    );
+  }
   return s;
 }
 
@@ -127,13 +154,29 @@ export function recoverNode(state: ClusterState, nodeId: number): ClusterState {
   node.state = 'up';
   node.downSince = null;
   node.detached = false;
+  node.upSince = s.time;
+  // If its Zookeeper role moved away while it was detached and the ensemble is short, it rejoins.
+  const present = s.nodes.filter((x) => x.state !== 'removed');
+  const want = Math.min(s.cfg.ft === 3 ? 5 : 3, present.length);
+  if (!node.zk && present.filter((x) => x.zk).length < want) node.zk = true;
   // Copies that were rebuilt elsewhere while the node was away are now surplus; trim them.
   trimSurplus(s);
-  if (prev === 'isolated') {
-    for (const vm of s.vms) if (vm.node === nodeId && vm.state === 'running') vm.state = 'running';
-  }
+  // VMs still on this host (CVM-only failure) may have had local copies rebuilt elsewhere
+  // while the CVM was away: locality is rebuilt as they read their data again.
+  for (const vm of s.vms) if (vm.node === nodeId && vm.state === 'running') vm.movedAt = s.time;
+  // VMs that HA could not place earlier get another try now that there is more memory.
+  retryFailedVms(s);
   log(s, 'recover', `${node.name} is back. ${prev === 'cvm-down' ? 'Local I/O returns to its own CVM.' : 'Its CVM rejoins and its drives serve data again.'}`);
   return s;
+}
+
+/** Queue VMs that HA could not restart (no host had memory) for another restart attempt. */
+export function retryFailedVms(s: ClusterState) {
+  for (const vm of s.vms) {
+    if (vm.state !== 'failed') continue;
+    vm.state = 'restarting';
+    vm.restartAt = s.time;
+  }
 }
 
 /**
@@ -170,6 +213,7 @@ export function addNode(state: ClusterState): ClusterState {
   s.nodes.push(node);
   s.disks.push(...makeDisks(cfg, id));
   s.cfg = cfg;
+  retryFailedVms(s);
   log(s, 'info', `${node.name} joined the cluster. A new CVM adds storage controller capacity; data rebalances onto its drives.`);
   return s;
 }

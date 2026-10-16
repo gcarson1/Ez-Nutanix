@@ -1,0 +1,24 @@
+/* Snapshots & Clones module (prefix sn-) */
+.sn-svg { max-width: 44rem; }
+.diagram .sn-row { fill: transparent; }
+.diagram [role='button']:hover > .sn-row { fill: var(--bg-3); }
+.diagram .sn-cell-shared { fill: var(--s3); stroke: var(--line-2); }
+.diagram .sn-cell-own { fill: var(--ink); }
+.diagram .sn-new { stroke: var(--ok); stroke-width: 2.5; }
+.diagram .sn-phys { fill: var(--bg-2); stroke: var(--line-2); }
+.diagram .sn-phys.mine { fill: var(--ink-soft); stroke: var(--ink-fg); stroke-width: 1.5; }
+.diagram .sn-phys.fresh { stroke: var(--ok); stroke-width: 2.5; }
+.diagram .sn-ptr { fill: none; stroke: var(--ink-fg); stroke-width: 1.25; opacity: 0.55; }
+.diagram .sn-shared-t { fill: var(--ink-fg); font-weight: 600; }
+.sn-cmp { display: grid; gap: var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); }
+.sn-cmp > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-1) var(--sp-3); align-items: center; }
+.sn-cmp .small { grid-column: 1 / -1; }
+.sn-bar { height: 0.75rem; background: var(--track); }
+.sn-bar i { display: block; height: 100%; background: var(--ok); transition: width var(--t-med) var(--ease); }
+.sn-bar.full i { background: var(--s2); }
+.sn-terms { padding-left: var(--sp-4); }
+.sn-terms li + li { margin-top: var(--sp-2); }
+@media (max-width: 600px) {
+  .sn .diagram-scroll > .sn-svg { min-width: 34rem; }
+}
+.diagram text.sn-lbl { paint-order: stroke; stroke: var(--bg); stroke-width: 5px; }

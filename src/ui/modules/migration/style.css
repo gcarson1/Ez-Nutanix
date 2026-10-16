@@ -1,0 +1,5 @@
+/* Migration with Move module */
+.mig-list { padding-left: var(--sp-4); margin: var(--sp-2) 0 0; }
+.mig-list li + li { margin-top: var(--sp-2); }
+.mig-steps { max-width: var(--measure); padding-left: var(--sp-6); font-size: var(--fs-15); }
+.mig-steps li + li { margin-top: var(--sp-2); }
