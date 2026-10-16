@@ -8,7 +8,7 @@ export interface GlossaryEntry {
 export const GLOSSARY: GlossaryEntry[] = [
   { term: 'AHV', full: 'Nutanix AHV hypervisor', def: 'Nutanix’s own hypervisor, built on Linux KVM. It runs the virtual machines on each node and is managed through Prism.' },
   { term: 'AOS', full: 'Acropolis Operating System', def: 'The Nutanix software that turns a group of servers into one cluster: storage, data protection, management services and APIs.' },
-  { term: 'Autopathing', def: 'If the storage controller (CVM) on a host stops, that host’s VMs keep running and their storage I/O is redirected over the network to CVMs on other nodes.' },
+  { term: 'Autopathing / iSCSI redirector', def: 'If the storage controller (CVM) on a host stops, that host’s VMs keep running and their storage I/O is redirected over the network to CVMs on other nodes. On ESXi and Hyper-V this is called autopathing; on AHV the iSCSI redirector does it.' },
   { term: 'Block', def: 'A physical chassis that holds one to four nodes. Block awareness keeps copies of data in different blocks so a whole-chassis failure loses nothing.' },
   { term: 'Category', def: 'A key/value tag (for example AppTier: Web) attached to VMs. Flow security policies and DR protection policies target categories instead of IP addresses or VM names.' },
   { term: 'Cluster', def: 'A group of nodes managed as one system. Storage from every node is pooled and protected across the whole cluster.' },
