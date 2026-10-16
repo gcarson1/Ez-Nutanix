@@ -42,10 +42,4 @@ export const content: ModuleContent = {
     'Switch to Nutanix Central: both regions report to one place, one console instead of five.',
     'Then open Cloud Manager, which runs on Nutanix Central, or LCM Rolling Upgrade for upgrades across clusters.',
   ],
-  honest: [
-    '“Prism Federation” is not a product name; the capabilities shown come from Prism Central and Nutanix Central.',
-    'Prism Central is an extra appliance to size, protect and upgrade; plan where it runs and how it is backed up.',
-    'Central management adds a dependency: clusters keep running if Prism Central or Nutanix Central is unreachable, but multi-cluster features and central views are unavailable until it is back.',
-    'Fleet upgrades still take time proportional to node count inside each cluster, because nodes are upgraded one at a time.',
-  ],
 };

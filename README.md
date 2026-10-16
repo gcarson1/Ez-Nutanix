@@ -34,7 +34,6 @@ Tips:
 - Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is the one place with every knob.
 - Use **Presets** in the top bar to load a cluster into the lab that matches the customer (3-node edge, 4-node starter, 8-node block-aware production, 12-node RF3 with EC-X).
 - Everything you change is kept in the address bar. **Copy link** sends the customer exactly the scenario you showed. **PNG** saves the current diagram.
-- Every module ends with an **Honest fit** callout. Use it: it answers the hard questions before they are asked.
 - Anything simplified carries an **Illustrative** tag; hover it to see what was simplified.
 
 ## Changing the presenter details
@@ -59,7 +58,7 @@ The presenter line and disclaimer show in the footer. Rebuild after editing.
 
 Each module lives in `src/ui/modules/<module>/`:
 
-- `content.ts` holds the words: summary, talk track, key numbers, questions and answers, what to click next, and the honest-fit notes. Edit freely; it is data, not code.
+- `content.ts` holds the words: summary, talk track, key numbers, questions and answers, and what to click next. Edit freely; it is data, not code.
 - `index.tsx` is the interactive part. It renders engine state and never contains platform logic.
 
 The glossary is `src/content/glossary.ts`.

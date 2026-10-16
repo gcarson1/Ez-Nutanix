@@ -196,14 +196,6 @@ body { min-height: 100vh; }
 .tip-pop .tbtn { height: auto; padding: var(--sp-2) 0 0; font-size: var(--fs-12); }
 .tip-pop .detail { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); color: var(--muted); }
 
-/* honest fit */
-.honest { margin-top: var(--sp-8); max-width: var(--measure); border-left: 2px solid var(--warn); padding: var(--sp-0h) 0 var(--sp-0h) var(--sp-4); }
-.honest summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); }
-.honest summary::-webkit-details-marker { display: none; }
-.honest summary svg { width: 0.875rem; height: 0.875rem; transition: transform var(--t-fast); }
-.honest[open] summary svg { transform: rotate(90deg); }
-.honest ul { margin-top: var(--sp-3); color: var(--text-2); font-size: var(--fs-15); }
-.honest li + li { margin-top: var(--sp-2); }
 
 /* follow block (design-system feedback) with status variants */
 .follow { max-width: var(--measure); margin-top: var(--sp-6); padding: var(--sp-0h) 0 var(--sp-0h) var(--sp-4); border-left: 2px solid var(--line-2); }

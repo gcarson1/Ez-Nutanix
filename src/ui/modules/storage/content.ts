@@ -36,10 +36,4 @@ export const content: ModuleContent = {
     },
   ],
   next: ['Data Lens', 'Cluster & DSF Lab', 'Database Service'],
-  honest: [
-    'File servers and object stores are VMs on the cluster: they consume CPU and memory that must be in the sizing.',
-    'NUS Starter is aimed at hybrid, archive and backup use and does not include Volumes; NUS Pro does.',
-    'FSVM failover is fast but not invisible: SMB sessions may pause or reconnect during takeover.',
-    'Tiering moves cold data off the cluster; reads of tiered data are slower and may incur cloud egress charges.',
-  ],
 };

@@ -43,11 +43,4 @@ export const content: ModuleContent = {
     'Choose “One link fails” with Active-backup, then with LACP: traffic moves to NIC B either way, and the bandwidth numbers show what is lost.',
     'Then show Flow for overlay VPCs and microsegmentation on top of these same hosts.',
   ],
-  honest: [
-    'Active-Backup, the default, limits each host to one link’s bandwidth; using both links means LACP and switch-side configuration.',
-    'MAC pinning (balance-slb) needs no switch config but has a multicast caveat, and Nutanix no longer recommends it.',
-    'Every VLAN-backed network needs its VLAN trunked to every host. Overlay networking removes that step but adds encapsulation and gateway sizing.',
-    'Virtual-switch changes on one- and two-node clusters require powering off user VMs, and the Quick change method can interrupt traffic.',
-    'CVM interfaces stay at 1500 MTU even when you enable jumbo frames elsewhere.',
-  ],
 };

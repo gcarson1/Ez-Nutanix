@@ -1,5 +1,5 @@
 // Content attached to every module: presenter talk track, key numbers, likely questions,
-// what to click next, and the honest-fit notes. Data, not code, so it can be edited freely.
+// and what to click next. Data, not code, so it can be edited freely.
 export interface ModuleContent {
   /** Route path, e.g. "nci/cluster". */
   path: string;
@@ -17,6 +17,4 @@ export interface ModuleContent {
   qa: { q: string; a: string }[];
   /** What to click next, in order. */
   next: string[];
-  /** "Where this has trade-offs" bullets. */
-  honest: string[];
 }

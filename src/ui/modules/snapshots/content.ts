@@ -38,10 +38,4 @@ export const content: ModuleContent = {
     'Pause on the clones: each shares every block until it writes its own.',
     'Then open Database Service for database clones built on the same mechanism, or Disaster Recovery for copying snapshots to another site.',
   ],
-  honest: [
-    'A snapshot keeps old blocks alive. The more the live disk changes, the more space the snapshot holds on to until it is deleted.',
-    'Local snapshots are not an offsite backup. Replicate them or back them up to protect against losing the cluster.',
-    'Clones that rewrite most of their data end up using about as much space as full copies.',
-    'This view is simplified: real block sizes are much smaller, and snapshot chains are managed in the background by the platform.',
-  ],
 };

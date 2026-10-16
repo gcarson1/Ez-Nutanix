@@ -41,10 +41,4 @@ export const content: ModuleContent = {
     'Point at the table underneath to compare what each size survives.',
     'Then LCM Rolling Upgrade for upgrades, Nutanix Central for fleet management, or Disaster Recovery to protect the site elsewhere.',
   ],
-  honest: [
-    'A single-node cluster has no node-level redundancy: a node outage takes the site down, and an SSD failure can make it read-only.',
-    'Two-node clusters depend on a Witness in a separate failure domain, and on WAN reachability to it for automatic failover and maintenance.',
-    'After a two-node failure is repaired, the cluster stays in a degraded state until a resync that can take hours finishes.',
-    'Small clusters must be sized so the survivors can carry the whole site, which leaves less usable capacity per node.',
-  ],
 };

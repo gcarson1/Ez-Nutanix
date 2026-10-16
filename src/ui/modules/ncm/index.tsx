@@ -12,13 +12,13 @@ import {
   demand,
   evaluate,
   monthlyCost,
+  paceEnd,
   requestSteps,
   score,
   SEV_WEIGHT,
   stepAt,
   stretches,
   withSpike,
-  type BudgetState,
   type CatalogItem,
   type Check,
   type Project,
@@ -51,26 +51,25 @@ const DRAW_DUR = 8;
 const AI_END = DRAW_FROM + DRAW_DUR + 0.6;
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-type Spike = 'night' | 'day';
-const SPIKES: Record<Spike, { at: number; label: string; when: string }> = {
-  night: { at: 3 * 24 + 2, label: 'Spike at 3 a.m.', when: 'at 3 a.m.' },
-  day: { at: 3 * 24 + 13, label: 'Spike at 2 p.m.', when: 'on a busy afternoon' },
-};
+/** Two spikes in the same week: one at 3 a.m. that a fixed alarm misses, one on a busy afternoon that it catches. */
+const SPIKES = [
+  { at: 1 * 24 + 2, when: 'at 3 a.m.' },
+  { at: 3 * 24 + 13, when: 'at 2 p.m.' },
+];
 
-function useWeek(spike: Spike) {
+function useWeek() {
   return useMemo(() => {
-    const series = withSpike(cpuSeries(DAYS, 11), LEARN * 24 + SPIKES[spike].at, SPIKE);
+    const series = SPIKES.reduce((sr, sp) => withSpike(sr, LEARN * 24 + sp.at, SPIKE), cpuSeries(DAYS, 11));
     const pts = anomalyBand(series, K_SIGMA, LEARN).slice(LEARN * 24);
     const flagged = stretches(pts.map((p) => p.out));
     const fixed = stretches(pts.map((p) => p.v > FIXED));
-    const first = flagged[0];
-    const peak = first ? Math.max(...pts.slice(first.start, first.end).map((p) => p.v)) : 0;
-    const flagAt = first ? DRAW_FROM + (first.start / (pts.length - 1)) * DRAW_DUR : AI_END;
-    return { pts, flagged, fixed, peak, flagAt };
-  }, [spike]);
+    const peaks = flagged.map((f) => Math.max(...pts.slice(f.start, f.end).map((p) => p.v)));
+    const flagAt = flagged.map((f) => DRAW_FROM + (f.start / (pts.length - 1)) * DRAW_DUR);
+    return { pts, flagged, fixed, peaks, flagAt };
+  }, []);
 }
 
-function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: number; t: number; spike: Spike }) {
+function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; t: number }) {
   const { pts, flagged, fixed } = wk;
   const H = 290;
   const l = 48;
@@ -94,9 +93,9 @@ function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: n
   }
   const line = drawn.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
   const shown = flagged.filter((s) => s.start <= hc);
-  const missed = spike === 'night' && shown.length > 0 && !fixed.some((s) => s.start <= hc);
+  const alarmed = (s: { start: number; end: number }) => fixed.some((f) => f.start < s.end && f.end > s.start);
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU over one week with the learned normal band and a fixed ${FIXED}% alarm line. A spike ${SPIKES[spike].when} is ${flagged.length ? 'flagged as unusual' : 'not flagged'}; the fixed alarm ${fixed.length ? 'fires' : 'stays silent'}.`}>
+    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU over one week with the learned normal band and a fixed ${FIXED}% alarm line. Spikes ${SPIKES[0].when} and ${SPIKES[1].when} are both flagged as unusual; the fixed alarm fires only for the one ${SPIKES[1].when}.`}>
       {[0, 25, 50, 75, 100].map((v) => (
         <g key={v}>
           <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
@@ -132,39 +131,33 @@ function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: n
           </g>
         );
       })}
-      {missed && (
-        <text x={sx(flagged[0].start) + 14} y={sy(FIXED) + 18} class="warn-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
-          Under {FIXED}%: the fixed alarm stays silent
+      {shown.map((s) => (
+        <text key={`fx${s.start}`} x={sx(s.start) + 14} y={alarmed(s) ? sy(FIXED) - 22 : sy(FIXED) + 18} class={`${alarmed(s) ? 'muted' : 'warn-fill'} halo`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          {alarmed(s) ? `Over ${FIXED}%: the fixed alarm fires too` : `Under ${FIXED}%: the fixed alarm stays silent`}
         </text>
-      )}
+      ))}
     </svg>
   );
 }
 
 function AiOps() {
-  const [spike, setSpike] = useEnum<Spike>('sp', 'night', ['night', 'day']);
-  const wk = useWeek(spike);
+  const wk = useWeek();
   const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END });
-  useRestartOn(clock, [spike]);
   const t = clock.t;
   const hc = prog(t, DRAW_FROM, DRAW_FROM + DRAW_DUR) * (wk.pts.length - 1);
-  const phase = phaseAt([0, DRAW_FROM, wk.flagAt], t);
+  const phase = phaseAt([0, DRAW_FROM, ...wk.flagAt], t);
   const flaggedNow = wk.flagged.filter((s) => s.start <= hc).length;
   const firedNow = wk.fixed.filter((s) => s.start <= hc).length;
-  const passed = flaggedNow > 0;
-  const peak = Math.round(wk.peak);
-  const S = SPIKES[spike];
+  const [night, day] = wk.peaks.map((v) => Math.round(v));
   const lines: Line[] = [
     { tone: 'ink', k: 'Normal, learned', text: 'The shaded band is what normal CPU looks like for each hour of the week, learned from the two weeks before.' },
     { tone: 'ink', k: 'Busy afternoons are normal', text: 'Weekday afternoons run hot every day, so they stay inside the band and raise nothing.' },
-    spike === 'night'
-      ? { tone: 'bad', k: `Flagged ${S.when}`, text: `CPU jumps to ${peak}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` }
-      : { tone: 'bad', k: `Flagged ${S.when}`, text: `CPU jumps to ${peak}% on a busy afternoon, above normal even for that hour, so it is flagged. A fixed ${FIXED}% alarm catches this one too; the learned band matters most when trouble hides under the threshold.` },
+    { tone: 'bad', k: `Flagged ${SPIKES[0].when}`, text: `CPU jumps to ${night}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` },
+    { tone: 'bad', k: `Flagged ${SPIKES[1].when}`, text: `CPU jumps to ${day}% on a busy afternoon, above normal even for that hour, so it is flagged too. This one crosses ${FIXED}%, so the fixed alarm fires as well. Only the learned band caught both.` },
   ];
   const line = lines[phase];
   return (
     <Show
-      top={<Choice<Spike> label="This week" value={spike} onChange={setSpike} options={(['night', 'day'] as Spike[]).map((s) => ({ value: s, label: SPIKES[s].label }))} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -173,7 +166,7 @@ function AiOps() {
           <Kpis
             items={[
               { k: 'Flagged as unusual', v: flaggedNow, tone: flaggedNow ? 'bad' : 'neutral' },
-              { k: `Fixed ${FIXED}% alarm`, v: firedNow ? 'Fired' : passed ? 'Silent' : '—', tone: passed ? (firedNow ? 'ok' : 'warn') : 'neutral', sub: passed && !firedNow ? 'missed the spike' : undefined },
+              { k: `Fixed ${FIXED}% alarm fired`, v: firedNow, tone: firedNow < flaggedNow ? 'warn' : 'neutral', sub: firedNow < flaggedNow ? 'missed the 3 a.m. spike' : undefined },
               { k: 'Learned from', v: '2 weeks', sub: 'of history, per hour' },
             ]}
           />
@@ -181,7 +174,7 @@ function AiOps() {
       }
     >
       <div class="diagram-scroll">
-        <WeekChart wk={wk} hc={hc} t={t} spike={spike} />
+        <WeekChart wk={wk} hc={hc} t={t} />
       </div>
       <Legend
         items={[
@@ -425,117 +418,159 @@ function SelfService() {
 }
 
 // ───────────────────────── Cost ─────────────────────────
+// One project, dev-test, runs hot. Cost Governance catches it with a budget alert, its savings
+// recommendations cut the waste, and Self-Service quota and policies keep it from coming back.
 const RATES = { vcpuMonth: 20, memGBMonth: 3, tbMonth: 40 };
-const USAGE: Usage[] = [
-  { project: 'web-shop', vcpu: 180, memGB: 720, tb: 22, budget: 9000 },
-  { project: 'data-team', vcpu: 240, memGB: 1900, tb: 85, budget: 15000 },
-  { project: 'vdi', vcpu: 400, memGB: 1600, tb: 40, budget: 19000 },
-  { project: 'dev-test', vcpu: 80, memGB: 320, tb: 12, budget: 4000 },
-];
+const DEV: Usage = { project: 'dev-test', vcpu: 80, memGB: 320, tb: 12, budget: 4000 };
+const PLANNED = monthlyCost(DEV, RATES);
 const MONTH = 30;
-const HOT: { project: string; surge: Surge } = { project: 'dev-test', surge: { from: 8, factor: 2 } };
-const TRACK_MAX = 1.4; // the bar runs to 140% of budget
-type Month = 'plan' | 'hot';
+const ALERT_AT = 0.5; // the alert threshold in this example
+const HOT: Surge = { from: 5, factor: 2.5 }; // a load test leaves extra VMs running
+const ALERT_DAY = crossDay(PLANNED, DEV.budget, 'warn', MONTH, HOT, ALERT_AT) ?? MONTH;
+const FIX_DAY = Math.ceil(ALERT_DAY) + 2; // the owner acts on the savings recommendations
+const GUARD_DAY = FIX_DAY + 5; // quota and policies in place
+const LEFT_ALONE: Surge[] = [HOT];
+const WITH_NCM: Surge[] = [HOT, { from: FIX_DAY, factor: 1 }, { from: GUARD_DAY, factor: 0.6 }];
+const OVER_DAY = crossDay(PLANNED, DEV.budget, 'over', MONTH, LEFT_ALONE);
+const ALONE_END = accrued(PLANNED, MONTH, MONTH, LEFT_ALONE);
+const NCM_END = accrued(PLANNED, MONTH, MONTH, WITH_NCM);
+const Y_MAX = 7000;
+const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 
-interface CostEvent {
-  day: number;
-  project: string;
-  state: Exclude<BudgetState, 'ok'>;
-}
+/** What NCM does about it, in the order it acts. */
+const GUARDS: { at: number; tone: Tone; k: string; by: string; text: string }[] = [
+  { at: ALERT_DAY, tone: 'warn', k: 'Budget alerts', by: 'Cost Governance', text: 'A budget per team or project, with an automated overspend alert to its owner while there is still time to act.' },
+  { at: FIX_DAY, tone: 'flow', k: 'Savings recommendations', by: 'Cost Governance', text: 'Finds idle and oversized VMs, so the owner knows exactly what to stop or right-size.' },
+  { at: GUARD_DAY, tone: 'ok', k: 'Quotas and policies', by: 'Self-Service', text: 'A quota caps the CPU, memory and storage a project can deploy. Approval and scheduler policies hold big requests and stop apps at set times.' },
+];
 
-function useMonth(month: Month) {
-  return useMemo(() => {
-    const rows = USAGE.map((u) => {
-      const surge = month === 'hot' && u.project === HOT.project ? HOT.surge : undefined;
-      const monthly = monthlyCost(u, RATES);
-      return { u, monthly, surge, warn: crossDay(monthly, u.budget, 'warn', MONTH, surge), over: crossDay(monthly, u.budget, 'over', MONTH, surge) };
-    });
-    const events: CostEvent[] = rows
-      .flatMap((r) => [
-        ...(r.warn !== null ? [{ day: r.warn, project: r.u.project, state: 'warn' as const }] : []),
-        ...(r.over !== null ? [{ day: r.over, project: r.u.project, state: 'over' as const }] : []),
-      ])
-      .sort((a, b) => a.day - b.day);
-    return { rows, events };
-  }, [month]);
-}
-
-function Showback({ m, day }: { m: ReturnType<typeof useMonth>; day: number }) {
-  const L = 130;
-  const TWd = 600;
-  const top = 56;
-  const rowH = 64;
-  const H = top + m.rows.length * rowH + 8;
-  const sx = (f: number) => L + (Math.min(f, TRACK_MAX) / TRACK_MAX) * TWd;
+function Guards({ t }: { t: number }) {
+  const now = phaseAt([-1, ...GUARDS.map((g) => g.at)], t) - 1;
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Spend so far for ${m.rows.length} projects against their monthly budgets, day ${Math.ceil(day)} of ${MONTH}.`}>
-      <text x={0} y={16} class="muted" style={{ fontSize: '12.5px' }}>
-        Rates you set: ${RATES.vcpuMonth} per vCPU · ${RATES.memGBMonth} per GB of memory · ${RATES.tbMonth} per TB, each month
+    <div class="ncm-guards">
+      <span class="choice-l">How NCM stops the overspend</span>
+      <ol>
+        {GUARDS.map((g, i) => (
+          <li key={g.k} class={`${t >= g.at ? `on ${g.tone}` : ''}${i === now && t <= MONTH ? ' now' : ''}`}>
+            <span class="n">{i + 1}</span>
+            <b>{g.k}</b>
+            <span class="by">{g.by}</span>
+            <p>{g.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function SpendChart({ t }: { t: number }) {
+  const H = 300;
+  const l = 56;
+  const r = 132;
+  const top = 18;
+  const b = 34;
+  const day = Math.min(MONTH, t);
+  const sx = (d: number) => l + (d / MONTH) * (W - l - r);
+  const sy = (v: number) => top + (1 - v / Y_MAX) * (H - top - b);
+  const path = (changes: Surge[], from: number, to: number) => {
+    const ds: number[] = [];
+    for (let d = from; d < to; d += 0.5) ds.push(d);
+    ds.push(to);
+    return ds.map((d, i) => `${i ? 'L' : 'M'}${sx(d).toFixed(1)} ${sy(accrued(PLANNED, d, MONTH, changes)).toFixed(1)}`).join(' ');
+  };
+  const spent = accrued(PLANNED, day, MONTH, WITH_NCM);
+  const marks = GUARDS.map((g, i) => ({ ...g, i, x: sx(g.at), y: sy(accrued(PLANNED, g.at, MONTH, WITH_NCM)) })).filter((g) => t >= g.at);
+  const hot = { x: sx(HOT.from), y: sy(accrued(PLANNED, HOT.from, MONTH)) };
+  return (
+    <svg
+      class="diagram"
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label={`dev-test spend over the month against its ${usd(DEV.budget)} budget. Left alone it would end at ${usd(ALONE_END)}; with the alert, the recommendations and the guardrails it ends at ${usd(NCM_END)}.`}
+    >
+      {[0, 1000, 2000, 3000, 4000, 5000, 6000, 7000].map((v) => (
+        <g key={v}>
+          <line x1={l} x2={sx(MONTH)} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
+          <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted" style={{ fontSize: '11px' }}>
+            {v ? `$${v / 1000}k` : '$0'}
+          </text>
+        </g>
+      ))}
+      {[1, 5, 10, 15, 20, 25, 30].map((d) => (
+        <text key={d} x={sx(d)} y={H - 10} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+          Day {d}
+        </text>
+      ))}
+      <line x1={l} x2={sx(MONTH)} y1={sy(DEV.budget)} y2={sy(DEV.budget)} class="ss-limit" />
+      <text x={l + 8} y={sy(DEV.budget) - 7} class="halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        Budget {usd(DEV.budget)}
       </text>
-      <line x1={sx(1)} x2={sx(1)} y1={top - 6} y2={H - 4} class="ss-limit" />
-      <text x={sx(1)} y={top - 10} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
-        Budget
+      <line x1={l} x2={sx(MONTH)} y1={sy(DEV.budget * ALERT_AT)} y2={sy(DEV.budget * ALERT_AT)} class="ncm-fixed" />
+      <text x={l + 8} y={sy(DEV.budget * ALERT_AT) - 7} class="muted halo" style={{ fontSize: '12px' }}>
+        Alert at {ALERT_AT * 100}%
       </text>
-      <line x1={sx(0.8)} x2={sx(0.8)} y1={top - 2} y2={H - 4} class="line" stroke-dasharray="3 3" />
-      <text x={sx(0.8)} y={top - 10} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
-        80%
-      </text>
-      {m.rows.map((r, i) => {
-        const y = top + i * rowH;
-        const spent = accrued(r.monthly, day, MONTH, r.surge);
-        const st = budgetState(spent, r.u.budget);
-        const f = spent / r.u.budget;
-        return (
-          <g key={r.u.project}>
-            <text x={0} y={y + 24} style={{ fontSize: '14px', fontWeight: 600 }}>
-              {r.u.project}
-            </text>
-            <rect x={L} y={y + 8} width={TWd} height={24} class="bg3" />
-            <rect x={L} y={y + 8} width={sx(f) - L} height={24} class={`${st === 'over' ? 'bad' : st === 'warn' ? 'warn' : 'ok'}-fill`} style={{ opacity: 0.85 }} />
-            <text x={L} y={y + 50} class="mono muted" style={{ fontSize: '11.5px' }}>
-              ${Math.round(spent).toLocaleString('en-US')} of ${r.u.budget.toLocaleString('en-US')}
-            </text>
-            <text x={L + TWd + 18} y={y + 25} class={st === 'over' ? 'bad-fill' : st === 'warn' ? 'warn-fill' : 'ok-fill'} style={{ fontSize: '13px', fontWeight: 600 }}>
-              {st === 'over' ? '✕ Over budget' : st === 'warn' ? '⚠ 80% alert sent' : '✓ On track'}
-            </text>
-          </g>
-        );
-      })}
+
+      {t >= HOT.from && (
+        <g style={{ opacity: prog(t, HOT.from, HOT.from + 1) }}>
+          <path d={path(LEFT_ALONE, HOT.from, MONTH)} class="ncm-alone" />
+          <text x={sx(MONTH) + 10} y={sy(ALONE_END) + 4} class="bad-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+            Left alone
+          </text>
+          <text x={sx(MONTH) + 10} y={sy(ALONE_END) + 21} class="mono bad-fill" style={{ fontSize: '12px' }}>
+            {usd(ALONE_END)}
+          </text>
+          <circle cx={hot.x} cy={hot.y} r={6} class="bad-fill" stroke="var(--bg)" stroke-width={2} />
+          <text x={hot.x + 12} y={hot.y + 20} class="bad-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+            Runs hot from day {HOT.from}
+          </text>
+        </g>
+      )}
+
+      <path d={path(WITH_NCM, 0, day)} class="ncm-spend" />
+      {t < MONTH && <line x1={sx(day)} x2={sx(day)} y1={top} y2={H - b} class="ncm-cursor" />}
+      <circle cx={sx(day)} cy={sy(spent)} r={4} class="ncm-spend-dot" />
+      {t >= MONTH && (
+        <>
+          <text x={sx(MONTH) + 10} y={sy(NCM_END) + 4} class="ok-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+            With NCM
+          </text>
+          <text x={sx(MONTH) + 10} y={sy(NCM_END) + 21} class="mono ok-fill" style={{ fontSize: '12px' }}>
+            {usd(NCM_END)}
+          </text>
+        </>
+      )}
+      {marks.map((g) => (
+        <g key={g.k}>
+          <circle cx={g.x} cy={g.y} r={10} class={`${g.tone}-fill`} stroke="var(--bg)" stroke-width={2} />
+          <text x={g.x} y={g.y + 4.5} text-anchor="middle" class="ncm-n">
+            {g.i + 1}
+          </text>
+        </g>
+      ))}
     </svg>
   );
 }
 
 function Cost() {
-  const [month, setMonth] = useEnum<Month>('mo', 'hot', ['plan', 'hot']);
-  const m = useMonth(month);
-  const clock = useClock({ rate: 3, duration: MONTH + 1, keys: true, poster: MONTH + 1 });
-  useRestartOn(clock, [month]);
-  const day = Math.min(MONTH, clock.t);
-  const phase = phaseAt([0, ...m.events.map((e) => e.day), MONTH + 0.01], clock.t);
-  const ev = phase > 0 && phase <= m.events.length ? m.events[phase - 1] : null;
-  const total = m.rows.reduce((s, r) => s + accrued(r.monthly, day, MONTH, r.surge), 0);
-  const alerts = m.events.filter((e) => e.day <= day).length;
-  const warnDay = (p: string) => Math.ceil(m.events.find((e) => e.project === p && e.state === 'warn')?.day ?? 0);
-  let line: Line;
-  if (clock.t > MONTH)
-    line = { tone: 'ink', k: 'Month closed', text: `Showback by project for the month: $${Math.round(total).toLocaleString('en-US')} in total, at your own rates. ${alerts ? `${alerts} budget alert${alerts > 1 ? 's' : ''} went out before the month closed.` : 'No project crossed 80% of its budget.'}` };
-  else if (!ev) line = { tone: 'ink', k: 'Metered every day', text: 'Each project’s use of CPU, memory and storage is metered daily, priced at the rates you set and compared with its budget. In NCM 2.0 this runs on-premises.' };
-  else if (ev.state === 'warn')
-    line = { tone: 'warn', k: '80% alert', text: `${ev.project} passed 80% of its budget on day ${Math.ceil(ev.day)}, so its owner gets an alert with ${MONTH - Math.ceil(ev.day)} days of the month still to go.` };
-  else line = { tone: 'bad', k: 'Over budget', text: `${ev.project} went over its budget on day ${Math.ceil(ev.day)}. Its owner has known since day ${warnDay(ev.project)}, not from the invoice.` };
+  const clock = useClock({ rate: 2, duration: MONTH + 1, keys: true, poster: MONTH + 1 });
+  const t = clock.t;
+  const day = Math.min(MONTH, t);
+  const spent = accrued(PLANNED, day, MONTH, WITH_NCM);
+  const pace = paceEnd(PLANNED, day, MONTH, WITH_NCM);
+  const st = budgetState(spent, DEV.budget, ALERT_AT);
+  const overPct = Math.round((ALONE_END / DEV.budget - 1) * 100);
+  const lines: Line[] = [
+    { tone: 'ink', k: 'Metered every day', text: `Cost Governance meters dev-test’s CPU, memory and storage every day at the rates you set, and tracks the total against its ${usd(DEV.budget)} budget for the month.` },
+    { tone: 'bad', k: 'Running hot', text: `On day ${HOT.from} a load test leaves extra VMs running, and dev-test starts spending ${HOT.factor} times its normal daily rate. Left alone, it would pass its budget on day ${Math.ceil(OVER_DAY ?? MONTH)} and end the month at ${usd(ALONE_END)}, ${overPct}% over.` },
+    { tone: 'warn', k: '1 · Budget alert', text: `Spend passes ${ALERT_AT * 100}% of the budget on day ${Math.ceil(ALERT_DAY)}, with ${MONTH - Math.ceil(ALERT_DAY)} days still to go. Cost Governance sends the owner an overspend alert now, not after the invoice.` },
+    { tone: 'flow', k: '2 · Savings recommendations', text: 'Cost Governance lists the idle and oversized VMs. The owner stops the idle load-test VMs and right-sizes the oversized ones, and spend drops back to the planned rate.' },
+    { tone: 'ok', k: '3 · Quotas and policies', text: 'Self-Service keeps it from happening again: the project quota caps the CPU, memory and storage dev-test can deploy, an approval policy holds large requests for sign-off, and a scheduler policy stops dev-test apps at night and on weekends.' },
+    { tone: 'ok', k: 'Under budget', text: `dev-test closes the month at ${usd(NCM_END)} of its ${usd(DEV.budget)} budget instead of ${usd(ALONE_END)}. The alert caught it early, the recommendations cut the waste, and the quota and policies stop it coming back.` },
+  ];
+  const line = lines[phaseAt([0, HOT.from, ALERT_DAY, FIX_DAY, GUARD_DAY, MONTH + 0.01], t)];
   return (
     <Show
-      top={
-        <Choice<Month>
-          label="This month"
-          value={month}
-          onChange={setMonth}
-          options={[
-            { value: 'plan', label: 'As planned' },
-            { value: 'hot', label: 'dev-test runs hot' },
-          ]}
-        />
-      }
+      top={<Guards t={t} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -543,22 +578,30 @@ function Cost() {
           </Follow>
           <Kpis
             items={[
-              { k: 'Spent so far', v: `$${(total / 1000).toFixed(1)}k`, sub: `${m.rows.length} projects` },
-              { k: 'Budget alerts sent', v: alerts, tone: alerts ? 'warn' : 'ok' },
-              { k: 'License', v: 'NCM Pro', tip: TIER_TIP.Pro },
+              { k: 'dev-test spend', v: usd(spent), tone: st === 'over' ? 'bad' : t > MONTH ? 'ok' : st === 'warn' ? 'warn' : 'neutral', sub: `of ${usd(DEV.budget)} budget` },
+              { k: 'Month-end at this pace', v: usd(pace), tone: pace > DEV.budget ? 'bad' : 'ok', sub: pace > DEV.budget ? `${Math.round((pace / DEV.budget - 1) * 100)}% over budget` : 'under budget' },
+              { k: 'License', v: 'NCM Pro', sub: 'approvals, schedules: Ultimate', tip: `${TIER_TIP.Pro} Approval and scheduler policies need NCM Ultimate.` },
             ]}
           />
         </>
       }
     >
       <div class="diagram-scroll">
-        <Showback m={m} day={day} />
+        <SpendChart t={t} />
       </div>
+      <Legend
+        items={[
+          { color: 'var(--text)', label: 'dev-test spend with NCM' },
+          { color: 'var(--bad)', label: 'Left alone' },
+        ]}
+      />
       <PlayBar
         clock={clock}
-        label="Monthly showback animation"
-        fmt={(t) => (t > MONTH ? 'Month closed' : `Day ${Math.max(1, Math.ceil(t))} of ${MONTH}`)}
-        extra={<Illus why="Rates, usage and budgets are made-up examples, and use is spread evenly over the month. Cost Governance (formerly Beam) meters actual consumption and uses the rates you configure." />}
+        label="dev-test spend animation"
+        fmt={(x) => (x > MONTH ? 'Month closed' : `Day ${Math.max(1, Math.ceil(x))} of ${MONTH}`)}
+        extra={
+          <Illus why={`Rates (${usd(RATES.vcpuMonth)} per vCPU, ${usd(RATES.memGBMonth)} per GB of memory, ${usd(RATES.tbMonth)} per TB a month), usage, the budget, the ${ALERT_AT * 100}% alert threshold and the savings are made-up examples. Cost Governance (formerly Beam) meters actual consumption at the rates you configure.`} />
+        }
       />
     </Show>
   );

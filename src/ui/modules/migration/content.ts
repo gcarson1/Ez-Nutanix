@@ -42,10 +42,4 @@ export const content: ModuleContent = {
     'Switch the source to Hyper-V, AWS EC2 or Azure: the pattern is the same.',
     'Then Hybrid & Public Cloud for NC2 targets, or AHV Networking for keeping IP addresses.',
   ],
-  honest: [
-    'Move handles the copy and cutover; dependencies, networks and testing are still a project to plan, usually app by app.',
-    'Very high change rates or thin links can stop incremental syncs from converging; fix bandwidth or timing first.',
-    'Support depends on the exact source, target, guest OS and Move version; check the support matrix before each wave.',
-    'Applications that need a tighter cutover than a short downtime window may need application-level replication instead.',
-  ],
 };

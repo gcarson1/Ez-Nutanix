@@ -24,8 +24,4 @@ export const content: ModuleContent = {
     { q: 'Can we keep VMware?', a: 'Yes, Nutanix clusters also run ESXi. AHV is included with the platform and some features, such as Flow, require it.' },
   ],
   next: ['Cluster & DSF Lab', 'Failure Gauntlet', 'LCM Rolling Upgrade'],
-  honest: [
-    'Each node gives some CPU and memory to its CVM; that overhead is the cost of a distributed controller and should be in every sizing.',
-    'Feature availability differs by hypervisor (AHV or ESXi) and by license tier.',
-  ],
 };

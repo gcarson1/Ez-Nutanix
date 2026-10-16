@@ -36,10 +36,4 @@ export const content: ModuleContent = {
     },
   ],
   next: ['Snapshots & Clones', 'Disaster Recovery', 'Hybrid & Public Cloud'],
-  honest: [
-    'Recovery is bounded by the last log catch-up and the retention window; data written after the last catch-up is not yet recoverable.',
-    'Feature support differs by engine and version (for example HA topologies and patching options); check the NDB compatibility matrix.',
-    'Thin clones save space only while they change a fraction of the data; a clone that rewrites everything grows to a full copy.',
-    'NDB itself is a set of VMs (control plane and agents) that need sizing, protection and upgrades.',
-  ],
 };

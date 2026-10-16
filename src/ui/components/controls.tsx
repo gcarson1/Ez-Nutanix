@@ -1,6 +1,6 @@
 // Shared controls in the design-system vocabulary: segmented choices, toggles, sliders,
-// labeled fields with "why disabled" text, status chips, explain-this tips, honest-fit
-// callouts, and the play bar (pause + scrub) for looping animations.
+// labeled fields with "why disabled" text, status chips, explain-this tips, and the play
+// bar (pause + scrub) for looping animations.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from './Icon';
@@ -214,22 +214,6 @@ export function Follow({ tone, k, children }: { tone?: Tone | 'ink'; k: string; 
       <div class="follow-k">{k}</div>
       {children}
     </div>
-  );
-}
-
-export function HonestFit({ items, title = 'Where this has trade-offs' }: { items: string[]; title?: string }) {
-  return (
-    <details class="honest">
-      <summary>
-        <Icon name="chev" />
-        Honest fit · {title}
-      </summary>
-      <ul>
-        {items.map((i) => (
-          <li key={i}>{i}</li>
-        ))}
-      </ul>
-    </details>
   );
 }
 

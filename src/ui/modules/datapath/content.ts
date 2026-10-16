@@ -40,10 +40,4 @@ export const content: ModuleContent = {
     'Read: served from the local node, with no network hop.',
     'Read after a VM moves: the first reads go remote, then the data follows the VM and latency drops back.',
   ],
-  honest: [
-    'Data locality helps less when reads hit deduplicated data shared across VMs, when nodes are storage-only, and when workloads are mostly remote by design.',
-    'RF3 waits for two remote copies instead of one, so it adds write overhead compared with RF2.',
-    'Large sequential I/O bypasses the OpLog by design. It is written straight to the extent store, still with all of its copies.',
-    'Right after a live migration, reads are slower until hot data has been localized. How long that takes depends on the working set.',
-  ],
 };

@@ -90,6 +90,21 @@ Not redone here. Summary only. The full rows and sources are in the linked notes
 - **Item 13, Data Lens and AI:** Data Lens 2.0 on-prem (including air-gapped) GA in Apr 2026, and On-Prem 2.1 added Objects. NAI is at 2.8. "Nutanix Agentic AI" is a full-stack solution targeted for 2H 2026. GPT-in-a-Box is a legacy name.
 - **Item 14, Fleet, NCM, Federation:** "Prism Federation" is not a Nutanix product name. The capability is Nutanix Central (SaaS and on-prem, up to 25 Prism domains). NCM 2.0 runs on Nutanix Central On-Prem. Self-Service and Cost Governance start at Pro, and Security Compliance is Ultimate only.
 
+
+## 6. NCM Cost: how overspend is caught and prevented
+
+The Cost tab shows dev-test running hot and NCM bringing it back under budget. Each mechanism it names is checked here. Rates, usage, the budget, the alert threshold and the savings are made-up examples and are labeled illustrative in the app.
+
+| ID | Claim (as the app states it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| COST-1 | Cost Governance keeps a budget per team or project and sends its owner an automated overspend alert. | The datasheet: "Establish precise cost center budgets with automated overspend alerts to proactively identify and control excess spending". The Bible: budgets "define expected or approved spend for a cost center" and "track actual cost against the configured budget", and its workflow includes "Create budgets and alerts". Budgets attach to cost centers, which can map to a team or project. | [Cost Governance datasheet][ds-cg]; [Bible: Cost Governance][b-cg] | 2026-10-16 | keep |
+| COST-2 | The alert fires when spend passes 50% of the budget. | No documented default threshold found. The sources say only "automated overspend alerts" and "Create budgets and alerts". | [ds-cg]; [b-cg] | 2026-10-16 | unverified. Shown as this example's threshold, inside the illustrative note |
+| COST-3 | Cost Governance lists idle and oversized VMs, and the owner stops or right-sizes them. | The datasheet: "Savings recommendations for idle and underutilized resources" and "identifying candidates for rightsizing or termination based on configurable cost policies". The Bible's recommendation types include "Idle virtual machines", "Oversized virtual machines" and "Unused or underutilized resources". The app has the owner act on them; it does not claim they are applied automatically. | [ds-cg]; [b-cg]; [Cost Governance test drive blog][blog-cg] | 2026-10-16 | keep |
+| COST-4 | Use is metered daily at the rates you set, and Cost Governance runs on-premises in NCM 2.0. | The Bible's User Defined Metering lets admins "define their own unit-based rates for resources such as CPU, memory, and storage". The product page: "Define unit rates for metering customer infrastructure" and "Cost Governance now operates exclusively within your existing on-premises data center infrastructure". The daily cadence is the animation's step, not a documented interval. | [b-cg]; [Cost Governance page][pg-cg]; [note E][E] row 2c | 2026-10-16 | keep (rates, on-prem). Daily step is illustrative |
+| COST-5 | A Self-Service project quota caps the CPU, memory and storage a project can deploy. | The Projects blog: "Set customizable limits on resources like CPU, memory, and storage per" project, "to manage and cap consumption within defined boundaries", and "help avoid overconsumption". The Bible: projects define "quotas" and get "Policies and quotas via the NCM Self-Service Policy Engine". Neither says in so many words what happens to a request over quota. The Prism quota policy pages on the portal couldn't be read. | [Projects blog][blog-proj]; [Bible: Self-Service][b-ss] | 2026-10-16 | keep (the cap). The Self-Service tab's "sent back with the reason" wording stays unverified on the portal |
+| COST-6 | Approval policies hold large requests for sign-off, scheduler policies stop dev-test apps at set times, and both need NCM Ultimate. | The Bible: "Approval policies allow administrators to require approval before certain actions are performed" and "Scheduler policies allow administrators to define when certain actions should occur", for example "an application may be scheduled to start or stop at specific times". Ultimate adds "governance (approvals and scheduler)" ([note E][E] row 2b). Nights and weekends are this example's schedule. | [b-ss]; [E] | 2026-10-16 | keep |
+| COST-7 | A budget by itself doesn't switch resources off (presenter Q&A). | Neither the datasheet nor the Bible describes a budget action that stops or blocks resources. The datasheet's "schedule-based automated actions" and Playbooks aren't tied to budgets there. This rests on absence of evidence, so the Q&A says "as far as the published material says". | [ds-cg]; [b-cg] | 2026-10-16 | unverified (worded as such) |
+
 ---
 
 ## Changes needed in the app
@@ -195,3 +210,9 @@ No contradictions were found for:
 [p-found]: https://portal.nutanix.com/page/documents/details?targetId=Field-Installation-Guide-v5_0%3Afie-cvm-cpu-allocation.html
 [p-pd-metro]: https://portal.nutanix.com/page/documents/details?targetId=Prism-Element-Data-Protection-Guide%3Awc-protection-domain-configuration-ma-wc-c.html
 [p-ahv-metro]: https://portal.nutanix.com/page/documents/details?targetId=Disaster-Recovery-DRaaS-Guide-vpc_2024_3%3Aecd-ecdr-metroavailability-pc-c.html
+[ds-cg]: https://www.nutanix.com/library/datasheets/nutanix-cloud-manager-cost-governance
+[b-cg]: https://www.nutanixbible.com/14b-book-of-cloud-management-cost-governance.html
+[b-ss]: https://www.nutanixbible.com/14c-book-of-cloud-management-self-service.html
+[blog-cg]: https://www.nutanix.com/blog/new-ncm-cost-governance-test-drive
+[pg-cg]: https://www.nutanix.com/en_gb/products/cloud-manager/cost-governance
+[blog-proj]: https://www.nutanix.com/tech-center/blog/nutanix-projects-key-capabilities-and-benefits

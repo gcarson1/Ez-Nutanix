@@ -43,12 +43,4 @@ export const content: ModuleContent = {
     'Change the node count and read the capacity bar: your data, the extra copies, and the space kept free for a rebuild.',
     'Then open the Failure Gauntlet for other failures, or the Cluster & DSF Lab for EC-X, blocks and racks.',
   ],
-  honest: [
-    'EC-X only applies to write-cold data and is applied in the background, so the full theoretical saving is rarely reached. Larger strips save more but make rebuilds more expensive.',
-    'A rebuild reserve is capacity you pay for and do not fill. Skipping it means a failure leaves data with fewer copies until capacity is added.',
-    'RF3 gives about two thirds of the usable capacity RF2 would give from the same drives, and adds write overhead. Block and rack awareness need enough blocks and racks to work.',
-    'This view models EC-X as post-process encoding of write-cold data, the default behavior. Inline erasure coding also exists (for example for Objects, and as an option in newer releases) and is not modeled here.',
-    'Compression and deduplication ratios vary widely by workload. This calculator uses 1.0:1 unless you enter a measured figure.',
-    'This calculator is for discussion. Use the official sizing tool for quotes; it accounts for per-version system overheads that are not modeled here.',
-  ],
 };

@@ -36,11 +36,4 @@ export const content: ModuleContent = {
     },
   ],
   next: ['Healthy cluster: let one loop play and point at one node out at a time and VM downtime staying at none.', 'Cluster already degraded: the pre-checks stop it before anything changes.', 'A node fails mid-upgrade: LCM waits, then resumes after the repair.', 'Then Failure Gauntlet for what an unplanned failure does on its own.'],
-  honest: [
-    'Upgrade time grows with node count, because LCM works on one node at a time and waits for resiliency between nodes.',
-    'Every node must be able to leave safely: you need resiliency OK and enough spare CPU and memory on the other hosts to absorb one node’s VMs.',
-    'On RF2 there is no spare fault tolerance while a node is out. A second failure during that window can make some data unavailable until a node returns; RF3 removes that window.',
-    'Firmware coverage depends on the server vendor and LCM release, and LCM does not upgrade firmware on single-node clusters.',
-    'LCM updates are not reversible. “Stop update” waits for the next safe point.',
-  ],
 };

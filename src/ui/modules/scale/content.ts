@@ -38,10 +38,4 @@ export const content: ModuleContent = {
     'Be upfront about the CVM: each node reserves CPU and memory for it; take the figure from sizing.',
     'Then Protection & Capacity for usable capacity, or Data Path for why locality matters.',
   ],
-  honest: [
-    'Each node reserves CPU and memory for its CVM. That overhead is real and belongs in every sizing; it depends on features and node size.',
-    'Compute and storage grow together by default. If one grows much faster than the other, choose node configurations carefully or use storage-only nodes.',
-    '“Linear” describes the scaling unit, not a guaranteed benchmark: workload, network and data placement still matter.',
-    'The 3-tier side here is a generic, simplified model. Many arrays scale in other ways, for example by adding controllers or arrays.',
-  ],
 };
