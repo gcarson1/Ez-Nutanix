@@ -1,24 +1,19 @@
 /* Data Security module (prefix sc-) */
-.sc-vseg .seg { display: flex; flex-direction: column; width: 100%; }
-.sc-vseg .seg button { text-align: left; justify-content: flex-start; }
-.sc-vseg .seg button + button { box-shadow: inset 0 1px 0 var(--line-2); }
-.sc-vseg .seg button[aria-pressed='true'] + button { box-shadow: none; }
-.sc-ul { margin: 0; padding-left: var(--sp-4); color: var(--text-2); }
-.sc-ul li + li { margin-top: var(--sp-1h); }
-.sc-h3 { font-size: var(--fs-15); margin: 0; }
-.diagram .sc-stolen { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 7 5; }
-.diagram .disk.sc-pulled { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 3; }
-.diagram .sc-keyline { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
-.diagram .sc-keyline.cut { stroke: var(--bad); opacity: 0.6; }
-.sc-layers { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
-.sc-layer { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); padding: var(--sp-4); background: var(--bg); border: 0; text-align: left; color: inherit; font: inherit; min-height: 9rem; }
-button.sc-layer { cursor: pointer; transition: background var(--t-fast); }
-button.sc-layer:hover { background: var(--bg-3); }
-.sc-layer .sc-k { font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.sc-layer .sc-t { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; font-size: var(--fs-15); }
-.sc-layer .sc-t svg { width: 1.1rem; height: 1.1rem; color: var(--ink-fg); flex: none; }
-.sc-layer .sc-s { font-size: var(--fs-13); color: var(--muted); }
-.sc-layer .sc-go { margin-top: auto; padding-top: var(--sp-2); font-size: var(--fs-12); color: var(--ink-fg); display: inline-flex; align-items: center; gap: var(--sp-1); }
-.sc-layer .sc-go svg { width: 0.875rem; height: 0.875rem; }
-@media (max-width: 1200px) { .sc-layers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 600px) { .sc-layers { grid-template-columns: minmax(0, 1fr); } .sc-layer { min-height: 0; } }
+.sc-dia .sc-t { font-size: 15px; font-weight: 600; }
+.sc-dia .sc-s { font-size: 13px; }
+.sc-dia .sc-ink { fill: var(--ink-fg); }
+.sc-dia .sc-gate { fill: none; stroke: var(--line-2); stroke-width: 1.25; stroke-dasharray: 4 3; }
+.sc-dia .sc-gate.on { fill: var(--ink-soft); stroke: var(--ink); stroke-dasharray: none; stroke-width: 2; }
+.sc-dia .sc-lock path { fill: none; stroke: var(--ink-fg); stroke-width: 2; }
+.sc-dia .sc-lock rect { fill: var(--ink-fg); }
+.sc-dia .sc-km { fill: var(--ink-soft); stroke: var(--ink-line); }
+.sc-dia .sc-key circle, .sc-dia .sc-key path { fill: none; stroke: var(--ink-fg); stroke-width: 2; }
+.sc-dia .sc-keyline { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+.sc-dia .sc-keyline.cut { stroke: var(--bad); }
+.sc-dia .sc-out { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 7 5; opacity: 0.7; }
+.sc-dia .sc-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.sc-dia .sc-piece { fill: var(--ink); }
+.sc-dia .sc-piece.exposed { stroke: var(--bad); stroke-width: 2.5; }
+.sc-dia .sc-cipher { stroke: var(--s2); stroke-width: 1; }
+.sc-dia .sc-hatch-bg { fill: var(--bg-3); }
+.sc-dia .sc-hatch-l { stroke: var(--s2); stroke-width: 2; }

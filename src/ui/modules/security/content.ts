@@ -4,15 +4,14 @@ export const content: ModuleContent = {
   path: 'nci/security',
   title: 'Data Security',
   tag: 'Nutanix Cloud Infrastructure',
-  summary:
-    'Encryption for data at rest, a hardened configuration that puts itself back when it drifts, and microsegmentation for traffic between VMs: separate layers for separate threats.',
+  summary: 'Encryption for data at rest, and what it does and does not protect: choose whether data is encrypted and where its keys live, then see whether a stolen drive or a stolen node can be read.',
   priority: 'P1',
   talk: [
-    'Start with the threat. Encryption at rest protects drives and nodes that leave your control; it does nothing against an attacker inside a running VM.',
-    'Two ways to encrypt: software encryption in AOS on ordinary drives, or self-encrypting drives (SEDs) when policy requires hardware encryption. They can be layered (dual encryption).',
-    'Keys can be managed natively by the cluster, with no extra server, or by your existing external key manager, so keys and data never sit in the same place.',
-    'Hardening is built in: in current releases a security profile (Standard, Elevated or Strict) is applied from Prism Central and checked every 2 hours, putting drifted settings back where it can.',
-    'Flow covers the traffic between VMs, Data Lens watches file shares for ransomware patterns, and snapshots and DR are the way back when something gets through.',
+    'Start with the threat. Encryption at rest protects drives and nodes that leave your control: stolen, sent back for repair or thrown away. It does nothing against an attacker inside a running VM.',
+    'Two ways to encrypt: software encryption in AOS on ordinary drives, which Nutanix positions for most cases, or self-encrypting drives (SEDs) when policy requires hardware encryption. They can be layered (dual encryption).',
+    'Apps see no change: data is encrypted before it reaches a drive and decrypted for any authorized reader.',
+    'Keys can be managed natively by the cluster, with no extra server, or by your existing external key manager, so keys and data never sit in the same place. That is what protects you if a whole node walks out.',
+    'Beyond encryption, hardening is built in: in current releases a security profile (Standard, Elevated or Strict) is applied from Prism Central and checked every 2 hours, putting drifted settings back where it can.',
   ],
   numbers: [
     { k: 'Encryption options', v: 'Software (AOS), self-encrypting drives, or both' },
@@ -36,11 +35,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Set encryption to None and threat to "a drive is pulled": readable. Switch to Software: protected.',
-    'Pick "a whole node is stolen" and compare the native key manager with an external KMS.',
-    'Pick "ransomware inside a VM" to show what encryption does not cover.',
-    'Play the drift timeline at the Strict profile.',
-    'Open Flow from the layers row to show microsegmentation and quarantine.',
+    'Start with encryption Off and “A drive is stolen”: the drive is readable. Switch to the built-in key manager: the same drive is unreadable.',
+    'Choose “A whole node is stolen” and compare the built-in key manager with an external key manager: only the external one keeps the keys away from the stolen node.',
+    'Point out the cost of the external key manager: another server to run, back up and keep reachable.',
+    'Then show Flow for traffic between VMs, and snapshots and DR for recovery, the threats encryption does not cover.',
   ],
   honest: [
     'Encryption at rest only protects media. Data is decrypted for any authorized reader, including a compromised VM or a stolen admin account.',

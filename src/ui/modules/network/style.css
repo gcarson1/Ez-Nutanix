@@ -1,27 +1,15 @@
 /* AHV Networking module (prefix net-) */
-.net-head { margin-bottom: var(--sp-3); }
-.net-list { list-style: none; padding: 0; margin: 0 0 var(--sp-2); width: 100%; font-size: var(--fs-14); }
-.net-list li { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2); border-bottom: 1px solid var(--line); padding: var(--sp-1) 0; }
-.net-list li + li { margin-top: 0; }
-.net-list .tbtn { padding: 0 var(--sp-1); }
-.net-list svg { width: 0.875rem; height: 0.875rem; }
-.net-bond { font-size: var(--fs-18); margin-top: var(--sp-2); }
-.net-p { margin-top: var(--sp-2); color: var(--text-2); }
-.net-lim { padding-top: var(--sp-3); }
-.net-lim + .net-lim { border-top: 1px solid var(--line); margin-top: var(--sp-3); }
-.net-cards { margin-top: var(--sp-6); }
-@media (max-width: 900px) { .net-lab > .stage { order: -1; } }
-.net-cards p { color: var(--text-2); }
-
 .net-dia .net-t { font-size: 15px; font-weight: 600; }
 .net-dia .net-s { font-size: 13.5px; }
 .net-dia .net-xs { font-size: 12px; }
-.net-dia .net-up { stroke: var(--s2); }
-.net-dia .net-idle { stroke: var(--line-2); }
-.net-dia .net-vs { stroke: var(--ink-line); stroke-width: 1.5; }
+.net-dia .net-br { fill: var(--ink-soft); stroke: var(--ink-line); stroke-width: 1.25; }
+.net-dia .net-link { stroke: var(--s2); stroke-width: 1.5; }
+.net-dia .net-wire { stroke-width: 3; transition: stroke var(--t-fast); }
+.net-dia .net-wire.on { stroke: var(--s2); }
+.net-dia .net-wire.wait { stroke: var(--line-2); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.net-dia .net-wire.down { stroke: var(--bad); stroke-width: 2; stroke-dasharray: 5 4; }
+.net-dia .net-lag { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.net-dia .net-pkt { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
+.net-dia .net-pkt.lost { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 3 2; }
 .net-dia .ink-text-fill { fill: var(--ink-fg); }
 .net-dia .ok-text-fill { fill: var(--ok); }
-.net-dia .bad-text-fill { fill: var(--bad); }
-.net-dia .flow-text-fill { fill: var(--flow); }
-.net-dia .net-path { fill: none; stroke: var(--flow); stroke-width: 3; opacity: 0.55; }
-.net-dia .net-pkt-t { fill: var(--flow); font-weight: 600; }
