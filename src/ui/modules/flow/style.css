@@ -1,0 +1,69 @@
+/* Flow module (prefix fl-) */
+.fl-lede { margin-bottom: var(--sp-5); }
+.fl-rules { list-style: none; padding: 0; margin: 0; width: 100%; }
+.fl-rules li { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); padding: var(--sp-1) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-13); }
+.fl-rules li + li { margin-top: 0; }
+.fl-rules .tbtn { height: auto; padding: var(--sp-1); }
+.fl-add { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1h); width: 100%; }
+.fl-add .input { width: auto; min-width: 0; height: var(--h-sm); padding: 0 var(--sp-2); font-size: var(--fs-13); }
+.fl-add .btn { height: var(--h-sm); padding: 0 var(--sp-2); }
+.fl-vlist .seg { display: flex; flex-direction: column; width: 100%; }
+.fl-vlist .seg button { text-align: left; justify-content: flex-start; }
+.fl-vlist .seg button + button { box-shadow: inset 0 1px 0 var(--line-2); }
+.fl-vlist .seg button[aria-pressed='true'] + button { box-shadow: none; }
+
+.diagram .fl-env { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1; }
+.diagram .fl-env.dev { stroke-dasharray: 6 4; }
+.diagram .fl-envlbl { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; fill: var(--muted); }
+.diagram .fl-wall { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 6 5; }
+.diagram .fl-wall.on { stroke: var(--bad); stroke-width: 3; stroke-dasharray: none; }
+.diagram .fl-ext { fill: var(--bg-3); stroke: var(--line-2); stroke-dasharray: 3 3; }
+.diagram .fl-vm { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .fl-vm.sel { stroke: var(--ink); stroke-width: 2.5; }
+.diagram .fl-vm.inf { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 2; }
+.diagram .fl-vm.quar { stroke: var(--bad); stroke-dasharray: 6 4; stroke-width: 2; }
+.diagram .fl-nic { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .fl-nic.hit-on { fill: var(--bad); }
+.diagram .fl-path { fill: none; stroke-width: 2; stroke-dasharray: 5 4; opacity: 0.85; }
+.diagram .fl-path.ok { stroke: var(--ok); }
+.diagram .fl-path.warn { stroke: var(--warn); }
+.diagram .fl-path.bad { stroke: var(--bad); }
+.diagram .fl-x { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 2; }
+.diagram .fl-xmark { stroke: var(--bad); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.diagram .fl-check { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.diagram .fl-check.ok { stroke: var(--ok); }
+.diagram .fl-check.warn { stroke: var(--warn); }
+.diagram .bad-fill.halo, .diagram text.bad-fill { fill: var(--bad); }
+
+.diagram .fl-vpc { fill: var(--bg); stroke-width: 2; }
+.diagram .fl-vpc.a { stroke: var(--ink); }
+.diagram .fl-vpc.b { stroke: var(--flow); stroke-dasharray: 6 3; }
+.diagram .fl-hop { fill: none; stroke: var(--line-2); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.diagram .fl-hop.done { stroke: var(--flow); opacity: 0.45; }
+.diagram .fl-hop.on { stroke: var(--flow); stroke-width: 3; stroke-dasharray: none; }
+.diagram .fl-pkt { fill: var(--bg); stroke: var(--flow); stroke-width: 2.5; }
+.diagram .fl-pkt.encap { fill: var(--flow-bg); stroke: var(--text); }
+
+.fl-sel { margin-top: var(--sp-4); padding: var(--sp-3) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.fl-sel-acts { display: flex; flex-wrap: wrap; gap: 0 var(--sp-8); }
+.fl-sel-acts .field { border: 0; padding: var(--sp-3) 0 0; }
+.fl-sim { margin-top: var(--sp-4); }
+.fl-sim .sec-h { margin-top: var(--sp-2); font-size: var(--fs-15); }
+.fl-sim-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-3); }
+.fl-sim-row label { display: flex; flex-direction: column; gap: var(--sp-1); }
+.fl-sim-row .input { width: auto; min-width: 9rem; }
+.fl-quick { margin-top: var(--sp-3); }
+.fl-quick .btn { height: var(--h-sm); padding: 0 var(--sp-3); font-size: var(--fs-13); }
+.fl-log .fl-rule { display: block; color: var(--muted); font-size: var(--fs-12); }
+.fl-hdrs { display: flex; flex-direction: column; border: 1px solid var(--line-2); }
+.fl-hdr { display: flex; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-1h) var(--sp-2); font-size: var(--fs-12); border-bottom: 1px solid var(--line); }
+.fl-hdr:last-child { border-bottom: 0; }
+.fl-hdr .k { color: var(--muted); white-space: nowrap; }
+.fl-hdr.outer { background: var(--flow-bg); }
+.fl-hdr.nat { background: var(--warn-bg); }
+.fl-h3 { font-size: var(--fs-15); margin: var(--sp-3) 0 var(--sp-2); }
+.fl-ul { margin: var(--sp-1) 0 0; padding-left: var(--sp-5); color: var(--text-2); }
+@media (max-width: 600px) {
+  .fl-sim-row .input { min-width: 0; width: 100%; }
+  .fl-sim-row label { flex: 1 1 100%; }
+}
