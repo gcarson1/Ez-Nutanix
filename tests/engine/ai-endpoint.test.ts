@@ -1,34 +1,63 @@
 import { describe, it, expect } from 'vitest';
-import { airgapBlocked, architecture, normalize, sourceBlocked, type EndpointChoice } from '../../src/engine/ai-endpoint';
+import { REPLICA_OPTS, SERVE_TIMES, SITE, planServing } from '../../src/engine/ai-endpoint';
 
-const base: EndpointChoice = { target: 'nkp', source: 'nim', gpus: 1, replicas: 1, gateway: false, airgap: false };
-
-describe('NAI endpoint wizard', () => {
-  it('air-gapped only applies to your own data center', () => {
-    expect(airgapBlocked({ target: 'nkp' })).toBeNull();
-    for (const target of ['eks', 'aks', 'gke'] as const) {
-      expect(airgapBlocked({ target })).toBeTruthy();
-      expect(normalize({ ...base, target, airgap: true }).airgap).toBe(false);
+describe('NAI endpoint: spreading requests over replicas', () => {
+  it('answers every request, in the order they arrived', () => {
+    for (const r of REPLICA_OPTS) {
+      const p = planServing(r);
+      expect(p.jobs).toHaveLength(SERVE_TIMES.busy + SERVE_TIMES.during);
+      for (let i = 1; i < p.jobs.length; i++) expect(p.jobs[i].dispatch).toBeGreaterThanOrEqual(p.jobs[i - 1].dispatch);
+      for (const j of p.jobs) {
+        expect(j.dispatch).toBeGreaterThanOrEqual(j.arrive);
+        expect(j.back).toBeLessThan(p.end);
+      }
     }
   });
 
-  it('Hugging Face is unavailable when air-gapped, and normalize never returns a blocked combination', () => {
-    expect(sourceBlocked('hf', { airgap: true })).toBeTruthy();
-    const n = normalize({ ...base, airgap: true, source: 'hf' });
-    expect(sourceBlocked(n.source, n)).toBeNull();
-    expect(n.source).toBe('upload');
+  it('a replica works on one request at a time', () => {
+    for (const r of REPLICA_OPTS) {
+      const p = planServing(r);
+      for (let k = 0; k < r; k++) {
+        const mine = p.jobs.filter((j) => j.replica === k).sort((a, b) => a.begin - b.begin);
+        for (let i = 1; i < mine.length; i++) expect(mine[i].begin).toBeGreaterThanOrEqual(mine[i - 1].done - 1e-9);
+      }
+    }
   });
 
-  it('counts GPUs and flags tensor-parallel serving', () => {
-    const a = architecture({ ...base, gpus: 4, replicas: 2 });
-    expect(a.totalGpus).toBe(8);
-    expect(a.tensorParallel).toBe(true);
-    expect(architecture(base).tensorParallel).toBe(false);
-    expect(architecture({ ...base, replicas: 9 }).choice.replicas).toBe(3);
+  it('spreads requests over every replica', () => {
+    const p = planServing(4);
+    expect(new Set(p.jobs.filter((j) => j.batch === 'busy').map((j) => j.replica)).size).toBe(4);
   });
 
-  it('keeps on-prem and cloud straight', () => {
-    expect(architecture(base).onPrem).toBe(true);
-    expect(architecture({ ...base, target: 'eks' }).onPrem).toBe(false);
+  it('a stopped replica gets no work while it is stopped', () => {
+    for (const r of REPLICA_OPTS) {
+      const p = planServing(r);
+      for (const j of p.jobs.filter((x) => x.replica === p.stop.replica)) expect(j.dispatch >= p.stop.to - 1e-9 || j.done <= p.stop.from + 1e-9).toBe(true);
+    }
+  });
+
+  it('with one replica requests queue, and wait for it while it is stopped', () => {
+    const p = planServing(1);
+    expect(p.maxWait.busy).toBeGreaterThan(0);
+    for (const j of p.jobs.filter((x) => x.batch === 'stop')) expect(j.dispatch).toBeGreaterThanOrEqual(p.stop.to - 1e-9);
+  });
+
+  it('more replicas never make anyone wait longer, and four never wait', () => {
+    const [a, b, c] = REPLICA_OPTS.map((r) => planServing(r).maxWait);
+    expect(b.busy).toBeLessThanOrEqual(a.busy);
+    expect(c.busy).toBeLessThanOrEqual(b.busy);
+    expect(b.stop).toBeLessThanOrEqual(a.stop);
+    expect(c.stop).toBeLessThanOrEqual(b.stop);
+    expect(c).toEqual({ busy: 0, stop: 0 });
+  });
+});
+
+describe('NAI endpoint: where it runs', () => {
+  it('only the air-gapped site is offline, and it runs on your own Kubernetes (NKP)', () => {
+    expect(SITE.dc.online).toBe(true);
+    expect(SITE.cloud.online).toBe(true);
+    expect(SITE.airgap.online).toBe(false);
+    expect(SITE.airgap.runsOn).toMatch(/NKP/);
+    expect(SITE.airgap.model.join(' ')).not.toMatch(/Hugging Face/);
   });
 });

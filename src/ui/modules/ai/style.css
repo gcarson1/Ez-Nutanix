@@ -1,26 +1,24 @@
-/* Enterprise AI module */
+/* Enterprise AI module (prefix ai-) */
+.diagram .ai-site { fill: none; stroke: var(--ink-line); stroke-width: 1.5; stroke-dasharray: 8 5; }
+.diagram .ai-site.off { stroke: var(--warn); }
+.diagram .ai-site-t { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; fill: var(--ink-fg); }
+.diagram .ai-site-t.warn-fill { fill: var(--warn); }
+.diagram .ai-cap { font-size: 11px; letter-spacing: 0.08em; }
 .diagram .ai-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .ai-k8s { fill: none; stroke: var(--line-2); stroke-width: 1.25; stroke-dasharray: 6 4; }
-.diagram .ai-infra { fill: var(--bg-3); stroke: var(--line-2); }
-.diagram .ai-rep { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .ai-rep.ready { stroke: var(--ok); stroke-width: 1.75; }
-.diagram .ai-gpu { fill: var(--ink); }
-.diagram .ai-hi .hit { stroke: var(--ink-fg); stroke-width: 2.25; }
-.diagram .ai-airgap { fill: none; stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 8 5; }
-.ai-steps { list-style: none; margin: var(--sp-3) 0 var(--sp-2); padding: 0; display: flex; flex-direction: column; }
-.ai-steps button { display: flex; align-items: center; gap: var(--sp-2); width: 100%; border: 0; background: none; padding: var(--sp-1h) 0; color: var(--muted); font-size: var(--fs-14); text-align: left; }
-.ai-steps button:hover { color: var(--text); }
-.ai-steps button.on { color: var(--text); font-weight: 600; }
-.ai-steps .n { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 1px solid var(--line-2); font: 600 var(--fs-12) var(--mono); }
-.ai-steps button.on .n { background: var(--ink); border-color: var(--ink); color: var(--ink-text); }
-.ai-steps button.past .n { color: var(--ok); border-color: var(--ok); }
-.ai-nav { margin-top: var(--sp-3); gap: var(--sp-2); }
-.ai-list { margin: var(--sp-2) 0 0; padding-left: var(--sp-4); font-size: var(--fs-14); color: var(--text-2); }
-.ai-list li + li { margin-top: var(--sp-2); }
-@media (max-width: 900px) {
-  .ai-steps { flex-direction: row; flex-wrap: wrap; gap: var(--sp-3); grid-column: 1 / -1; }
-  .ai-steps button { width: auto; }
-  .ai-nav { grid-column: 1 / -1; }
+.diagram .ai-ep { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 1.5; }
+.diagram .ai-net { fill: none; stroke: var(--line-2); stroke-dasharray: 4 4; }
+.diagram .ai-wire { fill: none; stroke: var(--line-2); stroke-width: 1.5; }
+.diagram .ai-wire.cut { stroke: var(--bad); stroke-dasharray: 3 4; opacity: 0.6; }
+.diagram .ai-load { fill: none; stroke: var(--ink-line); stroke-width: 1.25; stroke-dasharray: 4 4; }
+.diagram .ai-bar { fill: var(--bg-3); }
+.diagram .ai-bar-on { fill: var(--flow); opacity: 0.45; }
+.diagram .ai-gpu { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .ai-model { fill: var(--ink); }
+.diagram .ai-model.off { opacity: 0.35; }
+.diagram .ai-req { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .ai-ans { fill: var(--ok); stroke: var(--bg); stroke-width: 1.5; }
+.ai-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
+.ai-legend .legend { margin-top: 0; }
+@media (max-width: 600px) {
+  .diagram-scroll > .ai-svg { min-width: 44rem; }
 }
-.ai-review .stat { width: 100%; }
-.ai-narrow { max-width: 30rem; }

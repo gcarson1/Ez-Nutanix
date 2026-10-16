@@ -1,19 +1,20 @@
-/* Project Beacon module */
-.bc-note { display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border-left: 2px solid var(--warn); background: var(--warn-bg); margin-bottom: var(--sp-5); font-size: var(--fs-15); max-width: var(--measure); }
-.bc-note svg { width: 1.125rem; height: 1.125rem; flex: none; color: var(--warn); margin-top: 0.15rem; }
-.bc-lede { font-size: var(--fs-18); line-height: 1.55; max-width: var(--measure); }
-.bc-cols { align-items: start; }
-.bc-cols .follow { margin-top: 0; }
-.diagram .bc-apps { fill: var(--bg-2); stroke: var(--line-2); }
+/* Project Beacon module (prefix bc-) */
 .diagram .bc-band { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 7 5; }
-.diagram .bc-infra { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .bc-axis { stroke: var(--line-2); stroke-width: 2; stroke-dasharray: 4 5; }
+.diagram .bc-axis.on { stroke: var(--ink); stroke-dasharray: none; }
+.diagram .bc-tick { fill: var(--bg); stroke: var(--line-2); stroke-width: 2; }
+.diagram .bc-tick.on { fill: var(--ink); stroke: var(--ink); }
+.diagram .bc-head { fill: var(--ink); stroke: var(--bg); stroke-width: 3; }
+.diagram .bc-year { font-size: 24px; font-weight: 600; }
+.diagram .bc-year.now { fill: var(--ink-fg); }
+.diagram .bc-year.later { fill: var(--faint); }
 .diagram .bc-piece { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .bc-piece.ok { stroke: var(--ok); }
 .diagram .bc-piece.warn { stroke: var(--warn); stroke-dasharray: 6 4; }
-.diagram .bc-piece.neutral { stroke: var(--ink); stroke-dasharray: 3 4; }
-.diagram .bc-piece.sel { stroke-width: 2.75; fill: var(--sel); }
-.diagram .bc-dim { opacity: 0.45; }
+.diagram .bc-piece.now { stroke-width: 2.5; fill: var(--sel); }
+.diagram .bc-st { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
 .diagram .bc-st.ok { fill: var(--ok); }
 .diagram .bc-st.warn { fill: var(--warn); }
-.diagram .bc-st.neutral { fill: var(--ink-fg); }
-.bc-diag { margin-top: var(--sp-6); max-width: 62rem; }
+@media (max-width: 600px) {
+  .diagram-scroll > .bc-svg { min-width: 44rem; }
+}

@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   talk: [
     'Unstructured data is where ransomware hurts most: shared drives that many users can write to.',
     'Data Lens reads the file activity on the share. Known strains match its signature list. Pro adds behavior analytics that flags a user changing files at an abnormal rate, even for a strain nobody has seen before.',
-    'Press Play with Pro and a new variant: the alert fires, the client is blocked, and only a slice of the share is hit. Then switch to Starter: no signature, no behavior analytics, no alert.',
+    'Pick Auto-block: the alert fires, the client is blocked, and only a slice of the share is hit. Then Alert only: the same alert fires, but the client keeps encrypting until someone acts.',
     'Recovery comes from snapshots. The client cannot touch them, so one action restores the affected files to the last clean version.',
     'Be clear about the recovery point: edits made after that snapshot are lost on the files that were encrypted.',
     'It runs as SaaS or fully on-premises, including air-gapped sites, since Data Lens 2.0.',

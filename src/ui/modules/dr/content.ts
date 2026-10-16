@@ -10,7 +10,7 @@ export const content: ModuleContent = {
   talk: [
     'Protection is policy-based: you set a recovery point objective (RPO), assign VMs to the policy with categories, and the platform picks the replication tier.',
     'Three tiers: asynchronous at 1 hour or more, NearSync at 1 to 15 minutes, and synchronous at RPO 0 for sites under 5 ms round trip.',
-    'The sawtooth is the honest picture: between recovery points, recent writes exist only at the primary. An unplanned failover loses whatever had not reached the other site yet.',
+    'The honest picture: between copies, recent writes exist only at the primary site. An unplanned failover loses whatever had not reached the other site yet.',
     'Recovery plans are the runbook: boot order in stages, delays, network mapping and scripts. Test failover runs the same plan on clones in an isolated network, so you can prove it works without touching production.',
     'For zero data loss with automatic failover, synchronous replication plus a Witness in a separate fault domain lets the surviving site take over on its own.',
     'Sites can be combined: a nearby synchronous partner plus a distant NearSync or async copy, or a cloud site on Nutanix Cloud Clusters (NC2).',
@@ -37,11 +37,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Drag the RPO slider from 24 hours down to 0 and watch the tier change; then raise latency above 5 ms to see Sync blocked.',
-    'Unplanned failover: drag "When disaster strikes" and compare data lost at the peak and just after a recovery point lands.',
-    'Lower bandwidth until the link cannot keep up, and show the exposure growing past the RPO.',
-    'Play a planned failover (zero data loss), then a test failover, then turn off network mapping.',
-    'Multi-site: lose Sites A and B together and show recovery from Site C.',
+    'Async, unplanned: pause just before Site A is lost and point at the writes that exist only at Site A.',
+    'Switch to NearSync, then Sync: the data that could be lost shrinks from hours to minutes to none.',
+    'Planned failover: nothing is lost with any tier, because the last changes are copied before the switch.',
+    'Then open Hybrid & Public Cloud to use a cloud as the recovery site.',
   ],
   honest: [
     'Synchronous replication costs write latency on every write and is limited by distance (under 5 ms round trip). Nearby sites can fail together.',

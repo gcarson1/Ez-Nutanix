@@ -37,10 +37,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Traffic simulator: send "Web → DB (skips a tier)" in Monitoring, then switch the application policy to Enforced and send it again.',
-    'Select HR-DB-1, live-migrate it to Host 1, and resend: same verdict, enforced on the new host.',
-    'Ransomware tab: play with policies in Monitoring, then Enforced; turn on "allowed app ports" and use one-click quarantine.',
-    'Virtual Networking tab: follow the overlapping-IP packet, then the NAT and floating-IP paths.',
+    'Network Security with Policy Off: app traffic flows and every unwanted try gets through. Switch to Monitor: the same tries are flagged in the log but still get through. Then Enforce: each one is stopped at the VM.',
+    'Turn on Quarantine Web-2: nothing gets in or out of Web-2, even with the policy Off, while Web-1 keeps the app running.',
+    'Virtual Networking, Inside a VPC: two VPCs use the very same addresses, and each packet crosses between hosts in an envelope tagged with its VPC.',
+    'Out to the internet, then In from the internet: source NAT gives a whole VPC one public address, and a floating IP lets outsiders reach one VM.',
     'Open Data Security to see where Flow fits with encryption and hardening.',
   ],
   honest: [

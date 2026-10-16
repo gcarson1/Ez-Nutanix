@@ -5,14 +5,14 @@ export const content: ModuleContent = {
   title: 'Failure Gauntlet',
   tag: 'Nutanix Cloud Infrastructure',
   summary:
-    'Break a drive, a Controller VM (CVM), a node, a block or a rack, or several at once. Watch detection, VM restarts and self-healing on a timeline you can scrub, and compare RF2 with RF3 on the same failure.',
+    'Pick a failure: a drive, a Controller VM (CVM), a node, a whole block, two nodes at once, or a nearly full cluster. Watch detection, VM restarts and self-healing on a loop, with RF2 or RF3.',
   priority: 'P0',
   talk: [
     'Start with a node power-off. The cluster notices within seconds, HA (high availability) restarts that node’s VMs on other hosts in about one to two minutes, and re-protection starts right away.',
     'Point at the lines: every surviving node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
     'Stop only a CVM: nothing restarts. The host keeps its VMs and their I/O is served by other CVMs over the network until it returns.',
-    'Now the honest part: a second failure during an RF2 rebuild makes some data unavailable, and the sim does not hide it. Switch on the RF2 vs RF3 comparison to show the same script surviving on RF3.',
-    'Finish with the cannot-self-heal cases: a nearly full cluster, or a 3-node cluster after a node loss. The rail says exactly why and what fixes it.',
+    'Now the honest part: a second failure during an RF2 rebuild makes some data unavailable, and the sim does not hide it. Pick “Two nodes at once”, then switch to RF3 to show the same failure survived.',
+    'Finish with the cannot-self-heal case: a nearly full cluster. The caption says exactly why. The Cluster & DSF Lab shows the 3-node case too.',
   ],
   numbers: [
     { k: 'Failures tolerated', v: 'RF2: 1 node or drive at a time · RF3: 2' },
@@ -37,11 +37,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Node power-off: play it, then scrub back to the moment HA restarts the VMs.',
-    'Second failure during rebuild: run it, then switch Compare to RF2 vs RF3.',
-    'Block failure: compare awareness off vs on.',
-    'Nearly full cluster: read the “cannot self-heal” reason and fix.',
-    'Try the Gauntlet game for a few rounds.',
+    'Node with RF2: let it play and pause on the moment HA restarts the VMs, then on the rebuild.',
+    'Two nodes at once: RF2 loses access to some data; switch to RF3 and it survives.',
+    'Block (chassis): copies were kept in different blocks, so data stays available.',
+    'Nearly full cluster: the survivors have no room, so it cannot self-heal; read the reason.',
     'Then open LCM Rolling Upgrade to show planned maintenance with no downtime.',
   ],
   honest: [

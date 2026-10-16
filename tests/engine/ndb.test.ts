@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planRecovery, snapshots, lastCaptured, cloneCapacity, type TmPolicy } from '../../src/engine/ndb';
+import { planRecovery, snapshots, lastCaptured, patchDowntime, type TmPolicy } from '../../src/engine/ndb';
 
 const p: TmPolicy = { windowMin: 7 * 1440, snapEveryMin: 1440, snapOffsetMin: 60, logEveryMin: 30 };
 const now = 7 * 1440 - 10;
@@ -29,11 +29,9 @@ describe('Time Machine', () => {
   });
 });
 
-describe('thin clones', () => {
-  it('thin clones use less than full copies unless every block changes', () => {
-    const c = cloneCapacity(2, 5, 10);
-    expect(c.thinTB).toBeCloseTo(2 + 5 * 0.2);
-    expect(c.fullCopiesTB).toBe(12);
-    expect(cloneCapacity(2, 5, 100).savedTB).toBeCloseTo(0);
+describe('patching', () => {
+  it('HA databases roll one member at a time; single instances need a restart window', () => {
+    expect(patchDowntime({ name: 'a', engine: 'PostgreSQL', version: 1, ha: true })).toBe('rolling');
+    expect(patchDowntime({ name: 'b', engine: 'PostgreSQL', version: 1, ha: false })).toBe('restart-window');
   });
 });

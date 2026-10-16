@@ -8,8 +8,8 @@ export const content: ModuleContent = {
   priority: 'P2',
   talk: [
     'Start with what the customer already trusts: AOS, the storage engine under every Nutanix cluster.',
-    'Toggle to VM-based: a hypervisor on every node, a Controller VM (CVM) running AOS, VMs on top.',
-    'Toggle to Cloud Native: the data services row stays the same. The packaging changes: AOS runs as pods on the Kubernetes workers, uses their local NVMe, and is driven through the Kubernetes API.',
+    'Pick "On a hypervisor": the stack builds from the servers up, with a hypervisor on every node, a Controller VM (CVM) running AOS, and VMs on top.',
+    'Pick Amazon EKS: the data services layer stays the same. The packaging changes: AOS runs as pods on the Kubernetes workers, uses their local NVMe, and is driven through the Kubernetes API.',
     'App-level snapshots, replication and DR come from Nutanix Data Services for Kubernetes (NDK). Cloud Native AOS extends NDK to clusters with no hypervisor underneath.',
     'Be precise on availability: release 1.0.0 (July 2025) is for Amazon EKS. Bare metal arrives through NKP Metal, which was early access in 2026 with GA targeted for the second half of the year.',
   ],
@@ -34,7 +34,11 @@ export const content: ModuleContent = {
       a: 'Related. Project Beacon was the 2023 vision of data services that run anywhere. Cloud Native AOS, together with NDK, is the first concrete product from that direction.',
     },
   ],
-  next: ['Kubernetes Platform', 'Project Beacon', 'Disaster Recovery'],
+  next: [
+    'Start on "On a hypervisor" and let the stack build, then switch to Amazon EKS and point at the one layer that stays the same.',
+    'Switch to Bare metal to show where NKP Metal fits, and say it is early access.',
+    'Then open Kubernetes Platform, Project Beacon or Disaster Recovery.',
+  ],
   honest: [
     'Release 1.0 is narrower than VM-based AOS: EKS only, up to 15 workers, RF2, and DR with an RPO of an hour or more.',
     'Moving AOS into Kubernetes means storage operations follow Kubernetes practices, which suits platform teams more than VM administrators.',

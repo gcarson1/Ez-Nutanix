@@ -1,397 +1,288 @@
-// Enterprise AI (NAI): a mock "deploy a model endpoint" wizard. Each choice redraws the
-// resulting architecture straight away; Deploy marks it ready. Logic in engine/ai-endpoint.ts.
-import { useEffect, useState } from 'preact/hooks';
-import { useBool, useEnum, useNum } from '../../../state/route';
-import { Chip, Field, Follow, Illus, Seg, Stat, Toggle } from '../../components/controls';
-import { Icon } from '../../components/Icon';
-import { SOURCE_LABEL, TARGET_LABEL, airgapBlocked, architecture, sourceBlocked, type Source, type Target } from '../../../engine/ai-endpoint';
+// Enterprise AI (NAI): pick where the endpoint runs and how many model replicas it has, then watch
+// the model load, apps' requests reach one endpoint and be spread over the replicas, and one
+// replica stop while the others carry on. Scheduling lives in src/engine/ai-endpoint.ts; this file
+// only draws it.
+import { useEnum } from '../../../state/route';
+import { useMemo } from 'preact/hooks';
+import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
+import { useClock, useRestartOn } from '../../components/clock';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
-const STEPS = ['Where', 'Model', 'Size', 'Access', 'Review'] as const;
-type Focus = 'where' | 'model' | 'size' | 'access' | 'all';
-const FOCUS: Focus[] = ['where', 'model', 'size', 'access', 'all'];
+type Pt = [number, number];
 
-interface Box {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+const W = 960;
+const H = 352;
+const CY = 204;
+const BX = 208;
+const APPS = { x: 16, y: CY - 36, w: 176, h: 72 };
+const EP = { x: 244, y: CY - 52, w: 184, h: 104 };
+const EP_CX = EP.x + EP.w / 2;
+const ELBOW = 520;
+const RX = 580;
+const RW = 340;
+const RH = 54;
+const RG = 10;
+const BAR = { x0: 130, x1: 244 };
+const GPU = { dx: 290, dy: 8, s: 38 };
+const LOAD = { start: 0.3, flight: 1.5 };
+/** Model copies travel along the top of the site and down its right-hand gutter. */
+const LOAD_Y = 66;
+const GUTTER = 937;
+const T = SERVE_TIMES;
 
-/** Box positions for the wide (row) layout and the narrow (phone, stacked) layout. */
-function layout(narrow: boolean, gateway: boolean, replicas: number) {
-  if (!narrow) {
-    const ep: Box = { x: gateway ? 520 : 470, y: 40, w: 190, h: 70 };
-    const k8s: Box = { x: 40, y: 170, w: 620, h: 250 };
-    return {
-      W: 960,
-      H: 540,
-      apps: { x: 40, y: 40, w: 200, h: 70 },
-      gw: { x: 290, y: 34, w: 190, h: 82 },
-      ep,
-      k8s,
-      rep: (r: number): Box => ({ x: k8s.x + 16 + r * 194, y: k8s.y + 108, w: 180, h: 124 }),
-      src: { x: 720, y: 200, w: 200, h: 110 },
-      infra: { x: 40, y: k8s.y + k8s.h + 14, w: 620, h: 56 },
-      total: { x: 720, y: k8s.y + k8s.h + 38 },
-    };
+const repY = (r: number, n: number) => CY - (n * RH + (n - 1) * RG) / 2 + r * (RH + RG);
+const modelBox = (online: boolean) => (online ? { x: 16, y: 40, w: 176, h: 88 } : { x: 244, y: 56, w: 184, h: 84 });
+
+function along(pts: Pt[], f: number): Pt {
+  const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
+  let d = Math.max(0, Math.min(1, f)) * seg.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < seg.length; i++) {
+    if (d <= seg[i] || i === seg.length - 1) {
+      const k = seg[i] ? d / seg[i] : 0;
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k];
+    }
+    d -= seg[i];
   }
-  const W = 440;
-  const apps: Box = { x: 0, y: 36, w: W, h: 60 };
-  const gw: Box = { x: 0, y: 122, w: W, h: 76 };
-  const ep: Box = { x: 0, y: gateway ? 224 : 122, w: W, h: 60 };
-  const k8sY = ep.y + ep.h + 30;
-  const k8s: Box = { x: 0, y: k8sY, w: W, h: 108 + replicas * 82 };
-  const infra: Box = { x: 0, y: k8s.y + k8s.h + 14, w: W, h: 56 };
-  const src: Box = { x: 0, y: infra.y + infra.h + 20, w: W, h: 100 };
-  return {
-    W,
-    H: src.y + src.h + 10,
-    apps,
-    gw,
-    ep,
-    k8s,
-    rep: (r: number): Box => ({ x: 16, y: k8s.y + 108 + r * 82, w: W - 32, h: 72 }),
-    src,
-    infra,
-    total: { x: W - 16, y: k8s.y + 24 },
-  };
+  return pts[pts.length - 1];
 }
 
-function Arch({ a, focus, deployed, narrow }: { a: ReturnType<typeof architecture>; focus: Focus; deployed: boolean; narrow: boolean }) {
-  const c = a.choice;
-  const hi = (f: Focus) => (focus === f || focus === 'all' ? ' ai-hi' : '');
-  const L = layout(narrow, c.gateway, c.replicas);
-  const { W, H, apps, gw, ep, k8s, src, infra } = L;
-  const reps = Array.from({ length: c.replicas });
-  const mid = (b: Box) => b.x + b.w / 2;
-  // Connectors between the request-path boxes.
-  const links = narrow
-    ? [
-        { x1: W / 2, y1: apps.y + apps.h, x2: W / 2, y2: c.gateway ? gw.y : ep.y },
-        ...(c.gateway ? [{ x1: W / 2, y1: gw.y + gw.h, x2: W / 2, y2: ep.y }] : []),
-        { x1: W / 2, y1: ep.y + ep.h, x2: W / 2, y2: k8s.y },
-      ]
-    : [
-        { x1: apps.x + apps.w, y1: 75, x2: c.gateway ? gw.x : ep.x, y2: 75 },
-        ...(c.gateway ? [{ x1: gw.x + gw.w, y1: 75, x2: ep.x, y2: 75 }] : []),
-        { x1: mid(ep), y1: ep.y + ep.h, x2: mid(ep), y2: k8s.y },
-      ];
+/** Endpoint to a replica's work bar. */
+function fan(r: number, n: number): Pt[] {
+  const y = repY(r, n) + RH / 2;
+  return [[EP_CX, CY], [ELBOW, CY], [ELBOW, y], [RX + BAR.x0, y]];
+}
+const IN: Pt[] = [[APPS.x + APPS.w, CY], [EP_CX, CY]];
+
+function Hex({ x, y, r, cls }: { x: number; y: number; r: number; cls: string }) {
+  const pts = Array.from({ length: 6 }, (_, i) => {
+    const a = (i * Math.PI) / 3;
+    return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
+  }).join(' ');
+  return <polygon class={cls} points={pts} />;
+}
+
+/** Where a request (or its answer) is at time t, or null when it is not on screen. */
+function dotAt(j: Job, t: number, n: number): { p: Pt; answer: boolean } | null {
+  if (t < j.sent || t >= j.back) return null;
+  if (t < j.arrive) return { p: along(IN, ease(prog(t, j.sent, j.arrive))), answer: false };
+  if (t < j.dispatch) return null; // waiting: drawn in the endpoint's queue
+  const path = fan(j.replica, n);
+  if (t < j.begin) return { p: along(path, prog(t, j.dispatch, j.begin)), answer: false };
+  const y = repY(j.replica, n) + RH / 2;
+  if (t < j.done) return { p: [RX + BAR.x0 + (BAR.x1 - BAR.x0) * prog(t, j.begin, j.done), y], answer: false };
+  const home = j.done + T.hop;
+  if (t < home) return { p: along([[RX + BAR.x1, y], ...path.slice().reverse()], prog(t, j.done, home)), answer: true };
+  return { p: along(IN.slice().reverse() as Pt[], ease(prog(t, home, j.back))), answer: true };
+}
+
+function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number }) {
+  const site = SITE[where];
+  const n = plan.replicas;
+  const { stop } = plan;
+  const mb = modelBox(site.online);
+  const loaded = LOAD.start + LOAD.flight;
+  const stopped = (r: number) => r === stop.replica && t >= stop.from && t < stop.to;
+  const waiting = plan.jobs.filter((j) => t >= j.arrive && t < j.dispatch);
+  const gpuC = (r: number): Pt => [RX + GPU.dx + GPU.s / 2, repY(r, n) + GPU.dy + GPU.s / 2];
+  const loadPath = (r: number): Pt[] => {
+    const [gx, gy] = gpuC(r);
+    return [[mb.x + mb.w, LOAD_Y], [GUTTER, LOAD_Y], [GUTTER, gy], [gx + GPU.s / 2, gy]];
+  };
+
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Architecture of the model endpoint on ${TARGET_LABEL[c.target]}`}>
-      {c.airgap && (
+    <svg
+      class="diagram ai-svg"
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label={`A model endpoint in ${site.label.toLowerCase()} with ${n} replica${n > 1 ? 's' : ''}. Apps send requests to one endpoint, which spreads them over the replicas. When ${n > 1 ? 'one replica stops, the others keep answering' : 'the only replica stops, requests wait until it is back'}.`}
+    >
+      {/* the site boundary */}
+      <rect class={`ai-site${site.online ? '' : ' off'}`} x={BX} y={14} width={W - BX - 6} height={H - 28} />
+      <text x={BX + 20} y={38} style={{ fontSize: '12.5px' }}>
+        <tspan class={site.online ? 'ai-site-t' : 'ai-site-t warn-fill'}>{site.online ? site.title : `✕ ${site.title}`}</tspan>
+        <tspan class="muted"> · {site.runsOn}</tspan>
+      </text>
+
+      {/* model source, or the unreachable internet */}
+      {!site.online && (
         <g>
-          <rect class="ai-airgap" x={narrow ? 0.75 : 4} y={narrow ? 0.75 : 4} width={narrow ? W - 1.5 : W - 8} height={narrow ? H - 1.5 : H - 8} />
-          <text x={narrow ? 10 : 20} y={narrow ? 20 : 24} class="warn-fill" style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.06em' }}>
-            AIR-GAPPED SITE · NO INTERNET CONNECTION
+          <rect class="ai-net" x={16} y={40} width={176} height={64} />
+          <text x={104} y={66} text-anchor="middle" class="muted" style={{ fontSize: '14px', fontWeight: 600 }}>
+            Internet
+          </text>
+          <text x={104} y={88} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+            ✕ not connected
           </text>
         </g>
       )}
-      {links.map((l, i) => (
-        <line key={i} {...l} class="flow-stroke" stroke-width={2} />
+      <rect class="ai-box" x={mb.x} y={mb.y} width={mb.w} height={mb.h} />
+      <text x={mb.x + mb.w / 2} y={mb.y + 20} text-anchor="middle" class="muted ai-cap">
+        {site.online ? 'MODEL SOURCE' : 'MODEL FILES'}
+      </text>
+      {site.model.map((l, i) => (
+        <text key={l} x={mb.x + mb.w / 2} y={mb.y + 40 + i * 18} text-anchor="middle" style={{ fontSize: '13.5px', fontWeight: 600 }}>
+          {l}
+        </text>
       ))}
-      {/* apps */}
-      <g class={hi('access')}>
-        <rect class="ai-box hit" x={apps.x} y={apps.y} width={apps.w} height={apps.h} />
-        <text x={mid(apps)} y={apps.y + apps.h / 2 - 4} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14.5px' }}>
-          Your apps and agents
-        </text>
-        <text x={mid(apps)} y={apps.y + apps.h / 2 + 15} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-          call the endpoint with a token
-        </text>
-      </g>
-      {c.gateway && (
-        <g class={hi('access')}>
-          <rect class="ai-box hit" x={gw.x} y={gw.y} width={gw.w} height={gw.h} />
-          <text x={mid(gw)} y={gw.y + 26} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14.5px' }}>
-            Agent Gateway
-          </text>
-          <text x={mid(gw)} y={gw.y + 46} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-            MCP Gateway for tools
-          </text>
-          <text x={mid(gw)} y={gw.y + 64} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-            token tracking, quotas
-          </text>
-        </g>
-      )}
-      <g class={hi('access')}>
-        <rect class="ai-box hit" x={ep.x} y={ep.y} width={ep.w} height={ep.h} />
-        <text x={mid(ep)} y={ep.y + ep.h / 2 - 4} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14.5px' }}>
-          Inference endpoint
-        </text>
-        <text x={mid(ep)} y={ep.y + ep.h / 2 + 15} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-          HTTPS · API token · RBAC
-        </text>
-      </g>
-
-      {/* Kubernetes cluster */}
-      <g class={hi('where')}>
-        <rect class="ai-k8s hit" x={k8s.x} y={k8s.y} width={k8s.w} height={k8s.h} />
-        <text x={k8s.x + 16} y={k8s.y + 24} style={{ fontWeight: 600, fontSize: '14px' }}>
-          {narrow ? `Kubernetes: ${c.target === 'nkp' ? 'NKP on NCI' : TARGET_LABEL[c.target]}` : `Kubernetes: ${TARGET_LABEL[c.target]}`}
-        </text>
-      </g>
-      <rect class="ink-fill" x={k8s.x + 16} y={k8s.y + 40} width={k8s.w - 32} height={50} />
-      <text x={k8s.x + 32} y={k8s.y + 62} style={{ fill: '#fff', fontWeight: 600, fontSize: '14.5px' }}>
-        Nutanix Enterprise AI
+      <text x={mb.x + mb.w / 2} y={mb.y + 76} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        {site.modelHow}
       </text>
-      <text x={k8s.x + 32} y={k8s.y + 80} style={{ fill: 'rgba(255,255,255,.8)', fontSize: '12px' }}>
-        {narrow ? 'Endpoints, models, tokens · monitoring' : 'Endpoints, models, users and tokens · GPU and model monitoring'}
+      {t < loaded + 0.6 &&
+        Array.from({ length: n }, (_, r) => <polyline key={r} points={loadPath(r).map((q) => q.join(',')).join(' ')} class="ai-load" />)}
+
+      {/* apps and the endpoint */}
+      <rect class="ai-box" x={APPS.x} y={APPS.y} width={APPS.w} height={APPS.h} />
+      <text x={APPS.x + APPS.w / 2} y={APPS.y + 31} text-anchor="middle" style={{ fontSize: '14.5px', fontWeight: 600 }}>
+        Apps and agents
       </text>
-      <g class={hi('size')}>
-        {reps.map((_, r) => {
-          const b = L.rep(r);
-          const gx = narrow ? b.x + b.w - 6 - c.gpus * 40 : b.x + 12;
-          const gy = narrow ? b.y + 30 : b.y + 58;
-          return (
-            <g key={r}>
-              <rect class={`ai-rep hit${deployed ? ' ready' : ''}`} x={b.x} y={b.y} width={b.w} height={b.h} />
-              <text x={b.x + 12} y={b.y + 22} style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                Replica {r + 1}
-              </text>
-              <text x={b.x + b.w - 12} y={b.y + 22} text-anchor="end" class={deployed ? 'ok-fill' : 'muted'} style={{ fontSize: '12px', fontWeight: 600 }}>
-                {deployed ? '✓ Ready' : 'planned'}
-              </text>
-              <text x={b.x + 12} y={b.y + 42} class="muted" style={{ fontSize: '12px' }}>
-                model server
-              </text>
-              {Array.from({ length: c.gpus }).map((__, g) => (
-                <g key={g}>
-                  <rect class="ai-gpu" x={gx + g * 40} y={gy} width={34} height={34} />
-                  <text x={gx + 17 + g * 40} y={gy + 22} text-anchor="middle" class="mono" style={{ fontSize: '10.5px', fill: '#fff' }}>
-                    GPU
-                  </text>
-                </g>
-              ))}
-              <text x={b.x + 12} y={narrow ? b.y + 60 : b.y + 112} class="muted" style={{ fontSize: '11.5px' }}>
-                {c.gpus > 1 ? `model split across ${c.gpus} GPUs` : 'one GPU'}
-              </text>
-            </g>
-          );
-        })}
-      </g>
-
-      {/* model source */}
-      <g class={hi('model')}>
-        <rect class="ai-box hit" x={src.x} y={src.y} width={src.w} height={src.h} />
-        <text x={mid(src)} y={src.y + 26} text-anchor="middle" class="muted" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
-          {narrow ? 'MODEL SOURCE · LOADED INTO THE REPLICAS' : 'MODEL SOURCE'}
+      <text x={APPS.x + APPS.w / 2} y={APPS.y + 51} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        send prompts
+      </text>
+      <line x1={APPS.x + APPS.w} y1={CY} x2={EP.x} y2={CY} class="ai-wire" />
+      {Array.from({ length: n }, (_, r) => {
+        const p = fan(r, n);
+        return <polyline key={r} points={[[EP.x + EP.w, CY], ...p.slice(1, 3), [RX, p[3][1]]].map((q) => q.join(',')).join(' ')} class={`ai-wire${stopped(r) ? ' cut' : ''}`} />;
+      })}
+      <rect class="ai-ep" x={EP.x} y={EP.y} width={EP.w} height={EP.h} />
+      <text x={EP_CX} y={EP.y + 24} text-anchor="middle" style={{ fontSize: '14.5px', fontWeight: 600 }}>
+        Inference endpoint
+      </text>
+      <text x={EP_CX} y={EP.y + 41} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        one address · checks the token
+      </text>
+      <text x={EP.x + 14} y={EP.y + 88} class={waiting.length ? 'warn-fill' : 'muted'} style={{ fontSize: '12px', fontWeight: waiting.length ? 600 : 400 }}>
+        {waiting.length ? 'waiting' : 'no queue'}
+      </text>
+      {waiting.slice(0, 7).map((j, i) => (
+        <circle key={j.id} cx={EP.x + 74 + i * 15} cy={EP.y + 84} r={5.5} class="ai-req" />
+      ))}
+      {waiting.length > 7 && (
+        <text x={EP.x + EP.w - 8} y={EP.y + 88} text-anchor="end" class="warn-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+          +{waiting.length - 7}
         </text>
-        <text x={mid(src)} y={src.y + 52} text-anchor="middle" style={{ fontWeight: 600, fontSize: '15px' }}>
-          {c.source === 'upload' ? 'Your own model' : SOURCE_LABEL[c.source]}
-        </text>
-        <text x={mid(src)} y={src.y + 74} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-          {c.source === 'nim' ? 'NVIDIA-optimized package' : c.source === 'hf' ? 'open model hub' : 'files you upload'}
-          {narrow ? ` · ${c.source === 'hf' ? 'downloaded at deploy' : c.source === 'nim' && c.airgap ? 'air-gapped NIM' : 'stored with the cluster'}` : ''}
-        </text>
-        {!narrow && (
-          <text x={mid(src)} y={src.y + 94} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-            {c.source === 'hf' ? 'downloaded at deploy' : c.source === 'nim' && c.airgap ? 'air-gapped NIM' : 'stored with the cluster'}
-          </text>
-        )}
-      </g>
-      {!narrow && <line x1={src.x} y1={255} x2={k8s.x + k8s.w} y2={255} class="flow-stroke" stroke-width={1.75} stroke-dasharray="5 3" />}
-
-      {/* infrastructure */}
-      <g class={hi('where')}>
-        <rect class="ai-infra hit" x={infra.x} y={infra.y} width={infra.w} height={infra.h} />
-        <text x={infra.x + 16} y={infra.y + 24} style={{ fontWeight: 600, fontSize: '14px' }}>
-          {a.onPrem ? (narrow ? 'NCI: AHV nodes with GPUs' : 'Nutanix Cloud Infrastructure: AHV nodes with GPUs') : 'Cloud GPU instances in your account'}
-        </text>
-        <text x={infra.x + 16} y={infra.y + 43} class="muted" style={{ fontSize: '12px' }}>
-          {a.onPrem
-            ? narrow
-              ? 'Prompts, responses and models stay on your hardware'
-              : 'Your data center: prompts, responses and models stay on your hardware'
-            : narrow
-              ? 'Data stays in your cloud account and region'
-              : 'Your chosen region: data stays in your cloud account'}
-        </text>
-      </g>
-      {narrow ? (
-        <text x={L.total.x} y={L.total.y} text-anchor="end" class="mono" style={{ fontSize: '13px', fontWeight: 600 }}>
-          {a.totalGpus} GPU{a.totalGpus === 1 ? '' : 's'}
-        </text>
-      ) : (
-        <>
-          <text x={L.total.x} y={L.total.y} class="muted" style={{ fontSize: '12px' }}>
-            Total GPUs
-          </text>
-          <text x={L.total.x} y={L.total.y + 24} class="mono" style={{ fontSize: '22px', fontWeight: 600 }}>
-            {a.totalGpus}
-          </text>
-        </>
       )}
+
+      {/* replicas */}
+      {Array.from({ length: n }, (_, r) => {
+        const y = repY(r, n);
+        const off = stopped(r);
+        const job = plan.jobs.find((j) => j.replica === r && t >= j.begin && t < j.done);
+        const ready = t >= LOAD.start + LOAD.flight + r * 0.08;
+        const state = off ? '✕ stopped' : !ready ? 'loading the model' : job ? 'answering' : 'ready';
+        const [gx, gy] = gpuC(r);
+        return (
+          <g key={r}>
+            <rect class={`node-box${off ? ' down' : ''}`} x={RX} y={y} width={RW} height={RH} />
+            <text x={RX + 14} y={y + 22} style={{ fontSize: '14px', fontWeight: 600 }}>
+              Replica {r + 1}
+            </text>
+            <text x={RX + 14} y={y + 43} class={off ? 'bad-fill' : 'muted'} style={{ fontSize: '12px', fontWeight: off ? 600 : 400 }}>
+              {state}
+            </text>
+            <rect class="ai-bar" x={RX + BAR.x0} y={y + RH / 2 - 4} width={BAR.x1 - BAR.x0} height={8} />
+            {job && <rect class="ai-bar-on" x={RX + BAR.x0} y={y + RH / 2 - 4} width={(BAR.x1 - BAR.x0) * prog(t, job.begin, job.done)} height={8} />}
+            <rect class="ai-gpu" x={RX + GPU.dx} y={y + GPU.dy} width={GPU.s} height={GPU.s} style={{ opacity: off ? 0.4 : 1 }} />
+            <text x={RX + GPU.dx - 8} y={y + RH / 2 + 4} text-anchor="end" class="muted" style={{ fontSize: '10px', letterSpacing: '0.06em' }}>
+              GPU
+            </text>
+            {ready && <Hex x={gx} y={gy} r={12} cls={off ? 'ai-model off' : 'ai-model'} />}
+          </g>
+        );
+      })}
+
+      {/* the model copies flying in */}
+      {Array.from({ length: n }, (_, r) => {
+        const a = LOAD.start + r * 0.08;
+        if (t < a || t >= a + LOAD.flight) return null;
+        const [x, y] = along([...loadPath(r), gpuC(r)], ease(prog(t, a, a + LOAD.flight)));
+        return <Hex key={r} x={x} y={y} r={11} cls="ai-model" />;
+      })}
+
+      {/* requests and answers */}
+      {plan.jobs.map((j) => {
+        const d = dotAt(j, t, n);
+        return d && <circle key={j.id} cx={d.p[0]} cy={d.p[1]} r={6} class={d.answer ? 'ai-ans' : 'ai-req'} />;
+      })}
     </svg>
   );
 }
 
-function useNarrow(px = 700): boolean {
-  const q = typeof matchMedia !== 'undefined' ? matchMedia(`(max-width: ${px}px)`) : null;
-  const [n, setN] = useState(!!q?.matches);
-  useEffect(() => {
-    if (!q) return;
-    const on = () => setN(q.matches);
-    q.addEventListener('change', on);
-    return () => q.removeEventListener('change', on);
-  }, []);
-  return n;
-}
+const PHASES = ['Loading', 'Serving', 'One stops', 'Back'];
 
 export default function Ai() {
-  const [step, setStep] = useNum('s', 0, 0, 4);
-  const [target, setTarget] = useEnum<Target>('tg', 'nkp', ['nkp', 'eks', 'aks', 'gke']);
-  const [source, setSource] = useEnum<Source>('src', 'nim', ['nim', 'hf', 'upload']);
-  const [gpus, setGpus] = useNum('g', 1, 1, 4);
-  const [replicas, setReplicas] = useNum('r', 1, 1, 3);
-  const [gateway, setGateway] = useBool('gw', false);
-  const [airgap, setAirgap] = useBool('ag', false);
-  const [deployed, setDeployed] = useBool('dep', false);
+  const [where, setWhere] = useEnum<Where>('w', 'dc', WHERES);
+  const [repS, setRep] = useEnum<'1' | '2' | '4'>('r', '2', ['1', '2', '4']);
+  const n = Number(repS);
+  const plan = useMemo(() => planServing(n), [n]);
+  const site = SITE[where];
+  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2 });
+  useRestartOn(clock, [where, n]);
+  const t = clock.t;
+  const phase = phaseAt([0, T.start, plan.stop.from, plan.stop.to], t);
+  const up = phase === 0 ? 0 : n - (phase === 2 ? 1 : 0);
+  const waiting = plan.jobs.filter((j) => t >= j.arrive && t < j.dispatch).length;
 
-  const narrow = useNarrow();
-  const g = (gpus >= 4 ? 4 : gpus >= 2 ? 2 : 1) as 1 | 2 | 4;
-  const a = architecture({ target, source, gpus: g, replicas, gateway, airgap });
-  const c = a.choice;
-  // Any change after deploying means the drawing is a plan again.
-  const change = <T,>(fn: (v: T) => void) => (v: T) => {
-    fn(v);
-    if (deployed) setDeployed(false);
-  };
-  const agWhy = airgapBlocked({ target });
+  const load =
+    (n === 1 ? 'The replica loads the model' : `Each of the ${n} replicas loads its own copy of the model`) +
+    (site.online ? ', downloaded from NVIDIA NIM or Hugging Face, or uploaded by you.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later.');
+  const caption: { tone: Tone | 'ink'; k: string; text: string } = [
+    { tone: 'ink' as const, k: 'Loading the model', text: load },
+    n === 1
+      ? { tone: 'warn' as const, k: 'Requests queue', text: 'Apps call one endpoint address with an API token. With one replica, every request waits its turn at the same model server, so a queue builds in busy moments.' }
+      : { tone: 'flow' as const, k: 'Requests spread', text: `Apps call one endpoint address with an API token. The endpoint spreads the requests over the ${n} replicas, so they are answered side by side${plan.maxWait.busy > 0.05 ? ', with a short wait in busy moments' : ' and none has to wait'}.` },
+    n === 1
+      ? { tone: 'bad' as const, k: 'The only replica stops', text: 'It stops for an update or a node fault. Nothing can answer, so requests wait, or fail, until it is back.' }
+      : { tone: 'warn' as const, k: 'One replica stops', text: `Replica 1 stops for an update or a node fault. The endpoint sends requests only to the other ${n - 1}, ${plan.maxWait.stop > 0.05 ? 'so answers come a little slower' : 'and apps do not notice'}.` },
+    n === 1
+      ? { tone: 'ok' as const, k: 'Back', text: 'The replica is back and works through the waiting requests. With one replica, every stop means a pause for the apps.' }
+      : { tone: 'ok' as const, k: 'Back to full strength', text: 'Replica 1 is back and takes its share again. The endpoint kept answering the whole time.' },
+  ][phase];
 
   return (
-    <div class="lab">
-      <div class="ctl">
-        <ol class="ai-steps" aria-label="Wizard steps">
-          {STEPS.map((s, i) => (
-            <li key={s}>
-              <button type="button" aria-current={i === step ? 'step' : undefined} class={i === step ? 'on' : i < step ? 'past' : ''} onClick={() => setStep(i)}>
-                <span class="n">{i < step ? '✓' : i + 1}</span>
-                {s}
-              </button>
-            </li>
-          ))}
-        </ol>
-
-        {step === 0 && (
-          <>
-            <Field label="Kubernetes cluster" tip="NAI deploys onto CNCF-conformant Kubernetes: NKP in your data center, or EKS, AKS or GKE in public cloud." value={c.target === 'nkp' ? 'NKP' : c.target.toUpperCase()}>
-              <Seg
-                label="Kubernetes cluster"
-                value={target}
-                onChange={change(setTarget)}
-                options={[
-                  { value: 'nkp', label: 'NKP on NCI' },
-                  { value: 'eks', label: 'EKS' },
-                  { value: 'aks', label: 'AKS' },
-                  { value: 'gke', label: 'GKE' },
-                ]}
-              />
-            </Field>
-            <Field label="Air-gapped site" tip="No connection to the internet at all, common in defense and regulated sites." why={agWhy}>
-              <Toggle on={c.airgap} disabled={!!agWhy} onChange={change(setAirgap)}>
-                No internet connection
-              </Toggle>
-            </Field>
-          </>
-        )}
-        {step === 1 && (
-          <Field label="Model source" tip="Where the model comes from: NVIDIA NIM packages, Hugging Face, or files you upload." value={SOURCE_LABEL[c.source]} why={sourceBlocked('hf', c)}>
-            <div class="seg" role="group" aria-label="Model source">
-              {(['nim', 'hf', 'upload'] as Source[]).map((s) => (
-                <button type="button" key={s} aria-pressed={c.source === s} disabled={!!sourceBlocked(s, c)} onClick={() => change(setSource)(s)}>
-                  {s === 'nim' ? 'NVIDIA NIM' : s === 'hf' ? 'Hugging Face' : 'Upload'}
-                </button>
-              ))}
-            </div>
-          </Field>
-        )}
-        {step === 2 && (
-          <>
-            <Field label="GPUs per replica" tip="More than one GPU splits a large model across GPUs (tensor-parallel serving, NAI 2.8)." value={c.gpus}>
-              <Seg label="GPUs per replica" value={c.gpus} onChange={change(setGpus)} options={[1, 2, 4].map((n) => ({ value: n, label: String(n) }))} />
-            </Field>
-            <Field label="Replicas" tip="Copies of the model server sharing the traffic." value={c.replicas}>
-              <Seg label="Replicas" value={c.replicas} onChange={change(setReplicas)} options={[1, 2, 3].map((n) => ({ value: n, label: String(n) }))} />
-            </Field>
-          </>
-        )}
-        {step === 3 && (
-          <Field label="Agent Gateway" tip="An optional gateway in front of endpoints: token tracking and quotas, plus an MCP Gateway for agents’ tool access (GA in NAI 2.8).">
-            <Toggle on={c.gateway} onChange={change(setGateway)}>
-              Add the Agent Gateway
-            </Toggle>
-          </Field>
-        )}
-        {step === 4 && (
-          <div class="field ai-review">
-            <span class="field-label">Review</span>
-            <Stat k="Cluster" v={c.target === 'nkp' ? 'NKP on NCI' : c.target.toUpperCase()} />
-            <Stat k="Model" v={c.source === 'upload' ? 'Uploaded' : SOURCE_LABEL[c.source]} />
-            <Stat k="GPUs" v={`${c.gpus} × ${c.replicas} = ${a.totalGpus}`} />
-            <Stat k="Gateway" v={c.gateway ? 'Agent Gateway' : 'None'} />
-            <Stat k="Air-gapped" v={c.airgap ? 'Yes' : 'No'} />
-            <button type="button" class="btn primary block" style={{ marginTop: 'var(--sp-3)' }} onClick={() => setDeployed(true)} disabled={deployed}>
-              <Icon name="zap" />
-              {deployed ? 'Deployed' : 'Deploy endpoint'}
-            </button>
-          </div>
-        )}
-        <div class="hstack ai-nav">
-          <button type="button" class="btn" disabled={step === 0} onClick={() => setStep(step - 1)}>
-            <Icon name="back" /> Back
-          </button>
-          {step < 4 && (
-            <button type="button" class="btn" onClick={() => setStep(step + 1)}>
-              Next <Icon name="arrow" />
-            </button>
-          )}
-        </div>
+    <Show
+      top={
+        <>
+          <Choice<Where>
+            label="Where it runs"
+            value={where}
+            onChange={setWhere}
+            options={WHERES.map((w) => ({ value: w, label: SITE[w].label }))}
+          />
+          <Choice<'1' | '2' | '4'> label="Model replicas" value={repS} onChange={setRep} options={REPLICA_OPTS.map((r) => ({ value: String(r) as '1' | '2' | '4', label: String(r) }))} />
+        </>
+      }
+      foot={
+        <>
+          <Follow tone={caption.tone} k={caption.k}>
+            <p>{caption.text}</p>
+          </Follow>
+          <Kpis
+            items={[
+              { k: 'Replicas answering', v: phase === 0 ? 'Loading' : `${up} of ${n}`, tone: phase === 0 ? undefined : up === n ? 'ok' : up === 0 ? 'bad' : 'warn' },
+              { k: 'Requests waiting', v: waiting, tone: waiting ? 'warn' : undefined },
+              { k: 'Prompts stay in', v: site.stays, sub: site.online ? undefined : 'no internet needed', tip: 'Prompts, answers and model files stay on infrastructure you control. In public cloud that is your own account and region.' },
+            ]}
+          />
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <Picture where={where} plan={plan} t={t} />
       </div>
-
-      <div class="stage">
-        <div class="spread" style={{ marginBottom: 'var(--sp-3)' }}>
-          <strong>Resulting architecture</strong>
-          <span class="hstack">
-            {deployed ? <Chip tone="ok">Endpoint ready</Chip> : <Chip tone="neutral">Plan · not deployed</Chip>}
-            <Illus why="A mock wizard. It shows the shape of what NAI creates, not its real screens, and leaves out supporting pieces such as storage for model files and ingress." />
-          </span>
-        </div>
-        <div class={narrow ? 'ai-narrow' : 'diagram-scroll'}>
-          <Arch a={a} focus={FOCUS[step]} deployed={deployed} narrow={narrow} />
-        </div>
-        <Follow tone={deployed ? 'ok' : 'ink'} k={deployed ? 'Deployed' : `Step ${step + 1} of 5 · ${STEPS[step]}`}>
-          {a.notes.map((n) => (
-            <p key={n}>{n}</p>
-          ))}
-        </Follow>
+      <PlayBar clock={clock} label="Model endpoint animation" fmt={() => (n === 1 && phase === 2 ? 'Stopped' : PHASES[phase])} />
+      <div class="ai-legend">
+        <Legend
+          items={[
+            { color: 'var(--flow)', label: 'Request' },
+            { color: 'var(--ok)', label: 'Answer' },
+            { color: 'var(--ink)', label: 'Copy of the model on a GPU' },
+            { color: 'var(--bad)', label: 'Stopped replica', dashed: true },
+          ]}
+        />
+        <Illus why="Simplified. Real model servers work on many requests at once by batching them, a replica can span several GPUs, and times are not to scale. The point is how one endpoint spreads requests over replicas." />
       </div>
-
-      <div class="rail">
-        <div class="side-sec">
-          <strong>Naming, as of this build</strong>
-          <ul class="ai-list">
-            <li>
-              <strong>Nutanix Enterprise AI (NAI)</strong> is the product that deploys and runs these endpoints. Version 2.8 went GA in August 2026.
-            </li>
-            <li>
-              <strong>Nutanix Agentic AI</strong> is the full-stack solution announced in March 2026: NAI, NKP, AHV, Flow and Nutanix Unified Storage with NVIDIA AI Enterprise. Parts are GA, parts early access; the full solution is targeted for the second half of 2026.
-            </li>
-            <li>
-              <strong>GPT-in-a-Box</strong> is the earlier name for the bundle that NAI was part of.
-            </li>
-          </ul>
-        </div>
-        <div class="side-sec">
-          <strong>Also in NAI 2.8</strong>
-          <ul class="ai-list">
-            <li>Batch inference and speculative decoding</li>
-            <li>LoRA fine-tuning for models under 8B parameters</li>
-            <li>Custom IAM roles</li>
-            <li>Priced on infrastructure resources, not per token</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    </Show>
   );
 }

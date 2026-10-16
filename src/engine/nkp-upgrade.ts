@@ -1,201 +1,155 @@
-// NKP fleet: a Kubernetes version upgrade rolled across clusters in the data center, at the
-// edge and in the cloud. Pure and deterministic: build a plan once, then ask for the state at
-// any sim time (so play, step, scrub and reset are all just "state at t").
+// NKP fleet: a Kubernetes version upgrade rolled across clusters at the edge, in the data
+// center and in the cloud. Pure and deterministic: build a plan once, then ask for the state at
+// any sim time (so play, scrub and loop are all just "state at t").
 //
 // Modeled (in the spirit of Cluster API rolling updates):
-// - Inside a cluster, nodes are replaced one at a time: a new node at the target version joins,
-//   one old node is drained (pods move) and removed. Control-plane nodes go first, then workers.
-// - After each cluster, a health check gates the next step. If the canary fails its check,
-//   the rollout stops and later clusters are never touched.
-// - Clusters only join the rollout if the edition covers their infrastructure.
-// - Attached clusters (a cloud provider's managed Kubernetes) keep their provider's upgrade
-//   process, so the rollout never changes their version.
+// - The rollout goes in waves: one small canary cluster first, then the other edge sites, then
+//   the data center, then the cloud. Clusters in the same wave upgrade side by side, and a
+//   health check after each cluster gates the next wave.
+// - Inside a cluster, nodes are replaced one at a time: a new node at the target version joins
+//   and is checked, then one old node is drained (pods move) and removed. Control-plane nodes go
+//   first, then workers.
+// - If the canary's first new node fails its health check, the rollout stops there: the failed
+//   node is removed, the old nodes never left, so the canary is back where it started and no
+//   other cluster is touched.
 
-export type Site = 'dc' | 'edge' | 'cloud';
-export type Infra = 'nci' | 'vsphere' | 'aws' | 'eks';
-export type Edition = 'starter' | 'pro' | 'ultimate';
-export type Strategy = 'serial' | 'waves';
+export type Site = 'edge' | 'dc' | 'cloud';
+export type Infra = 'ahv' | 'vsphere' | 'aws';
 
 export interface FleetCluster {
   id: string;
   name: string;
   site: Site;
   infra: Infra;
-  /** Control-plane nodes (0 for an attached cluster whose control plane the provider runs). */
+  /** Control-plane nodes. */
   cp: number;
   workers: number;
-  attached?: boolean;
 }
 
 export const FLEET: FleetCluster[] = [
-  { id: 'e1', name: 'store-01', site: 'edge', infra: 'nci', cp: 1, workers: 2 },
-  { id: 'e2', name: 'store-02', site: 'edge', infra: 'nci', cp: 1, workers: 2 },
-  { id: 'e3', name: 'store-03', site: 'edge', infra: 'nci', cp: 1, workers: 2 },
-  { id: 'd1', name: 'dc-prod', site: 'dc', infra: 'nci', cp: 3, workers: 6 },
-  { id: 'd2', name: 'dc-vsphere', site: 'dc', infra: 'vsphere', cp: 3, workers: 4 },
-  { id: 'c1', name: 'aws-nkp', site: 'cloud', infra: 'aws', cp: 3, workers: 3 },
-  { id: 'c2', name: 'eks-attached', site: 'cloud', infra: 'eks', cp: 0, workers: 3, attached: true },
+  { id: 'e1', name: 'store-01', site: 'edge', infra: 'ahv', cp: 1, workers: 2 },
+  { id: 'e2', name: 'store-02', site: 'edge', infra: 'ahv', cp: 1, workers: 2 },
+  { id: 'e3', name: 'store-03', site: 'edge', infra: 'ahv', cp: 1, workers: 2 },
+  { id: 'd1', name: 'dc-prod', site: 'dc', infra: 'ahv', cp: 3, workers: 4 },
+  { id: 'd2', name: 'dc-vsphere', site: 'dc', infra: 'vsphere', cp: 3, workers: 3 },
+  { id: 'c1', name: 'aws-prod', site: 'cloud', infra: 'aws', cp: 3, workers: 3 },
 ];
-
-/** Lowest edition whose deployment targets include this infrastructure (research note 3b). */
-export function editionNeeded(c: FleetCluster): Edition {
-  if (c.attached) return 'ultimate'; // attaching EKS/AKS is part of fleet management
-  if (c.infra === 'nci') return 'starter';
-  return 'pro';
-}
-
-const RANK: Record<Edition, number> = { starter: 0, pro: 1, ultimate: 2 };
-export function covered(c: FleetCluster, e: Edition): boolean {
-  return RANK[e] >= RANK[editionNeeded(c)];
-}
 
 /** Sim seconds. Illustrative; real times depend on node size, workloads and pod disruption rules. */
 export const TIMING = { node: 360, check: 240 } as const;
+/** Share of a node's slot spent on each step: the new node joins, then the old one drains, then leaves. */
+const JOIN = 0.4;
+const DRAIN = 0.8;
 
 export interface ClusterPlan {
   id: string;
-  /** Rollout wave index (0 = canary). -1 = not in the rollout. */
+  /** Rollout wave (0 = canary). */
   wave: number;
-  /** Why it is not in the rollout, when wave is -1. */
-  skip?: 'edition' | 'attached';
   start: number;
-  /** Last node replaced. */
+  /** Last node replaced. Infinity when the cluster is never started. */
   nodesEnd: number;
   /** Health check finished. */
   end: number;
   nodes: number;
+  /** The first new node fails its health check and the cluster is rolled back. */
   fails: boolean;
 }
 
 export interface Plan {
   clusters: ClusterPlan[];
-  /** Time the rollout finishes or halts. */
+  /** Start time of each wave (the last entry is when the rollout finishes or stops). */
+  waves: number[];
+  /** Time the rollout finishes, or the failed canary is fully rolled back. */
   end: number;
-  halted: boolean;
-}
-
-export interface PlanInput {
-  edition: Edition;
-  strategy: Strategy;
-  canaryFails: boolean;
-  fleet?: FleetCluster[];
+  /** Time the rollout stopped (the canary's new node failed its check), when it did. */
+  haltAt: number | null;
 }
 
 /** Rollout order: a canary edge site first, then the other edge sites, the data center, the cloud. */
-function waveGroups(list: FleetCluster[], strategy: Strategy): FleetCluster[][] {
-  const order = (s: Site) => (s === 'edge' ? 0 : s === 'dc' ? 1 : 2);
-  const sorted = list.slice().sort((a, b) => order(a.site) - order(b.site));
-  if (strategy === 'serial') return sorted.map((c) => [c]);
+export function waveGroups(fleet: FleetCluster[] = FLEET): FleetCluster[][] {
+  const order: Site[] = ['edge', 'dc', 'cloud'];
+  const sorted = fleet.slice().sort((a, b) => order.indexOf(a.site) - order.indexOf(b.site));
   const [canary, ...rest] = sorted;
   const groups: FleetCluster[][] = canary ? [[canary]] : [];
-  for (const s of ['edge', 'dc', 'cloud'] as Site[]) {
+  for (const s of order) {
     const g = rest.filter((c) => c.site === s);
     if (g.length) groups.push(g);
   }
   return groups;
 }
 
-export function planRollout({ edition, strategy, canaryFails, fleet = FLEET }: PlanInput): Plan {
-  const inRollout = fleet.filter((c) => covered(c, edition) && !c.attached);
-  const groups = waveGroups(inRollout, strategy);
+export function planRollout({ canaryFails, fleet = FLEET }: { canaryFails: boolean; fleet?: FleetCluster[] }): Plan {
   const plans = new Map<string, ClusterPlan>();
+  const waves: number[] = [];
   let t = 0;
-  let halted = false;
-  groups.forEach((g, w) => {
-    if (halted) {
-      for (const c of g) plans.set(c.id, { id: c.id, wave: w, start: Infinity, nodesEnd: Infinity, end: Infinity, nodes: c.cp + c.workers, fails: false });
-      return;
-    }
+  let haltAt: number | null = null;
+  waveGroups(fleet).forEach((g, w) => {
+    const halted = haltAt !== null;
+    if (!halted) waves.push(t);
     let waveEnd = t;
     for (const c of g) {
       const nodes = c.cp + c.workers;
-      const nodesEnd = t + nodes * TIMING.node;
-      const end = nodesEnd + TIMING.check;
+      if (halted) {
+        plans.set(c.id, { id: c.id, wave: w, start: Infinity, nodesEnd: Infinity, end: Infinity, nodes, fails: false });
+        continue;
+      }
       const fails = canaryFails && w === 0;
+      // A failing canary spends one node slot: the new node joins, fails its check and is removed.
+      const nodesEnd = t + (fails ? 1 : nodes) * TIMING.node;
+      const end = fails ? nodesEnd : nodesEnd + TIMING.check;
       plans.set(c.id, { id: c.id, wave: w, start: t, nodesEnd, end, nodes, fails });
+      if (fails) haltAt = t + JOIN * TIMING.node;
       waveEnd = Math.max(waveEnd, end);
     }
     t = waveEnd;
-    if (canaryFails && w === 0) halted = true;
   });
-  const clusters = fleet.map(
-    (c) =>
-      plans.get(c.id) ?? {
-        id: c.id,
-        wave: -1,
-        skip: c.attached && covered(c, edition) ? ('attached' as const) : ('edition' as const),
-        start: Infinity,
-        nodesEnd: Infinity,
-        end: Infinity,
-        nodes: c.cp + c.workers,
-        fails: false,
-      },
-  );
-  return { clusters, end: t, halted };
+  waves.push(t);
+  return { clusters: fleet.map((c) => plans.get(c.id)!), waves, end: t, haltAt };
 }
 
-export type ClusterStatus = 'waiting' | 'upgrading' | 'checking' | 'done' | 'failed' | 'halted' | 'skipped';
-export type NodePhase = 'join' | 'drain' | 'remove';
+export type ClusterStatus = 'waiting' | 'upgrading' | 'checking' | 'done' | 'failed' | 'rolledBack' | 'halted';
+/** join: a new node joins · drain: an old node drains · remove: it leaves · fail: the new node failed its check · back: the failed node is removed. */
+export type NodePhase = 'join' | 'drain' | 'remove' | 'fail' | 'back';
 
 export interface ClusterState {
   id: string;
   status: ClusterStatus;
   /** Nodes already running the new version (replacements complete). */
   replaced: number;
-  /** Node being replaced right now. */
-  current?: { index: number; role: 'cp' | 'worker'; phase: NodePhase };
-  /** Nodes in the cluster right now (one extra while a replacement has joined but the old one is not yet removed). */
+  /** Node being replaced right now, with 0..1 progress through its current phase. */
+  current?: { index: number; role: 'cp' | 'worker'; phase: NodePhase; p: number };
+  /** Nodes in the cluster right now (one extra while a new node has joined and the old one has not left). */
   liveNodes: number;
-  /** Nodes unavailable for scheduling right now (cordoned/draining). */
+  /** Nodes out of service right now (draining or leaving). */
   unavailable: number;
 }
 
+const span = (t: number, a: number, b: number) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+
 export function clusterState(c: FleetCluster, p: ClusterPlan, t: number, plan: Plan): ClusterState {
   const base = { id: c.id, replaced: 0, liveNodes: p.nodes, unavailable: 0 };
-  if (p.wave < 0) return { ...base, status: 'skipped' };
-  if (!Number.isFinite(p.start)) return { ...base, status: plan.halted && t >= plan.end ? 'halted' : 'waiting' };
+  if (!Number.isFinite(p.start)) return { ...base, status: plan.haltAt !== null && t >= plan.haltAt ? 'halted' : 'waiting' };
   if (t < p.start) return { ...base, status: 'waiting' };
-  if (t >= p.nodesEnd) {
-    const status: ClusterStatus = t < p.end ? 'checking' : p.fails ? 'failed' : 'done';
-    return { ...base, replaced: p.nodes, status };
+  const role = (i: number) => (i < c.cp ? ('cp' as const) : ('worker' as const));
+  const N = TIMING.node;
+  if (p.fails) {
+    if (t >= p.end) return { ...base, status: 'rolledBack' };
+    const el = t - p.start;
+    const [phase, p0, p1]: [NodePhase, number, number] = el < JOIN * N ? ['join', 0, JOIN] : el < DRAIN * N ? ['fail', JOIN, DRAIN] : ['back', DRAIN, 1];
+    return { ...base, status: phase === 'join' ? 'upgrading' : 'failed', current: { index: 0, role: role(0), phase, p: span(el, p0 * N, p1 * N) }, liveNodes: p.nodes + 1 };
   }
+  if (t >= p.nodesEnd) return { ...base, replaced: p.nodes, status: t < p.end ? 'checking' : 'done' };
   const el = t - p.start;
-  const index = Math.floor(el / TIMING.node);
-  const f = (el - index * TIMING.node) / TIMING.node;
-  const phase: NodePhase = f < 0.4 ? 'join' : f < 0.8 ? 'drain' : 'remove';
+  const index = Math.floor(el / N);
+  const f = el / N - index;
+  const [phase, p0, p1]: [NodePhase, number, number] = f < JOIN ? ['join', 0, JOIN] : f < DRAIN ? ['drain', JOIN, DRAIN] : ['remove', DRAIN, 1];
   return {
     ...base,
     status: 'upgrading',
     replaced: index,
-    current: { index, role: index < c.cp ? 'cp' : 'worker', phase },
+    current: { index, role: role(index), phase, p: span(f, p0, p1) },
     // Surge of one: the new node joins first, then the old one drains and leaves.
     liveNodes: p.nodes + 1,
     unavailable: phase === 'join' ? 0 : 1,
   };
-}
-
-export interface FleetEvent {
-  t: number;
-  tone: 'ok' | 'warn' | 'bad' | 'flow' | 'neutral';
-  text: string;
-}
-
-export function events(plan: Plan, fleet: FleetCluster[], t: number, from = '1.34', to = '1.35'): FleetEvent[] {
-  const out: FleetEvent[] = [];
-  const byId = new Map(fleet.map((c) => [c.id, c]));
-  out.push({ t: 0, tone: 'neutral', text: `Rollout planned: Kubernetes ${from} to ${to}.` });
-  for (const p of plan.clusters) {
-    const c = byId.get(p.id)!;
-    if (!Number.isFinite(p.start)) continue;
-    out.push({ t: p.start, tone: 'flow', text: `${c.name}: upgrade started${p.wave === 0 ? ' (canary)' : ''}. Control plane first.` });
-    if (c.cp && c.workers) out.push({ t: p.start + c.cp * TIMING.node, tone: 'flow', text: `${c.name}: control plane on ${to}. Worker nodes next.` });
-    out.push({ t: p.nodesEnd, tone: 'neutral', text: `${c.name}: all nodes replaced. Running health checks.` });
-    out.push(
-      p.fails
-        ? { t: p.end, tone: 'bad', text: `${c.name}: health check failed. Rollout stopped; no other cluster was touched.` }
-        : { t: p.end, tone: 'ok', text: `${c.name}: healthy on ${to}.` },
-    );
-  }
-  if (!plan.halted && plan.clusters.some((p) => Number.isFinite(p.start))) out.push({ t: plan.end, tone: 'ok', text: 'Rollout complete.' });
-  return out.filter((e) => e.t <= t).sort((a, b) => a.t - b.t);
 }

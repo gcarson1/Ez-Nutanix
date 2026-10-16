@@ -35,10 +35,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Step through the random write with RF2, then switch to RF3 and point out the second remote copy before the acknowledgement.',
-    'Play the sequential write to show the OpLog is skipped while protection stays the same.',
-    'Open Read, choose Remote, and walk the latency ladder.',
-    'Play Locality after a move, then open the Cluster & DSF Lab to migrate a VM across a whole cluster.',
+    'Small write with RF2: point at the acknowledgement arriving only after the second copy exists, then switch to RF3 for the third.',
+    'Large sequential write: the OpLog is skipped while protection stays the same.',
+    'Read: served from the local node, with no network hop.',
+    'Read after a VM moves: the first reads go remote, then the data follows the VM and latency drops back.',
   ],
   honest: [
     'Data locality helps less when reads hit deduplicated data shared across VMs, when nodes are storage-only, and when workloads are mostly remote by design.',

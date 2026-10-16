@@ -1,27 +1,18 @@
 /* Edge & ROBO module (prefix edge-) */
-.edge-events { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.edge-events .btn[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--ink-text); }
-.edge-steps-ctl { padding: var(--sp-4) 0; border-top: 1px solid var(--line); }
-.edge-steps { list-style: none; padding: 0; margin: var(--sp-3) 0 0; }
-.edge-steps li + li { margin-top: 0; }
-.edge-steps button { display: grid; grid-template-columns: 0.75rem minmax(0, 1fr); gap: var(--sp-2); width: 100%; text-align: left; border: 0; background: none; padding: var(--sp-2) var(--sp-1); color: var(--muted); font-size: var(--fs-13); line-height: 1.45; border-left: 2px solid transparent; }
-.edge-steps li.past button { color: var(--text-2); }
-.edge-steps li.on button { color: var(--text); background: var(--bg-3); border-left-color: var(--ink); }
-.edge-dot { width: 0.625rem; height: 0.625rem; margin-top: 0.3rem; border-radius: 50%; }
-.edge-dot.ok { background: var(--ok); } .edge-dot.warn { background: var(--warn); } .edge-dot.bad { background: var(--bad); }
 .edge-matrix { min-width: 40rem; }
 .edge-matrix th.on, .edge-matrix td.on { background: var(--ink-soft); }
+.edge-matrix tr.on td:first-child { font-weight: 600; box-shadow: inset 2px 0 0 var(--ink); padding-left: var(--sp-2); }
 .edge-matrix td { padding-left: var(--sp-2); }
 .edge-cell { margin-top: var(--sp-1); color: var(--text-2); }
-.edge-cards { margin-top: var(--sp-4); }
-.edge-cards p { color: var(--text-2); }
 .edge-dia .edge-cap { font-size: 12px; letter-spacing: 0.08em; }
 .edge-dia .edge-t { font-size: 15px; font-weight: 600; }
 .edge-dia .edge-s { font-size: 13.5px; }
 .edge-dia .edge-xs { font-size: 12px; }
+.edge-dia .edge-mode { font-weight: 600; }
 .edge-dia .edge-link { stroke: var(--s2); }
 .edge-dia .edge-wit { stroke: var(--ink-fg); }
+.edge-dia .edge-beat { fill: var(--ok); }
+.edge-dia .edge-heal { stroke: var(--flow); stroke-width: 1.25; stroke-dasharray: 3 4; opacity: 0.6; }
 .edge-dia text.ok-fill { fill: var(--ok); }
 .edge-dia text.warn-fill { fill: var(--warn); }
 .edge-dia text.bad-fill { fill: var(--bad); }
-@media (max-width: 900px) { .edge-lab > .stage { order: -1; } }

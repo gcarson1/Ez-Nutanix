@@ -6,46 +6,36 @@ export interface ScaleInputs {
   nodes: number;
   drivesPerNode: number;
   driveTB: number;
-  /** Share of each node's CPU and memory reserved for its CVM, 0..1 (the user's own sizing figure). */
-  cvmShare: number;
   /** Arrays in the 3-tier design (each with a controller pair). */
   arrays?: number;
 }
 
 export interface ScaleResult {
-  hci: { controllers: number; rawTB: number; hostsPerController: number; vmNodeEquivalents: number; controllerNodeEquivalents: number };
+  hci: { controllers: number; rawTB: number };
   tier3: { controllers: number; hostsPerController: number; hosts: number };
 }
 
 export function scaleModel(i: ScaleInputs): ScaleResult {
   const n = Math.max(1, Math.round(i.nodes));
-  const share = Math.min(0.9, Math.max(0, i.cvmShare));
   const arrays = Math.max(1, Math.round(i.arrays ?? 1));
   return {
-    hci: {
-      controllers: n,
-      rawTB: n * i.drivesPerNode * i.driveTB,
-      hostsPerController: 1,
-      vmNodeEquivalents: n * (1 - share),
-      controllerNodeEquivalents: n * share,
-    },
+    hci: { controllers: n, rawTB: n * i.drivesPerNode * i.driveTB },
     tier3: { controllers: 2 * arrays, hostsPerController: n / (2 * arrays), hosts: n },
   };
 }
 
 export interface JoinStep {
-  id: string;
+  id: 'add' | 'join' | 'balance' | 'done';
   text: string;
   /** The new node counts toward capacity and controllers from this step on. */
   joined: boolean;
   balancing: boolean;
 }
 
-/** Adding a node, step by step (simplified). */
+/** Adding a node, in the order it happens (simplified). */
 export const JOIN_STEPS: JoinStep[] = [
-  { id: 'rack', text: 'Rack and cable the new node. Workloads keep running.', joined: false, balancing: false },
-  { id: 'expand', text: 'Prism finds the node and Expand Cluster adds it, imaging it with the cluster’s software if needed.', joined: false, balancing: false },
-  { id: 'join', text: 'Its CVM joins the cluster: the storage pool grows and there is one more storage controller.', joined: true, balancing: false },
+  { id: 'add', text: 'A new node is racked, cabled and added from Prism with Expand Cluster. VMs keep running.', joined: false, balancing: false },
+  { id: 'join', text: 'Its CVM joins the cluster: one more storage controller, and the storage pool grows by its drives.', joined: true, balancing: false },
   { id: 'balance', text: 'Disk balancing moves some existing data onto the new drives in the background.', joined: true, balancing: true },
-  { id: 'done', text: 'Done. More capacity and more controller, and no VM was stopped.', joined: true, balancing: false },
+  { id: 'done', text: 'More capacity and more controllers, one node at a time, and no VM was stopped.', joined: true, balancing: false },
 ];

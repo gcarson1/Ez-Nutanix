@@ -79,11 +79,6 @@ export function planMove(i: MoveInput, horizon: number): MovePlan {
   return { phases, seedEnd, converges, downtimeMin: downtime, cutoverStart, doneAt, lastDeltaGB: lastDelta };
 }
 
-export function phaseAt(p: MovePlan, t: number): Phase {
-  for (const ph of p.phases) if (t >= ph.start && t < ph.end) return ph;
-  return p.phases[p.phases.length - 1];
-}
-
 /** Downtime if the operator cut over right after the seed, without incremental syncs. */
 export function naiveDowntime(i: MoveInput): number {
   return i.vmGB / gbPerMin(i.mbps) + i.bootMin;

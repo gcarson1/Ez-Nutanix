@@ -9,11 +9,11 @@ export const content: ModuleContent = {
   priority: 'P1',
   talk: [
     'Four parts: Intelligent Operations (AIOps), Self-Service (formerly Calm), Cost Governance (formerly Beam) and Security Compliance (formerly Security Central).',
-    'AIOps: instead of a fixed threshold, it learns normal per time of day. Move the spike to 3 a.m. and see it flagged; the same spike on a busy afternoon is not.',
-    'Capacity runway: slide “add N VMs” and see which resource runs out first and when, so purchases are planned, not reactive.',
-    'Self-Service: app teams order from a catalog; quotas and approval policy are checked before anything is created, and the result arrives with owner and categories set.',
-    'Cost: showback per project at rates you choose, with budget alerts. In NCM 2.0 Cost Governance runs entirely on-premises.',
-    'Tiers matter: Starter covers forecasting and right-sizing, Pro adds Cost Governance and Self-Service, Ultimate adds multi-VM blueprints, approvals and Security Compliance.',
+    'AIOps: instead of a fixed threshold, it learns what normal looks like for each hour. A spike at 3 a.m. is flagged even though it stays under a 70% alarm that would miss it; busy afternoons raise nothing.',
+    'Intelligent Operations also forecasts capacity runway, so purchases are planned rather than reactive, and suggests right-sizing for over- and under-sized VMs.',
+    'Self-Service: app teams order from a catalog; quota and approval policy are checked before anything is created, and the result arrives with owner, project and categories set. Over quota, the request is sent back with the reason.',
+    'Cost: showback per project at rates you choose, with an alert at 80% of budget, before the month closes. In NCM 2.0 Cost Governance runs entirely on-premises.',
+    'Security Compliance scans settings against a baseline, suggests a fix for each finding, and catches drift when someone changes a setting by hand. Tiers matter: Starter covers forecasting and right-sizing, Pro adds Cost Governance and Self-Service, Ultimate adds multi-VM blueprints, approvals and Security Compliance.',
   ],
   numbers: [
     { k: 'NCM components', v: 'Intelligent Operations · Self-Service · Cost Governance · Security Compliance' },
@@ -36,7 +36,13 @@ export const content: ModuleContent = {
       a: 'NCM Pro gives the marketplace, single-VM blueprints and runbooks. Multi-VM application blueprints and approval workflows need NCM Ultimate.',
     },
   ],
-  next: ['Nutanix Central & Prism Federation', 'Kubernetes Platform', 'Database Service'],
+  next: [
+    'AIOps, Spike at 3 a.m.: the learned band flags it while the fixed 70% alarm stays silent. Then Spike at 2 p.m. for contrast.',
+    'Self-Service: 3-tier web app for the approval step, then App over quota to show a request sent back before anything is created.',
+    'Cost, dev-test runs hot: the owner gets the 80% alert days before the project goes over budget.',
+    'SecOps: watch findings get fixed, then a setting changed by hand caught by the next scan.',
+    'Then open Nutanix Central & Prism Federation, where NCM 2.x runs.',
+  ],
   honest: [
     'Anomaly detection and forecasts need history to learn from; expect a learning period before results are useful, and noisy alerts if the baseline is too tight.',
     'Self-service is only as good as the blueprints behind it; someone has to build, test and maintain them.',

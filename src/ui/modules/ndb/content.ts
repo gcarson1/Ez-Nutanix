@@ -9,9 +9,9 @@ export const content: ModuleContent = {
   priority: 'P1',
   talk: [
     'Start with the pain: a dropped table, a test team waiting days for a copy, patch nights for dozens of databases.',
-    'Time Machine: drag back to one minute before the mistake. NDB uses the nearest earlier snapshot and replays transaction logs to that point.',
+    'Time Machine: recover to one minute before the mistake. NDB uses the nearest earlier snapshot and replays transaction logs to that point.',
     'Recover side by side as a clone to pull back just what you need, or restore in place when you want production rolled back.',
-    'Thin clones come from AOS snapshots: they are ready in minutes and use space only for what they change.',
+    'Database clones come from AOS snapshots, the same mechanism as in Snapshots & Clones: ready in minutes, using space only for what they change.',
     'Provisioning and patching follow profiles the DBA defines once, so every database is built and patched the same way.',
     'Engines in NDB 2.11: Oracle, SQL Server, PostgreSQL (including pgvector), EDB Postgres, MySQL, MariaDB and MongoDB.',
   ],
