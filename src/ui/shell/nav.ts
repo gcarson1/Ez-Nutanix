@@ -13,7 +13,11 @@ export function go(path: string, params: Record<string, string> = {}, from?: HTM
     window.scrollTo(0, 0);
     return;
   }
-  if (from) from.style.viewTransitionName = 'hero';
+  if (from) {
+    // Only one element may carry the name: hand it from the current header to the clicked tile.
+    document.querySelectorAll<HTMLElement>('.mod-head').forEach((h) => h !== from && (h.style.viewTransitionName = 'none'));
+    from.style.viewTransitionName = 'hero';
+  }
   const vt = doc.startViewTransition(async () => {
     if (from) from.style.viewTransitionName = '';
     navigate(path, params);

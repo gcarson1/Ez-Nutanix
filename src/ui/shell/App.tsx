@@ -2,7 +2,7 @@
 // panel, glossary, shortcuts and about dialogs, toasts and global keyboard shortcuts.
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { useRoute, getRoute, setParams } from '../../state/route';
+import { useRoute, getRoute, setParams, urlIsShareable } from '../../state/route';
 import { PRESETS, clearedScenario, setScenario } from '../../state/scenario';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
@@ -274,6 +274,10 @@ function ModuleView({ def }: { def: ModuleDef }) {
 }
 
 function copyLink() {
+  if (!urlIsShareable()) {
+    toast('This preview can’t hold a link. Open the HTML file in a browser to copy a scenario link.');
+    return;
+  }
   const url = location.href;
   const done = () => toast('Link to this exact scenario copied');
   if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, () => fallbackCopy(url, done));

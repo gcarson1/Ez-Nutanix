@@ -54,12 +54,35 @@ export function getRoute(): Route {
   return current;
 }
 
+// Some hosts (for example an embedded preview that loads the page as about:srcdoc)
+// refuse URL updates. The in-memory route is the source of truth, so the app keeps
+// working there; only the address bar stops following along.
+
+/** The current document URL with its hash replaced (absolute, so it never resolves against a <base>). */
+function urlWithHash(hash: string): string {
+  return location.href.split('#')[0] + hash;
+}
+
+function writeHash(hash: string, push: boolean) {
+  try {
+    if (push) location.hash = hash;
+    else history.replaceState(history.state, '', urlWithHash(hash));
+  } catch {
+    /* host does not allow URL updates; keep the in-memory route */
+  }
+}
+
+/** True when the address bar can hold a shareable link to the current view. */
+export function urlIsShareable(): boolean {
+  return typeof location !== 'undefined' && /^(https?|file):$/.test(location.protocol) && location.hash === buildHash(current.path, current.params);
+}
+
 /** Go to a module. Pushes a history entry. */
 export function navigate(path: string, params: Record<string, string> = {}) {
   const next = buildHash(path, params);
-  if (location.hash === next) return;
+  if (buildHash(current.path, current.params) === next && location.hash === next) return;
   current = { path, params };
-  location.hash = next; // triggers hashchange -> emit (idempotent)
+  writeHash(next, true); // triggers hashchange -> emit (idempotent)
   emit();
 }
 
@@ -71,13 +94,13 @@ export function setParams(patch: Record<string, string | number | boolean | null
     else params[k] = typeof v === 'boolean' ? (v ? '1' : '0') : String(v);
   }
   current = { path: current.path, params };
-  history.replaceState(null, '', buildHash(current.path, params));
+  writeHash(buildHash(current.path, params), false);
   emit();
 }
 
 export function replaceParams(params: Record<string, string>) {
   current = { path: current.path, params: { ...params } };
-  history.replaceState(null, '', buildHash(current.path, current.params));
+  writeHash(buildHash(current.path, current.params), false);
   emit();
 }
 
