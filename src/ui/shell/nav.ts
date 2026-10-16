@@ -4,7 +4,8 @@
 import { navigate } from '../../state/route';
 import { prefersReducedMotion } from '../components/clock';
 
-type VTDoc = Document & { startViewTransition?: (cb: () => Promise<void> | void) => { finished: Promise<void> } };
+type VT = { ready: Promise<void>; updateCallbackDone: Promise<void>; finished: Promise<void> };
+type VTDoc = Document & { startViewTransition?: (cb: () => Promise<void> | void) => VT };
 
 export function go(path: string, params: Record<string, string> = {}, from?: HTMLElement | null) {
   const doc = document as VTDoc;
@@ -25,5 +26,7 @@ export function go(path: string, params: Record<string, string> = {}, from?: HTM
     // Let Preact flush the render before the new snapshot is taken.
     await new Promise((r) => setTimeout(r, 0));
   });
-  vt.finished.catch(() => undefined);
+  // A newer transition (a quick second click, or Escape) skips this one and rejects its promises
+  // with an AbortError. That is expected, so none of them may surface as an unhandled rejection.
+  for (const p of [vt.ready, vt.updateCallbackDone, vt.finished]) p?.catch(() => undefined);
 }
