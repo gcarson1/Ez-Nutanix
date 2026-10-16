@@ -1,0 +1,26 @@
+/* Cloud Manager module */
+.ncm-tier { display: inline-flex; align-items: center; height: 1.25rem; padding: 0 var(--sp-1h); font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.04em; border: 1px solid var(--ink-line); color: var(--ink-fg); background: var(--ink-soft); white-space: nowrap; vertical-align: 0.15em; }
+.ncm-tier.starter { border-color: var(--line-2); color: var(--muted); background: none; }
+.ncm-tier.ultimate { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.ncm-runway .mrow { padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+.ncm-runway .mrow:hover { background: none; }
+.ncm-tblwrap { overflow-x: auto; }
+.ncm-tblwrap .tbl { min-width: 34rem; }
+.ncm-qbar { position: relative; height: 0.5rem; background: var(--track); margin-top: var(--sp-2); overflow: hidden; }
+.ncm-qbar > span { position: absolute; top: 0; bottom: 0; left: 0; background: var(--s2); }
+.ncm-qbar > span.add { background: var(--flow); }
+.ncm-qbar > span.over { background: var(--bad); }
+.ncm-steps { list-style: none; padding: 0; margin: var(--sp-4) 0 0; font-size: var(--fs-15); }
+.ncm-steps li { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.ncm-steps li + li { margin-top: 0; }
+.ncm-steps .ic { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 1px solid var(--line-2); font: 600 var(--fs-12) var(--mono); flex: none; }
+.ncm-steps li.done { color: var(--text); }
+.ncm-steps li.done .ic { border-color: var(--ok); color: var(--ok); }
+.ncm-steps li.now { color: var(--text); font-weight: 600; }
+.ncm-steps li.now .ic { border-color: var(--flow); color: var(--flow); background: var(--flow-bg); }
+.ncm-checks { list-style: none; padding: 0; margin: 0; }
+.ncm-checks li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+.ncm-checks li + li { margin-top: 0; }
+.ncm-checks .t { font-weight: 600; }
+@media (max-width: 600px) { .ncm-checks li { grid-template-columns: minmax(0, 1fr); } }
+.diagram .ncm-band { fill: var(--ink); fill-opacity: 0.32; stroke: var(--ink-fg); stroke-opacity: 0.5; stroke-width: 0.75; }

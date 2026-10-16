@@ -1,0 +1,9 @@
+/* Unified Storage module */
+.sto-map { list-style: none; padding: 0; margin: var(--sp-3) 0; font-size: var(--fs-13); counter-reset: none; }
+.sto-map li { position: relative; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-2); }
+.sto-map li + li { margin-top: var(--sp-4); }
+.sto-map li + li::before { content: '↓'; position: absolute; left: 50%; top: calc(var(--sp-4) * -1); transform: translate(-50%, -0.05rem); color: var(--faint); font-size: var(--fs-12); line-height: var(--sp-4); }
+.sto-map li.svc { background: var(--ink-soft); border-color: var(--ink-line); }
+.sto-map li.dsf { background: var(--bg-2); }
+.sto-load { margin-top: var(--sp-3); border-top: 1px solid var(--line); padding-top: var(--sp-2); }
+.sto-load .mrow-top { padding: var(--sp-1) 0; font-weight: 400; }

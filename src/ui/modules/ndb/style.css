@@ -1,0 +1,16 @@
+/* Database Service module */
+.ndb-steps { list-style: none; padding: 0; margin: var(--sp-4) 0 0; font-size: var(--fs-15); }
+.ndb-steps li { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.ndb-steps li + li { margin-top: 0; }
+.ndb-steps .ic { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border: 1px solid var(--line-2); font: 600 var(--fs-12) var(--mono); flex: none; }
+.ndb-steps li.done { color: var(--text); }
+.ndb-steps li.done .ic { border-color: var(--ok); color: var(--ok); }
+.ndb-steps li.now { color: var(--text); font-weight: 600; }
+.ndb-steps li.now .ic { border-color: var(--flow); color: var(--flow); background: var(--flow-bg); }
+.ndb-eng { list-style: none; padding: 0; margin: var(--sp-2) 0; font-size: var(--fs-14); }
+.ndb-eng li { padding: var(--sp-1) 0 var(--sp-1) var(--sp-3); border-left: 2px solid transparent; }
+.ndb-eng li + li { margin-top: 0; }
+.ndb-eng li.on { border-left-color: var(--ink); font-weight: 600; }
+.tbl .toggle { height: var(--h-sm); padding: 0 var(--sp-2); }
+.ndb-tblwrap { overflow-x: auto; }
+.ndb-tblwrap .tbl { min-width: 34rem; }

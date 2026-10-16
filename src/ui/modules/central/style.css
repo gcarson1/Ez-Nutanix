@@ -1,0 +1,15 @@
+/* Nutanix Central module */
+.diagram .cen-pc { fill: var(--ink-soft); stroke: var(--ink-line); stroke-width: 1.25; }
+.diagram .cen-scope { stroke: var(--ink-fg); stroke-width: 2.5; stroke-dasharray: 8 5; }
+.cen-tblwrap { overflow-x: auto; }
+.cen-tblwrap .tbl { min-width: 40rem; }
+.cen-fleet { display: grid; grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr)); gap: var(--sp-3); margin-top: var(--sp-3); }
+.cen-tile { background: var(--bg); border: 1px solid var(--line-2); padding: var(--sp-3) var(--sp-4); min-height: 8.5rem; font-size: var(--fs-14); }
+.cen-tile.hidden { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); color: var(--faint); background: var(--bg-2); font-size: var(--fs-13); }
+.cen-tile.hidden svg { width: 1rem; height: 1rem; }
+.cen-alerts { list-style: none; padding: 0; margin: var(--sp-2) 0 0; font-size: var(--fs-13); }
+.cen-alerts li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-2); align-items: start; padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); }
+.cen-alerts li + li { margin-top: 0; }
+.cen-alerts li.ack { opacity: 0.55; }
+.cen-alerts .tbtn { height: auto; padding: 0; }
+.cen-code { font: var(--fs-12) / 1.5 var(--mono); background: var(--bg-2); border: 1px solid var(--line); padding: var(--sp-3); margin: var(--sp-2) 0; white-space: pre-wrap; word-break: break-word; color: var(--text-2); }
