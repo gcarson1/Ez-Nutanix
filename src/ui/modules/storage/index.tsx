@@ -363,7 +363,8 @@ function Volumes() {
 }
 
 // ── Objects ──
-type Rule = 'off' | '90' | '30';
+/** Every bucket gets one lifecycle rule: objects older than 30 days move to cheaper S3 storage. */
+const DAYS = 30;
 const YEAR = 365;
 const TILES = 24;
 const TOTAL_TB = 200;
@@ -379,43 +380,24 @@ const bucketTile = (i: number) => ({ x: BKT.x + 20 + i * (TILE_W + TILE_GAP), y:
 const targetTile = (i: number) => ({ x: TGT.x + 18 + (i % 8) * 29, y: TGT.y + 62 + Math.floor(i / 8) * 26 });
 
 function Objects() {
-  const [rule, setRule] = useEnum<Rule>('ot', '90', ['off', '90', '30']);
-  const days = rule === 'off' ? null : Number(rule);
   const clock = useClock({ rate: 24, duration: YEAR + 30, keys: true, poster: YEAR });
-  useRestartOn(clock, [rule]);
   const d = clock.t;
   const today = Math.min(YEAR, d);
   const written = (TOTAL_TB * today) / YEAR;
-  const split = tierSplit(written, days, today);
+  const split = tierSplit(written, DAYS, today);
   const month = Math.min(12, Math.floor(today / (YEAR / 12)) + 1);
 
   const cap: Cap =
-    days === null
-      ? d >= YEAR
-        ? { tone: 'ink', k: 'After one year', text: `All ${TOTAL_TB} TB is still on the cluster. A lifecycle rule would move older objects to cheaper capacity elsewhere.` }
-        : { tone: 'ink', k: 'No rule', text: 'Apps and backup software write objects over the S3 API. Without a lifecycle rule, every object stays on the cluster as the bucket grows.' }
-      : d >= YEAR
-        ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB lives on cheaper storage. Reading a tiered object is slower and may cost cloud egress.` }
-        : today < days
-          ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
-          : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket moves objects older than ${days} days to cheaper S3 storage. The cluster keeps the recent data, which is read most.` };
+    d >= YEAR
+      ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB lives on cheaper storage. Reading a tiered object is slower and may cost cloud egress.` }
+      : today < DAYS
+        ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
+        : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket moves objects older than ${DAYS} days to cheaper S3 storage. The cluster keeps the recent data, which is read most.` };
 
   const H = BKT.y + BKT.h + 78;
   const DSF_Y = BKT.y + BKT.h + 16;
   return (
     <Show
-      top={
-        <Choice<Rule>
-          label="Lifecycle rule"
-          value={rule}
-          onChange={setRule}
-          options={[
-            { value: 'off', label: 'No rule' },
-            { value: '90', label: 'Tier after 90 days' },
-            { value: '30', label: 'Tier after 30 days' },
-          ]}
-        />
-      }
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>
@@ -432,7 +414,7 @@ function Objects() {
       }
     >
       <div class="diagram-scroll">
-        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster over a year. ${days === null ? 'With no lifecycle rule every object stays on the cluster.' : `A lifecycle rule moves objects older than ${days} days to cheaper S3 storage.`}`}>
+        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster over a year. A lifecycle rule moves objects older than ${DAYS} days to cheaper S3 storage.`}>
           <defs>
             <marker id="sto-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0 0 L10 5 L0 10 z" class="flow-fill" />
@@ -450,29 +432,27 @@ function Objects() {
           <text x={BKT.x + BKT.w - 20} y={BKT.y + 26} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
             object workers · 3 or more VMs
           </text>
-          <rect class={days === null ? 'sto-tgt off' : 'sto-tgt'} x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} />
+          <rect class="sto-tgt" x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} />
           <text x={TGT.x + TGT.w / 2} y={TGT.y + 26} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
             Cheaper S3 storage
           </text>
           <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
             AWS S3 or any S3-compatible target
           </text>
-          {days !== null && <path d={`M${BKT.x + BKT.w + 4} ${BKT.y + BKT.h / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />}
-          {days !== null && (
-            <text text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-              <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 26}>
-                older than
-              </tspan>
-              <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 10}>
-                {days} days
-              </tspan>
-            </text>
-          )}
+          <path d={`M${BKT.x + BKT.w + 4} ${BKT.y + BKT.h / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />
+          <text text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+            <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 26}>
+              older than
+            </tspan>
+            <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 10}>
+              {DAYS} days
+            </tspan>
+          </text>
           {Array.from({ length: TILES }, (_, i) => {
             const a = arriveAt(i);
             const b = bucketTile(i);
             if (d < a) return null;
-            const tierAt = days === null ? Infinity : a + days;
+            const tierAt = a + DAYS;
             const src = { x: SRC.x + SRC.w / 2 - TILE_W / 2, y: SRC.y + SRC.h };
             let x = b.x;
             let y = b.y;
