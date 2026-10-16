@@ -12,7 +12,7 @@ export const content: ModuleContent = {
     'Point at the lines: every surviving node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
     'Stop only a CVM: nothing restarts. The host keeps its VMs and their I/O is served by other CVMs over the network until it returns.',
     'Now the honest part: a second failure during an RF2 rebuild makes some data unavailable, and the sim does not hide it. Pick “Two nodes at once”, then switch to RF3 to show the same failure survived.',
-    'Finish with the cannot-self-heal case: a nearly full cluster. The caption says exactly why. The Cluster & DSF Lab shows the 3-node case too.',
+    'Finish with the cannot-self-heal case: a nearly full cluster. The caption says exactly why.',
   ],
   numbers: [
     { k: 'Failures tolerated', v: 'RF2: 1 node or drive at a time · RF3: 2' },

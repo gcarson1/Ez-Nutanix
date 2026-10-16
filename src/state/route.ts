@@ -1,5 +1,5 @@
 // Route + scenario state, serialized in the URL hash so a presenter can send a link
-// to an exact configuration:  #/nci/cluster?nodes=8&npb=2&ba=1
+// to an exact configuration:  #/nci/capacity?nodes=8&rf=3
 //
 // Navigation between modules pushes history (so the browser Back button works);
 // tweaking a control replaces the current entry (so history isn't spammed).

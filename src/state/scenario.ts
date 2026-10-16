@@ -1,5 +1,5 @@
 // Shared cluster scenario, read from and written to the URL hash so every cluster-based
-// module (Cluster Lab, Protection & Capacity, Failure Gauntlet, LCM) shows the same setup
+// module (Protection & Capacity, Scale-out, Failure Gauntlet) shows the same setup
 // and a presenter can send a link to it. Defaults are never written to the URL.
 import { DEFAULT_CONFIG, normalizeConfig, type ClusterConfig, type Media } from '../engine/cluster';
 import { useBool, useEnum, useNum, useRoute, setParams } from './route';
@@ -99,8 +99,8 @@ export interface Preset {
 export const PRESETS: Preset[] = [
   { id: 'edge3', label: '3-node edge (RF2)', cfg: { nodes: 3, nodesPerBlock: 1, rf: 2, ft: 2, vms: 12, drivesPerNode: 4 } },
   { id: 'start4', label: '4-node starter (RF2)', cfg: { nodes: 4, nodesPerBlock: 4, rf: 2, ft: 2, vms: 16 } },
-  { id: 'prod8', label: '8-node production (RF2, block-aware)', cfg: { nodes: 8, nodesPerBlock: 2, blockAware: true, rf: 2, ft: 2, vms: 32 } },
-  { id: 'rf3ec12', label: '12-node RF3 + EC-X', cfg: { nodes: 12, nodesPerBlock: 2, rf: 3, ft: 3, ecx: true, vms: 48 } },
+  { id: 'prod8', label: '8-node production (RF2)', cfg: { nodes: 8, nodesPerBlock: 2, rf: 2, ft: 2, vms: 32 } },
+  { id: 'rf3ec12', label: '12-node RF3', cfg: { nodes: 12, nodesPerBlock: 2, rf: 3, ft: 3, vms: 48 } },
 ];
 
 /** Every cluster key, mapped to null: used by Reset and before applying a preset. */

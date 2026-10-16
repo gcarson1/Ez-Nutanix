@@ -31,8 +31,8 @@ Tips:
 
 - Start with the **Guided tour** on the landing page. It walks the panes bottom-up: infrastructure, then services, then Nutanix Central.
 - Animations start on their own and loop, pausing briefly at the end of each step so its caption can be read. Drag the scrub bar to pause on a moment; press Play (or Space) to carry on.
-- Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is the one place with every knob.
-- Use **Presets** in the top bar to load a cluster into the lab that matches the customer (3-node edge, 4-node starter, 8-node block-aware production, 12-node RF3 with EC-X).
+- Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is one fixed 4-node cluster with five scenarios (data placement, live migration, planned shutdown, VM failover, drive failure) and a right-hand pane that explains the chosen one.
+- Use **Presets** in the top bar to load a cluster size that matches the customer into Protection & Capacity (3-node edge, 4-node starter, 8-node production, 12-node RF3). Its other tabs show erasure coding and block and rack awareness.
 - Everything you change is kept in the address bar. **Copy link** sends the customer exactly the scenario you showed. **PNG** saves the current diagram.
 - Anything simplified carries an **Illustrative** tag; hover it to see what was simplified.
 

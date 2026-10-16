@@ -77,8 +77,40 @@ for (const m of MODULES) {
   });
 }
 
+test('cluster lab: scenario buttons sit above the picture and switch the story', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/cluster`);
+  const pick = page.getByRole('group', { name: 'Choose what to show' });
+  for (const name of ['Data placement', 'Live migration', 'Planned shutdown', 'VM failover', 'Drive failure']) {
+    await expect(pick.getByRole('button', { name })).toBeVisible();
+  }
+  const pickBox = await pick.boundingBox();
+  const picBox = await page.locator('.dl-dia').boundingBox();
+  expect(pickBox!.y).toBeLessThan(picBox!.y);
+  await pick.getByRole('button', { name: 'VM failover' }).click();
+  await expect(pick.getByRole('button', { name: 'VM failover' })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.url()).toContain('sc=failover');
+  await expect(page.getByRole('complementary', { name: /VM failover/ }).getByRole('heading', { name: 'VM failover' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('protection & capacity: erasure coding and blocks-and-racks tabs render and switch', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/capacity`);
+  const tabs = page.getByRole('tablist', { name: 'Protection topics' });
+  await tabs.getByRole('tab', { name: /Erasure coding/ }).click();
+  await expect.poll(() => page.url()).toContain('tab=ec');
+  await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'RF2 · 4/1 strips' })).toHaveAttribute('aria-pressed', 'true');
+  await tabs.getByRole('tab', { name: 'Blocks and racks' }).click();
+  await page.getByRole('button', { name: 'Node only' }).click();
+  await expect.poll(() => page.url()).toContain('aw=node');
+  await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('scenario state round-trips through the URL', async ({ page }) => {
-  await page.goto(`${FILE}#/nci/cluster?nodes=12&rf=3&ft=3`);
+  await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();
   expect(page.url()).toContain('nodes=12');
   await page.getByLabel('Scenario preset').selectOption({ label: '4-node starter (RF2)' });

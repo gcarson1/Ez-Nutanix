@@ -12,3 +12,34 @@
 .cp-r { background: repeating-linear-gradient(45deg, transparent 0 4px, var(--line-2) 4px 5px); }
 .cp-share-l { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-5); margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--text-2); font-variant-numeric: tabular-nums; }
 .cp-share-l b { display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: var(--sp-1h); vertical-align: -0.1rem; }
+
+/* erasure coding tab */
+.diagram .cp-ring { fill: none; stroke: var(--flow); stroke-width: 1.5; }
+.diagram .cp-freed { fill: none; stroke: var(--ink-fg); stroke-width: 1.25; stroke-dasharray: 2 2; }
+.diagram .cp-par rect { fill: var(--flow-bg); stroke: var(--flow); stroke-width: 1.5; }
+.diagram .cp-par text { fill: var(--flow); font-size: 11px; font-weight: 700; font-family: var(--mono); }
+.diagram .cp-par.new rect { fill: var(--flow); }
+.diagram .cp-par.new text { fill: var(--bg); }
+.diagram .cp-par.lost rect { fill: none; stroke: var(--bad); stroke-dasharray: 3 2; opacity: 0.75; }
+.diagram .cp-par.lost text { fill: var(--bad); }
+.diagram .cp-arc { fill: none; stroke: var(--flow); stroke-width: 1.25; opacity: 0.55; }
+.diagram .cp-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1; }
+.cp-ec { max-width: 44rem; margin-top: var(--sp-3); }
+.cp-ec-h { font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--sp-2); }
+.cp-ec-row { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 13rem; gap: var(--sp-3); align-items: center; padding: var(--sp-1) 0; font-size: var(--fs-13); color: var(--text-2); }
+.cp-ec-row .bar { height: 0.75rem; border: 1px solid var(--line-2); position: relative; }
+.cp-ec-row .bar i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+.cp-ec-row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.cp-ec-row .v small { font-family: var(--font); color: var(--faint); }
+
+/* blocks and racks tab */
+.diagram .cp-group { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.diagram .cp-group.down { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
+.diagram .cp-group-t { font-size: 12px; font-weight: 600; fill: var(--muted); letter-spacing: 0.02em; }
+.diagram .cp-lost.gone { stroke-width: 2.25; opacity: 1; }
+.diagram .cp-warn-t { font-size: 13px; font-weight: 600; }
+
+@media (max-width: 900px) {
+  .cp-ec-row { grid-template-columns: minmax(0, 1fr) 4rem; }
+  .cp-ec-row .bar { grid-column: 1 / -1; grid-row: 2; }
+}

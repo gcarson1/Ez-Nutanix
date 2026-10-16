@@ -1,4 +1,4 @@
-/* Cluster & DSF Lab + Failure Gauntlet (prefix cl-) */
+/* Generic cluster diagram and time strip, used by the Failure Gauntlet (prefix cl-) */
 .cl-dia .cl-name { font-size: 13px; font-weight: 700; }
 .cl-dia.compact .cl-name { font-size: 13px; }
 .cl-dia .cl-state { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
@@ -56,35 +56,6 @@
 .cl-strip .pending { fill: url(#cl-hatch); }
 .cl-strip .hatch { stroke: var(--line-2); stroke-width: 1; }
 
-.cl-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; margin-top: var(--sp-2); font-size: var(--fs-13); }
-.cl-act { display: inline-flex; align-items: center; gap: var(--sp-1h); border: 1px solid var(--line-2); padding: 0 0 0 var(--sp-2); height: 1.75rem; font-size: var(--fs-13); }
-.cl-act .t { font-family: var(--mono); color: var(--faint); font-size: var(--fs-12); }
-.cl-act button { border: 0; background: none; color: var(--muted); height: 100%; padding: 0 var(--sp-2); }
-.cl-act button:hover { color: var(--text); background: var(--bg-3); }
-.cl-act.future { border-style: dashed; color: var(--muted); }
-
-.cl-inspect { margin-top: var(--sp-4); }
-.cl-inspect .btns { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
-.cl-inspect .btn { height: var(--h-sm); font-size: var(--fs-13); }
-.cl-inspect .why { font-size: var(--fs-12); color: var(--warn); margin-top: var(--sp-2); }
-.cl-facts { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-13); color: var(--muted); margin-top: var(--sp-1); }
-.cl-facts b { color: var(--text); font-weight: 600; font-family: var(--mono); }
-.cl-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; justify-content: space-between; }
-.cl-sub { font-size: var(--fs-12); color: var(--muted); line-height: 1.5; }
-.cl-rail h3 { font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--sp-2); }
-.cl-rail .side-sec + .side-sec { border-top: 1px solid var(--line); }
-.cl-rail .bigline { font-size: var(--fs-18); font-weight: 600; margin-top: var(--sp-2); line-height: 1.3; }
-.cl-rail .meter { margin: var(--sp-2) 0 var(--sp-1); }
-.cl-rail .meter.warn > span { background: var(--warn); }
-.cl-rail .meter.bad > span { background: var(--bad); }
-.cl-rail .reason { font-size: var(--fs-13); color: var(--text-2); margin-top: var(--sp-2); line-height: 1.45; }
-.cl-mix { display: flex; height: 0.5rem; margin-top: var(--sp-2); background: var(--track); }
-.cl-mix span { display: block; height: 100%; }
-.cl-mix .op { background: var(--ink); }
-.cl-mix .ex { background: var(--s2); }
-.cl-select { height: var(--h-sm); font-size: var(--fs-13); width: 100%; }
-.cl-tb { margin-top: var(--sp-3); }
-
 /* gauntlet */
 .cl-scn { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
 .cl-scn button { text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; padding: var(--sp-2) var(--sp-2); font-size: var(--fs-14); color: var(--text-2); display: flex; gap: var(--sp-2); align-items: baseline; }
@@ -118,3 +89,104 @@
 @media (max-width: 1200px) { .cl-cmp { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) { .cl-phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .cl-phases { grid-template-columns: minmax(0, 1fr); } .cl-phases li { min-height: 0; } }
+
+/* ── Cluster & DSF Lab (prefix dl-) ─────────────────────────────────── */
+.dl > .stage { padding-top: var(--sp-5); }
+.dl-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
+.dl-pick .seg { align-self: flex-start; }
+.dl-pick .seg button { height: calc(var(--h-lg) - 2px); padding: 0 var(--sp-4); font-size: var(--fs-15); gap: var(--sp-2); }
+.dl-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
+
+/* one line saying what is happening now; fixed height so the picture never jumps */
+.dl-cap { display: flex; gap: var(--sp-3); align-items: flex-start; margin: var(--sp-6) 0 var(--sp-2); min-height: 3.25rem; }
+.dl-cap .dl-n { flex: none; margin-top: 0.1rem; padding: var(--sp-1) var(--sp-1h); border: 1px solid var(--ink-line); color: var(--ink-fg); font: 600 var(--fs-13) / 1 var(--mono); font-variant-numeric: tabular-nums; }
+.dl-cap p { font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
+
+/* static explanation pane */
+.dl-rail .side-sec h2 { font-size: var(--fs-20); margin: var(--sp-2) 0 var(--sp-1); }
+.dl-rail .dl-lede { color: var(--muted); font-size: var(--fs-14); }
+.dl-rail ol { margin: var(--sp-4) 0 0; padding-left: 1.25rem; font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
+.dl-rail ol li::marker { color: var(--ink-fg); font-family: var(--mono); font-size: var(--fs-13); }
+.dl-rail ol li + li { margin-top: var(--sp-2); }
+.dl-rail .dl-why { margin-top: var(--sp-2); font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
+.dl-rail .dl-setup { margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--muted); line-height: 1.5; }
+
+.dl-legend { margin-top: var(--sp-2); }
+.dl-legend span { display: inline-flex; align-items: center; gap: var(--sp-1h); }
+.dl-sw { width: 1rem; height: 0.75rem; flex: none; }
+
+/* diagram */
+.dl-dia { max-width: 70rem; }
+.dl-dia .dl-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; transition: fill var(--t-med), stroke var(--t-med); }
+.dl-dia .dl-node.off .dl-card { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
+.dl-dia .dl-node.entering .dl-card { stroke: var(--warn); stroke-width: 1.75; }
+.dl-dia .dl-node.maint .dl-card { fill: var(--warn-bg); stroke: var(--warn); stroke-dasharray: 6 4; }
+.dl-dia .dl-node.returning .dl-card { stroke: var(--flow); stroke-width: 1.75; }
+.dl-dia .dl-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.dl-dia .dl-word { font-size: 12.5px; font-weight: 600; }
+.dl-dia .dl-word.ok { fill: var(--ok); }
+.dl-dia .dl-word.warn { fill: var(--warn); }
+.dl-dia .dl-word.bad { fill: var(--bad); }
+.dl-dia .dl-word.flow { fill: var(--flow); }
+
+.dl-dia .dl-cvm rect { fill: var(--ink); }
+.dl-dia .dl-cvm text { fill: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
+.dl-dia .dl-cvm.down rect { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 4 3; }
+.dl-dia .dl-cvm.paused rect { fill: var(--warn-bg); stroke: var(--warn); stroke-dasharray: 4 3; }
+.dl-dia .dl-cvm.down text, .dl-dia .dl-cvm.paused text { fill: var(--muted); }
+.dl-dia .dl-beat { fill: #fff; }
+.dl-dia .dl-x { stroke: var(--muted); stroke-width: 2; fill: none; stroke-linecap: round; }
+.dl-dia .dl-cvm.down .dl-x, .dl-dia .dl-x.bad { stroke: var(--bad); }
+.dl-dia .dl-cvm.paused .dl-x { stroke: var(--warn); }
+.dl-dia .dl-hyp { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
+.dl-dia .dl-hyp.off { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
+.dl-dia .dl-hypt { font-size: 10.5px; fill: var(--muted); letter-spacing: 0.02em; }
+
+.dl-dia .dl-disk { fill: var(--bg); stroke: var(--line-2); stroke-width: 1; }
+.dl-dia .dl-disk.failed { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.5; }
+.dl-dia .dl-drive.dim .dl-disk { opacity: 0.55; }
+.dl-dia .dl-dl { font-size: 10px; fill: var(--faint); }
+.dl-dia .dl-dl.bad { fill: var(--bad); font-weight: 600; }
+
+.dl-dia .dl-vm rect { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 1; }
+.dl-dia .dl-vm text { font-family: var(--mono); font-size: 11.5px; font-weight: 600; fill: var(--text); }
+.dl-dia .dl-vm.hl rect { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 2; }
+.dl-dia .dl-vm.moving rect { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 2; }
+.dl-dia .dl-vm.restarting rect { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.75; stroke-dasharray: 4 3; }
+.dl-dia .dl-vm.stopped rect { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
+.dl-dia .dl-vm.stopped text { fill: var(--muted); }
+.dl-dia .dl-trail { fill: none; stroke-width: 1.25; stroke-dasharray: 3 4; opacity: 0.7; }
+.dl-dia .dl-trail.moving { stroke: var(--ok); }
+.dl-dia .dl-trail.restarting { stroke: var(--warn); }
+
+/* data tiles (also used by the legend swatches) */
+.t-local { fill: var(--ink); }
+.t-copy { fill: var(--s2); }
+.t-single { fill: var(--warn); }
+.t-new { fill: var(--flow); }
+.t-off { fill: none; stroke: var(--s2); stroke-width: 1; stroke-dasharray: 2 1.5; }
+.t-lost { fill: var(--bad); }
+.t-dim { opacity: 0.16; }
+
+/* data in motion */
+.dl-arc { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.dl-arc.write, .dl-arc.copy { stroke: var(--ink-fg); }
+.dl-arc.rebuild, .dl-arc.resync, .dl-arc.read { stroke: var(--flow); }
+.dl-arc.read { stroke-width: 1.2; opacity: 0.75; }
+.dl-arc.localize { stroke: var(--ink-fg); stroke-dasharray: 2 3; stroke-width: 2; }
+.dl-dot { stroke: var(--bg); stroke-width: 1.5; }
+.dl-dot.write, .dl-dot.copy, .dl-dot.localize { fill: var(--ink-fg); }
+.dl-dot.rebuild, .dl-dot.resync, .dl-dot.read { fill: var(--flow); }
+.dl-dia .dl-lane { stroke: var(--line-2); stroke-dasharray: 2 5; }
+.dl-dia .dl-lanet { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; fill: var(--faint); }
+.dl-dia .dl-pool { fill: none; stroke: var(--ink-fg); stroke-width: 1.5; }
+.dl-dia .dl-poolt { font-size: 13px; font-weight: 600; fill: var(--ink-fg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dl-dia .beat { animation: none; }
+  .dl-dia .dl-card { transition: none; }
+}
+@media (max-width: 900px) {
+  .dl-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
+  .dl-cap p { font-size: var(--fs-16); }
+}

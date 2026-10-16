@@ -1,6 +1,6 @@
 // Failure Gauntlet: pick a failure and RF2 or RF3, and watch one fixed 8-node cluster detect
-// it, keep VMs running and heal itself, on a loop you can scrub. Building your own cluster
-// and breaking things by hand lives in the Cluster & DSF Lab.
+// it, keep VMs running and heal itself, on a loop you can scrub. The Cluster & DSF Lab covers
+// the everyday cases (VM failover, drive failure, planned shutdown) on a 4-node cluster.
 import { useMemo, useRef } from 'preact/hooks';
 import '../cluster-lab/style.css';
 import { useScenario } from '../../../state/scenario';
@@ -14,7 +14,7 @@ import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import { ClusterDiagram } from '../cluster-lab/ClusterDiagram';
 import { TimeStrip } from '../cluster-lab/TimeStrip';
-import { DiagramLegend } from '../cluster-lab/index';
+import { DiagramLegend } from '../cluster-lab/legend';
 import { useMaybeTimeline, fmtT } from '../cluster-lab/sim';
 
 type Pick = 'disk' | 'cvm' | 'node' | 'block' | 'double' | 'full';

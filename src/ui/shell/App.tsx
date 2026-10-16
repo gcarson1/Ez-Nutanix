@@ -105,14 +105,14 @@ const LANDING_NOTES = {
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
     'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
-    'Use the presets in the top bar to load a cluster that matches the customer into the Cluster & DSF Lab.',
+    'Use the presets in the top bar to load a cluster size that matches the customer into Protection & Capacity.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
     { q: 'Do we have to run AHV?', a: 'No. Nutanix clusters also support VMware ESXi, but some features covered here (for example Flow and some DR options) are AHV-only or work differently on ESXi.' },
     { q: 'Can we start small?', a: 'Yes. Clusters start at one to three nodes for edge sites and grow a node at a time.' },
   ],
-  next: ['Open Nutanix Cloud Infrastructure', 'Open the Cluster Lab and fail a node', 'Show Disaster Recovery'],
+  next: ['Open Nutanix Cloud Infrastructure', 'Open the Cluster Lab and show VM failover', 'Show Disaster Recovery'],
 };
 
 function Presenter({ def, onClose }: { def: ModuleDef | undefined; onClose: () => void }) {
@@ -308,8 +308,8 @@ function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);
   if (!p) return;
   const cur = getRoute().path;
-  const clusterViews = ['nci/cluster', 'nci/capacity'];
-  if (!clusterViews.includes(cur)) go('nci/cluster');
+  // The Cluster & DSF Lab uses one fixed cluster; presets size Protection & Capacity.
+  if (cur !== 'nci/capacity') go('nci/capacity');
   setParams(clearedScenario());
   setScenario(p.cfg);
   toast(`Preset: ${p.label}`);

@@ -1,13 +1,18 @@
-// Protection & Capacity: pick RF2 or RF3 and a node count, and watch pieces of data land as
-// copies on different nodes, a node fail, and the copies being re-created on the others.
-// Placement lives in src/engine/spread.ts; this file only animates it.
+// Protection & Capacity: three tabs, each one looping picture with one or two preset choices.
+// Copies: pick RF2 or RF3 and a node count, and watch pieces of data land as copies on
+// different nodes, a node fail, and the copies being re-created on the others (placement in
+// src/engine/spread.ts). Erasure coding and Blocks and racks live in ec.tsx and domains.tsx.
 import { useMemo } from 'preact/hooks';
+import { useEnum } from '../../../state/route';
 import { useScenario } from '../../../state/scenario';
 import { capacityShares, planSpread } from '../../../engine/spread';
 import type { RF } from '../../../engine/rules';
 import { useClock, useRestartOn } from '../../components/clock';
 import { Follow, PlayBar } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Shape } from './shapes';
+import { EcView } from './ec';
+import { DomainsView } from './domains';
 import './style.css';
 
 const NODE_OPTS = [3, 4, 5, 6, 8, 12];
@@ -16,34 +21,6 @@ const PAD = 8;
 const TOP = 100;
 const FLIGHT = 0.7;
 const REBUILD_FLIGHT = 0.9;
-
-/** Eight simple shapes; each piece of data is drawn as one of them. */
-function Shape({ kind, x, y, r, cls, style }: { kind: number; x: number; y: number; r: number; cls: string; style?: Record<string, string | number> }) {
-  const k = kind % 8;
-  if (k === 0) return <circle class={cls} cx={x} cy={y} r={r} style={style} />;
-  if (k === 1) return <rect class={cls} x={x - r * 0.88} y={y - r * 0.88} width={r * 1.76} height={r * 1.76} style={style} />;
-  const pts = (n: number, rot: number, rr = r) =>
-    Array.from({ length: n }, (_, i) => {
-      const a = rot + (i * 2 * Math.PI) / n;
-      return `${(x + rr * Math.cos(a)).toFixed(1)},${(y + rr * Math.sin(a)).toFixed(1)}`;
-    }).join(' ');
-  if (k === 2) return <polygon class={cls} points={pts(3, -Math.PI / 2, r * 1.12)} style={style} />;
-  if (k === 3) return <polygon class={cls} points={pts(4, 0, r * 1.1)} style={style} />;
-  if (k === 4) return <polygon class={cls} points={pts(6, 0)} style={style} />;
-  if (k === 5) return <polygon class={cls} points={pts(5, -Math.PI / 2, r * 1.05)} style={style} />;
-  if (k === 6) {
-    // star
-    const star = Array.from({ length: 10 }, (_, i) => {
-      const a = -Math.PI / 2 + (i * Math.PI) / 5;
-      const rr = i % 2 ? r * 0.5 : r * 1.15;
-      return `${(x + rr * Math.cos(a)).toFixed(1)},${(y + rr * Math.sin(a)).toFixed(1)}`;
-    }).join(' ');
-    return <polygon class={cls} points={star} style={style} />;
-  }
-  const a = r * 0.36;
-  const b = r * 1.05;
-  return <path class={cls} d={`M${x - a} ${y - b}h${2 * a}v${b - a}h${b - a}v${2 * a}h${a - b}v${b - a}h${-2 * a}v${a - b}h${a - b}v${-2 * a}h${b - a}z`} style={style} />;
-}
 
 function useTimeline(nodes: number, rf: RF) {
   return useMemo(() => {
@@ -125,7 +102,7 @@ function pct(x: number) {
   return `${Math.round(x * 100)}%`;
 }
 
-export default function Capacity() {
+function CopiesView() {
   const { cfg, set } = useScenario();
   const rf: RF = cfg.rf === 3 ? 3 : 2;
   const nodes = Math.min(16, Math.max(3, cfg.nodes));
@@ -205,5 +182,30 @@ export default function Capacity() {
         </div>
       </div>
     </Show>
+  );
+}
+
+type TabId = 'copies' | 'ec' | 'domains';
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'copies', label: 'Copies (RF2, RF3)' },
+  { id: 'ec', label: 'Erasure coding (EC-X)' },
+  { id: 'domains', label: 'Blocks and racks' },
+];
+
+export default function Capacity() {
+  const [tab, setTab] = useEnum<TabId>('tab', 'copies', ['copies', 'ec', 'domains']);
+  return (
+    <>
+      <div class="tabs" role="tablist" aria-label="Protection topics">
+        {TABS.map((t) => (
+          <button type="button" role="tab" key={t.id} aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'copies' && <CopiesView />}
+      {tab === 'ec' && <EcView />}
+      {tab === 'domains' && <DomainsView />}
+    </>
   );
 }

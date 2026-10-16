@@ -4,7 +4,7 @@ import './style.css';
 import { go } from '../../shell/nav';
 
 const SUBS = [
-  { path: 'nci/cluster', icon: 'server', t: 'Cluster & DSF Lab', s: 'The full lab: build any cluster, then break, add, remove and migrate.', pri: 'Lab' },
+  { path: 'nci/cluster', icon: 'server', t: 'Cluster & DSF Lab', s: 'One 4-node cluster: data placement, live migration, planned shutdown, VM failover and drive failure.', pri: 'Lab' },
   { path: 'nci/datapath', icon: 'zap', t: 'Data Path', s: 'Follow a write or a read from the VM through the controller to its copies.', pri: 'Write & read' },
   { path: 'nci/capacity', icon: 'shield', t: 'Protection & Capacity', s: 'RF2 or RF3: copies land on different nodes and heal after a failure.', pri: 'Sizing' },
   { path: 'nci/failures', icon: 'power', t: 'Failure Gauntlet', s: 'Pick a failure, from one drive to two nodes at once, and watch the cluster heal.', pri: 'Resilience' },
