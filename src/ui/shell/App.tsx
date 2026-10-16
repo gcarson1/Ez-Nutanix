@@ -447,11 +447,11 @@ export function App() {
             <span class="bar-div" />
             <button type="button" class={`tbtn${panel === 'presenter' ? ' on' : ''}`} onClick={() => setPanel(panel === 'presenter' ? null : 'presenter')} title="Presenter notes (P)" aria-pressed={panel === 'presenter'}>
               <Icon name="podium" />
-              <span class="lbl">Presenter</span>
+              <span class="lbl wide-only">Presenter</span>
             </button>
             <button type="button" class={`tbtn${panel === 'glossary' ? ' on' : ''}`} onClick={() => setPanel(panel === 'glossary' ? null : 'glossary')} title="Glossary (G)" aria-pressed={panel === 'glossary'}>
               <Icon name="book" />
-              <span class="lbl">Glossary</span>
+              <span class="lbl wide-only">Glossary</span>
             </button>
             <button type="button" class="icon-btn" onClick={() => setDialog('keys')} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
               <Icon name="keyboard" />

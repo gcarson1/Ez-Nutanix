@@ -6,5 +6,9 @@ export default defineConfig({
   testDir: 'tests/smoke',
   timeout: 30_000,
   reporter: 'list',
-  use: { viewport: { width: 1600, height: 900 } },
+  use: {
+    viewport: { width: 1600, height: 900 },
+    // Optional: point at a preinstalled Chromium when the bundled one isn't downloaded.
+    launchOptions: process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
+  },
 });
