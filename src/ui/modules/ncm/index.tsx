@@ -28,7 +28,7 @@ import {
 } from '../../../engine/ncm';
 import { useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 import './style.css';
 
 type Line = { tone: Tone | 'ink'; k: string; text: string };
@@ -439,30 +439,11 @@ const Y_MAX = 7000;
 const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 
 /** What NCM does about it, in the order it acts. */
-const GUARDS: { at: number; tone: Tone; k: string; by: string; text: string }[] = [
+const GUARDS: Point[] = [
   { at: ALERT_DAY, tone: 'warn', k: 'Budget alerts', by: 'Cost Governance', text: 'A budget per team or project, with an automated overspend alert to its owner while there is still time to act.' },
   { at: FIX_DAY, tone: 'flow', k: 'Savings recommendations', by: 'Cost Governance', text: 'Finds idle and oversized VMs, so the owner knows exactly what to stop or right-size.' },
   { at: GUARD_DAY, tone: 'ok', k: 'Quotas and policies', by: 'Self-Service', text: 'A quota caps the CPU, memory and storage a project can deploy. Approval and scheduler policies hold big requests and stop apps at set times.' },
 ];
-
-function Guards({ t }: { t: number }) {
-  const now = phaseAt([-1, ...GUARDS.map((g) => g.at)], t) - 1;
-  return (
-    <div class="ncm-guards">
-      <span class="choice-l">How NCM stops the overspend</span>
-      <ol>
-        {GUARDS.map((g, i) => (
-          <li key={g.k} class={`${t >= g.at ? `on ${g.tone}` : ''}${i === now && t <= MONTH ? ' now' : ''}`}>
-            <span class="n">{i + 1}</span>
-            <b>{g.k}</b>
-            <span class="by">{g.by}</span>
-            <p>{g.text}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
 
 function SpendChart({ t }: { t: number }) {
   const H = 300;
@@ -571,7 +552,7 @@ function Cost() {
   const line = lines[phaseAt(COST_STARTS, t)];
   return (
     <Show
-      top={<Guards t={t} />}
+      top={<Points label="How NCM stops the overspend" items={GUARDS} t={t} until={MONTH} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>

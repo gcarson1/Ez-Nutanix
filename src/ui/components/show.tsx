@@ -47,6 +47,36 @@ export function Kpis({ items }: { items: KpiItem[] }) {
   );
 }
 
+export interface Point {
+  k: string;
+  /** Which product or component does it, shown under the heading. */
+  by?: string;
+  text: string;
+  tone: 'ok' | 'warn' | 'flow' | 'bad' | 'ink';
+  /** Animation time when the card lights up. */
+  at: number;
+}
+
+/** Numbered cards that light up as the animation reaches each one; the latest is outlined until `until`. */
+export function Points({ label, items, t, until }: { label: string; items: Point[]; t: number; until?: number }) {
+  const now = phaseAt([-1, ...items.map((g) => g.at)], t) - 1;
+  return (
+    <div class="points" style={{ '--n': items.length }}>
+      <span class="choice-l">{label}</span>
+      <ol>
+        {items.map((g, i) => (
+          <li key={g.k} class={`${t >= g.at ? `on ${g.tone}` : ''}${i === now && (until === undefined || t <= until) ? ' now' : ''}`}>
+            <span class="n">{i + 1}</span>
+            <b>{g.k}</b>
+            {g.by && <span class="by">{g.by}</span>}
+            <p>{g.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 /** Index of the phase a time falls in, given phase start times (ascending). */
 export function phaseAt(starts: number[], t: number): number {
   let i = 0;
