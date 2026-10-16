@@ -35,9 +35,4 @@ export const content: ModuleContent = {
     },
   ],
   next: ['Files, Objects', 'Snapshots & Clones', 'Flow'],
-  honest: [
-    'Recovery is only as recent as the last clean snapshot; edits after it on the affected files are lost. Frequent snapshots narrow that gap but use capacity.',
-    'Behavior-based detection is a Pro feature, and automated recovery applies to Nutanix Files. Check the tier and storage type you plan to use.',
-    'Detection needs some activity before it is confident, so a few files are typically hit before the client is blocked.',
-  ],
 };

@@ -43,10 +43,4 @@ export const content: ModuleContent = {
     'SecOps: watch findings get fixed, then a setting changed by hand caught by the next scan.',
     'Then open Nutanix Central & Prism Federation, where NCM 2.x runs.',
   ],
-  honest: [
-    'Anomaly detection and forecasts need history to learn from; expect a learning period before results are useful, and noisy alerts if the baseline is too tight.',
-    'Self-service is only as good as the blueprints behind it; someone has to build, test and maintain them.',
-    'Showback reflects the rates you set; it is a model of cost, not an invoice.',
-    'NCM 2.x requires Nutanix Central on-premises, which is another component to deploy and size.',
-  ],
 };

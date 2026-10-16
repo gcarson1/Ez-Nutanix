@@ -7,7 +7,6 @@ import { PRESETS, clearedScenario, setScenario } from '../../state/scenario';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
-import { HonestFit } from '../components/controls';
 import { simKey } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG } from './config';
@@ -105,8 +104,8 @@ const LANDING_NOTES = {
   talk: [
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
-    'Every pane opens a module that shows how that part works. The modules are honest about trade-offs, so use them to answer hard questions.',
-    'Use the presets in the top bar to jump to a cluster size that matches the customer.',
+    'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
+    'Use the presets in the top bar to load a cluster that matches the customer into the Cluster & DSF Lab.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
@@ -266,7 +265,6 @@ function ModuleView({ def }: { def: ModuleDef }) {
         </div>
       </header>
       <Component />
-      {!!c.honest.length && <HonestFit items={c.honest} />}
     </div>
   );
 }

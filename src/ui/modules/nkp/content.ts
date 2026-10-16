@@ -38,9 +38,4 @@ export const content: ModuleContent = {
     'Canary fails: show the rollout stop at the first cluster, with the other five still on the old version.',
     'Then open Cloud Native AOS or Enterprise AI to show what runs on these clusters.',
   ],
-  honest: [
-    'Kubernetes moves fast: plan for regular minor-version upgrades on every cluster, and test your apps against each new version before rolling it out.',
-    'Fleet-wide management is an Ultimate feature; lower editions manage clusters without the fleet view.',
-    'Node-replacement upgrades need room for one extra node per cluster while each step runs, so leave headroom on the underlying infrastructure.',
-  ],
 };

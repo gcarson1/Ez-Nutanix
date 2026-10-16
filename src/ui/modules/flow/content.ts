@@ -43,10 +43,4 @@ export const content: ModuleContent = {
     'Out to the internet, then In from the internet: source NAT gives a whole VPC one public address, and a floating IP lets outsiders reach one VM.',
     'Open Data Security to see where Flow fits with encryption and hardening.',
   ],
-  honest: [
-    'Microsegmentation is only as good as its categories and rules. If VMs are mislabeled or rules go stale, protection quietly weakens; keep tagging part of provisioning.',
-    'Monitoring logs but does not block. It is the recommended way to start, but a policy left in Monitoring protects nothing.',
-    'An attacker who exploits a port the application genuinely needs can still move along that allowed path. Policy limits the blast radius; detection and quarantine still matter.',
-    'Overlay networking adds an encapsulation layer (58 bytes per packet), a dependency on Prism Central’s Network Controller, and gateway sizing to plan: source NAT for a VPC runs on one host, and troubleshooting spans overlay and underlay.',
-  ],
 };

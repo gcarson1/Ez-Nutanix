@@ -41,9 +41,4 @@ export const content: ModuleContent = {
     'Switch to the air-gapped site: the model comes in as files, with no internet connection.',
     'Then open the Kubernetes Platform module for what the endpoint runs on.',
   ],
-  honest: [
-    'GPUs are the real constraint: model size and traffic decide how many you need, and that sizing is a separate exercise from this picture.',
-    'Some agentic AI pieces were early access in 2026; confirm what is GA for the features a project depends on.',
-    'Running your own endpoints means your team operates them: capacity, model updates and access policies are yours to manage.',
-  ],
 };

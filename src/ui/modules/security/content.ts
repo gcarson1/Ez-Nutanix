@@ -40,10 +40,4 @@ export const content: ModuleContent = {
     'Point out the cost of the external key manager: another server to run, back up and keep reachable.',
     'Then show Flow for traffic between VMs, and snapshots and DR for recovery, the threats encryption does not cover.',
   ],
-  honest: [
-    'Encryption at rest only protects media. Data is decrypted for any authorized reader, including a compromised VM or a stolen admin account.',
-    'An external key manager is another critical system to run, back up and keep highly available: if the cluster cannot reach its keys, it cannot read its data.',
-    'Security profiles do not cover every setting; some remain manual, and changes that need a reboot raise an alert rather than applying themselves.',
-    'Which encryption levels, profiles and integrations are available depends on hypervisor, software version and license. Check the Security Guide for your release.',
-  ],
 };

@@ -42,11 +42,4 @@ export const content: ModuleContent = {
     'Planned failover: nothing is lost with any tier, because the last changes are copied before the switch.',
     'Then open Hybrid & Public Cloud to use a cloud as the recovery site.',
   ],
-  honest: [
-    'Synchronous replication costs write latency on every write and is limited by distance (under 5 ms round trip). Nearby sites can fail together.',
-    'An RPO is a target, not a guarantee: it holds only while bandwidth keeps up with the change rate.',
-    'Unplanned failover loses the writes that had not replicated yet. Without a Witness, someone has to decide to fail over, which adds time.',
-    'Recovery plans are only trustworthy if network mappings, boot order and scripts are kept current and tested. Untested plans fail at the worst moment.',
-    'Feature availability (tiers, Metro with Witness, cloud targets) depends on hypervisor, software version and license. Check the documentation for your release.',
-  ],
 };

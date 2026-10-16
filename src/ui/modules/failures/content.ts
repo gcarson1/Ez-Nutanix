@@ -43,12 +43,4 @@ export const content: ModuleContent = {
     'Nearly full cluster: the survivors have no room, so it cannot self-heal; read the reason.',
     'Then open LCM Rolling Upgrade to show planned maintenance with no downtime.',
   ],
-  honest: [
-    'On RF2, a second failure during a long rebuild is the real risk window. RF3, block awareness and rack awareness exist for that, and they cost capacity.',
-    'Self-healing needs free space. A nearly full cluster cannot re-protect itself after a failure, so size for a rebuild reserve.',
-    'HA restarts are a reboot for the VMs on the failed host. Applications still need their own start-up and clustering if they cannot tolerate that.',
-    'HA is best effort unless memory is reserved, and the reservation (one or two hosts’ worth) is memory VMs cannot use.',
-    'When a CVM is down, its host’s I/O crosses the network to other CVMs, so latency goes up until it returns.',
-    'Timings and the rebuild rate in this sim are illustrative. Real values depend on hardware, workload and software version.',
-  ],
 };

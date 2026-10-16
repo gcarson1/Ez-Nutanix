@@ -39,9 +39,4 @@ export const content: ModuleContent = {
     'Switch to Bare metal to show where NKP Metal fits, and say it is early access.',
     'Then open Kubernetes Platform, Project Beacon or Disaster Recovery.',
   ],
-  honest: [
-    'Release 1.0 is narrower than VM-based AOS: EKS only, up to 15 workers, RF2, and DR with an RPO of an hour or more.',
-    'Moving AOS into Kubernetes means storage operations follow Kubernetes practices, which suits platform teams more than VM administrators.',
-    'Bare-metal support is early access with a target date, not a shipping product; check the current status before committing a project to it.',
-  ],
 };

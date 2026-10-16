@@ -1,5 +1,5 @@
-// Every module: its content (talk track, honest fit, ...) and its component.
-// The shell renders the header, presenter panel and honest-fit callout from `content`.
+// Every module: its content (talk track, key numbers, ...) and its component.
+// The shell renders the header and presenter panel from `content`.
 import type { FunctionComponent } from 'preact';
 import type { ModuleContent } from '../../content/types';
 import NciHub from './nci-hub';

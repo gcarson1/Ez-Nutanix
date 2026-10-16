@@ -43,11 +43,4 @@ export const content: ModuleContent = {
     'Open the Failure Gauntlet for scripted failures and the RF2 vs RF3 comparison.',
     'Open Protection & Capacity to turn this layout into usable capacity numbers.',
   ],
-  honest: [
-    'The CVM on every node uses CPU and memory that VMs cannot use. Size for it, and for more when advanced features are on.',
-    'Self-healing needs free space on the survivors. A cluster run close to full cannot fully re-protect after a failure, so keep a rebuild reserve (one node’s worth at RF2 is common guidance).',
-    'Data locality helps most for VMs that read their own data. Storage-only nodes, heavy deduplication and workloads that read data written elsewhere get less benefit.',
-    'One- and two-node clusters trade resiliency for cost and footprint: a single node has no node-level redundancy, and a two-node cluster depends on a Witness.',
-    'This lab samples a few hundred data items and simplifies timings and placement. Real rebuild speed depends on hardware, load and version.',
-  ],
 };

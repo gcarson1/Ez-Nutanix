@@ -39,8 +39,4 @@ export const content: ModuleContent = {
     'Stop on 2025 to point at Cloud Native AOS as the first concrete product, then open the Cloud Native AOS module.',
     'Open the Kubernetes Platform and Database Service modules for the other pieces.',
   ],
-  honest: [
-    'This is a vision: do not plan a project around Beacon itself, only around products with GA status.',
-    'Nutanix’s Beacon page has not been updated since 2024, so the name may be retired; the direction now shows up under product names.',
-  ],
 };

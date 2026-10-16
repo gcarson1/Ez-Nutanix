@@ -43,9 +43,4 @@ export const content: ModuleContent = {
     'Change the cloud to Azure or Google Cloud: the picture stays the same, which is the point.',
     'Then Disaster Recovery for the policies, Migration with Nutanix Move for the move itself, or Cloud Native AOS for containers.',
   ],
-  honest: [
-    'Bare-metal cloud instances are billed while they run, whether or not they are busy; size a DR cluster for steady state and plan how it grows on failover.',
-    'Instance types, regions and features differ between clouds and change often; confirm for your target region.',
-    'Network design (connectivity to on-premises, IP ranges, egress costs) is usually the long pole of an NC2 project.',
-  ],
 };
