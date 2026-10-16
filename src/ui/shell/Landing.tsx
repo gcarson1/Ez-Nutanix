@@ -27,6 +27,12 @@ const SERVICES: PaneDef[] = [
   { id: 'ai', title: 'Enterprise AI', path: 'ai' },
 ];
 
+// For customers who want part of the platform: AHV with their own array, or Nutanix HCI under ESXi.
+const PARTIAL: PaneDef[] = [
+  { id: 'ext', title: 'Nutanix with external storage', sub: 'AHV and Prism on your own storage array', path: 'partial', params: { tab: 'ext' } },
+  { id: 'esxi', title: 'ESXi on Nutanix', sub: 'Keep vSphere and vCenter, run them on Nutanix', path: 'partial', params: { tab: 'esxi' } },
+];
+
 const CLOUDS: PaneDef[] = [
   { id: 'aws', title: 'AWS', path: 'cloud', params: { c: 'aws' } },
   { id: 'azure', title: 'Azure', path: 'cloud', params: { c: 'azure' } },
@@ -149,6 +155,16 @@ export function Landing() {
             <Icon name="server" />
             <span class="pt">Any Bare Metal Linux</span>
           </Pane>
+        </section>
+
+        <section class="band partial" aria-label="Don’t want the full stack?">
+          <button type="button" class="partial-head" data-pane="partial" onClick={(e) => go('partial', undefined, e.currentTarget as HTMLElement)}>
+            <span class="pt">Don’t want the full stack?</span>
+            <span class="ps">Start with the part you need</span>
+          </button>
+          {PARTIAL.map((p) => (
+            <Pane key={p.id} p={p} />
+          ))}
         </section>
 
         <p class="slide-hint">

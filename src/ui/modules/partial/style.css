@@ -1,0 +1,26 @@
+/* "Don't want the full stack?" module: external storage (prefix xs-) and ESXi on Nutanix (prefix es-) */
+.diagram .xs-array { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .xs-net { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .xs-link { stroke: var(--line-2); stroke-width: 2; }
+.diagram .xs-io, .diagram .es-io { fill: var(--flow); stroke: var(--bg); stroke-width: 2; }
+.diagram .xs-slot { fill: none; stroke: var(--line); stroke-dasharray: 3 5; }
+.diagram .xs-vol { fill: var(--bg); stroke: var(--line-2); }
+.diagram .xs-vol.hl { stroke: var(--flow); stroke-width: 2; fill: var(--flow-bg); }
+.diagram .xs-snap { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.diagram .xs-map { fill: none; stroke: var(--flow); stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram text.xs-on-ink, .diagram text.es-on-ink { fill: var(--ink-text); }
+.diagram text.xs-on-ink.soft, .diagram text.es-on-ink.soft { opacity: 0.82; }
+.diagram .es-vc { fill: var(--bg-2); stroke: var(--line-2); }
+.diagram .es-hv { fill: var(--bg-3); }
+.diagram .es-hv.ahv { fill: var(--ink); }
+.diagram .es-hv.up { fill: var(--warn); opacity: 0.45; }
+.diagram .es-cvm-off { fill: var(--bg-3); stroke: var(--warn); stroke-dasharray: 3 2; }
+.diagram .es-pass { fill: none; stroke: var(--line-2); stroke-width: 1.25; stroke-dasharray: 3 3; }
+.diagram .es-link { stroke: var(--ink-line); stroke-width: 1.5; }
+.diagram text.es-ink { fill: var(--ink-fg); font-weight: 600; }
+.diagram text.es-warn { fill: var(--warn); }
+.xs-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
+.xs-legend .legend { margin-top: 0; }
+@media (max-width: 600px) {
+  .diagram-scroll > .xs-dia, .diagram-scroll > .es-dia { min-width: 44rem; }
+}
