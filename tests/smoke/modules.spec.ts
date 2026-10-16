@@ -109,6 +109,23 @@ test('protection & capacity: erasure coding and blocks-and-racks tabs render and
   expect(errors).toEqual([]);
 });
 
+test('full-stack band opens the external storage and ESXi tabs', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(FILE);
+  await page.getByRole('button', { name: /ESXi on Nutanix/ }).click();
+  await expect(page.locator('.mod-head h1')).toHaveText('Don’t want the full stack?');
+  const tabs = page.getByRole('tablist', { name: 'Ways to start' });
+  await expect(tabs.getByRole('tab', { name: 'ESXi on Nutanix' })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('button', { name: 'Convert to AHV later' }).click();
+  await expect.poll(() => page.url()).toContain('go=conv');
+  await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
+  await tabs.getByRole('tab', { name: 'Nutanix with external storage' }).click();
+  await page.getByRole('button', { name: 'Dell PowerFlex' }).click();
+  await expect.poll(() => page.url()).toContain('ar=pf');
+  await expect(page.locator('.kpi .v', { hasText: 'Dell SDC' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('scenario state round-trips through the URL', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();

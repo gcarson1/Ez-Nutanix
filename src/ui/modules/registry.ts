@@ -50,6 +50,8 @@ import Beacon from './beacon';
 import { content as BeaconC } from './beacon/content';
 import Cloud from './cloud';
 import { content as CloudC } from './cloud/content';
+import Partial from './partial';
+import { content as PartialC } from './partial/content';
 
 export interface ModuleDef {
   content: ModuleContent;
@@ -84,6 +86,7 @@ export const MODULES: ModuleDef[] = [
   { content: AiC, Component: Ai, icon: 'ai', parent: '' },
   { content: BeaconC, Component: Beacon, icon: 'beacon', parent: '' },
   { content: CloudC, Component: Cloud, icon: 'cloud', parent: '' },
+  { content: PartialC, Component: Partial, icon: 'layers', parent: '' },
 ];
 
 export function findModule(path: string): ModuleDef | undefined {
