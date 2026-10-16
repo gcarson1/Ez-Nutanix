@@ -383,6 +383,7 @@ body { min-height: 100vh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .flowline { display: none; }
+  .diagram .beat { animation: none; }
   .pane:hover, .pane:focus-visible { transform: none; }
 }
 @media print {

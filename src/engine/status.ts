@@ -26,8 +26,10 @@ export interface ClusterStatus {
   items: { healthy: number; under: number; unavailable: number; total: number };
   capacity: { rawTB: number; usedTB: number; liveRawTB: number; freeTB: number; usedPct: number };
   selfHeal: { state: 'idle' | 'waiting' | 'rebuilding' | 'blocked' | 'complete'; reason?: string; progress: number; remainingGB: number };
+  /** Data is protected again, but full resiliency cannot come back on its own: why, and the fix. */
+  protectionLimit?: string;
   liveNodes: number;
-  zk: { total: number; alive: number; quorum: boolean };
+  zk: { total: number; alive: number; quorum: boolean; witness?: boolean };
   cvmsUp: number;
 }
 
@@ -79,10 +81,15 @@ export function deriveStatus(state: ClusterState): ClusterStatus {
   const alive = present.filter(nodeAlive);
   const downUndetached = present.filter((n) => !nodeAlive(n) && !n.detached).length;
 
+  // Two-node clusters use a Witness at another site as the tie-breaking vote, so one
+  // surviving node keeps quorum. Single-node clusters have no node-level redundancy.
+  const twoNode = present.length === 2 && cfg.nodes === 2;
+  const witness = twoNode ? 1 : 0;
+
   // Zookeeper quorum
   const zkNodes = present.filter((n) => n.zk);
-  const zkAlive = zkNodes.filter(nodeAlive).length;
-  const zkQuorumNeeded = Math.floor(zkNodes.length / 2) + 1;
+  const zkAlive = zkNodes.filter(nodeAlive).length + witness;
+  const zkQuorumNeeded = Math.floor((zkNodes.length + witness) / 2) + 1;
   const zkQuorum = zkAlive >= zkQuorumNeeded;
   const zkTol = zkAlive - zkQuorumNeeded;
 
@@ -90,9 +97,9 @@ export function deriveStatus(state: ClusterState): ClusterStatus {
   const copies = METADATA_COPIES[cfg.ft];
   // Quorum-based: c copies tolerate floor((c-1)/2) losses. Down nodes still in the ring
   // count against that until they are detached and the ring re-replicates.
-  const nominal = cfg.ft - 1;
+  const nominal = Math.min(cfg.ft - 1, Math.max(0, present.length - 1));
   const effCopies = Math.min(copies, alive.length);
-  const metaTol = Math.min(nominal - downUndetached, Math.floor((effCopies - 1) / 2));
+  const metaTol = twoNode ? nominal - downUndetached : Math.min(nominal - downUndetached, Math.floor((effCopies - 1) / 2));
 
   // Data items
   let healthy = 0;
@@ -156,9 +163,24 @@ export function deriveStatus(state: ClusterState): ClusterStatus {
   else if (unavailable > 0) resiliency = 'Data unavailable';
   else if (tolerable < nominal || under > 0 || downUndetached > 0) resiliency = 'Critical';
 
+  let protectionLimit: string | undefined;
+  if (resiliency === 'Critical' && under === 0 && unavailable === 0) {
+    const need = MIN_NODES[cfg.ft];
+    if (twoNode && alive.length === 1) {
+      protectionLimit = `Running in single-node mode: data has two copies on different drives of ${alive[0].name}, so losing that node means downtime. Fix: bring the failed node back or replace it.`;
+    } else if (present.length >= need && alive.length < need) {
+      protectionLimit = `Only ${alive.length} nodes are running, and metadata and cluster configuration need at least ${need} to absorb another failure. Fix: replace the failed node or add a node.`;
+    } else if (downUndetached > 0) {
+      protectionLimit = 'A failed node still counts in the metadata ring until it comes back or is detached (after about 30 minutes down).';
+    } else if (dataTol < nominal) {
+      protectionLimit = `Some copies share a ${state.domain}: too few healthy ${state.domain}s are left to keep them apart. Fix: restore the failed ${state.domain} or add one.`;
+    }
+  }
+
   let health: Health = 'OK';
   if (resiliency !== 'OK') health = 'Critical';
-  else if (!rc.ok || present.some((n) => n.state !== 'up')) health = 'Warning';
+  // One- and two-node clusters cannot rebuild to full protection by design; that alone is not a warning.
+  else if ((!rc.ok && present.length > 2) || present.some((n) => n.state !== 'up')) health = 'Warning';
 
   return {
     health,
@@ -177,8 +199,9 @@ export function deriveStatus(state: ClusterState): ClusterStatus {
       usedPct: liveCapGB ? (liveUsedGB / liveCapGB) * 100 : 100,
     },
     selfHeal,
+    protectionLimit,
     liveNodes: alive.length,
-    zk: { total: zkNodes.length, alive: zkAlive, quorum: zkQuorum },
+    zk: { total: zkNodes.length + witness, alive: zkAlive, quorum: zkQuorum, witness: twoNode },
     cvmsUp: alive.length,
   };
 }

@@ -16,6 +16,19 @@ export const EC_MIN_NODES: Record<RF, number> = { 2: 4, 3: 6 };
 /** Minimum blocks / racks for block / rack fault tolerance (facts: FD-1, FD-2). */
 export const MIN_BLOCKS: Record<RF, number> = { 2: 3, 3: 5 };
 export const MIN_RACKS: Record<RF, number> = { 2: 3, 3: 5 };
+/** With EC-X on, block / rack awareness needs one more domain than the narrowest strip (facts: FD-1, FD-2). */
+export const MIN_BLOCKS_EC: Record<RF, number> = { 2: 4, 3: 6 };
+export const MIN_RACKS_EC: Record<RF, number> = { 2: 4, 3: 6 };
+
+/** Minimum blocks for block awareness, with or without EC-X. */
+export function minBlocks(rf: RF, ecx = false): number {
+  return (ecx ? MIN_BLOCKS_EC : MIN_BLOCKS)[rf];
+}
+
+/** Minimum racks for rack awareness, with or without EC-X. */
+export function minRacks(rf: RF, ecx = false): number {
+  return (ecx ? MIN_RACKS_EC : MIN_RACKS)[rf];
+}
 
 /**
  * EC-X strip (data/parity) by node count (facts: EC-2).
@@ -59,21 +72,23 @@ export function ecAllowed(rf: RF, nodes: number): Explained<boolean> {
   };
 }
 
-export function blockAwareAllowed(rf: RF, blocks: number): Explained<boolean> {
-  if (blocks >= MIN_BLOCKS[rf]) return { value: true, ok: true };
+export function blockAwareAllowed(rf: RF, blocks: number, ecx = false): Explained<boolean> {
+  const min = minBlocks(rf, ecx);
+  if (blocks >= min) return { value: true, ok: true };
   return {
     value: false,
     ok: false,
-    reason: `Block awareness with RF${rf} needs at least ${MIN_BLOCKS[rf]} blocks (this layout has ${blocks}).`,
+    reason: `Block awareness with RF${rf}${ecx ? ' and erasure coding' : ''} needs at least ${min} blocks (this layout has ${blocks}).`,
   };
 }
 
-export function rackAwareAllowed(rf: RF, racks: number): Explained<boolean> {
-  if (racks >= MIN_RACKS[rf]) return { value: true, ok: true };
+export function rackAwareAllowed(rf: RF, racks: number, ecx = false): Explained<boolean> {
+  const min = minRacks(rf, ecx);
+  if (racks >= min) return { value: true, ok: true };
   return {
     value: false,
     ok: false,
-    reason: `Rack awareness with RF${rf} needs at least ${MIN_RACKS[rf]} racks (this layout has ${racks}).`,
+    reason: `Rack awareness with RF${rf}${ecx ? ' and erasure coding' : ''} needs at least ${min} racks (this layout has ${racks}).`,
   };
 }
 
@@ -82,7 +97,9 @@ export function rackAwareAllowed(rf: RF, racks: number): Explained<boolean> {
  * the lab lets you build 1- and 2-node clusters to explain how they differ.
  */
 export function edgeAdvisory(nodes: number): string | null {
-  if (nodes === 1) return 'Single-node cluster: no node-level redundancy. Data is protected across the node’s drives, and a node outage means downtime. Typically used at small edge sites with backup or replication elsewhere.';
-  if (nodes === 2) return 'Two-node cluster: requires a Witness at a separate site to arbitrate if the nodes lose contact. After one node fails, the survivor keeps running workloads with a single data copy until the pair is healthy again.';
+  if (nodes === 1)
+    return 'Single-node cluster: no node-level redundancy, so a node outage means downtime. Data copies are kept on different drives in the node, so a drive failure can be rebuilt (an SSD failure can make the cluster read-only). Typically used at small edge sites, with backup or replication elsewhere.';
+  if (nodes === 2)
+    return 'Two-node cluster: uses a Witness at a separate site to arbitrate if the nodes lose contact (required for upgrades and maintenance). If one node fails, the survivor switches to single-node mode and re-protects data as two copies on different drives. When the peer is back and stable for about 15 minutes, data resyncs to two-node mode, which can take hours.';
   return null;
 }
