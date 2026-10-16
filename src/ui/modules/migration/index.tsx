@@ -68,7 +68,7 @@ function caption(kind: PhaseKind, src: string): { tone: Tone | 'ink'; k: string;
 export default function Migration() {
   const [src, setSrc] = useEnum<Src>('src', 'esxi', SRC_IDS);
   const syncSeg = SEGS.filter((s) => s.kind === 'sync')[1];
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (syncSeg.a + syncSeg.b) / 2 });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (syncSeg.a + syncSeg.b) / 2, stops: STARTS });
   useRestartOn(clock, [src]);
   const t = clock.t;
   const seg = SEGS[phaseAt(STARTS, t)];

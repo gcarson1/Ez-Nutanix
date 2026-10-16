@@ -142,7 +142,7 @@ function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; 
 
 function AiOps() {
   const wk = useWeek();
-  const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END });
+  const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END, stops: [DRAW_FROM, ...wk.flagAt] });
   const t = clock.t;
   const hc = prog(t, DRAW_FROM, DRAW_FROM + DRAW_DUR) * (wk.pts.length - 1);
   const phase = phaseAt([0, DRAW_FROM, ...wk.flagAt], t);
@@ -370,7 +370,7 @@ function SelfService() {
   const v = evaluate(p, d, true);
   const steps = useMemo(() => requestSteps(item, v), [req]);
   const total = steps.reduce((s, x) => s + x.dur, 0);
-  const clock = useClock({ rate: 1.5, duration: total, keys: true, poster: total });
+  const clock = useClock({ rate: 1.5, duration: total, keys: true, poster: total, stops: steps.map((_, i) => steps.slice(0, i).reduce((s, x) => s + x.dur, 0)) });
   useRestartOn(clock, [req]);
   const at = stepAt(steps, clock.t);
   const id = steps[at.idx].id;
@@ -434,6 +434,7 @@ const WITH_NCM: Surge[] = [HOT, { from: FIX_DAY, factor: 1 }, { from: GUARD_DAY,
 const OVER_DAY = crossDay(PLANNED, DEV.budget, 'over', MONTH, LEFT_ALONE);
 const ALONE_END = accrued(PLANNED, MONTH, MONTH, LEFT_ALONE);
 const NCM_END = accrued(PLANNED, MONTH, MONTH, WITH_NCM);
+const COST_STARTS = [0, HOT.from, ALERT_DAY, FIX_DAY, GUARD_DAY, MONTH + 0.01];
 const Y_MAX = 7000;
 const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 
@@ -552,7 +553,7 @@ function SpendChart({ t }: { t: number }) {
 }
 
 function Cost() {
-  const clock = useClock({ rate: 2, duration: MONTH + 1, keys: true, poster: MONTH + 1 });
+  const clock = useClock({ rate: 2, duration: MONTH + 1, keys: true, poster: MONTH + 1, stops: COST_STARTS });
   const t = clock.t;
   const day = Math.min(MONTH, t);
   const spent = accrued(PLANNED, day, MONTH, WITH_NCM);
@@ -567,7 +568,7 @@ function Cost() {
     { tone: 'ok', k: '3 · Quotas and policies', text: 'Self-Service keeps it from happening again: the project quota caps the CPU, memory and storage dev-test can deploy, an approval policy holds large requests for sign-off, and a scheduler policy stops dev-test apps at night and on weekends.' },
     { tone: 'ok', k: 'Under budget', text: `dev-test closes the month at ${usd(NCM_END)} of its ${usd(DEV.budget)} budget instead of ${usd(ALONE_END)}. The alert caught it early, the recommendations cut the waste, and the quota and policies stop it coming back.` },
   ];
-  const line = lines[phaseAt([0, HOT.from, ALERT_DAY, FIX_DAY, GUARD_DAY, MONTH + 0.01], t)];
+  const line = lines[phaseAt(COST_STARTS, t)];
   return (
     <Show
       top={<Guards t={t} />}
@@ -770,7 +771,7 @@ function SecOps() {
   const [base, setBase] = useEnum<Base>('bl', 'hard', ['hard', 'reg']);
   const B = BASELINES[base];
   const tl = useMemo(() => secTimeline(base), [base]);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.scanEnd + 0.8 });
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.scanEnd + 0.8, stops: [tl.scanEnd, tl.fix0, tl.fixEnd, tl.drift, tl.caught] });
   useRestartOn(clock, [base]);
   const t = clock.t;
   const phase = phaseAt([0, tl.scanEnd, tl.fix0, tl.fixEnd, tl.drift, tl.caught], t);

@@ -38,7 +38,7 @@ export default function Edge() {
   const ev: EventId = applies(size, evRaw) ? evRaw : 'node';
   const tl = useTimeline(size, ev);
   const tell = Math.min(tl.steps.length - 1, 2);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.starts[tell] + 0.8 });
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.starts[tell] + 0.8, stops: tl.starts });
   useRestartOn(clock, [size, ev]);
   const t = clock.t;
   const idx = phaseAt(tl.starts, t);

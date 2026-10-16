@@ -130,7 +130,7 @@ export default function Capacity() {
   const rf: RF = cfg.rf === 3 ? 3 : 2;
   const nodes = Math.min(16, Math.max(3, cfg.nodes));
   const tl = useTimeline(nodes, rf);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5 });
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, stops: [tl.fail, tl.detect, tl.done] });
   useRestartOn(clock, [nodes, rf]);
   const t = clock.t;
   const phase = phaseAt([0, tl.fail, tl.detect, tl.done], t);

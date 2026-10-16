@@ -276,7 +276,7 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
 export default function Security() {
   const [enc, setEnc] = useEnum<Enc>('enc', 'native', ['off', 'native', 'ext']);
   const [th, setTh] = useEnum<Threat>('th', 'drive', ['drive', 'node']);
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: RESULT + 1 });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: RESULT + 1, stops: [STEAL, RESULT] });
   useRestartOn(clock, [enc, th]);
   const t = clock.t;
   const phase = phaseAt([0, STEAL, RESULT], t);

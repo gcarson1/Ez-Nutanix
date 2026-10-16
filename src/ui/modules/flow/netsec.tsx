@@ -246,10 +246,11 @@ export function NetSec() {
   const [quar, setQuar] = useBool('q', false);
   const pol = useMemo(() => policies(mode, quar), [mode, quar]);
   const { shots, verdicts } = useShots(pol);
-  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: PHASE + TRY_AT[0] + TRY_FLIGHT + 0.6 });
+  const starts = TRIES.map((_, i) => PHASE * i).concat(PHASE * TRIES.length);
+  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: PHASE + TRY_AT[0] + TRY_FLIGHT + 0.6, stops: starts });
   useRestartOn(clock, [mode, quar]);
   const t = clock.t;
-  const phase = phaseAt(TRIES.map((_, i) => PHASE * i).concat(PHASE * TRIES.length), t);
+  const phase = phaseAt(starts, t);
   const tryNow = phase > 0 ? TRIES[phase - 1] : null;
   const vNow = phase > 0 ? verdicts[phase - 1] : null;
   const res = tryNow && vNow ? outcome(vNow, tryNow.dst) : null;

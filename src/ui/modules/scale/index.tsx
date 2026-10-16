@@ -37,7 +37,7 @@ function countsAt(i: number) {
 
 export default function Scale() {
   const { cfg } = useScenario();
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: STARTS });
   const t = clock.t;
   const i = phaseAt(STARTS, t);
   const ph = PHASES[i];

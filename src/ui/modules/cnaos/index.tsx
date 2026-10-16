@@ -160,7 +160,7 @@ const PHASES = ['What changes', 'What stays the same', 'Apps on top'];
 
 export default function Cnaos() {
   const [on, setOn] = useEnum<On>('on', 'eks', ['vm', 'eks', 'metal']);
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: PHASE_STARTS });
   useRestartOn(clock, [on]);
   const phase = phaseAt(PHASE_STARTS, clock.t);
   const tone: Tone | 'ink' = phase === 1 ? 'ink' : on === 'metal' ? 'warn' : phase === 2 ? 'ok' : 'flow';

@@ -4,7 +4,7 @@
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { useClock, useRestartOn, useStepKey } from '../../components/clock';
 import { Follow, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import { COMP, DEFAULT_MINUTES, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
@@ -83,6 +83,7 @@ export default function Lcm() {
   useRestartOn(clock, [sc]);
   const view = lcmStateAt(sim, clock.t);
   const line = caption(sc, sim, view);
+  useStepKey(clock, line.k);
   const prot = PROTECTION[view.resiliency.state];
   const down = Math.round(view.impact.vmDownMin);
 

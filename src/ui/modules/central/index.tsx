@@ -316,7 +316,7 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
 export default function Central() {
   const [view, setView] = useEnum<View>('tab', 'fed', VIEWS);
   const tl = useMemo(() => timeline(view), [view]);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.view + 0.5 });
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.view + 0.5, stops: tl.starts });
   useRestartOn(clock, [view]);
   const t = clock.t;
   const phase = phaseAt(tl.starts, t);

@@ -30,7 +30,7 @@ Send `dist/index.html` to customers as is. It opens from disk in any current bro
 Tips:
 
 - Start with the **Guided tour** on the landing page. It walks the panes bottom-up: infrastructure, then services, then Nutanix Central.
-- Animations start on their own and loop. Drag the scrub bar to pause on a moment; press Play (or Space) to carry on.
+- Animations start on their own and loop, pausing briefly at the end of each step so its caption can be read. Drag the scrub bar to pause on a moment; press Play (or Space) to carry on.
 - Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is the one place with every knob.
 - Use **Presets** in the top bar to load a cluster into the lab that matches the customer (3-node edge, 4-node starter, 8-node block-aware production, 12-node RF3 with EC-X).
 - Everything you change is kept in the address bar. **Copy link** sends the customer exactly the scenario you showed. **PNG** saves the current diagram.

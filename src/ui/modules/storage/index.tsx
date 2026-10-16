@@ -54,7 +54,7 @@ const CHIP_H = 24;
 function Files() {
   const [nS, setN] = useEnum<'3' | '1'>('fv', '3', ['3', '1']);
   const n = Number(nS);
-  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1 });
+  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1, stops: F_STARTS });
   useRestartOn(clock, [n]);
   const t = clock.t;
   const ph = phaseAt(F_STARTS, t);
@@ -240,7 +240,7 @@ function sessionPath(c: number, cvm: number): [number, number][] {
 }
 
 function Volumes() {
-  const clock = useClock({ rate: 1, duration: V.end, keys: true, poster: V.back + 1.5 });
+  const clock = useClock({ rate: 1, duration: V.end, keys: true, poster: V.back + 1.5, stops: V_STARTS });
   const t = clock.t;
   const ph = phaseAt(V_STARTS, t);
   const before = useMemo(() => iscsiTargets(HOSTS, CVMS, []), []);
@@ -380,7 +380,7 @@ const bucketTile = (i: number) => ({ x: BKT.x + 20 + i * (TILE_W + TILE_GAP), y:
 const targetTile = (i: number) => ({ x: TGT.x + 18 + (i % 8) * 29, y: TGT.y + 62 + Math.floor(i / 8) * 26 });
 
 function Objects() {
-  const clock = useClock({ rate: 24, duration: YEAR + 30, keys: true, poster: YEAR });
+  const clock = useClock({ rate: 24, duration: YEAR + 30, keys: true, poster: YEAR, stops: [DAYS, YEAR] });
   const d = clock.t;
   const today = Math.min(YEAR, d);
   const written = (TOTAL_TB * today) / YEAR;
