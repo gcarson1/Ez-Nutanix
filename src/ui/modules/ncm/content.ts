@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   talk: [
     'Four parts: Intelligent Operations (AIOps), Self-Service (formerly Calm), Cost Governance (formerly Beam) and Security Compliance (formerly Security Central).',
-    'AIOps: instead of a fixed threshold, it learns what normal looks like for each hour. A spike at 3 a.m. is flagged even though it stays under a 70% alarm that would miss it; busy afternoons raise nothing.',
+    'AIOps: instead of a fixed threshold, it learns what normal looks like for each hour. A spike at 3 a.m. is flagged even though it stays under a 70% alarm that would miss it; a spike on a busy afternoon is flagged and trips the alarm too; normal busy afternoons raise nothing.',
     'Intelligent Operations also forecasts capacity runway, so purchases are planned rather than reactive, and suggests right-sizing for over- and under-sized VMs.',
     'Self-Service: app teams order from a catalog; quota and approval policy are checked before anything is created, and the result arrives with owner, project and categories set. Over quota, the request is sent back with the reason.',
     'Cost: showback per project at rates you choose, with an alert at 80% of budget, before the month closes. In NCM 2.0 Cost Governance runs entirely on-premises.',
@@ -37,7 +37,7 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'AIOps, Spike at 3 a.m.: the learned band flags it while the fixed 70% alarm stays silent. Then Spike at 2 p.m. for contrast.',
+    'AIOps: pause on the 3 a.m. spike, flagged by the learned band while the fixed 70% alarm stays silent, then on the 2 p.m. spike, which both catch.',
     'Self-Service: 3-tier web app for the approval step, then App over quota to show a request sent back before anything is created.',
     'Cost, dev-test runs hot: the owner gets the 80% alert days before the project goes over budget.',
     'SecOps: watch findings get fixed, then a setting changed by hand caught by the next scan.',

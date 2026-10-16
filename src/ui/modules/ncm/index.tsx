@@ -51,26 +51,25 @@ const DRAW_DUR = 8;
 const AI_END = DRAW_FROM + DRAW_DUR + 0.6;
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-type Spike = 'night' | 'day';
-const SPIKES: Record<Spike, { at: number; label: string; when: string }> = {
-  night: { at: 3 * 24 + 2, label: 'Spike at 3 a.m.', when: 'at 3 a.m.' },
-  day: { at: 3 * 24 + 13, label: 'Spike at 2 p.m.', when: 'on a busy afternoon' },
-};
+/** Two spikes in the same week: one at 3 a.m. that a fixed alarm misses, one on a busy afternoon that it catches. */
+const SPIKES = [
+  { at: 1 * 24 + 2, when: 'at 3 a.m.' },
+  { at: 3 * 24 + 13, when: 'at 2 p.m.' },
+];
 
-function useWeek(spike: Spike) {
+function useWeek() {
   return useMemo(() => {
-    const series = withSpike(cpuSeries(DAYS, 11), LEARN * 24 + SPIKES[spike].at, SPIKE);
+    const series = SPIKES.reduce((sr, sp) => withSpike(sr, LEARN * 24 + sp.at, SPIKE), cpuSeries(DAYS, 11));
     const pts = anomalyBand(series, K_SIGMA, LEARN).slice(LEARN * 24);
     const flagged = stretches(pts.map((p) => p.out));
     const fixed = stretches(pts.map((p) => p.v > FIXED));
-    const first = flagged[0];
-    const peak = first ? Math.max(...pts.slice(first.start, first.end).map((p) => p.v)) : 0;
-    const flagAt = first ? DRAW_FROM + (first.start / (pts.length - 1)) * DRAW_DUR : AI_END;
-    return { pts, flagged, fixed, peak, flagAt };
-  }, [spike]);
+    const peaks = flagged.map((f) => Math.max(...pts.slice(f.start, f.end).map((p) => p.v)));
+    const flagAt = flagged.map((f) => DRAW_FROM + (f.start / (pts.length - 1)) * DRAW_DUR);
+    return { pts, flagged, fixed, peaks, flagAt };
+  }, []);
 }
 
-function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: number; t: number; spike: Spike }) {
+function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; t: number }) {
   const { pts, flagged, fixed } = wk;
   const H = 290;
   const l = 48;
@@ -94,9 +93,9 @@ function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: n
   }
   const line = drawn.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
   const shown = flagged.filter((s) => s.start <= hc);
-  const missed = spike === 'night' && shown.length > 0 && !fixed.some((s) => s.start <= hc);
+  const alarmed = (s: { start: number; end: number }) => fixed.some((f) => f.start < s.end && f.end > s.start);
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU over one week with the learned normal band and a fixed ${FIXED}% alarm line. A spike ${SPIKES[spike].when} is ${flagged.length ? 'flagged as unusual' : 'not flagged'}; the fixed alarm ${fixed.length ? 'fires' : 'stays silent'}.`}>
+    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU over one week with the learned normal band and a fixed ${FIXED}% alarm line. Spikes ${SPIKES[0].when} and ${SPIKES[1].when} are both flagged as unusual; the fixed alarm fires only for the one ${SPIKES[1].when}.`}>
       {[0, 25, 50, 75, 100].map((v) => (
         <g key={v}>
           <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
@@ -132,39 +131,33 @@ function WeekChart({ wk, hc, t, spike }: { wk: ReturnType<typeof useWeek>; hc: n
           </g>
         );
       })}
-      {missed && (
-        <text x={sx(flagged[0].start) + 14} y={sy(FIXED) + 18} class="warn-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
-          Under {FIXED}%: the fixed alarm stays silent
+      {shown.map((s) => (
+        <text key={`fx${s.start}`} x={sx(s.start) + 14} y={alarmed(s) ? sy(FIXED) - 22 : sy(FIXED) + 18} class={`${alarmed(s) ? 'muted' : 'warn-fill'} halo`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          {alarmed(s) ? `Over ${FIXED}%: the fixed alarm fires too` : `Under ${FIXED}%: the fixed alarm stays silent`}
         </text>
-      )}
+      ))}
     </svg>
   );
 }
 
 function AiOps() {
-  const [spike, setSpike] = useEnum<Spike>('sp', 'night', ['night', 'day']);
-  const wk = useWeek(spike);
+  const wk = useWeek();
   const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END });
-  useRestartOn(clock, [spike]);
   const t = clock.t;
   const hc = prog(t, DRAW_FROM, DRAW_FROM + DRAW_DUR) * (wk.pts.length - 1);
-  const phase = phaseAt([0, DRAW_FROM, wk.flagAt], t);
+  const phase = phaseAt([0, DRAW_FROM, ...wk.flagAt], t);
   const flaggedNow = wk.flagged.filter((s) => s.start <= hc).length;
   const firedNow = wk.fixed.filter((s) => s.start <= hc).length;
-  const passed = flaggedNow > 0;
-  const peak = Math.round(wk.peak);
-  const S = SPIKES[spike];
+  const [night, day] = wk.peaks.map((v) => Math.round(v));
   const lines: Line[] = [
     { tone: 'ink', k: 'Normal, learned', text: 'The shaded band is what normal CPU looks like for each hour of the week, learned from the two weeks before.' },
     { tone: 'ink', k: 'Busy afternoons are normal', text: 'Weekday afternoons run hot every day, so they stay inside the band and raise nothing.' },
-    spike === 'night'
-      ? { tone: 'bad', k: `Flagged ${S.when}`, text: `CPU jumps to ${peak}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` }
-      : { tone: 'bad', k: `Flagged ${S.when}`, text: `CPU jumps to ${peak}% on a busy afternoon, above normal even for that hour, so it is flagged. A fixed ${FIXED}% alarm catches this one too; the learned band matters most when trouble hides under the threshold.` },
+    { tone: 'bad', k: `Flagged ${SPIKES[0].when}`, text: `CPU jumps to ${night}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` },
+    { tone: 'bad', k: `Flagged ${SPIKES[1].when}`, text: `CPU jumps to ${day}% on a busy afternoon, above normal even for that hour, so it is flagged too. This one crosses ${FIXED}%, so the fixed alarm fires as well. Only the learned band caught both.` },
   ];
   const line = lines[phase];
   return (
     <Show
-      top={<Choice<Spike> label="This week" value={spike} onChange={setSpike} options={(['night', 'day'] as Spike[]).map((s) => ({ value: s, label: SPIKES[s].label }))} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -173,7 +166,7 @@ function AiOps() {
           <Kpis
             items={[
               { k: 'Flagged as unusual', v: flaggedNow, tone: flaggedNow ? 'bad' : 'neutral' },
-              { k: `Fixed ${FIXED}% alarm`, v: firedNow ? 'Fired' : passed ? 'Silent' : '—', tone: passed ? (firedNow ? 'ok' : 'warn') : 'neutral', sub: passed && !firedNow ? 'missed the spike' : undefined },
+              { k: `Fixed ${FIXED}% alarm fired`, v: firedNow, tone: firedNow < flaggedNow ? 'warn' : 'neutral', sub: firedNow < flaggedNow ? 'missed the 3 a.m. spike' : undefined },
               { k: 'Learned from', v: '2 weeks', sub: 'of history, per hour' },
             ]}
           />
@@ -181,7 +174,7 @@ function AiOps() {
       }
     >
       <div class="diagram-scroll">
-        <WeekChart wk={wk} hc={hc} t={t} spike={spike} />
+        <WeekChart wk={wk} hc={hc} t={t} />
       </div>
       <Legend
         items={[
