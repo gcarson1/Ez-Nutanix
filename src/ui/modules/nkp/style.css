@@ -1,0 +1,27 @@
+/* NKP fleet module */
+.diagram .nkp-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .nkp-box.flow { stroke: var(--flow); stroke-width: 1.75; }
+.diagram .nkp-box.warn { stroke: var(--warn); stroke-width: 1.75; }
+.diagram .nkp-box.ok { stroke: var(--ok); }
+.diagram .nkp-box.bad { stroke: var(--bad); stroke-width: 2; fill: var(--bad-bg); }
+.diagram .nkp-off { opacity: 0.45; }
+.diagram .nkp-off .nkp-box { stroke-dasharray: 4 4; }
+.diagram .nkp-node { stroke-width: 1.25; }
+.diagram .nkp-node.old { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .nkp-node.new { fill: var(--ink); stroke: var(--ink); }
+.diagram .nkp-node.ext { fill: var(--bg-3); stroke: var(--s2); stroke-dasharray: 2 2; }
+.diagram .nkp-node.joining { fill: none; stroke: var(--flow); stroke-width: 1.75; stroke-dasharray: 3 2; }
+.diagram .nkp-node.old.drain { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.75; }
+.diagram .nkp-node.old.remove { opacity: 0.25; stroke-dasharray: 3 2; }
+.diagram .nkp-node.old.join { stroke: var(--text); }
+.diagram .nkp-nl { font-size: 10.5px; fill: var(--muted); }
+.diagram .nkp-nl.on { fill: #fff; }
+.diagram .nkp-st.ok { fill: var(--ok); }
+.diagram .nkp-st.warn { fill: var(--warn); }
+.diagram .nkp-st.bad { fill: var(--bad); }
+.diagram .nkp-st.flow { fill: var(--flow); }
+.diagram .nkp-st.neutral { fill: var(--muted); }
+.nkp-ver { display: inline-flex; gap: var(--sp-2); align-items: center; font-size: var(--fs-15); }
+.nkp-list { margin: var(--sp-2) 0 0; padding-left: var(--sp-4); font-size: var(--fs-14); }
+.nkp-list li + li { margin-top: var(--sp-1h); }
+.nkp-narrow { max-width: 30rem; }

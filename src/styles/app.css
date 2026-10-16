@@ -359,7 +359,7 @@ body { min-height: 100vh; }
   .mod { padding-top: var(--sp-4); }
   .mod-head { grid-template-columns: minmax(0, 1fr); }
   .mod-head .acts { justify-content: flex-start; }
-  .lab { grid-template-columns: minmax(0, 1fr); }
+  .lab, .lab.ctl-only, .lab.two { grid-template-columns: minmax(0, 1fr); }
   .lab > .ctl { border-right: 0; border-bottom: 1px solid var(--line); padding-right: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--sp-5); }
   .lab > .ctl .field:first-child { border-top: 1px solid var(--line); }
   .lab > .ctl .field:nth-child(-n + 2) { border-top: 0; }
