@@ -205,7 +205,7 @@ export function rebuildCapacity(state: ClusterState, usage = diskUsageMap(state)
     e.used += usage.get(d.id) || 0;
     domains.set(k, e);
   }
-  const maxTarget = state.items.reduce((m, it) => Math.max(m, it.target), cfg.rf);
+  const maxTarget = state.items.reduce<number>((m, it) => Math.max(m, it.target), cfg.rf);
   const minNodes = MIN_NODES[cfg.ft];
   if (up.length - 1 < Math.min(minNodes, 2) || domains.size - 1 < cfg.rf) {
     return {
