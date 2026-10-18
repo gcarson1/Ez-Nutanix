@@ -1,11 +1,16 @@
 /* Cloud Native AOS module (prefix cn-) */
-.diagram .cn-layer { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .cn-layer.pending { stroke-dasharray: 6 4; stroke: var(--warn); }
-.diagram .cn-slot { fill: none; stroke: var(--line); stroke-dasharray: 3 5; }
-.diagram .cn-side { fill: none; stroke: var(--line-2); }
+.diagram .cn-vol { fill: var(--bg); stroke: var(--line-2); }
+.diagram .cn-vol.lost { stroke: var(--bad); stroke-dasharray: 3 2; }
+.diagram .cn-snap { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.diagram .cn-snaprow { fill: var(--bg-2); stroke: var(--ink); stroke-width: 1.25; }
+.diagram .cn-link { stroke: var(--flow); stroke-width: 2; }
+.diagram .cn-link.warn { stroke: var(--warn); stroke-dasharray: 5 4; }
+.diagram .cn-io { fill: var(--flow); stroke: var(--bg); stroke-width: 2; }
+.diagram .cn-io.warn { fill: var(--warn); }
 .diagram text.cn-on-ink { fill: var(--ink-text); }
 .diagram text.cn-on-ink.soft { opacity: 0.82; }
-.diagram .cn-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 2; }
+.diagram text.cn-bad { fill: var(--bad); }
+.diagram text.cn-warn { fill: var(--warn); }
 .cn-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
 .cn-legend .legend { margin-top: 0; }
 @media (max-width: 600px) {

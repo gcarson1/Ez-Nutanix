@@ -27,6 +27,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   { term: 'NCI-C', full: 'NCI Compute', def: 'The Nutanix license for compute-only nodes that use an external storage array: AHV, Prism and DR automation, priced per core, with snapshots and clones left to the array.' },
   { term: 'NCM', full: 'Nutanix Cloud Manager', def: 'Operations, automation, cost governance and security compliance on top of the platform. Feature availability depends on license tier.' },
   { term: 'NDB', full: 'Nutanix Database Service', def: 'Database provisioning, patching, cloning and point-in-time recovery as a service, built on AOS snapshots and log capture.' },
+  { term: 'NDK', full: 'Nutanix Data Services for Kubernetes', def: 'Snapshots, replication and disaster recovery for Kubernetes apps. It protects an app’s Kubernetes resources and its data together, as one unit.' },
   { term: 'NKP', full: 'Nutanix Kubernetes Platform', def: 'Nutanix’s platform for deploying and managing fleets of Kubernetes clusters across data center, edge and cloud.' },
   { term: 'Node', def: 'One server: CPU, memory, drives and network, running a hypervisor plus a CVM.' },
   { term: 'NVMe/TCP', def: 'A way to reach NVMe storage over ordinary Ethernet and TCP/IP, with no Fibre Channel network. Nutanix compute nodes use it to reach Everpure FlashArray and Dell PowerStore.' },
