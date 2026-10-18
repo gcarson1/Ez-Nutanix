@@ -1,6 +1,6 @@
 // Nutanix Unified Storage: Files (an FSVM fails and a survivor takes over its folders), Volumes
 // (an iSCSI host is redirected to a healthy CVM) and Objects (a lifecycle rule tiers old objects
-// off the cluster). Each tab is one looping picture; the models are in engine/unistore.ts.
+// to a cheaper S3-compatible store). Each tab is one looping picture; the models are in engine/unistore.ts.
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { useClock, useRestartOn } from '../../components/clock';
@@ -363,7 +363,7 @@ function Volumes() {
 }
 
 // ── Objects ──
-/** Every bucket gets one lifecycle rule: objects older than 30 days move to cheaper S3 storage. */
+/** Every bucket gets one lifecycle rule: objects older than 30 days move to a cheaper S3-compatible store. */
 const DAYS = 30;
 const YEAR = 365;
 const TILES = 24;
@@ -389,10 +389,10 @@ function Objects() {
 
   const cap: Cap =
     d >= YEAR
-      ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB lives on cheaper storage. Reading a tiered object is slower and may cost cloud egress.` }
+      ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob and other S3 clouds also work as targets; reading a tiered object back is slower, and from a public cloud it may cost egress.` }
       : today < DAYS
         ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
-        : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket moves objects older than ${DAYS} days to cheaper S3 storage. The cluster keeps the recent data, which is read most.` };
+        : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket has Objects move anything older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. The bucket keeps the metadata and the recent data, which is read most.` };
 
   const H = BKT.y + BKT.h + 78;
   const DSF_Y = BKT.y + BKT.h + 16;
@@ -414,7 +414,7 @@ function Objects() {
       }
     >
       <div class="diagram-scroll">
-        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster over a year. A lifecycle rule moves objects older than ${DAYS} days to cheaper S3 storage.`}>
+        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster over a year. A lifecycle rule moves objects older than ${DAYS} days to a cheaper S3-compatible store; AWS S3, Azure Blob and other S3 clouds are optional targets.`}>
           <defs>
             <marker id="sto-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0 0 L10 5 L0 10 z" class="flow-fill" />
@@ -434,10 +434,10 @@ function Objects() {
           </text>
           <rect class="sto-tgt" x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} />
           <text x={TGT.x + TGT.w / 2} y={TGT.y + 26} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
-            Cheaper S3 storage
+            Cheaper S3-compatible store
           </text>
-          <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
-            AWS S3 or any S3-compatible target
+          <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted" style={{ fontSize: '11px' }}>
+            optional: AWS S3, Azure Blob, other S3 clouds
           </text>
           <path d={`M${BKT.x + BKT.w + 4} ${BKT.y + BKT.h / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />
           <text text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
@@ -485,7 +485,7 @@ function Objects() {
           </text>
           <Fabric y={DSF_Y} h={56} note="the bucket gets the container’s copies, erasure coding and compression" />
           <text x={36} y={DSF_Y + 22} style={{ fontSize: '12.5px' }}>
-            Object data and metadata live in vDisks, like any VM’s data.
+            Object data and metadata live in vDisks like any VM’s data; on hybrid nodes AOS also moves it between flash and HDD.
           </text>
         </svg>
       </div>
