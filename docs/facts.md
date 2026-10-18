@@ -149,6 +149,19 @@ The module’s second tab (`src/ui/modules/partial/esxi.tsx`). Host and VM count
 | ESX-15 | vSphere 8 reaches end of general support in October 2027, as Nutanix states it. | The transition page: "VMware by Broadcom has announced that vSphere 8 will reach end of General Support in October 2027". No Broadcom document was found. | [nx-transition] | 2026-10-16 | keep, attributed to Nutanix |
 | ESX-16 | ROI figures (IDC’s 391% three-year ROI) and the 92% AHV share of cores. | The IDC figures cover Nutanix Cloud Platform in general, not ESXi on Nutanix. The AHV share is from an investor summary. | [mig-guide]; Nutanix Q4 FY26 summary | 2026-10-16 | leave out |
 
+## 9. Objects lifecycle tiering targets
+
+The Unified Storage module's Objects tab (`src/ui/modules/storage/index.tsx`). The 30-day rule, the volumes and the year are an example.
+
+| ID | Claim (as the app states it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| TIER-1 | A lifecycle rule has Objects move old objects to a cheaper S3-compatible store, in your data center or a public cloud. | Nutanix: "Customers can use any S3-compatible target as a tier to Nutanix Objects" (press release, Dec 2020, and the Objects VP's 3.0 post, Oct 2020); "Tiering can be enabled on a per-bucket level as a lifecycle policy". Wasabi's setup guide (Oct 2026) adds the target as endpoint type "Other S3 Compatible", then a lifecycle rule picks "Tiering" and that endpoint. A 2021 practitioner blog says endpoints can be "any S3 compatible public cloud or on-prem solution". | [pr-obj-tier]; [n-obj30]; [wasabi-obj]; scalcia.com blog (Feb 2021, third party) | 2026-10-18 | keep |
+| TIER-2 | AWS S3, Azure Blob and other S3 clouds are optional targets. | Objects 3.3 added Azure, which "builds on our tiering ability to Amazon S3 storage"; Wasabi and Impossible Cloud document Objects tiering to their clouds. | [blog-obj33]; [wasabi-obj] | 2026-10-18 | keep |
+| TIER-3 | The bucket keeps the metadata of tiered objects. | The press release: "metadata is retained on-premises for easier search and retrieval". | [pr-obj-tier] | 2026-10-18 | keep |
+| TIER-4 | A second Nutanix Objects store can be the tiering target. | Objects is S3-compatible, so it should qualify as an "Other S3 Compatible" endpoint, but no Nutanix page I found names Objects-to-Objects tiering. (Files Smart Tiering does list "Nutanix Objects Storage" as a target.) | [blog-mobility] | 2026-10-18 | unverified. The app says "S3-compatible store in your data center" and doesn't name Objects |
+| TIER-5 | On hybrid nodes, AOS also moves object data between flash and HDD. | The Bible: "Data is moved between tiers by Intelligent Lifecycle Management (ILM) based on access patterns"; on flash plus HDD, flash is Tier 0 and HDD Tier 1. Nutanix's Sizer notes (2019) add that objects over 1.5 MiB are written straight to HDD and smaller ones to flash; that detail is dated, so the app doesn't show it. | [b-io]; [sizer-obj] | 2026-10-18 | keep (ILM). Size threshold left out |
+| TIER-6 | Reading a tiered object back is slower, and from a public cloud it may cost egress. | Tiered data is served from the remote endpoint (practitioner blog above), so it crosses the network; egress charges are public-cloud pricing, not a Nutanix fee. This is my inference, not a quoted Nutanix statement. | — | 2026-10-18 | keep (inferred, worded as "may") |
+
 ---
 
 ## Changes needed in the app
@@ -290,3 +303,10 @@ No contradictions were found for:
 [n-conv]: https://next.nutanix.com/installation-configuration-23/cluster-conversion-esxi-to-ahv-in-place-or-failover-failback-44949
 [dev-choice]: https://www.nutanix.dev/2022/09/15/nutanix-benefit-6-hypervisor-choice/
 [pg-flow]: https://www.nutanix.com/products/flow
+[pr-obj-tier]: https://www.nutanix.com/press-releases/2020/nutanix-extends-storage-services-to-its-hybrid-cloud-platform
+[n-obj30]: https://next.nutanix.com/community-blog-154/realizing-secure-hybrid-cloud-infrastructure-with-nutanix-objects-3-0-38648
+[wasabi-obj]: https://docs.wasabi.com/docs/how-do-i-use-nutanix-objects-with-wasabi.md
+[blog-obj33]: https://www.nutanix.com/blog/objects-33-improved-efficiency-and-time-to-value
+[blog-mobility]: https://www.nutanix.com/blog/storage-mobility-to-meet-the-challenges-of-hybrid-multicloud
+[b-io]: https://www.nutanixbible.com/4g-book-of-aos-data-io-path.html
+[sizer-obj]: https://sizerwiki.prod.saas.nutanix.com/?p=472

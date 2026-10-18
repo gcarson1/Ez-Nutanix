@@ -12,7 +12,7 @@ export const content: ModuleContent = {
     'Files: a set of file server VMs presents one namespace. Scale out with more FSVMs or up with bigger ones; clients keep the same path.',
     'Kill an FSVM: a survivor takes over its volume group and IP address, folders stay reachable, and the original takes them back when it returns.',
     'Volumes: hosts log in to one Data Services IP and are redirected to a healthy CVM, so path failover does not depend on client multipathing.',
-    'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups and lifecycle tiering to other S3 targets.',
+    'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups. Lifecycle rules tier old objects to any S3-compatible store, on premises or in a public cloud.',
   ],
   numbers: [
     { k: 'Files HA minimum', v: '3 FSVMs (1 FSVM = no HA)' },
