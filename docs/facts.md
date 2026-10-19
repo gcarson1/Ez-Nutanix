@@ -162,6 +162,26 @@ The Unified Storage module's Objects tab (`src/ui/modules/storage/index.tsx`). T
 | TIER-5 | On hybrid nodes, AOS also moves object data between flash and HDD. | The Bible: "Data is moved between tiers by Intelligent Lifecycle Management (ILM) based on access patterns"; on flash plus HDD, flash is Tier 0 and HDD Tier 1. Nutanix's Sizer notes (2019) add that objects over 1.5 MiB are written straight to HDD and smaller ones to flash; that detail is dated, so the app doesn't show it. | [b-io]; [sizer-obj] | 2026-10-18 | keep (ILM). Size threshold left out |
 | TIER-6 | Reading a tiered object back is slower, and from a public cloud it may cost egress. | Tiered data is served from the remote endpoint (practitioner blog above), so it crosses the network; egress charges are public-cloud pricing, not a Nutanix fee. This is my inference, not a quoted Nutanix statement. | — | 2026-10-18 | keep (inferred, worded as "may") |
 
+## 10. Cloud Native AOS: the one message
+
+The Cloud Native AOS module (`src/ui/modules/cnaos/`). The message: stateful Kubernetes apps get Nutanix storage and data protection on Amazon EKS with no hypervisor, and whole apps are protected and replicated for DR. The three workers, the pods and the three blocks are an example.
+
+| ID | Claim (as the app states it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| CNA-1 | AOS runs as a pod on every Kubernetes worker, with no hypervisor and no Controller VM. | Release notes: "Built to run as Kubernetes pods". Blog: it "delivers Nutanix AOS Storage as a set of microservices running inside of Kubernetes", "without the need for a hypervisor". Datasheet: "eliminating the need for a hypervisor". | [rn-cnaos10]; [blog-cnaos]; [ds-cnaos] | 2026-10-18 | keep |
+| CNA-2 | On EKS, AOS pools the workers' EBS gp3 volumes; workers are i3en, i4i, m6id or m5d. | Datasheet, "Cloud Storage": "EBS GP3 with EC2 native instances". Release notes: "i3en, i4i, m6id, and m5d instance families" and "(e.g., i3en.6xlarge → 3725 GiB EBS)". | [ds-cnaos]; [rn-cnaos10] | 2026-10-18 | fix. The old widget said "EC2 instances with local NVMe" |
+| CNA-3 | Every block is kept on two workers (RF2); release 1.0 runs up to 15 workers. | Release notes: "Built-in data protection with RF2 replication", "Max worker nodes per cluster: 15", "Max PVCs per node: 64". Datasheet: "Tunable Redundancy Factor: 2", "Availability Domains: Node, Rack". | [rn-cnaos10]; [ds-cnaos] | 2026-10-18 | keep |
+| CNA-4 | When a worker fails, the second copies keep the volume available and Kubernetes restarts the database pod on another worker with its data. | Product page: "Mature, scale-out enterprise storage protects data from hardware failure." Restarting the pod elsewhere is ordinary Kubernetes scheduling. That the volume is served from the surviving copy is my inference from RF2; no Cloud Native AOS page walks through a worker failure. | [pg-cnaos] | 2026-10-18 | keep (inferred, marked illustrative) |
+| CNA-5 | Stateful apps get Nutanix volumes, snapshots and compression in AWS. | Release notes: "Supports thin provisioning, compression, app-level snapshots, replication, and DR". | [rn-cnaos10] | 2026-10-18 | keep |
+| CNA-6 | NDK snapshots the app as one unit: its Kubernetes resources and its volume data. | Product page: "replicating the full-stack application as a single entity, including the data persistence layer"; "so your Kubernetes apps can be managed as a single entity". Datasheet lists "Application Consistent Snapshots", with DR "included with Nutanix Data Services for Kubernetes". | [pg-cnaos]; [ds-cnaos] | 2026-10-18 | keep |
+| CNA-7 | NDK replicates the app to another AWS region or zone, with an RPO of 1 hour or more in release 1.0. | Datasheet: "Async Replication (RPO = 1 hr or greater)"; "Multiple Site DR: 1 to 1, Across AWS regions and availability zones". Release notes: DR at "RPO ≥ 1 hour" through NDK. | [ds-cnaos]; [rn-cnaos10] | 2026-10-18 | keep |
+| CNA-8 | Apps on NKP on Nutanix (AHV) in your data center can fail over to EKS. | Datasheet, "Public Cloud DR": "NKP on NCI (AHV) to AWS EKS". The press release describes DR "between availability zones, clouds and on-premises". The widget shows only the direction the datasheet names. | [ds-cnaos]; [pr-cnaos] | 2026-10-18 | keep |
+| CNA-9 | A cloud database service ties the app to one cloud and is managed apart from it. | Blog: "Applications built using a PaaS data service typically can only be deployed on that vendor's public cloud", and it "needs to be managed separately to the Kubernetes application". | [blog-cnaos] | 2026-10-18 | keep (Nutanix's framing, in the presenter Q&A) |
+| CNA-10 | Generally available on Amazon EKS since release 1.0.0 (July 2025); AKS and GKE aren't confirmed. | Release notes: 1.0.0 "brings the power of AOS to Amazon EKS". Datasheet: "Cloud Native AOS licenses run on AWS only for the first version." I found no AKS or GKE release. | [rn-cnaos10]; [ds-cnaos] | 2026-10-18 | keep |
+| CNA-11 | Bare metal is early access through NKP Metal, with GA targeted for the second half of 2026. | NKP Metal press release (Apr 2026): customers can "use Cloud Native AOS as a purpose-built storage option for true bare-metal Kubernetes deployments"; early access for NKP Pro and Ultimate; "it will go to general availability in the second half of 2026". I found no GA announcement by 2026-10-18. | [pr-nkpm] | 2026-10-18 | keep |
+| CNA-12 | Moving apps between bare metal, on-premises clusters and public clouds is planned. | Product page: "Move workloads seamlessly between on-prem, public clouds and bare metal servers*", with the footnote "*future development". | [pg-cnaos] | 2026-10-18 | keep, shown as planned |
+| CNA-13 | On bare metal, AOS pools the servers' local drives and keeps two copies. | Nutanix hasn't published NKP Metal storage details. Local drives follow from bare-metal servers; the two copies follow release 1.0 on EKS. | [pr-nkpm]; [rn-cnaos10] | 2026-10-18 | keep (inferred; the caption says "as release 1.0 does on Amazon EKS") |
+
 ---
 
 ## Changes needed in the app
@@ -310,3 +330,9 @@ No contradictions were found for:
 [blog-mobility]: https://www.nutanix.com/blog/storage-mobility-to-meet-the-challenges-of-hybrid-multicloud
 [b-io]: https://www.nutanixbible.com/4g-book-of-aos-data-io-path.html
 [sizer-obj]: https://sizerwiki.prod.saas.nutanix.com/?p=472
+[pr-cnaos]: https://www.nutanix.com/press-releases/2025/nutanix-announces-cloud-native-aos
+[rn-cnaos10]: https://next.nutanix.com/product-updates/nutanix-cloud-native-aos-1-0-0-44652
+[blog-cnaos]: https://www.nutanix.com/blog/nutanix-cloud-native-aos-brings-enterprise-storage-to-diverse-kubernetes-environments
+[pg-cnaos]: https://www.nutanix.com/products/kubernetes-management-platform/cloud-native-aos
+[ds-cnaos]: https://www.nutanix.com/library/datasheets/aos
+[pr-nkpm]: https://www.nutanix.com/press-releases/2026/nutanix-introduces-nkp-metal-bringing-bare-metal-kubernetes-to-its-platform

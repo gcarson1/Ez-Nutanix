@@ -126,6 +126,18 @@ test('full-stack band opens the external storage and ESXi tabs', async ({ page }
   expect(errors).toEqual([]);
 });
 
+test('Any Bare Metal Linux opens Cloud Native AOS on bare metal', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(FILE);
+  await page.getByRole('button', { name: /Any Bare Metal Linux/ }).click();
+  await expect(page.locator('.mod-head h1')).toHaveText('Cloud Native AOS');
+  await expect(page.getByRole('button', { name: 'Bare metal (NKP Metal)' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Amazon EKS' }).click();
+  await expect.poll(() => page.url()).not.toContain('on=metal');
+  await expect(page.locator('.kpi .v', { hasText: 'GA · 1.0' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('scenario state round-trips through the URL', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();
