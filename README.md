@@ -48,12 +48,13 @@ Edit `src/config.json`:
   "presenterRole": "Systems Engineer",
   "organization": "Your Company",
   "contact": "you@example.com",
+  "credit": "Built by: Alex Besaw, Gabriel Carson, and Claude :)",
   "disclaimer": "Illustrative visualization for education. …",
   "factsCheckedOn": "2026-10-16"
 }
 ```
 
-The presenter line and disclaimer show in the footer. Rebuild after editing.
+The footer shows the credit line (and the presenter line, if set) above the disclaimer. Rebuild after editing.
 
 ## Editing content
 
