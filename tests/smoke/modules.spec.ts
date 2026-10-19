@@ -168,6 +168,18 @@ test('failure gauntlet: failure buttons and steps sit above the picture; RF choi
   expect(errors).toEqual([]);
 });
 
+test('protection & capacity: RF2 opens on 3 nodes, RF3 moves to 5, and picking 8 sticks', async ({ page }) => {
+  await page.goto(`${FILE}#/nci/capacity`);
+  const nodes = page.getByRole('group', { name: 'Nodes' });
+  await expect(nodes.getByRole('button', { name: '3', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'RF3 · 3 copies' }).click();
+  await expect(nodes.getByRole('button', { name: '5', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await nodes.getByRole('button', { name: '8', exact: true }).click();
+  await expect.poll(() => page.url()).toContain('nodes=8');
+  await page.getByRole('button', { name: 'RF2 · 2 copies' }).click();
+  await expect(nodes.getByRole('button', { name: '8', exact: true })).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('scenario state round-trips through the URL', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();

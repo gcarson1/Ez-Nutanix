@@ -50,10 +50,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'RF2 with 8 nodes: let one loop play and point out that no node ever holds two copies of the same shape.',
+    'RF2 opens on 3 nodes, the smallest standard cluster: let one loop play and point out that no node ever holds two copies of the same shape.',
     'Watch the node fail: every shape still has a copy somewhere, then the healthy nodes re-create the missing copies together.',
-    'Switch to RF3: three copies of each shape, and two nodes can fail at once.',
-    'Change the node count and read the capacity bar: your data, the extra copies, and the space kept free for a rebuild.',
+    'Switch to RF3: it moves to 5 nodes, its minimum, with three copies of each shape, and two nodes can fail at once.',
+    'Pick 8 nodes and read the capacity bar: your data, the extra copies, and a smaller share kept free for a rebuild.',
     'Erasure coding tab: watch the cold pieces become a strip and their extra copies disappear, then the lost piece rebuilt from the rest of its strip. Read the usable-share bars.',
     'Blocks and racks tab: Node only first (one piece unavailable), then Block and Rack (nothing unavailable).',
     'Then open the Failure Gauntlet for other failures.',
