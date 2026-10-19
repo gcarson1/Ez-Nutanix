@@ -23,7 +23,7 @@ const PICKS: { id: Pick; label: string; blurb: string }[] = [
   { id: 'cvm', label: 'Controller VM', blurb: 'One CVM stops for 15 minutes. The host and its VMs keep running; their I/O goes to other CVMs.' },
   { id: 'node', label: 'Node', blurb: 'A whole node powers off. HA restarts its VMs on other hosts and every other node helps re-protect its data.' },
   { id: 'block', label: 'Block (chassis)', blurb: 'A chassis holding two nodes loses power. Copies were kept in different blocks, so data stays available.' },
-  { id: 'double', label: 'Two nodes at once', blurb: 'Two nodes fail together. RF2 keeps two copies, so some data loses both; RF3 keeps three.' },
+  { id: 'double', label: 'Two nodes at once', blurb: 'Two nodes fail together. With RF2, any data whose two copies were on those nodes loses both; RF3 keeps three.' },
   { id: 'full', label: 'Nearly full cluster', blurb: 'A node fails when drives are about 85% full. The survivors have no room to re-create every missing copy.' },
 ];
 
@@ -119,7 +119,7 @@ export default function Failures() {
     >
       <div class="diagram-scroll">{diagram}</div>
       <DiagramLegend ecx={false} />
-      <PlayBar clock={clock} scrub={false} fmt={fmtT} label="Failure animation" extra={<Illus why="Simulated from a sample of a few hundred data items on an 8-node, 4-block cluster. Detection, HA and rebuild timings are simplified from documented behavior; time runs slowly around the failure and fast afterwards." />} />
+      <PlayBar clock={clock} scrub={false} fmt={fmtT} label="Failure animation" extra={<Illus why="Simulated from a sample of a few hundred data items on an 8-node, 4-block cluster. Detection, HA and rebuild timings are illustrative, simplified from documented behavior; time runs slowly around the failure and fast afterwards. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left." />} />
       <TimeStrip
         samples={run.tl.samples}
         duration={duration}

@@ -281,7 +281,7 @@ export default function EsxiOnNutanix() {
             { color: 'var(--line-2)', label: 'Drives passed through to the CVM', dashed: true },
           ]}
         />
-        <Illus why={conv ? 'Timing is compressed. A real conversion has prerequisites and runs for much longer; how VMs move between hypervisors is not shown.' : 'Host and VM counts are an example. Which ESXi versions are qualified depends on the AOS release.'} />
+        <Illus why={conv ? 'Timing is compressed. A real conversion has strict prerequisites, checked against the Compatibility Matrix, and runs for much longer; how VMs move between hypervisors is not shown.' : 'Host and VM counts are an example. Which ESXi versions are qualified depends on the AOS release; check the Compatibility Matrix.'} />
       </div>
     </Show>
   );

@@ -361,7 +361,7 @@ export default function Datapath() {
               ]}
             />
           )}
-          {mode === 'rd' && <Kpis items={[{ k: 'Served from', v: step.servedFrom ? SRC_WORD[step.servedFrom] : 'Looking…', tone: step.servedFrom ? 'ok' : undefined }, { k: 'Network hops', v: 0, tip: 'With data locality, one copy is on the node where the VM runs, so the read never leaves the server.' }]} />}
+          {mode === 'rd' && <Kpis items={[{ k: 'Served from', v: step.servedFrom ? SRC_WORD[step.servedFrom] : 'Looking…', tone: step.servedFrom ? 'ok' : undefined }, { k: 'Network hops', v: 0, tip: 'Reads normally prefer the copy on the VM’s own node, as here, so they stay on the server. They may still use a remote copy, for example after the VM moves.' }]} />}
           {mode === 'loc' && (
             <Kpis
               items={[

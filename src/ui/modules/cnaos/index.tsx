@@ -39,7 +39,7 @@ const SITE: Record<On, { cluster: string; worker: string; kind: string; vol: str
     dcLine: 'Its apps can fail over to EKS through NDK',
     regionHead: 'Another AWS region or zone',
     regionSub: 'EKS with Cloud Native AOS',
-    regionFoot: 'RPO 1 hour or more in release 1.0',
+    regionFoot: 'Target RPO 1 hour or more in release 1.0',
     drHead: 'DR SITES',
   },
   metal: {
@@ -73,7 +73,7 @@ function caption(on: On, i: number): string {
     'A database pod claims a persistent volume like any Kubernetes app. AOS keeps every block it writes on two different workers (RF2).',
     'Worker 1 fails. The second copies on the other workers keep the volume available, so Kubernetes restarts the database pod on worker 3 with all its data.',
     'NDK, Nutanix Data Services for Kubernetes, snapshots the app as one unit: its Kubernetes resources and its volume data, consistent with each other.',
-    'NDK replicates the snapshot to another AWS region or zone, on a schedule with an RPO of 1 hour or more in release 1.0. It also pairs EKS with NKP on Nutanix in your data center, so apps there can fail over to AWS.',
+    'NDK replicates the snapshot to another AWS region or zone, on a schedule, with a target RPO of 1 hour or more in release 1.0. It also pairs EKS with NKP on Nutanix in your data center, so apps there can fail over to AWS.',
   ][i];
 }
 
@@ -405,8 +405,8 @@ export default function Cnaos() {
           <Kpis
             items={[
               { k: 'Hypervisor', v: 'None', sub: 'AOS runs as pods' },
-              on === 'eks' ? { k: 'Disaster recovery', v: 'RPO ≥ 1 h', sub: 'through NDK, in release 1.0' } : { k: 'Moving between sites', v: 'Planned', tone: 'warn', sub: 'listed as future development' },
-              on === 'eks' ? { k: 'Status', v: 'GA · 1.0', tone: 'ok', sub: 'since July 2025, up to 15 workers' } : { k: 'Status', v: 'Early access', tone: 'warn', sub: 'GA targeted 2H 2026' },
+              on === 'eks' ? { k: 'Disaster recovery', v: 'RPO ≥ 1 h', sub: 'target, through NDK, in release 1.0' } : { k: 'Moving between sites', v: 'Planned', tone: 'warn', sub: 'listed as future development' },
+              on === 'eks' ? { k: 'Status', v: 'GA · 1.0', tone: 'ok', sub: 'since July 2025; 1.0 allows up to 15 workers' } : { k: 'Status', v: 'Early access', tone: 'warn', sub: 'GA targeted 2H 2026' },
             ]}
           />
         </>

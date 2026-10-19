@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   talk: [
     'Say it plainly up front: Project Beacon is a vision Nutanix announced in 2023, not something you can buy.',
     'The idea: developers build an app once and run it anywhere, and the data services (storage, databases, protection) come along with it.',
-    'Let the timeline run through the years. 2023: the idea, with databases as a managed service first. 2024: broadened to cloud-native storage for Kubernetes. 2025: Cloud Native AOS, the first concrete product. 2026: bare metal through NKP Metal, in early access.',
+    'Let the timeline run through the years, and say the dates are history and announced plans, not commitments. 2023: the idea, with databases as a managed service first. 2024: broadened to cloud-native storage for Kubernetes. 2025: Cloud Native AOS, the first concrete product. 2026: bare metal through NKP Metal, in early access.',
     'Read the cards as they appear: the green ones ship today, the amber one is early access, and the band across the top is still only a direction.',
     'Use it to explain why Cloud Native AOS, NDK and NKP fit together, not as a roadmap promise.',
   ],
@@ -18,7 +18,7 @@ export const content: ModuleContent = {
     { k: 'Expanded', v: 'May 2024: cloud-native block and file storage' },
     { k: 'NDK', v: 'GA March 2024; NDK 2.3 in August 2026' },
     { k: 'First product', v: 'Cloud Native AOS, May 2025 (1.0 on EKS, July 2025)' },
-    { k: 'NKP Metal', v: 'Early access April 2026; GA targeted 2H 2026' },
+    { k: 'NKP Metal', v: 'Early access April 2026; GA targeted 2H 2026 (a plan, not a commitment)' },
   ],
   qa: [
     {

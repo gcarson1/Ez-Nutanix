@@ -15,6 +15,7 @@ export const content: ModuleContent = {
     'Erasure coding tab: data that has not been overwritten for a while is encoded in the background into a strip of data and parity pieces, each on a different node, and its extra copies are deleted. A lost piece is recomputed from the rest of its strip.',
     'Be precise about the saving: a 4/1 strip uses 1.25 times the space instead of 2 times, but only for write-cold data, so the blended saving depends on how much of the data stays cold.',
     'Blocks and racks tab: start with Node only to show the risk, a piece whose two copies share a chassis, then switch to Block and Rack to show a whole block or rack failing with nothing unavailable.',
+    'Present the numbers on this page as sizing guidance, not guarantees: RF overhead, EC-X savings and the rebuild reserve depend on the design, and the node, block and rack minimums can change with the AOS version, so confirm them for a real design.',
   ],
   numbers: [
     { k: 'RF2', v: '2 copies · at least 3 nodes · tolerates 1 failure' },

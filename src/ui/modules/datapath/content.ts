@@ -10,7 +10,7 @@ export const content: ModuleContent = {
     'Every node runs a Controller VM (CVM). The VM’s I/O goes to the CVM on its own node first, so the first hop never crosses the network.',
     'A write is acknowledged only after all copies exist: 2 copies on 2 nodes with RF2, 3 copies on 3 nodes with RF3. That is why a node failure does not lose acknowledged data.',
     'Small random writes land in the OpLog, a buffer on the fastest drives, and drain to the extent store later in larger sequential chunks. Large sequential streams skip the OpLog but keep the same protection.',
-    'Reads check the memory cache first, then the OpLog, then the local drives. Only if there is no local copy does the read go over the network.',
+    'Reads check the memory cache first, then the OpLog, then the local drives. The read path normally prefers local data but may use a remote copy over the network, for example right after a VM moves.',
     'After a live migration the first reads go remote, then hot data is copied to the new node, so latency returns to normal without anyone doing anything.',
     'Under all of this, a distributed metadata store on every CVM records where each piece of data lives. It keeps 3 copies under redundancy factor 2 and 5 under redundancy factor 3.',
   ],

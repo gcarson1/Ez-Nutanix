@@ -8,10 +8,10 @@ export const content: ModuleContent = {
     'Pick a failure: a drive, a Controller VM (CVM), a node, a whole block, two nodes at once, or a nearly full cluster. Watch detection, VM restarts and self-healing on a loop, with RF2 or RF3.',
   priority: 'P0',
   talk: [
-    'Start with a node power-off. The cluster notices within seconds, HA (high availability) restarts that node’s VMs on other hosts in about one to two minutes, and re-protection starts right away.',
+    'Start with a node power-off. The cluster notices within seconds, HA (high availability) restarts that node’s VMs on other hosts, typically in about one to two minutes, and re-protection starts right away.',
     'Point at the lines: every surviving node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
     'Stop only a CVM: nothing restarts. The host keeps its VMs and their I/O is served by other CVMs over the network until it returns.',
-    'Now the honest part: a second failure during an RF2 rebuild makes some data unavailable, and the sim does not hide it. Pick “Two nodes at once”, then switch to RF3 to show the same failure survived.',
+    'Now the honest part: with RF2, a second failure before the rebuild finishes can make some data unavailable. Whether it does depends on which failure domains hold the copies and how much free space is left. Pick “Two nodes at once” and compare RF2 with RF3.',
     'Finish with the cannot-self-heal case: a nearly full cluster. The caption says exactly why.',
   ],
   numbers: [
@@ -29,7 +29,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Is RF2 safe enough?',
-      a: 'RF2 survives any one node or drive failure and then rebuilds itself. The exposure is a second failure before that rebuild finishes. For most clusters, RF2 with enough free space and good monitoring is the common choice. RF3, and block or rack awareness, are there when that window matters more, at the cost of capacity and some write overhead.',
+      a: 'RF2 survives any one node or drive failure and then rebuilds itself, if there is free space for the missing copies. The exposure is a second failure before that rebuild finishes. For most clusters, RF2 with enough free space and good monitoring is the common choice. RF3, and block or rack awareness, are there when that window matters more, at the cost of capacity and some write overhead.',
     },
     {
       q: 'Will my VMs go down if a node fails?',
@@ -38,7 +38,7 @@ export const content: ModuleContent = {
   ],
   next: [
     'Node with RF2: let it play and pause on the moment HA restarts the VMs, then on the rebuild.',
-    'Two nodes at once: RF2 loses access to some data; switch to RF3 and it survives.',
+    'Two nodes at once: compare RF2 with RF3. With RF2, the result depends on whether the two nodes share a block.',
     'Block (chassis): copies were kept in different blocks, so data stays available.',
     'Nearly full cluster: the survivors have no room, so it cannot self-heal; read the reason.',
     'Then open LCM Rolling Upgrade to show planned maintenance with no downtime.',

@@ -25,7 +25,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Does performance really scale linearly?',
-      a: 'Controller count and raw capacity grow one node at a time, and with data locality each VM’s I/O is served mostly by its own node’s CVM. Real results still depend on the workload, the network and how data is spread, so treat “linear” as the architecture’s scaling unit, not a benchmark promise.',
+      a: 'The cluster scales by adding distributed controllers and capacity: each node brings its own CVM and drives, and with data locality each VM’s I/O is served mostly by its own node’s CVM. That describes the architecture, not a benchmark result. Real performance depends on the workload, the network and how data is spread, so size it for the actual workload.',
     },
     {
       q: 'What if we need storage but not compute, or the reverse?',

@@ -25,7 +25,7 @@ export const content: ModuleContent = {
   qa: [
     {
       q: 'Can we use our NetApp array?',
-      a: 'Not yet. Nutanix and NetApp announced ONTAP support over NFS in April 2026, for AFF A-series and some FAS systems, and in late September 2026 it was still planned for this fall. Today the generally available arrays are Everpure FlashArray, Dell PowerStore and Dell PowerFlex.',
+      a: 'Not yet. Nutanix and NetApp announced ONTAP support over NFS in April 2026, for AFF A-series and some FAS systems, and in mid-October 2026 it was still planned for this fall with an upcoming NCI release. Today the generally available arrays are Everpure FlashArray, Dell PowerStore and Dell PowerFlex.',
     },
     {
       q: 'Can we attach our existing Nutanix cluster to the array?',

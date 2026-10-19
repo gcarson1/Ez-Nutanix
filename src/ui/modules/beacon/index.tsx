@@ -2,7 +2,7 @@
 // product you buy; a marker walks 2023 to 2026 on a loop and each year's delivered piece appears
 // with its status in words.
 import { useClock } from '../../components/clock';
-import { Follow, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
@@ -154,7 +154,7 @@ export default function Beacon() {
       <div class="diagram-scroll">
         <Timeline t={t} now={now} />
       </div>
-      <PlayBar clock={clock} label="Beacon timeline animation" fmt={() => `${y.year} · ${y.title}`} />
+      <PlayBar clock={clock} label="Beacon timeline animation" fmt={() => `${y.year} · ${y.title}`} extra={<Illus why="The dates are history and announced plans, not product commitments. Each product’s own release notes say what ships today." />} />
     </Show>
   );
 }
