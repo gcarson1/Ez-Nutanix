@@ -3,8 +3,8 @@
 // different nodes, a node fail, and the copies being re-created on the others (placement in
 // src/engine/spread.ts). Erasure coding and Blocks and racks live in ec.tsx and domains.tsx.
 import { useMemo } from 'preact/hooks';
-import { useEnum } from '../../../state/route';
-import { useScenario } from '../../../state/scenario';
+import { setParams, useEnum, useRoute } from '../../../state/route';
+import { KEYS, useScenario } from '../../../state/scenario';
 import { capacityShares, planSpread } from '../../../engine/spread';
 import type { RF } from '../../../engine/rules';
 import { useClock, useRestartOn } from '../../components/clock';
@@ -103,10 +103,18 @@ function pct(x: number) {
   return `${Math.round(x * 100)}%`;
 }
 
+/** Node count the Copies tab opens with when the link names none: the smallest cluster for each RF. */
+const FIRST_NODES: Record<RF, number> = { 2: 3, 3: 5 };
+
 function CopiesView() {
   const { cfg, set } = useScenario();
+  const route = useRoute();
   const rf: RF = cfg.rf === 3 ? 3 : 2;
-  const nodes = Math.min(16, Math.max(3, cfg.nodes));
+  const named = route.params[KEYS.nodes] !== undefined;
+  const nodes = named ? Math.min(16, Math.max(3, cfg.nodes)) : FIRST_NODES[rf];
+  // The shared default (8) is never written to the URL, so this tab writes its node count
+  // explicitly; otherwise picking 8 would fall back to the first view.
+  const setNodes = (n: number) => setParams({ [KEYS.nodes]: n });
   const tl = useTimeline(nodes, rf);
   const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, stops: [tl.fail, tl.detect, tl.done] });
   useRestartOn(clock, [nodes, rf]);
@@ -130,7 +138,10 @@ function CopiesView() {
           <Choice<RF>
             label="Protection"
             value={rf}
-            onChange={(v) => (v === 3 ? set({ rf: 3, ft: 3, nodes: Math.max(5, nodes), ecx: false }) : set({ rf: 2, ft: 2, ecx: false }))}
+            onChange={(v) => {
+              set(v === 3 ? { rf: 3, ft: 3, ecx: false } : { rf: 2, ft: 2, ecx: false });
+              setNodes(v === 3 ? Math.max(5, nodes) : nodes);
+            }}
             options={[
               { value: 2, label: 'RF2 · 2 copies' },
               { value: 3, label: 'RF3 · 3 copies' },
@@ -139,7 +150,7 @@ function CopiesView() {
           <Choice<number>
             label="Nodes"
             value={nodes}
-            onChange={(v) => set({ nodes: v })}
+            onChange={setNodes}
             why={rf === 3 ? 'RF3 needs at least 5 nodes.' : null}
             options={opts.map((n) => ({ value: n, label: String(n), disabled: rf === 3 && n < 5, title: rf === 3 && n < 5 ? 'RF3 needs at least 5 nodes' : undefined }))}
           />

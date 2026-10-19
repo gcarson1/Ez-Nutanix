@@ -3,7 +3,7 @@
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useRoute, getRoute, setParams } from '../../state/route';
-import { PRESETS, clearedScenario, setScenario } from '../../state/scenario';
+import { KEYS, PRESETS, clearedScenario, setScenario } from '../../state/scenario';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
@@ -272,6 +272,8 @@ function applyPreset(id: string) {
   if (cur !== 'nci/capacity') go('nci/capacity');
   setParams(clearedScenario());
   setScenario(p.cfg);
+  // Written even when it equals the default, because Protection & Capacity opens on 3 nodes otherwise.
+  if (p.cfg.nodes !== undefined) setParams({ [KEYS.nodes]: p.cfg.nodes });
   toast(`Preset: ${p.label}`);
 }
 
