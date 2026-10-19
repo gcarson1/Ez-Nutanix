@@ -394,7 +394,7 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         steps: [
           { at: 0, label: 'Running', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
           { at: 2, label: `${v} fails`, text: `${v} loses power. Its ${vmCount} VMs stop and the copies on its drives go offline.` },
-          { at: 5.5, label: 'VMs restart', text: 'High availability (HA) restarts those VMs on other nodes, typically within about two minutes.' },
+          { at: 5.5, label: 'VMs restart', text: 'High availability (HA) restarts those VMs on other nodes with free memory, typically within about two minutes.' },
           { at: 9.6, label: 'Copies re-created', text: 'Every surviving node re-creates some of the missing copies, all at the same time.' },
           { at: 15, label: 'Protected', text: 'Every piece of data has two copies again. Nobody had to step in.' },
         ],
@@ -489,7 +489,7 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
             { tone: 'bad', text: 'Some data unavailable until a node returns' },
             { tone: 'warn', text: 'Three copies (RF3) survive this' },
           ],
-          why: 'Two copies tolerate one failure at a time. Two at once, or a second failure before the rebuild finishes, is the risk window that three copies, and block or rack awareness, are for.',
+          why: 'Two copies tolerate one failure at a time. Two at once, or a second failure before the rebuild finishes, is the risk window that three copies, and block or rack awareness, are for. Whether data is affected depends on which failure domains hold the copies: these two nodes are in different blocks, while two nodes in the same block would be a block failure, which block awareness survives.',
           legend: [L_COPY, L_SHORT, { look: 'gone', label: 'No copy online' }, L_NEW],
           duration: 20,
           poster: 7,

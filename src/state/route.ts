@@ -72,11 +72,6 @@ function writeHash(hash: string, push: boolean) {
   }
 }
 
-/** True when the address bar can hold a shareable link to the current view. */
-export function urlIsShareable(): boolean {
-  return typeof location !== 'undefined' && /^(https?|file):$/.test(location.protocol) && location.hash === buildHash(current.path, current.params);
-}
-
 /** Go to a module. Pushes a history entry. */
 export function navigate(path: string, params: Record<string, string> = {}) {
   const next = buildHash(path, params);

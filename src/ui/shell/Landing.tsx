@@ -105,16 +105,6 @@ export function Landing() {
     <div class={`slide-wrap${tour !== null ? ' tour-on' : ''}`} ref={wrap}>
       <div class="slide">
         <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
-        <div class="slide-actions">
-          <button type="button" class="btn primary" onClick={() => setTour(0)}>
-            <Icon name="compass" />
-            Guided tour
-          </button>
-          <button type="button" class="btn" onClick={(e) => go('nci/cluster', undefined, e.currentTarget as HTMLElement)}>
-            <Icon name="server" />
-            Open the Cluster Lab
-          </button>
-        </div>
 
         <section class="band central" data-tour="central" aria-label="Nutanix Central">
           <button type="button" class="central-head" data-pane="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
@@ -171,6 +161,12 @@ export function Landing() {
           Click any pane to see how it works. Press <kbd>?</kbd> for shortcuts and <kbd>P</kbd> for presenter notes.
         </p>
       </div>
+
+      {tour === null && (
+        <button type="button" class="tour-fab" onClick={() => setTour(0)} aria-label="Guided tour" title="Guided tour">
+          <Icon name="compass" />
+        </button>
+      )}
 
       {step && tour !== null && (
         <div class="tour-card" role="dialog" aria-label="Guided tour" aria-live="polite">
