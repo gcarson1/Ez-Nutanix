@@ -3,6 +3,9 @@
 // module header (View Transitions where the browser supports them).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from '../components/Icon';
+import awsLogo from '../../assets/logos/aws.svg';
+import azureLogo from '../../assets/logos/azure.svg';
+import googleCloudLogo from '../../assets/logos/google-cloud-icon.svg';
 import { go } from './nav';
 
 interface PaneDef {
@@ -68,6 +71,13 @@ function Pane({ p, cls, tour, children }: { p: PaneDef; cls?: string; tour?: str
       </span>
     </button>
   );
+}
+
+/** The providers' own marks, as on the original slide: logos only, no names (alt text names them). */
+function CloudLogo({ id }: { id: string }) {
+  if (id === 'aws') return <img class="cloud-logo aws" src={awsLogo} alt="AWS" />;
+  if (id === 'gcp') return <img class="cloud-logo gcp" src={googleCloudLogo} alt="Google Cloud" />;
+  return <img class="cloud-logo azure" src={azureLogo} alt="Azure" />;
 }
 
 export function Landing() {
@@ -136,8 +146,7 @@ export function Landing() {
           <div class="gray clouds" data-tour="clouds">
             {CLOUDS.map((p) => (
               <Pane key={p.id} p={p}>
-                <Icon name="cloud" class="cloud-glyph" />
-                <span class="cloud-mark">{p.title}</span>
+                <CloudLogo id={p.id} />
               </Pane>
             ))}
           </div>

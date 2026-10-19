@@ -101,7 +101,10 @@ body { min-height: 100vh; }
 .clouds .pane:focus-visible { outline-color: var(--slide-gray-text); }
 .clouds .pane .ps { color: rgba(0, 0, 0, 0.6); }
 .cloud-mark { font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.0625rem, 0.9rem + 0.5vw, 1.5rem); }
-.cloud-glyph { width: 2.25rem; height: 1.5rem; color: #3f3f46; }
+.cloud-logo { display: block; max-width: 100%; height: auto; }
+/* Logos only. AWS is a wordmark, so it sits wider; the two icon marks share one height. */
+.cloud-logo.aws { width: clamp(3.25rem, 2.6rem + 1.4vw, 4.5rem); }
+.cloud-logo.azure, .cloud-logo.gcp { height: clamp(1.9rem, 1.5rem + 0.9vw, 2.75rem); width: auto; }
 .bare.pane { background: var(--slide-gray); color: var(--slide-gray-text); }
 .bare.pane:hover, .bare.pane:focus-visible { background: var(--slide-gray-hover); box-shadow: 0 0.75rem 2rem -0.75rem rgba(0, 0, 0, 0.35); }
 .bare.pane:focus-visible { outline-color: var(--slide-gray-text); }
