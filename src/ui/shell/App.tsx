@@ -105,7 +105,7 @@ const LANDING_NOTES = {
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
     'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
-    'On Protection & Capacity, Scale-out vs 3-tier and Failure Gauntlet, the Presets menu in the top bar loads a cluster size that matches the customer into Protection & Capacity.',
+    'On Protection & Capacity and Scale-out vs 3-tier, the Presets menu in the top bar loads a cluster size that matches the customer into Protection & Capacity.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
@@ -305,7 +305,7 @@ function crumbsFor(def: ModuleDef | undefined): { label: string; path: string }[
 }
 
 /** Modules that read the shared cluster size, where the top bar shows Presets. */
-const PRESET_PATHS = ['nci/capacity', 'nci/scale', 'nci/failures'];
+const PRESET_PATHS = ['nci/capacity', 'nci/scale'];
 
 function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);

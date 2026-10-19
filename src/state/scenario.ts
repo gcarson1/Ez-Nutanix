@@ -1,5 +1,5 @@
 // Shared cluster scenario, read from and written to the URL hash so every cluster-based
-// module (Protection & Capacity, Scale-out, Failure Gauntlet) shows the same setup
+// module (Protection & Capacity, Scale-out) shows the same setup
 // and a presenter can send a link to it. Defaults are never written to the URL.
 import { DEFAULT_CONFIG, normalizeConfig, type ClusterConfig, type Media } from '../engine/cluster';
 import { useBool, useEnum, useNum, useRoute, setParams } from './route';

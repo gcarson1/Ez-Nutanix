@@ -140,13 +140,32 @@ test('Any Bare Metal Linux opens Cloud Native AOS on bare metal', async ({ page 
 });
 
 test('Presets show only on the modules that use the shared cluster', async ({ page }) => {
-  for (const path of ['nci/capacity', 'nci/scale', 'nci/failures']) {
+  for (const path of ['nci/capacity', 'nci/scale']) {
     await page.goto(`${FILE}#/${path}`);
     await expect(page.getByLabel('Scenario preset')).toBeVisible();
   }
-  await page.goto(`${FILE}#/nkp`);
-  await expect(page.locator('.mod-head h1')).toBeVisible();
-  await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
+  for (const path of ['nkp', 'nci/failures']) {
+    await page.goto(`${FILE}#/${path}`);
+    await expect(page.locator('.mod-head h1')).toBeVisible();
+    await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
+  }
+});
+
+test('failure gauntlet: failure buttons and steps sit above the picture; RF choice only for two nodes', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/failures`);
+  const pick = page.getByRole('group', { name: 'What fails' });
+  for (const name of ['Drive', 'Controller VM', 'Node', 'Block', 'Two nodes', 'Nearly full']) await expect(pick.getByRole('button', { name, exact: true })).toBeVisible();
+  const steps = page.getByRole('list', { name: 'Steps' });
+  expect((await steps.boundingBox())!.y).toBeLessThan((await page.locator('.gx-dia').boundingBox())!.y);
+  await expect(page.getByRole('group', { name: 'Copies kept' })).toHaveCount(0);
+  await pick.getByRole('button', { name: 'Two nodes', exact: true }).click();
+  await expect.poll(() => page.url()).toContain('sc=double');
+  await page.getByRole('group', { name: 'Copies kept' }).getByRole('button', { name: '3 (RF3)' }).click();
+  await expect.poll(() => page.url()).toContain('cp=3');
+  await steps.getByRole('button', { name: /Recovery/ }).click();
+  await expect(steps.locator('[aria-current="step"]')).toContainText('Recovery');
+  expect(errors).toEqual([]);
 });
 
 test('scenario state round-trips through the URL', async ({ page }) => {

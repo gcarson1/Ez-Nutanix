@@ -1,0 +1,94 @@
+/* Failure Gauntlet (prefix gx-, tiles gt-) */
+.gx > .stage { padding-top: var(--sp-5); }
+.gx-top { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-8); align-items: flex-start; }
+.gx-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
+.gx-pick .seg { align-self: flex-start; }
+.gx-pick .seg button { height: calc(var(--h-lg) - 2px); padding: 0 var(--sp-4); font-size: var(--fs-15); gap: var(--sp-2); }
+.gx-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
+
+/* step tracker: the timeline, above the picture */
+.gx-steps { list-style: none; margin: var(--sp-6) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.gx-steps li { margin: 0; flex: 1 1 0; min-width: 8rem; }
+.gx-steps li + li { border-left: 1px solid var(--line); }
+.gx-steps button { width: 100%; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border: 0; background: none; color: var(--faint); font-size: var(--fs-13); font-weight: 500; text-align: left; transition: color var(--t-fast), background var(--t-fast); }
+.gx-steps button:hover { color: var(--text); background: var(--bg-3); }
+.gx-steps .n { flex: none; display: inline-grid; place-items: center; width: 1.375rem; height: 1.375rem; border: 1px solid var(--line-2); font: 600 var(--fs-12) / 1 var(--mono); }
+.gx-steps .n svg { width: 0.75rem; height: 0.75rem; }
+.gx-steps li.done button { color: var(--muted); }
+.gx-steps li.done .n { border-color: var(--ok); color: var(--ok); }
+.gx-steps li.now button { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+.gx-steps li.now .n { background: var(--ink); border-color: var(--ink); color: var(--ink-text); }
+.gx-cap { margin: var(--sp-4) 0 var(--sp-2); min-height: 3.25rem; font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
+
+/* outcome pane */
+.gx-outcome { list-style: none; padding: 0; margin: var(--sp-3) 0 0; display: grid; gap: var(--sp-3); }
+.gx-outcome li { display: grid; grid-template-columns: 1.125rem minmax(0, 1fr); gap: var(--sp-2); align-items: start; font-size: var(--fs-14); line-height: 1.45; color: var(--text-2); margin: 0; }
+.gx-outcome li svg { width: 1.125rem; height: 1.125rem; margin-top: 0.05rem; }
+.gx-outcome li.ok svg { color: var(--ok); }
+.gx-outcome li.warn svg { color: var(--warn); }
+.gx-outcome li.bad svg { color: var(--bad); }
+.gx-outcome li.bad { color: var(--text); font-weight: 600; }
+.gx-rail .gx-why { margin-top: var(--sp-2); font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
+.gx-rail .gx-setup { margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--muted); line-height: 1.5; }
+
+.gx-legend { margin-top: var(--sp-2); }
+.gx-legend span { display: inline-flex; align-items: center; gap: var(--sp-1h); }
+.gx-sw { width: 1rem; height: 0.75rem; flex: none; }
+
+/* diagram */
+.gx-dia { max-width: 70rem; }
+.gx-dia .gx-block { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.gx-dia .gx-block.down { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
+.gx-dia .gx-blabel { font-size: 10.5px; font-weight: 600; fill: var(--faint); letter-spacing: 0.02em; }
+.gx-dia .gx-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; transition: fill var(--t-med), stroke var(--t-med); }
+.gx-dia .gx-node.down .gx-card { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 5 4; }
+.gx-dia .gx-node.cvm .gx-card { stroke: var(--warn); stroke-width: 1.75; }
+.gx-dia .gx-name { font-size: 13px; font-weight: 700; }
+.gx-dia .gx-word { font-size: 10.5px; font-weight: 600; }
+.gx-dia .gx-word.down { fill: var(--bad); }
+.gx-dia .gx-word.cvm { fill: var(--warn); }
+.gx-dia .gx-cvm rect { fill: var(--ink); }
+.gx-dia .gx-cvm text { fill: #fff; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; }
+.gx-dia .gx-cvm.down rect { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
+.gx-dia .gx-cvm.stopped rect { fill: var(--warn-bg); stroke: var(--warn); stroke-dasharray: 3 2; }
+.gx-dia .gx-cvm.down text, .gx-dia .gx-cvm.stopped text { fill: var(--muted); }
+.gx-dia .gx-beat { fill: #fff; }
+.gx-dia .gx-x { stroke: var(--muted); stroke-width: 1.75; fill: none; stroke-linecap: round; }
+.gx-dia .gx-cvm.down .gx-x, .gx-dia .gx-x.bad { stroke: var(--bad); }
+.gx-dia .gx-cvm.stopped .gx-x { stroke: var(--warn); }
+.gx-dia .gx-disk { fill: var(--bg); stroke: var(--line-2); stroke-width: 1; }
+.gx-dia .gx-disk.failed { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.5; }
+.gx-dia .gx-disk.full { stroke: var(--warn); stroke-width: 1.5; }
+.gx-dia .gx-dlabel { font-size: 9.5px; font-weight: 700; letter-spacing: 0.03em; }
+.gx-dia .gx-dlabel.bad { fill: var(--bad); }
+.gx-dia .gx-dlabel.warn { fill: var(--warn); }
+.gx-dia .gx-node.down .gx-disk { opacity: 0.55; }
+.gx-dia .gx-vm rect { fill: var(--bg-3); stroke: var(--s2); stroke-width: 1; }
+.gx-dia .gx-vm.stopped rect { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
+.gx-dia .gx-vm.restarting rect { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.gx-dia .gx-trail { fill: none; stroke: var(--warn); stroke-width: 1.25; stroke-dasharray: 3 4; opacity: 0.7; }
+
+/* tiles (also used by the legend swatches) */
+.gt-copy { fill: var(--s2); }
+.gt-single { fill: var(--warn); }
+.gt-new { fill: var(--flow); }
+.gt-off { fill: none; stroke: var(--s2); stroke-width: 1; stroke-dasharray: 2 1.5; }
+.gt-gone { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.5; }
+.gt-lost { fill: var(--bad); }
+
+/* data in motion */
+.gx-arc { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.gx-arc.rebuild { stroke: var(--flow); }
+.gx-arc.redirect { stroke: var(--flow); stroke-dasharray: 4 3; }
+.gx-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .gx-dia .beat { animation: none; }
+  .gx-dia .gx-card { transition: none; }
+}
+@media (max-width: 900px) {
+  .gx-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
+  .gx-cap { font-size: var(--fs-16); }
+  .gx-steps li { min-width: 50%; }
+  .gx-steps li + li { border-left: 0; }
+}
