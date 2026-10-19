@@ -4,15 +4,14 @@ export const content: ModuleContent = {
   path: 'nci/failures',
   title: 'Failure Gauntlet',
   tag: 'Nutanix Cloud Infrastructure',
-  summary:
-    'Pick a failure: a drive, a Controller VM (CVM), a node, a whole block, two nodes at once, or a nearly full cluster. Watch detection, VM restarts and self-healing on a loop, with RF2 or RF3.',
+  summary: 'Pick what fails, from one drive to two nodes at once, and watch an 8-node cluster ride through it step by step.',
   priority: 'P0',
   talk: [
-    'Start with a node power-off. The cluster notices within seconds, HA (high availability) restarts that node’s VMs on other hosts, typically in about one to two minutes, and re-protection starts right away.',
-    'Point at the lines: every surviving node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
-    'Stop only a CVM: nothing restarts. The host keeps its VMs and their I/O is served by other CVMs over the network until it returns.',
-    'Now the honest part: with RF2, a second failure before the rebuild finishes can make some data unavailable. Whether it does depends on which failure domains hold the copies and how much free space is left. Pick “Two nodes at once” and compare RF2 with RF3.',
-    'Finish with the cannot-self-heal case: a nearly full cluster. The caption says exactly why.',
+    'Start with Node. Walk the steps above the picture: the node fails, HA (high availability) restarts its VMs on other nodes, typically in about two minutes, and every surviving node re-creates the missing copies at once.',
+    'Point at the lines under the nodes: every node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
+    'Controller VM: nothing restarts. The host keeps its VMs and their I/O goes to other CVMs over the network until the CVM is back.',
+    'Now the honest part: pick Two nodes. With two copies (RF2), pieces that had both copies on those nodes go red: unavailable until a node returns. Switch Copies kept to 3 (RF3) and the same failure is survived. In a real cluster, how much is affected depends on how copies are spread across failure domains.',
+    'Finish with Nearly full: the survivors run out of space, so the cluster cannot fully re-protect itself. That is why sizing keeps a node’s worth of space free.',
   ],
   numbers: [
     { k: 'Failures tolerated', v: 'RF2: 1 node or drive at a time · RF3: 2' },
@@ -25,7 +24,7 @@ export const content: ModuleContent = {
   qa: [
     {
       q: 'How long does a rebuild take?',
-      a: 'It depends on how much data the failed part held, how many nodes help, the hardware and how busy the cluster is. The estimate here is data divided by survivors times a per-node rate you can change, so treat it as a way to reason about scale, not a quote. Because every node helps, bigger clusters rebuild a failed node faster.',
+      a: 'It depends on how much data the failed part held, how many nodes help, the hardware and how busy the cluster is. Time here is compressed so each failure plays in seconds. Because every node helps, bigger clusters rebuild a failed node faster.',
     },
     {
       q: 'Is RF2 safe enough?',
@@ -37,10 +36,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Node with RF2: let it play and pause on the moment HA restarts the VMs, then on the rebuild.',
-    'Two nodes at once: compare RF2 with RF3. With RF2, the result depends on whether the two nodes share a block.',
-    'Block (chassis): copies were kept in different blocks, so data stays available.',
-    'Nearly full cluster: the survivors have no room, so it cannot self-heal; read the reason.',
+    'Node: click through the steps above the picture, or let it play; it pauses briefly after each step.',
+    'Two nodes: with 2 copies some data goes red (unavailable); switch Copies kept to 3 and it survives.',
+    'Block: copies were kept in different blocks, so a whole chassis can fail with nothing unavailable.',
+    'Nearly full: drives fill up before every copy is back; read the outcome on the right.',
     'Then open LCM Rolling Upgrade to show planned maintenance with no downtime.',
   ],
 };

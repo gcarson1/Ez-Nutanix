@@ -2,10 +2,12 @@
 // short, looping stories. The engine decides the data layout, which node HA restarts each VM
 // on, and where every re-created copy lands; this file only paces those results into frames.
 // Pure (no DOM), so the frames are unit tested.
-import { createCluster, type ClusterConfig, type ClusterState, type DataItem } from '../../../engine/cluster';
+import { createCluster, type ClusterConfig, type ClusterState } from '../../../engine/cluster';
 import { applyFailure } from '../../../engine/failures';
-import { tick } from '../../../engine/rebuild';
-import { itemLiveCount } from '../../../engine/status';
+import { arrivalSlots as arrive, ease, flight, prog, rebuilt, settle, stream, type Slot } from './story';
+
+export { prog, ease };
+export type { Slot };
 
 export const NODES = 4;
 export const VMS_PER_NODE = 4;
@@ -47,11 +49,6 @@ export type VmLook = 'run' | 'moving' | 'stopped' | 'restarting';
 /** local = copy on the node where its VM runs; copy = any other copy (or every copy, when local isn't the point). */
 export type TileLook = 'local' | 'copy' | 'single' | 'new' | 'off' | 'lost';
 export type ArcKind = 'write' | 'copy' | 'rebuild' | 'localize' | 'read' | 'resync';
-
-export interface Slot {
-  node: number;
-  slot: number;
-}
 
 /** Endpoints for arcs. `lane` is the bottom of a node's card, where network traffic arrives. */
 export type Anchor = { k: 'vm'; at: Slot } | { k: 'cvm'; node: number } | { k: 'disk'; disk: string } | { k: 'lane'; node: number };
@@ -122,12 +119,6 @@ export interface ScenarioDef {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-export const prog = (t: number, a: number, b: number) => (b <= a ? (t >= b ? 1 : 0) : clamp01((t - a) / (b - a)));
-export const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
-/** Evenly spaced dots streaming along an arc, looping with time. */
-const stream = (t: number, n = 3, speed = 0.7) => Array.from({ length: n }, (_, k) => (t * speed + k / n) % 1);
-
 export function stepAt(def: ScenarioDef, t: number): number {
   let i = 0;
   def.steps.forEach((s, k) => {
@@ -193,46 +184,11 @@ function group(recs: Rec[], t: number, look: (r: Rec) => TileLook | null, dim?: 
   return out;
 }
 
-/** Slots that VMs arriving at a node take, in arrival order (after the 4 home slots). */
-function arrivalSlots(moves: { vm: number; to: number }[], vacated: Map<number, number[]> = new Map()): Map<number, Slot> {
-  const used = new Map<number, number>();
-  const out = new Map<number, Slot>();
-  for (const m of moves) {
-    const free = vacated.get(m.to) ?? [];
-    const k = used.get(m.to) ?? 0;
-    const slot = k < free.length ? free[k] : VMS_PER_NODE + (k - free.length);
-    used.set(m.to, k + 1);
-    out.set(m.vm, { node: m.to, slot });
-  }
-  return out;
-}
+/** Slots that VMs arriving at a node take, in arrival order (after the home slots). */
+const arrivalSlots = (moves: { vm: number; to: number }[]) => arrive(moves, VMS_PER_NODE);
 
 function homeVms(L: Lab, look: (id: number) => VmLook = () => 'run', hl?: number): VmF[] {
   return L.s0.vms.map((v) => ({ id: v.id, label: L.labels.get(v.id)!, at: L.home.get(v.id)!, look: look(v.id), hl: v.id === hl }));
-}
-
-/** Run the engine from `s1` until every item has its full set of copies and HA is done. */
-function settle(s1: ClusterState, limitS = 24 * 3600): ClusterState {
-  let s = s1;
-  const done = (x: ClusterState) =>
-    x.items.every((it) => itemLiveCount(x, it) >= it.target) && x.vms.every((v) => v.state === 'running' || v.state === 'failed');
-  for (let i = 0; i < limitS / 10 && !done(s); i++) s = tick(s, 10);
-  return s;
-}
-
-/** Copies the engine re-created between the failure state and the settled state. */
-function rebuilt(before: ClusterState, after: ClusterState, affected: (it: DataItem) => boolean) {
-  const out: { item: number; from: { node: number; disk: string }; to: { node: number; disk: string } }[] = [];
-  for (const it of before.items) {
-    if (!affected(it)) continue;
-    const fin = after.items[it.id];
-    const key = (m: { node: number; disk: string }) => `${m.node}|${m.disk}`;
-    const had = new Set(it.members.map(key));
-    const added = fin.members.filter((m) => !had.has(key(m)));
-    const source = fin.members.find((m) => had.has(key(m)));
-    for (const a of added) out.push({ item: it.id, from: { node: source?.node ?? a.node, disk: source?.disk ?? a.disk }, to: { node: a.node, disk: a.disk } });
-  }
-  return out;
 }
 
 // ── 1. Data placement ────────────────────────────────────────────────────────
@@ -415,13 +371,6 @@ export function maintPlan(): MaintPlan {
   const ok = resync.length ? Math.max(...resync.map((r) => r.end)) : MAINT.back;
   MAINTPLAN = { away, order, partners, resync, ok };
   return MAINTPLAN;
-}
-
-function flight(t: number, k: number, window: readonly [number, number], n: number) {
-  const each = 1.6;
-  const gap = n > 1 ? (window[1] - window[0] - each) / (n - 1) : 0;
-  const a = window[0] + k * gap;
-  return { a, b: a + each, p: ease(prog(t, a, a + each)) };
 }
 
 function maintFrame(t: number): Frame {
