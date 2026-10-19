@@ -100,7 +100,7 @@ export default function Failures() {
           clock={clock}
           label="Failure animation"
           fmt={(t) => `Step ${stepIndex(def, t) + 1} of ${n}`}
-          extra={<Illus why="Time is compressed so each failure plays in seconds. In a real cluster HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Results also depend on how copies are spread across failure domains and how much space is free. Each tile is a tenth of a drive." />}
+          extra={<Illus why="Time is compressed so each failure plays in seconds, and timings are illustrative. In a real cluster HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left. Each tile is a tenth of a drive." />}
         />
       </div>
 

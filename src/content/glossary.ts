@@ -35,7 +35,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   { term: 'Prism Central', def: 'The management console for many clusters. It runs as one VM or a small scale-out set of VMs and hosts multi-cluster features.' },
   { term: 'Prism Element', def: 'The management interface built into every cluster. It manages that one cluster.' },
   { term: 'Rack awareness', def: 'Keeps copies of data in different racks so losing a whole rack (power or top-of-rack switch) does not lose data.' },
-  { term: 'RF', full: 'Replication factor', def: 'How many full copies of data the cluster keeps. RF2 keeps two copies on different nodes and survives one failure; RF3 keeps three and survives two.' },
+  { term: 'RF', full: 'Replication factor', def: 'How many full copies of data the cluster keeps. RF2 keeps two copies on different nodes and survives one failure, with at least 3 nodes; RF3 keeps three and survives two, with at least 5.' },
   { term: 'RPO', full: 'Recovery point objective', def: 'The most data you can afford to lose, measured in time. An RPO of 1 hour means a recovery may lose up to the last hour of changes.' },
   { term: 'RTO', full: 'Recovery time objective', def: 'How long it may take to get an application running again after a disaster.' },
   { term: 'Stargate', def: 'The AOS service that handles all storage I/O for its node: it receives VM reads and writes, manages caches and replicates writes to other CVMs.' },

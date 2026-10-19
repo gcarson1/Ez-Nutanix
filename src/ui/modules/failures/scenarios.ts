@@ -531,7 +531,7 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
           { tone: 'ok', text: 'No data lost or unavailable' },
           { tone: 'bad', text: 'Cannot fully re-protect: no free space' },
         ],
-        why: 'Self-healing needs room on the survivors. Common sizing guidance is to keep one node’s worth of space free with two copies, so a node failure can always be fully re-protected.',
+        why: 'Self-healing needs room on the survivors. Common sizing guidance is to keep the largest node’s worth of space free with two copies (the two largest with three), so a node failure can always be fully re-protected.',
         legend: [L_COPY, L_SHORT, L_OFF, L_NEW],
         duration: 18,
         poster: 15,
