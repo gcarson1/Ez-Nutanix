@@ -40,7 +40,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'What if the cluster is nearly full when something fails?',
-      a: 'Re-creating copies needs free space on the surviving nodes. A cluster run close to full cannot fully re-protect itself, so common guidance is to keep one node’s worth of space free at RF2. The Failure Gauntlet shows the nearly-full case.',
+      a: 'Re-creating copies needs free space on the surviving nodes. A cluster run close to full cannot fully re-protect itself, so common guidance is to keep the largest node’s worth of space free at RF2, and the two largest at RF3. The Failure Gauntlet shows the nearly-full case.',
     },
   ],
   next: [

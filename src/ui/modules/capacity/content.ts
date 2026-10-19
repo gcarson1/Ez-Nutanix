@@ -10,8 +10,8 @@ export const content: ModuleContent = {
     'Each shape is a piece of data. RF2 writes two copies of it, each on a different node; RF3 writes three. No node ever holds two copies of the same piece.',
     'When a node fails, every piece still has a copy on a healthy node, so nothing is lost and VMs keep running.',
     'Then the healthy nodes re-create the missing copies together, many nodes to many nodes, so the cluster heals itself quickly and can take another failure.',
-    'That protection costs capacity: usable is about half of raw with RF2 and about a third with RF3, before keeping a node’s worth of space free so the rebuild has room.',
-    'Moving from RF2 to RF3 is done online.',
+    'That protection costs capacity: usable is about half of raw with RF2 and about a third with RF3, before keeping free space so a rebuild has room: the largest node’s worth with RF2, the two largest with RF3.',
+    'Moving from RF2 to RF3 can be done on a running cluster of at least 5 nodes: first the cluster’s redundancy factor, then each container, as long as there is free space for the third copy.',
     'Erasure coding tab: data that has not been overwritten for a while is encoded in the background into a strip of data and parity pieces, each on a different node, and its extra copies are deleted. A lost piece is recomputed from the rest of its strip.',
     'Be precise about the saving: a 4/1 strip uses 1.25 times the space instead of 2 times, but only for write-cold data, so the blended saving depends on how much of the data stays cold.',
     'Blocks and racks tab: start with Node only to show the risk, a piece whose two copies share a chassis, then switch to Block and Rack to show a whole block or rack failing with nothing unavailable.',
@@ -24,7 +24,8 @@ export const content: ModuleContent = {
     { k: 'EC-X overhead examples', v: '4/1 = 1.25x (vs 2x) · 4/2 = 1.5x (vs 3x)' },
     { k: 'EC-X minimum nodes', v: '4 with RF2 · 6 with RF3' },
     { k: 'Block or rack awareness minimum', v: '3 (RF2) · 5 (RF3) · with EC-X: 4 · 6' },
-    { k: 'Rebuild reserve (common sizing guidance)', v: 'N+1 for RF2 · N+2 for RF3 or above 24 nodes · a block’s worth with block awareness' },
+    { k: 'Rebuild reserve (sizing guidance)', v: 'RF2: the largest node (N+1) · RF3: the two largest (N+2) · with block awareness, a whole block per failure tolerated' },
+    { k: 'Resilient capacity (Prism)', v: 'Total capacity minus the space a rebuild needs; Prism warns at 75% of it by default' },
   ],
   qa: [
     {
@@ -33,7 +34,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Why reserve a whole node of free space?',
-      a: 'After a node failure, the cluster re-creates the missing copies on the remaining nodes. That needs free space equal to what the failed node held. Without it, data stays available but runs with fewer copies until you add capacity.',
+      a: 'After a node failure, the cluster re-creates the missing copies on the remaining nodes. That needs free space equal to what the failed node held, so size for the largest node (the two largest with RF3). Without it, data stays available but runs with fewer copies until you add capacity, Prism raises an alert, and upgrade pre-checks can hold back an upgrade. Prism shows the safe limit as resilient capacity, and an optional Reserve Rebuild Capacity setting keeps that space from being filled.',
     },
     {
       q: 'Does erasure coding slow anything down?',

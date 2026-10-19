@@ -200,6 +200,19 @@ An internal documentation review asked for release and configuration caveats acr
 | REV-10 | Move zero-copy applies when the VM disks already sit on a supported external array, such as Everpure FlashArray, that the AHV cluster also uses. Move 6.3.3 is for new deployments only. | Move 6.3: "zero-copy migration with supported external storage"; the Sep 29, 2026 blog names only FlashArray. "Move 6.3.3 supports new deployments only". | [move63]; [move-zc]; [move633] | 2026-10-19 | fix. Dell PowerStore removed from the zero-copy claim |
 | REV-11 | NetApp ONTAP support was still planned for this fall in mid-October 2026. | Oct 15, 2026 coverage: "Planned for availability this autumn with an upcoming NCI release", over NFS. | Intelligent CIO (Oct 15, 2026) | 2026-10-19 | keep (presenter Q&A) |
 
+## 12. Replication factor and rebuild space recheck (October 2026)
+
+The owner asked for the replication factor requirements and the free space needed to rebuild to be double-checked. Node minimums, failures tolerated, metadata copies and the block, rack and EC-X minimums all match the sources in RF-1, RF-2, EC-1 and FD-1. The changes are about the rebuild reserve and the RF2-to-RF3 line.
+
+| ID | Claim (as the app states it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| RB-1 | RF2 needs 3 nodes and RF3 needs 5; size RF2 for N+1 and RF3 for N+2. | Nutanix's sizing workshop: "RF2 clusters require a minimum of 3 nodes" and "should be sized to account for N+1"; "RF3 clusters require a minimum of 5 nodes" and "should ideally be sized to account for N+2", "at a minimum" N+1. | [sizing-ws]; [Bible: Data resilience][b-res] | 2026-10-19 | keep |
+| RB-2 | The rebuild reserve is the largest node's worth (the two largest with RF3), not an average node. | A Nutanix blog on storage resiliency: the reserve setting means "the cluster reserves the capacity of the largest node". A Nutanix employee: Prism's checks are "based on the largest single-node (or two-node) storage capacity in the cluster". | [nx-resil]; [nx-n1] | 2026-10-19 | changed: "the largest node" in Protection & Capacity, the Cluster & DSF Lab and the Gauntlet |
+| RB-3 | Prism shows resilient capacity and warns at 75% of it by default; an optional setting reserves the rebuild space. | The Bible: "Resilient Capacity = Total Cluster Capacity - Capacity needed to rebuild from FT failure(s)", and, for the warning threshold, "By default that is set to 75%". The Nutanix blog names the "Reserve Rebuild Capacity" setting and says it "can be left disabled". | [Bible: Data resilience][b-res]; [nx-resil] | 2026-10-19 | added to Protection & Capacity numbers and Q&A |
+| RB-4 | Without rebuild space, Prism alerts and upgrade pre-checks can hold back an upgrade. | A Nutanix employee: "Not having rebuild capacity will result in alerts", and the "same check is also part of upgrade pre-checks, so automated upgrades requiring restarts would be blocked". | [nx-n1] | 2026-10-19 | added to the Protection & Capacity Q&A |
+| RB-5 | N+2 for RF2 clusters above 24 nodes (was in the Protection & Capacity numbers). | This is one architect's own advice (CAP-3, Josh Odgers' blog), not Nutanix guidance or a Prism rule. The sizing workshop and Prism size RF2 for one node. | [odgers-size]; [sizing-ws] | 2026-10-19 | removed from the page; `recommendedReserve()` still suggests it but no page uses that function |
+| RB-6 | Moving from RF2 to RF3 "is done online". | A Nutanix employee: RF3 "can be enabled at the time of cluster creation or after creation too", and it needs at least five nodes. Odgers (then at Nutanix) shows the conversion "on the fly": the cluster's redundancy factor first, then each container, with free space for the third copy. No source says "online" in those words. | [nx-rf3]; [odgers-rf3] | 2026-10-19 | reworded: "can be done on a running cluster of at least 5 nodes", in that order, with free space |
+
 ---
 
 ## Changes needed in the app
@@ -374,3 +387,8 @@ No contradictions were found for:
 [move63]: https://next.nutanix.com/product-updates/nutanix-move-6-3-45782
 [move-zc]: https://www.nutanix.com/blog/accelerating-workload-mobility-using-nutanix-move
 [move633]: https://next.nutanix.com/product-updates/nutanix-move-6-3-3-45958
+[sizing-ws]: https://sizing-workshop.readthedocs.io/en/latest/discovery/ntnx/ntnx.html
+[nx-resil]: https://next.nutanix.com/community-blog-154/managing-storage-resiliency-is-now-simpler-than-ever-39809
+[nx-n1]: https://next.nutanix.com/installation-configuration-23/capacity-for-rf2-and-n-1-37235
+[nx-rf3]: https://next.nutanix.com/how-it-works-22/rf2-rf3-requirements-37206
+[odgers-rf3]: https://joshodgers.com/tag/resiliency-factor
