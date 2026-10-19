@@ -7,10 +7,10 @@ export const content: ModuleContent = {
   summary: 'Pick what fails, from one drive to two nodes at once, and watch an 8-node cluster ride through it step by step.',
   priority: 'P0',
   talk: [
-    'Start with Node. Walk the steps above the picture: the node fails, HA (high availability) restarts its VMs on other nodes, typically in about two minutes if they have free memory, and every surviving node re-creates the missing copies at once.',
+    'Start with Node. Walk the steps above the picture: the node fails, HA (high availability) restarts its VMs on other nodes, typically in about two minutes, and every surviving node re-creates the missing copies at once.',
     'Point at the lines under the nodes: every node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
     'Controller VM: nothing restarts. The host keeps its VMs and their I/O goes to other CVMs over the network until the CVM is back.',
-    'Now the honest part: pick Two nodes. With two copies (RF2), a second failure before the rebuild finishes can make some data unavailable: here, pieces that had both copies on those two nodes go red until a node returns. Whether it happens depends on which failure domains hold the copies and how much free space is left; two nodes in the same block are a block failure, which block awareness survives. Switch Copies kept to 3 (RF3) and the same failure is survived.',
+    'Now the honest part: pick Two nodes. With two copies (RF2), pieces that had both copies on those nodes go red: unavailable until a node returns. Switch Copies kept to 3 (RF3) and the same failure is survived. In a real cluster, how much is affected depends on how copies are spread across failure domains.',
     'Finish with Nearly full: the survivors run out of space, so the cluster cannot fully re-protect itself. That is why sizing keeps a node’s worth of space free.',
   ],
   numbers: [

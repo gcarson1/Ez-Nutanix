@@ -12,9 +12,9 @@ type Prov = 'aws' | 'azure' | 'gcp';
 type Use = 'dr' | 'burst' | 'exit';
 
 const PROV: Record<Prov, { name: string; short: string; status: string }> = {
-  aws: { name: 'Amazon Web Services', short: 'AWS', status: 'NC2 on AWS is generally available. GC2 (Government Cloud Clusters) runs on AWS GovCloud (US).' },
+  aws: { name: 'Amazon Web Services', short: 'AWS', status: 'NC2 on AWS is generally available. GC2 (Government Cloud Clusters) runs on AWS GovCloud (US) and the AWS European Sovereign Cloud.' },
   azure: { name: 'Microsoft Azure', short: 'Azure', status: 'NC2 on Azure is generally available.' },
-  gcp: { name: 'Google Cloud', short: 'Google Cloud', status: 'NC2 on Google Cloud has been generally available since Dec 9, 2025, on Z3 and C4 bare-metal instances in 17 regions.' },
+  gcp: { name: 'Google Cloud', short: 'Google Cloud', status: 'NC2 on Google Cloud has been generally available since Dec 9, 2025, on Z3 and C4 bare-metal instances in 17 regions at launch.' },
 };
 const PROV_IDS = Object.keys(PROV) as Prov[];
 
@@ -137,7 +137,7 @@ export default function Cloud() {
       <div class="diagram-scroll">
         <Scene prov={prov} use={use} t={t} sc={sc} />
       </div>
-      <PlayBar clock={clock} label="Use case animation" fmt={() => ph.k} extra={<Illus why="A simplified picture: VM and node counts, timing and network paths are examples, not sizing." />} />
+      <PlayBar clock={clock} label="Use case animation" fmt={() => ph.k} extra={<Illus why="A simplified picture: VM and node counts, timing and network paths are examples, not sizing. Regions, instance types and features vary by cloud and release." />} />
     </Show>
   );
 }

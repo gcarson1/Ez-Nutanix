@@ -279,7 +279,7 @@ export default function Nkp() {
         clock={clock}
         label="Fleet upgrade animation"
         fmt={() => word}
-        extra={<Illus why="Example versions and timings. Upgrading a canary first, then waves, is a common practice shown as an example. Inside a cluster, a new node joins before an old one leaves, as in a Cluster API rolling update." />}
+        extra={<Illus why="Example versions and timings. Fleet management is in NKP Ultimate. Upgrading a canary first, then waves, is a common practice shown as an example. Inside a cluster, a new node joins before an old one leaves, as in a Cluster API rolling update." />}
       />
     </Show>
   );

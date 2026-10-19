@@ -254,8 +254,8 @@ export default function Dr() {
   const rpo = none
     ? { v: 'None', sub: event === 'planned' ? 'the last changes are copied first' : 'RPO zero' }
     : tier === 'async'
-      ? { v: 'Hours', sub: 'RPO 1 to 24 hours' }
-      : { v: 'Minutes', sub: 'RPO 1 to 15 minutes' };
+      ? { v: 'Hours', sub: 'RPO target 1 to 24 hours' }
+      : { v: 'Minutes', sub: 'RPO target 1 to 15 minutes' };
   const rto = event === 'planned' ? 'a move you schedule' : s.decision === 'witness' ? 'starts on its own' : 'after someone declares a disaster';
 
   return (
@@ -290,7 +290,7 @@ export default function Dr() {
           </Follow>
           <Kpis
             items={[
-              { k: 'Data you could lose', v: rpo.v, sub: rpo.sub, tone: none ? 'ok' : 'warn', tip: 'The recovery point objective (RPO): how much recent data a failover can lose. The protection policy sets it.' },
+              { k: 'Data you could lose', v: rpo.v, sub: rpo.sub, tone: none ? 'ok' : 'warn', tip: 'The recovery point objective (RPO): how much recent data a failover can lose. The protection policy sets it as a target; link bandwidth and change rate decide whether it is met.' },
               { k: 'Running again in', v: 'Minutes', sub: rto, tip: 'The recovery time objective (RTO): how long until the apps are back. Mostly the recovery plan starting the apps in order, plus the time to decide in a real disaster.' },
               { k: 'Each write waits for', v: tier === 'sync' ? 'Both sites' : 'Site A only', sub: tier === 'sync' ? 'sites under 5 ms apart' : 'copies follow in the background' },
             ]}
@@ -312,7 +312,7 @@ export default function Dr() {
         clock={clock}
         label="Disaster recovery animation"
         fmt={() => cap.k}
-        extra={<Illus why="Time is compressed: an hour between async copies is drawn as a few seconds. The RPO ranges, the 5 ms limit for synchronous replication and the Witness for automatic failover follow Nutanix documentation; site layout and boot timing are simplified." />}
+        extra={<Illus why="Time is compressed: an hour between async copies is drawn as a few seconds. The RPO ranges, the 5 ms limit for synchronous replication and the Witness for automatic failover follow Nutanix documentation. RPOs are targets, not guarantees, and automatic failover needs a supported synchronous setup with a Witness. Site layout and boot timing are simplified." />}
       />
     </Show>
   );

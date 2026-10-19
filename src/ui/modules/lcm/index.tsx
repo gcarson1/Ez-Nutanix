@@ -5,7 +5,7 @@ import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
 import { useClock, useRestartOn, useStepKey } from '../../components/clock';
-import { Follow, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import { COMP, DEFAULT_MINUTES, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
 
@@ -118,7 +118,12 @@ export default function Lcm() {
           { color: 'var(--warn)', dashed: true, label: 'LCM waiting' },
         ]}
       />
-      <PlayBar clock={clock} label="Upgrade animation" fmt={() => phaseLabel(sim, view)} />
+      <PlayBar
+        clock={clock}
+        label="Upgrade animation"
+        fmt={() => phaseLabel(sim, view)}
+        extra={<Illus why="The times on the timeline use older, unofficial per-node estimates (about 15 minutes for AOS and 25 for AHV). Real times depend on the cluster, its load and the release." />}
+      />
     </Show>
   );
 }

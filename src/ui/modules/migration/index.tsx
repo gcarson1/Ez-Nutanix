@@ -10,7 +10,7 @@ import './style.css';
 
 type Src = 'esxi' | 'hyperv' | 'ec2' | 'azure';
 const SRC: Record<Src, { label: string; box: string; sub: string; cloud: boolean; note: string }> = {
-  esxi: { label: 'VMware ESXi', box: 'VMware vSphere', sub: 'ESXi hosts, through vCenter', cloud: false, note: 'From Move 6.3, ESXi to AHV can skip the copy entirely with supported external arrays (Dell PowerStore, Pure Storage).' },
+  esxi: { label: 'VMware ESXi', box: 'VMware vSphere', sub: 'ESXi hosts, through vCenter', cloud: false, note: 'From Move 6.3, ESXi to AHV can skip the copy when the disks already sit on a supported external array, such as Everpure FlashArray, shared with the AHV cluster.' },
   hyperv: { label: 'Hyper-V', box: 'Microsoft Hyper-V', sub: 'Hyper-V hosts in your data center', cloud: false, note: 'The same seed, sync and cutover pattern applies to every source Move supports.' },
   ec2: { label: 'AWS EC2', box: 'AWS EC2', sub: 'native instances in your AWS account', cloud: true, note: 'Check the Move support matrix for the exact source, target and versions before each wave.' },
   azure: { label: 'Azure', box: 'Microsoft Azure', sub: 'native VMs in your Azure subscription', cloud: true, note: 'Check the Move support matrix for the exact source, target and versions before each wave.' },

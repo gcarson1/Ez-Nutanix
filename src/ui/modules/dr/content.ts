@@ -9,17 +9,17 @@ export const content: ModuleContent = {
   priority: 'P0',
   talk: [
     'Protection is policy-based: you set a recovery point objective (RPO), assign VMs to the policy with categories, and the platform picks the replication tier.',
-    'Three tiers: asynchronous at 1 hour or more, NearSync at 1 to 15 minutes, and synchronous at RPO 0 for sites under 5 ms round trip.',
+    'Three tiers, each with an RPO target: asynchronous at 1 hour or more, NearSync at 1 to 15 minutes, and synchronous at RPO 0 for sites under 5 ms round trip.',
     'The honest picture: between copies, recent writes exist only at the primary site. An unplanned failover loses whatever had not reached the other site yet.',
     'Recovery plans are the runbook: boot order in stages, delays, network mapping and scripts. Test failover runs the same plan on clones in an isolated network, so you can prove it works without touching production.',
-    'For zero data loss with automatic failover, synchronous replication plus a Witness in a separate fault domain lets the surviving site take over on its own.',
+    'For zero data loss with automatic failover, synchronous replication plus a Witness in a separate fault domain lets the surviving site take over on its own, in a setup Nutanix supports for your hypervisor and release.',
     'Sites can be combined: a nearby synchronous partner plus a distant NearSync or async copy, or a cloud site on Nutanix Cloud Clusters (NC2).',
   ],
   numbers: [
-    { k: 'Asynchronous', v: 'RPO 1 hour or more (up to 24 hours)' },
-    { k: 'NearSync', v: 'RPO 1 to 15 minutes' },
+    { k: 'Asynchronous', v: 'RPO target of 1 hour or more (up to 24 hours)' },
+    { k: 'NearSync', v: 'RPO target of 1 to 15 minutes' },
     { k: 'Synchronous', v: 'RPO 0, needs under 5 ms round-trip time' },
-    { k: 'Automatic failover', v: 'Synchronous + Witness in a separate fault domain' },
+    { k: 'Automatic failover', v: 'Synchronous (Metro) + Witness in a separate fault domain, in supported setups' },
     { k: 'NC2 clouds', v: 'AWS, Microsoft Azure, Google Cloud, OVHcloud' },
   ],
   qa: [

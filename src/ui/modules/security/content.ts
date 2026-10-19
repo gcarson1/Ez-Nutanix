@@ -11,14 +11,14 @@ export const content: ModuleContent = {
     'Two ways to encrypt: software encryption in AOS on ordinary drives, which Nutanix positions for most cases, or self-encrypting drives (SEDs) when policy requires hardware encryption. They can be layered (dual encryption).',
     'Apps see no change: data is encrypted before it reaches a drive and decrypted for any authorized reader.',
     'Keys can be managed natively by the cluster, with no extra server, or by your existing external key manager, so keys and data never sit in the same place. That is what protects you if a whole node walks out.',
-    'Beyond encryption, hardening is built in: in current releases a security profile (Standard, Elevated or Strict) is applied from Prism Central and checked every 2 hours, putting drifted settings back where it can.',
+    'Beyond encryption, hardening is built in. With AOS 7.6, Prism Central 7.6 and AHV 11.2, a security profile (Standard, Elevated or Strict) is applied from Prism Central and checked every 2 hours. Drifted settings are put back where possible; a change that would need a host reboot raises an alert instead.',
   ],
   numbers: [
     { k: 'Encryption options', v: 'Software (AOS), self-encrypting drives, or both' },
-    { k: 'Key management', v: 'Native (on the cluster) or external key manager' },
-    { k: 'Software encryption module', v: 'FIPS 140-2 Level 1 validated (per Nutanix)' },
-    { k: 'Security profiles', v: 'Standard, Elevated, Strict (AOS 7.6, PC 7.6, AHV 11.2)' },
-    { k: 'Drift check', v: 'Every 2 hours' },
+    { k: 'Key management', v: 'Native (on the cluster) or external key manager; options vary by release and configuration' },
+    { k: 'Software encryption module', v: 'FIPS 140-2 Level 1 (per Nutanix); check the current certificate for your release' },
+    { k: 'Security profiles', v: 'Standard, Elevated, Strict (AOS 7.6, PC 7.6, AHV 11.2; AOS layer only on other hypervisors)' },
+    { k: 'Drift check', v: 'Every 2 hours; fixed automatically where possible, otherwise an alert' },
   ],
   qa: [
     {

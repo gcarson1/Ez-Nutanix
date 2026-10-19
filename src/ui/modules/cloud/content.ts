@@ -9,23 +9,23 @@ export const content: ModuleContent = {
   priority: 'P1',
   talk: [
     'NC2 is the same AOS and AHV you run on-premises, on bare-metal instances in your cloud account, managed in the same Prism Central.',
-    'It is generally available on AWS, Azure and Google Cloud (GA December 2025), and also on OVHcloud.',
+    'It is generally available on AWS, Azure and Google Cloud (GA December 2025), and also on OVHcloud. Regions, bare-metal types and some features differ by cloud and release.',
     'Common reasons customers use it: a DR site without a second building, burst capacity without buying hardware, and leaving a data center on their own schedule. Moving VMs there is a lift and shift with no refactoring (see Migration with Move).',
-    'In every use case the operating model does not change, only where the VMs run.',
+    'In every use case the operating model for VMs does not change, only where they run.',
     'For containerized apps there is a cloud-native path instead: NKP manages the Kubernetes fleet, and Cloud Native AOS brings AOS storage into Kubernetes. Today Cloud Native AOS is GA on Amazon EKS only.',
   ],
   numbers: [
     { k: 'NC2 clouds (GA)', v: 'AWS, Azure, Google Cloud, OVHcloud' },
-    { k: 'NC2 on Google Cloud', v: 'GA Dec 9, 2025 · Z3 and C4 bare metal · 17 regions' },
+    { k: 'NC2 on Google Cloud', v: 'GA Dec 9, 2025 · Z3 and C4 bare metal · 17 regions at GA' },
     { k: 'GC2 on AWS GovCloud (US)', v: 'Available' },
-    { k: 'AWS European Sovereign Cloud', v: 'Announced, “later in 2026”' },
+    { k: 'GC2 on AWS European Sovereign Cloud', v: 'GA Jul 2026, starting with Germany' },
     { k: 'Cloud Native AOS', v: 'GA on Amazon EKS (1.0, Jul 2025)' },
     { k: 'Also supported on NC2', v: 'Nutanix Move and Database Service (NDB) on AWS, Azure and Google Cloud' },
   ],
   qa: [
     {
       q: 'Is NC2 on Google Cloud real, or still a preview?',
-      a: 'It became generally available on December 9, 2025, on Z3 and C4 bare-metal instances in 17 regions. One card on the NC2 product page still says preview; the GA announcement and the NC2 FAQ are the current statements.',
+      a: 'It became generally available on December 9, 2025, on Z3 and C4 bare-metal instances in 17 regions at launch, expanding over time. One card on the NC2 product page still says preview; the GA announcement and the NC2 FAQ are the current statements.',
     },
     {
       q: 'Do we have to change our applications to run them on NC2?',

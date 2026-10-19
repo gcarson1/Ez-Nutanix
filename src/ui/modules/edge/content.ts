@@ -9,16 +9,16 @@ export const content: ModuleContent = {
   talk: [
     'Start with the trade-off: fewer nodes cost less and fit in a closet, but each size survives different things.',
     'One node: the cheapest option, with lowered resiliency. A drive failure can be rebuilt inside the node, but a node outage is site downtime, so plan backup or replication.',
-    'Two nodes plus a small Witness VM at another site: survives a node failure. The survivor switches to single-node mode and keeps two copies of data on its own drives. Getting back to two-node mode takes a while, so be honest about that.',
+    'Two nodes plus a small Witness VM at another site, set up as Nutanix supports: survives a node failure. The survivor switches to single-node mode and keeps two copies of data on its own drives, if it has room. Getting back to two-node mode takes a while, so be honest about that.',
     'Three nodes: the standard RF2 cluster. It self-heals after a node failure if there is free capacity, and upgrades roll with no VM downtime.',
     'Every site runs on its own, even if the WAN drops. Prism Central in the data center manages them all as a fleet, including LCM upgrades.',
   ],
   numbers: [
-    { k: 'Two-node switch to single-node mode', v: 'About 30–60 s (guest disk timeout of at least 60 s recommended)' },
-    { k: 'Two-node return to two-node mode', v: '15 min of steady heartbeat, then a resync that can take hours' },
+    { k: 'Two-node switch to single-node mode', v: 'Typically 30–60 s with the Witness reachable (guest disk timeout of at least 60 s recommended)' },
+    { k: 'Two-node return to two-node mode', v: 'Typically 15 min of steady heartbeat, then a resync that can take hours' },
     { k: 'Two-node sizing', v: 'Run on one node: disk and memory at about 40% or less' },
     { k: 'Two-node copies', v: 'Data 2 copies (one per node), metadata 4 copies' },
-    { k: 'Single-node async DR', v: '6-hour RPO only' },
+    { k: 'Single-node async DR', v: '6-hour RPO only, per Nutanix guidance (check your release)' },
   ],
   qa: [
     {
@@ -31,7 +31,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'When should we choose a single node?',
-      a: 'When the site can tolerate downtime from a node outage and the data is protected elsewhere by backup or replication (async from a single node is limited to a 6-hour RPO). Upgrades also mean shutting down the guest VMs. If the site cannot accept that, use two or three nodes.',
+      a: 'When the site can tolerate downtime from a node outage and the data is protected elsewhere by backup or replication (Nutanix guidance limits async from a single node to a 6-hour RPO; check your release). Upgrades also mean shutting down the guest VMs. If the site cannot accept that, use two or three nodes.',
     },
   ],
   next: [
