@@ -105,7 +105,7 @@ const LANDING_NOTES = {
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
     'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
-    'Inside any module, the Presets menu in the top bar loads a cluster size that matches the customer into Protection & Capacity.',
+    'On Protection & Capacity, Scale-out vs 3-tier and Failure Gauntlet, the Presets menu in the top bar loads a cluster size that matches the customer into Protection & Capacity.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
@@ -304,6 +304,9 @@ function crumbsFor(def: ModuleDef | undefined): { label: string; path: string }[
   return out;
 }
 
+/** Modules that read the shared cluster size, where the top bar shows Presets. */
+const PRESET_PATHS = ['nci/capacity', 'nci/scale', 'nci/failures'];
+
 function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);
   if (!p) return;
@@ -416,8 +419,8 @@ export function App() {
                 <span class="lbl">{def.parent ? 'Back' : 'Back to platform'}</span>
               </button>
             )}
-            {/* No presets on the home page; inside a module they size Protection & Capacity. */}
-            {def && (
+            {/* Presets size the shared cluster, so they show only on the modules that use it. */}
+            {def && PRESET_PATHS.includes(def.content.path) && (
               <>
                 <label class="sr-only" for="preset">
                   Scenario preset

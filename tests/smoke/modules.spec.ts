@@ -139,6 +139,16 @@ test('Any Bare Metal Linux opens Cloud Native AOS on bare metal', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('Presets show only on the modules that use the shared cluster', async ({ page }) => {
+  for (const path of ['nci/capacity', 'nci/scale', 'nci/failures']) {
+    await page.goto(`${FILE}#/${path}`);
+    await expect(page.getByLabel('Scenario preset')).toBeVisible();
+  }
+  await page.goto(`${FILE}#/nkp`);
+  await expect(page.locator('.mod-head h1')).toBeVisible();
+  await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
+});
+
 test('scenario state round-trips through the URL', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();
