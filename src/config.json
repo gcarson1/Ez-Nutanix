@@ -5,6 +5,6 @@
   "organization": "",
   "contact": "",
   "credit": "Built by: Alex Besaw, Gabriel Carson, and Claude :)",
-  "disclaimer": "Illustrative visualization for education. Behavior, limits and requirements vary by software version and configuration. Refer to Nutanix documentation.",
+  "disclaimer": "Illustrative visualization for education. Behavior, limits, licensing, and supported topologies vary by product release and configuration. Confirm the current Compatibility Matrix and product documentation before designing a deployment.",
   "factsCheckedOn": "2026-10-16"
 }

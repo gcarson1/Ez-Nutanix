@@ -55,7 +55,7 @@ export default function ClusterLab() {
           clock={clock}
           label={`${def.title} animation`}
           fmt={(t) => `Step ${stepAt(def, t) + 1} of ${n}`}
-          extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts take about two minutes and re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
+          extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
         />
       </div>
 

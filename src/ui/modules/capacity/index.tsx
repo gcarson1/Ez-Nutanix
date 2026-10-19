@@ -153,7 +153,7 @@ function CopiesView() {
             items={[
               { k: 'Copies of each piece', v: rf },
               { k: 'Survives', v: rf === 2 ? '1 failure' : '2 at once', tone: 'ok' },
-              { k: 'Usable', v: pct(share.data), sub: 'of raw, after the reserve', tip: `Raw divided by ${rf} copies, after keeping ${share.reserveNodes === 1 ? 'one node' : 'two nodes'} of free space so data can fully re-protect after a failure.` },
+              { k: 'Usable', v: pct(share.data), sub: 'of raw after the reserve (estimate)', tip: `Raw divided by ${rf} copies, after keeping ${share.reserveNodes === 1 ? 'one node' : 'two nodes'} of free space so data can fully re-protect after a failure. This is sizing guidance; the real figure depends on the design and data reduction.` },
             ]}
           />
         </>

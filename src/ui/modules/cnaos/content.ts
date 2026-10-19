@@ -12,14 +12,14 @@ export const content: ModuleContent = {
     'Steps 2 and 3: a database pod writes, and every block lands on two workers (RF2). When a worker fails, the second copies are still there and Kubernetes restarts the database on another worker with its data.',
     'Steps 4 and 5: Nutanix Data Services for Kubernetes (NDK) snapshots the whole app, its Kubernetes resources and its data together, and replicates it to another AWS region or zone. Apps on NKP on Nutanix in your data center can fail over to EKS the same way.',
     'Why customers care: a cloud provider’s database service only runs in that provider’s cloud and is managed apart from the app. With Cloud Native AOS the database stays inside Kubernetes, on storage the team already knows, so the app and its data move together.',
-    'Be precise on availability: release 1.0.0 (July 2025) is for Amazon EKS, up to 15 workers, RF2, with DR at an RPO of 1 hour or more. Bare metal comes through NKP Metal, early access with GA targeted for the second half of 2026; moving apps to and from bare metal is listed as future development.',
+    'Be precise on availability: release 1.0.0 (July 2025) is for Amazon EKS, up to 15 workers, RF2, with a DR target RPO of 1 hour or more. These limits belong to release 1.0, so check the current release notes. Bare metal comes through NKP Metal, early access with GA targeted for the second half of 2026; moving apps to and from bare metal is listed as future development.',
   ],
   numbers: [
     { k: 'Announced', v: 'May 2025 (.NEXT 2025)' },
     { k: 'Release 1.0.0', v: 'July 2025, Amazon EKS only' },
     { k: '1.0 limits', v: 'Up to 15 worker nodes, RF2, up to 64 volumes per node' },
     { k: '1.0 storage', v: 'EBS gp3 volumes on i3en, i4i, m6id or m5d workers' },
-    { k: 'DR in 1.0', v: 'Through NDK, RPO 1 hour or more; across AWS regions and zones, and from NKP on Nutanix (AHV) to EKS' },
+    { k: 'DR in 1.0', v: 'Through NDK, target RPO 1 hour or more; across AWS regions and zones, and from NKP on Nutanix (AHV) to EKS' },
   ],
   qa: [
     {

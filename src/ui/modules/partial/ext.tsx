@@ -280,7 +280,7 @@ export default function ExtStorage() {
             { color: 'var(--line-2)', label: 'Array snapshot', dashed: true },
           ]}
         />
-        <Illus why="Node, VM and volume counts are an example. Supported servers, array models and limits differ by array and release." />
+        <Illus why="Node, VM and volume counts are an example. Supported servers, array models, versions and limits differ by array and release; check the Compatibility Matrix." />
       </div>
     </Show>
   );

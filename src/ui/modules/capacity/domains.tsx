@@ -166,8 +166,8 @@ export function DomainsView() {
     aw === 'block'
       ? { k: 'Free space to keep', v: 'One block', sub: '2 nodes here', tip: 'Common sizing guidance: keep a block’s worth of free space so the cluster can fully re-protect after losing a whole block.' }
       : aw === 'rack'
-        ? { k: 'Minimum racks', v: '3 · 5', sub: 'RF2 · RF3 (4 · 6 with EC-X)' }
-        : { k: 'Minimum blocks for awareness', v: '3 · 5', sub: 'RF2 · RF3 (4 · 6 with EC-X)' };
+        ? { k: 'Minimum racks', v: '3 · 5', sub: 'RF2 · RF3 (4 · 6 with EC-X)', tip: 'From current Nutanix documentation. Confirm it for the AOS version and design.' }
+        : { k: 'Minimum blocks for awareness', v: '3 · 5', sub: 'RF2 · RF3 (4 · 6 with EC-X)', tip: 'From current Nutanix documentation. Confirm it for the AOS version and design.' };
 
   return (
     <Show

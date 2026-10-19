@@ -4,19 +4,20 @@ export const content: ModuleContent = {
   path: 'nci/snapshots',
   title: 'Snapshots & Clones',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'Snapshots copy a map of where the data lives, not the data itself, and clones start out sharing every block. Space is used only by what changes afterwards.',
+  summary: 'Snapshots copy a map of where the data lives, not the data itself, and clones start out sharing every block. Space is used only by what changes afterwards. Snapshots are local restore points, not backups.',
   priority: 'P1',
   talk: [
     'A virtual disk is a map: each logical block points to where the data physically lives in the storage fabric.',
     'A snapshot copies the map, not the data. That is why it completes almost immediately and starts out using no extra data space.',
     'After the snapshot, new writes go to new blocks and only the live disk’s map changes (redirect-on-write). The snapshot keeps pointing at the old blocks.',
     'A clone is a new writable disk built from a snapshot’s map. It is ready at once and shares every block until it changes one.',
-    'Space grows only with change: the VM’s new writes, and each clone’s own changes. That is what makes many test and development copies affordable.',
+    'Space grows only with change: the VM’s new writes and each clone’s own changes, stored at the container’s replication factor. That is what makes many test and development copies affordable.',
+    'Snapshots are local protection, not backups: they live on the same cluster as the data. Replicate them to another site, or use a backup product, to protect against losing the cluster; replicated copies use space there too.',
   ],
   numbers: [
     { k: 'Data copied to take a snapshot', v: 'None (map only)' },
     { k: 'New space for a fresh clone', v: 'None until it is written' },
-    { k: 'Space a snapshot costs over time', v: 'Old blocks the live disk has since replaced' },
+    { k: 'Space a snapshot costs over time', v: 'Old blocks the live disk has since replaced, times the replication factor' },
   ],
   qa: [
     {
