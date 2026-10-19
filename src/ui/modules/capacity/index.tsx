@@ -25,13 +25,13 @@ const REBUILD_FLIGHT = 0.9;
 function useTimeline(nodes: number, rf: RF) {
   return useMemo(() => {
     const plan = planSpread(nodes, rf);
-    const dt = 5 / plan.pieces;
+    const dt = Math.min(1, 5 / plan.pieces);
     const t0 = 0.5;
     const writesEnd = t0 + (plan.pieces - 1) * dt + FLIGHT;
     const fail = writesEnd + 1;
     const detect = fail + 1.3;
     const rebuilds = plan.copies.filter((c) => c.kind === 'rebuild');
-    const gap = Math.min(0.14, 2.4 / Math.max(1, rebuilds.length));
+    const gap = Math.min(0.3, 2.4 / Math.max(1, rebuilds.length));
     const done = detect + Math.max(0, rebuilds.length - 1) * gap + REBUILD_FLIGHT + 0.2;
     const end = done + 2.4;
     const start = new Map<string, number>();
@@ -45,9 +45,10 @@ function Spread({ nodes, rf, t, tl }: { nodes: number; rf: RF; t: number; tl: Re
   const { plan, start, fail } = tl;
   const gap = nodes > 8 ? 8 : 14;
   const nW = (W - PAD * 2 - gap * (nodes - 1)) / nodes;
-  const cols = Math.max(2, Math.min(4, Math.floor((nW - 10) / 22)));
-  const sz = Math.min(38, (nW - 10) / cols);
   const maxSlots = Math.max(...plan.copies.map((c) => c.slot)) + 1;
+  // Few pieces, so use only as many columns as a node needs and let the shapes grow.
+  const cols = Math.max(2, Math.min(4, maxSlots, Math.floor((nW - 10) / 22)));
+  const sz = Math.min(38, (nW - 10) / cols);
   const rows = Math.ceil(maxSlots / cols);
   const nH = 34 + rows * sz + 10;
   const H = TOP + nH + 8;
@@ -76,7 +77,7 @@ function Spread({ nodes, rf, t, tl }: { nodes: number; rf: RF; t: number; tl: Re
           </text>
           {isDown(n) && (
             <text x={nodeX(n) + nW - 8} y={TOP + 21} text-anchor="end" class="bad-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
-              ✕ {nW > 70 ? 'down' : ''}
+              ✕ {nW > 90 ? 'down' : ''}
             </text>
           )}
         </g>
@@ -118,7 +119,7 @@ function CopiesView() {
   const caption = [
     { tone: 'ink' as const, k: 'Writing', text: `Every piece of data is stored as ${rf} copies, each on a different node. No node holds two copies of the same piece.` },
     { tone: 'bad' as const, k: rf === 2 ? 'A node fails' : 'Two nodes fail at once', text: `${failedNames} ${rf === 2 ? 'goes' : 'go'} down. Every piece still has a copy on a healthy node, so nothing is lost and VMs keep running.` },
-    { tone: 'flow' as const, k: 'Self-healing', text: 'The healthy nodes re-create the missing copies together, many nodes to many nodes, so the cluster heals quickly.' },
+    { tone: 'flow' as const, k: 'Self-healing', text: 'Each missing copy is copied from a surviving copy to another healthy node. Different nodes copy at the same time, so the cluster heals quickly.' },
     { tone: 'ok' as const, k: 'Protected again', text: `Back to ${rf} copies of everything, on the nodes that are left. The cluster can take another failure.` },
   ][phase];
 

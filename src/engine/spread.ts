@@ -24,9 +24,19 @@ export interface SpreadPlan {
   perNode: number[];
 }
 
-/** Number of pieces of data to draw: eight, one per distinct shape, so no two look alike. */
-export function piecesFor(_nodes: number): number {
-  return 8;
+/** Number of pieces of data to draw: four (three on 3 nodes), so each copy and rebuild is easy to follow. */
+export function piecesFor(nodes: number): number {
+  return nodes <= 3 ? 3 : 4;
+}
+
+/**
+ * First node of a piece's run of copies. Pieces go in pairs that overlap by one node, and the
+ * pairs are spread around the cluster, so the node that fails (N2) holds two pieces whose other
+ * copies sit on different nodes: two different sources rebuild them at once.
+ */
+function startFor(piece: number, pieces: number, nodes: number): number {
+  const pairs = Math.ceil(pieces / 2);
+  return Math.round((Math.floor(piece / 2) * nodes) / pairs) + (piece % 2);
 }
 
 /** Which nodes fail in the animation: one for RF2, two at once for RF3. */
@@ -44,7 +54,7 @@ export function planSpread(nodes: number, rf: RF, pieces = piecesFor(nodes), fai
   for (let p = 0; p < pieces; p++) {
     const on: number[] = [];
     for (let k = 0; k < rf && k < nodes; k++) {
-      const node = (p + k) % nodes; // neighbors on a ring: distinct, and even rebuild spread
+      const node = (startFor(p, pieces, nodes) + k) % nodes; // neighbors on a ring: distinct
       on.push(node);
       copies.push({ piece: p, node, slot: count[node]++, kind: 'write' });
     }
@@ -53,6 +63,7 @@ export function planSpread(nodes: number, rf: RF, pieces = piecesFor(nodes), fai
 
   const down = new Set(failed);
   const healthy = Array.from({ length: nodes }, (_, i) => i).filter((i) => !down.has(i));
+  const reads = Array.from({ length: nodes }, () => 0); // spread the rebuild reads over sources
   for (let p = 0; p < pieces; p++) {
     const alive = holders[p].filter((n) => !down.has(n));
     if (!alive.length) continue; // every copy lost: cannot be rebuilt
@@ -61,7 +72,8 @@ export function planSpread(nodes: number, rf: RF, pieces = piecesFor(nodes), fai
     while (missing > 0) {
       const target = healthy.filter((n) => !have.has(n)).sort((a, b) => count[a] - count[b] || a - b)[0];
       if (target === undefined) break;
-      const src = alive[(p + missing) % alive.length];
+      const src = [...alive].sort((a, b) => reads[a] - reads[b] || a - b)[0];
+      reads[src]++;
       const srcSlot = copies.find((c) => c.piece === p && c.node === src)!.slot;
       copies.push({ piece: p, node: target, slot: count[target]++, kind: 'rebuild', from: { node: src, slot: srcSlot } });
       have.add(target);

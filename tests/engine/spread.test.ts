@@ -58,6 +58,14 @@ describe('planSpread', () => {
     }
   });
 
+  it.each(CASES)('%i nodes RF%i: a few pieces, and the failed copies are rebuilt from more than one node', (n, rf) => {
+    const p = planSpread(n, rf);
+    expect(p.pieces).toBe(n <= 3 ? 3 : 4);
+    const rebuilt = p.copies.filter((c) => c.kind === 'rebuild');
+    expect(rebuilt.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(rebuilt.map((c) => c.from!.node)).size).toBeGreaterThanOrEqual(2);
+  });
+
   it('fails one node for RF2 and two for RF3', () => {
     expect(failedFor(8, 2)).toEqual([1]);
     expect(failedFor(5, 3)).toHaveLength(2);

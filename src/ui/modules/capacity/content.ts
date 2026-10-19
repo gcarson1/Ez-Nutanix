@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   talk: [
     'Each shape is a piece of data. RF2 writes two copies of it, each on a different node; RF3 writes three. No node ever holds two copies of the same piece.',
     'When a node fails, every piece still has a copy on a healthy node, so nothing is lost and VMs keep running.',
-    'Then the healthy nodes re-create the missing copies together, many nodes to many nodes, so the cluster heals itself quickly and can take another failure.',
+    'Then healthy nodes copy each missing piece from a surviving copy onto another node. In a real cluster every node takes part at once, many nodes to many nodes, so it heals quickly and can take another failure.',
     'That protection costs capacity: usable is about half of raw with RF2 and about a third with RF3, before keeping free space so a rebuild has room: the largest node’s worth with RF2, the two largest with RF3.',
     'Moving from RF2 to RF3 can be done on a running cluster of at least 5 nodes: first the cluster’s redundancy factor, then each container, as long as there is free space for the third copy.',
     'Erasure coding tab: data that has not been overwritten for a while is encoded in the background into a strip of data and parity pieces, each on a different node, and its extra copies are deleted. A lost piece is recomputed from the rest of its strip.',
