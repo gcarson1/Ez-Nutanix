@@ -6,6 +6,8 @@ export interface AppConfig {
   presenterRole: string;
   organization: string;
   contact: string;
+  /** Credit line shown first in the footer. */
+  credit: string;
   disclaimer: string;
   factsCheckedOn: string;
 }

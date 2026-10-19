@@ -25,9 +25,18 @@ body { min-height: 100vh; }
 /* ── page frame ────────────────────────────────────────────────────── */
 .page { flex: 1; width: 100%; }
 .foot-bar { border-top: 1px solid var(--line); }
-.foot-bar .in { max-width: var(--wide); margin: 0 auto; padding: var(--sp-4) var(--gutter) var(--sp-5); display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-6); align-items: baseline; font-size: var(--fs-12); color: var(--faint); }
-.foot-bar .in .tbtn { height: auto; padding: 0; font-size: var(--fs-12); color: var(--muted); }
-.foot-bar .who { color: var(--muted); }
+.foot-bar .in { max-width: var(--wide); margin: 0 auto; padding: var(--sp-4) var(--gutter) var(--sp-5); font-size: var(--fs-12); line-height: 1.5; color: var(--faint); }
+/* Line 1: credit (and presenter, if set) on the left, About on the right. Line 2: the disclaimer. */
+.foot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-4); }
+.foot-row .credit { color: var(--muted); }
+.foot-row .who { color: var(--muted); padding-left: var(--sp-4); border-left: 1px solid var(--line-2); }
+.foot-row .tbtn { margin-left: auto; height: auto; padding: 0; font-size: var(--fs-12); color: var(--muted); }
+.foot-bar .disclaimer { margin-top: var(--sp-1); color: var(--faint); }
+@media (max-width: 600px) {
+  .foot-row { flex-direction: column; align-items: flex-start; }
+  .foot-row .tbtn { margin-left: 0; }
+  .foot-row .who { padding-left: 0; border-left: 0; }
+}
 
 /* ── landing: the slide ───────────────────────────────────────────── */
 .slide-wrap { background: var(--slide-bg); min-height: calc(100vh - var(--bar-h)); display: flex; flex-direction: column; }

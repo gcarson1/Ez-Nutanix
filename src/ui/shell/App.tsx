@@ -461,16 +461,19 @@ export function App() {
 
       <footer class="foot-bar">
         <div class="in">
-          <span>{CONFIG.disclaimer}</span>
-          {(CONFIG.presenterName || CONFIG.organization) && (
-            <span class="who">
-              {[CONFIG.presenterName, CONFIG.presenterRole, CONFIG.organization].filter(Boolean).join(' · ')}
-              {CONFIG.contact ? ` · ${CONFIG.contact}` : ''}
-            </span>
-          )}
-          <button type="button" class="tbtn" onClick={() => setDialog('about')}>
-            About this simulation
-          </button>
+          <div class="foot-row">
+            {CONFIG.credit && <span class="credit">{CONFIG.credit}</span>}
+            {(CONFIG.presenterName || CONFIG.organization) && (
+              <span class="who">
+                {[CONFIG.presenterName, CONFIG.presenterRole, CONFIG.organization].filter(Boolean).join(' · ')}
+                {CONFIG.contact ? ` · ${CONFIG.contact}` : ''}
+              </span>
+            )}
+            <button type="button" class="tbtn" onClick={() => setDialog('about')}>
+              About this simulation
+            </button>
+          </div>
+          <p class="disclaimer">{CONFIG.disclaimer}</p>
         </div>
       </footer>
 
