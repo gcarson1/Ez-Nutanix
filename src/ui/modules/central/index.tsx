@@ -363,7 +363,7 @@ export default function Central() {
         clock={clock}
         label="Fleet reporting animation"
         fmt={() => L[phase].word}
-        extra={<Illus why="Five example clusters in two regions. Reports are drawn as dots in one pass; real clusters report continuously. Nutanix Central on-premises supports up to 25 Prism Central domains." />}
+        extra={<Illus why="Five example clusters in two regions. Reports are drawn as dots in one pass; real clusters report continuously. At its December 2025 GA, Nutanix Central on-premises supported up to 25 Prism Central domains." />}
       />
     </Show>
   );

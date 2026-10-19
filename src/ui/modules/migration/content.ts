@@ -8,16 +8,16 @@ export const content: ModuleContent = {
     'Nutanix Move brings VMs from VMware, Hyper-V, AWS and Azure onto Nutanix, on-premises or in NC2. It copies while the VM keeps running, keeps the copy in sync, and cuts over in a short window you choose.',
   priority: 'P1',
   talk: [
-    'Move is free for Nutanix customers and has been around for about ten years, so it is a well-trodden path.',
+    'Move is included at no extra cost for Nutanix customers and has been around for about ten years, so it is a well-trodden path.',
     'Three phases: a seed copy while users keep working, incremental syncs that carry only changes, then a cutover.',
-    'Downtime is only the cutover: a final small sync plus the power-on. Compare it with shutting down and copying everything.',
+    'Downtime is only the cutover: a final small sync plus the power-on, so its length depends on change rate, bandwidth and boot time. Compare it with shutting down and copying everything.',
     'Before the cutover, Move can prepare the guest OS for AHV, for example by installing drivers, automatically or manually depending on the OS and the access you give it.',
     'The honest limit: if a VM changes data faster than the link can copy it, syncs never catch up. The fix is more bandwidth or a quieter time.',
-    'Sources: vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud (VMC, AVS), AHV and file shares. Targets: AHV on-premises and NC2 on AWS, Azure, Google Cloud and OVHcloud.',
+    'Sources: vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud (VMC, AVS), AHV and file shares. Targets: AHV on-premises and NC2 on AWS, Azure, Google Cloud and OVHcloud. Supported versions and pairs change by Move release, so check the support matrix.',
   ],
   numbers: [
-    { k: 'Cost', v: 'Free for Nutanix customers' },
-    { k: 'Current release', v: 'Move 6.3.3 (Oct 2026)' },
+    { k: 'Cost', v: 'No extra cost for Nutanix customers' },
+    { k: 'Current release', v: 'Move 6.3.3 (Oct 2026, new deployments only)' },
     { k: 'Targets', v: 'AHV on-prem; NC2 on AWS, Azure, Google Cloud, OVHcloud' },
     { k: 'File shares', v: 'SMB v2+, NFS v3 sources' },
   ],
@@ -28,7 +28,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Can we migrate without copying the data at all?',
-      a: 'For ESXi to AHV with supported external arrays (Dell PowerStore, Pure Storage), Move 6.3 added zero-copy migration. Otherwise Move copies the data, using the seed and incremental approach shown here.',
+      a: 'For ESXi to AHV, Move 6.3 added zero-copy migration when the VM disks already sit on a supported external array, such as Everpure FlashArray, that the AHV cluster also uses. Otherwise Move copies the data, using the seed and incremental approach shown here.',
     },
     {
       q: 'Do we need to change IP addresses?',

@@ -84,11 +84,11 @@ Where a portal page exists for a topic, its URL is listed so someone can confirm
 Not redone here. Summary only. The full rows and sources are in the linked notes.
 
 - **Item 7, LCM** ([C-lcm-networking.md][C]): current versions are LCM 3.4, AOS 7.6, AHV 11.2 and pc.7.6. Since 7.5, AHV is a separate LCM update. The order is framework update, then pre-checks, then dependency ordering, then one node at a time, moving to the next node only when Data Resiliency is Normal. There is no automatic rollback. Pre-check names were updated: for example, test_nutanix_partition_space and test_check_url_connectivity. **1-node:** AOS and AHV upgrades need all guest VMs shut down, and LCM does no firmware. **2-node:** a registered Witness is required, and upgrades take longer. Firmware reboots 2–3 times in the Phoenix environment. Inspur is dropped from the vendor list, and NKE is incompatible with pc.7.5+. On AHV, AOS-upgrade I/O redirection is the iSCSI redirector, not "autopathing". Per-node durations are unofficial (about 15 min AOS, 25+ min AHV). AHV networking fixes are also there: balance-slb is no longer recommended, LACP fallback is not a bond mode, and the OVS rebalance default is 10 s.
-- **Item 10, NC2** ([E-platform-services.md][E]): GA on AWS, Azure, **Google Cloud (GA Dec 9, 2025)** and OVHcloud. The AWS European Sovereign Cloud offering is branded GC2 and is "coming soon", not GA.
+- **Item 10, NC2** ([E-platform-services.md][E]): GA on AWS, Azure, **Google Cloud (GA Dec 9, 2025)** and OVHcloud. GC2 (Government Cloud Clusters) is GA on AWS GovCloud (US) and, since Jul 28, 2026, on the AWS European Sovereign Cloud, starting with Germany ([GC2 on AWS ESC][gc2-esc]). Region presence does not guarantee every bare-metal type or feature.
 - **Item 11, NDB:** NDB 2.11 (July 2026). Add EDB Postgres to the engine list.
 - **Item 12, Cloud Native AOS:** GA only on Amazon EKS (1.0.0, July 2025). Bare metal is future work, tied to NKP Metal. Project Beacon was a 2023 vision whose outcome is CN-AOS plus NDK, not a product.
 - **Item 13, Data Lens and AI:** Data Lens 2.0 on-prem (including air-gapped) GA in Apr 2026, and On-Prem 2.1 added Objects. NAI is at 2.8. "Nutanix Agentic AI" is a full-stack solution targeted for 2H 2026. GPT-in-a-Box is a legacy name.
-- **Item 14, Fleet, NCM, Federation:** "Prism Federation" is not a Nutanix product name. The capability is Nutanix Central (SaaS and on-prem, up to 25 Prism domains). NCM 2.0 runs on Nutanix Central On-Prem. Self-Service and Cost Governance start at Pro, and Security Compliance is Ultimate only.
+- **Item 14, Fleet, NCM, Federation:** "Prism Federation" is not a Nutanix product name. The capability is Nutanix Central (SaaS and on-prem; up to 25 Prism domains at the Dec 2025 on-prem GA). NCM 2.0 (GA Apr 2026) runs on Nutanix Central On-Prem, which "is now required for all NCM 2.x Deployments"; NCM 2.1 (GA Aug 13, 2026) adds a 3-node Small form factor for about 2,500 VMs, next to the Medium form factor for about 10,000 ([NCM 2.1][ncm21]; [NCM 2.x][ncm2x]). Self-Service and Cost Governance start at Pro, and Security Compliance is Ultimate only.
 
 
 ## 6. NCM Cost: how overspend is caught and prevented
@@ -336,3 +336,6 @@ No contradictions were found for:
 [pg-cnaos]: https://www.nutanix.com/products/kubernetes-management-platform/cloud-native-aos
 [ds-cnaos]: https://www.nutanix.com/library/datasheets/aos
 [pr-nkpm]: https://www.nutanix.com/press-releases/2026/nutanix-introduces-nkp-metal-bringing-bare-metal-kubernetes-to-its-platform
+[gc2-esc]: https://www.nutanix.com/blog/nutanix-government-cloud-clusters-is-available-in-aws-european-sovereign-cloud
+[ncm21]: https://www.nutanix.com/blog/introducing-nutanix-cloud-manager-2-1
+[ncm2x]: https://next.nutanix.com/community-blog-154/sovereign-ready-unified-insight-driven-nutanix-cloud-manager-2-x-45618
