@@ -11,15 +11,15 @@ export const content: ModuleContent = {
     'Pick where it runs: your data center (NKP on Nutanix), public cloud (EKS, AKS or GKE in your own account), or an air-gapped site. Air-gapped means NKP in your own data center: Hugging Face is out, and the model comes as air-gapped NIM or your own files.',
     'Every replica loads its own copy of the model onto its GPUs. Apps and agents call one endpoint address with an API token; role-based access control decides who can create endpoints and tokens, and GPU and model monitoring are built in.',
     'The endpoint spreads requests over the replicas. With one replica, requests queue in busy moments, and a stop for an update or a fault means a pause. With two or more, the others keep answering.',
-    'NAI 2.8 adds the Agent Gateway in front of endpoints: token tracking and quotas per app, and an MCP Gateway for governed tool access by agents. It can also split a large model across several GPUs in one replica.',
+    'NAI 2.8 adds the Agent Gateway in front of endpoints: token tracking and quotas per app, and an MCP Gateway for governed tool access by agents. It can also split a supported model across several GPUs in one replica; spreading one model over several GPU nodes is a tech preview.',
     'Naming: NAI is the product, now at 2.8. Nutanix Agentic AI is the wider full-stack solution around it, and GPT-in-a-Box is the earlier name for the bundle NAI was part of.',
   ],
   numbers: [
     { k: 'Current release', v: 'NAI 2.8 (GA August 2026)' },
-    { k: 'Runs on', v: 'NKP, plus EKS, AKS and GKE' },
-    { k: 'Model sources', v: 'NVIDIA NIM, Hugging Face, your own' },
-    { k: 'Pricing basis', v: 'Infrastructure resources, not tokens' },
-    { k: 'Also in NAI 2.8', v: 'Agent Gateway with MCP Gateway, multi-GPU serving, batch inference, speculative decoding, LoRA fine-tuning (models under 8B), custom IAM roles, air-gapped NIM' },
+    { k: 'Runs on', v: 'NKP or other CNCF Kubernetes; tested on EKS, AKS and GKE' },
+    { k: 'Model sources', v: 'NVIDIA NIM, Hugging Face, your own; a catalog of pre-validated models' },
+    { k: 'Licensing', v: 'By GPU memory (vCPUs on clusters without GPUs), not tokens' },
+    { k: 'Also in NAI 2.8', v: 'Agent Gateway (licensed separately) with MCP Gateway, multi-GPU serving (multi-node in tech preview), batch inference, speculative decoding, LoRA fine-tuning (models under 8B), custom IAM roles, air-gapped NIM' },
   ],
   qa: [
     {
@@ -28,7 +28,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Which models can we run?',
-      a: 'NVIDIA NIM packages, models from Hugging Face, or model files you upload. Fit depends on GPU memory; NAI 2.8 can split a model across several GPUs.',
+      a: 'NVIDIA NIM packages (with an NVIDIA AI Enterprise license), models from Hugging Face, or model files you upload. NAI keeps a catalog of pre-validated models; others you import yourself. Fit depends on GPU memory; NAI 2.8 can split supported models across several GPUs.',
     },
     {
       q: 'Is Nutanix Agentic AI a separate product we buy?',

@@ -281,7 +281,7 @@ export default function Ai() {
             { color: 'var(--bad)', label: 'Stopped replica', dashed: true },
           ]}
         />
-        <Illus why="Simplified. Real model servers work on many requests at once by batching them, a replica can span several GPUs, and times are not to scale. The point is how one endpoint spreads requests over replicas." />
+        <Illus why="Simplified. Real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. The point is how one endpoint spreads requests over replicas." />
       </div>
     </Show>
   );

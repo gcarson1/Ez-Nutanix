@@ -8,22 +8,24 @@ export const content: ModuleContent = {
   priority: 'P2',
   talk: [
     'Unstructured data is where ransomware hurts most: shared drives that many users can write to.',
-    'Data Lens reads the file activity on the share. Known strains match its signature list. Pro adds behavior analytics that flags a user changing files at an abnormal rate, even for a strain nobody has seen before.',
+    'Data Lens reads the file activity on the share. Known strains match its signature list. Pro adds behavior analytics that flags a user changing files at an abnormal rate, even for a strain nobody has seen before. Its user behavior analytics (UBA) compares each user with their own past activity.',
     'Watch the alert fire and the client get blocked automatically, seconds after the attack starts, so only a slice of the share is hit.',
     'Recovery comes from snapshots. The client cannot touch them, so one action restores the affected files to the last clean version.',
     'Be clear about the recovery point: edits made after that snapshot are lost on the files that were encrypted.',
-    'It runs as SaaS or fully on-premises, including air-gapped sites, since Data Lens 2.0.',
+    'It runs as SaaS or fully on-premises, including air-gapped sites, since Data Lens 2.0. On-Prem 2.1 added Nutanix Objects, UBA and finer role-based access control.',
   ],
   numbers: [
     { k: 'Known ransomware signatures', v: 'over 65,000' },
     { k: 'Data Lens 2.0 on-prem', v: 'GA April 2026, air-gapped capable' },
-    { k: 'On-Prem 2.1', v: 'August 2026: adds Nutanix Objects' },
+    { k: 'On-Prem 2.1', v: 'August 2026: adds Objects (5.4 or later), UBA (Pro) and granular RBAC' },
     { k: 'Covers', v: 'Files, Objects; Amazon S3 on SaaS Pro' },
+    { k: 'Starter vs Pro', v: 'Starter: signatures and blocking. Pro: behavior-based detection, UBA, permission reports' },
+    { k: 'Files only', v: 'Behavior analytics (UBA) and automated recovery' },
   ],
   qa: [
     {
       q: 'Does it classify personal or sensitive data (PII)?',
-      a: 'No, that is not what Data Lens is sold for. Its privacy side is audit trails, permission mapping and access-risk reporting, with the metadata kept on-premises if you choose.',
+      a: 'No, that is not what Data Lens is sold for. Its privacy side is audit trails, permission mapping and access-risk reporting (Pro), with the metadata kept on-premises if you choose. On-premises, granular RBAC since 2.1 can scope each admin role to specific file servers.',
     },
     {
       q: 'Can it run without sending anything to the cloud?',
@@ -31,7 +33,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Will it stop every attack?',
-      a: 'No tool can promise that. Detection reduces how much gets encrypted; snapshots are what make recovery possible. Keep snapshot schedules and backups that match the recovery point you need.',
+      a: 'No tool can promise that. Detection reduces how much gets encrypted; snapshots are what make recovery possible. Behavior-based detection is a Pro feature, and UBA and automated recovery are listed for Files, not Objects. Keep snapshot schedules and backups that match the recovery point you need.',
     },
   ],
   next: ['Files, Objects', 'Snapshots & Clones', 'Flow'],

@@ -78,7 +78,7 @@ function TimeMachine() {
   const lines: Line[] = [
     { tone: 'ink', k: 'Protecting', text: 'Time Machine takes a snapshot of the database every day and copies its transaction log every 30 minutes, so any moment in the window can be rebuilt.' },
     { tone: 'bad', k: 'A mistake', text: 'Saturday 14:38: someone drops a table. Time Machine keeps capturing, so the moment just before it is still there.' },
-    { tone: 'flow', k: 'Pick a moment', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window.' },
+    { tone: 'flow', k: 'Pick a moment', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window up to the last captured log.' },
     { tone: 'flow', k: 'Rebuild it', text: `NDB starts from the nearest earlier snapshot (${fmtT(BASE)}) and replays ${fmtSpan(TARGET - BASE)} of transaction log on top of it, up to ${fmtT(TARGET)}.` },
     clone
       ? { tone: 'ok', k: 'Clone ready', text: 'A copy of the database at 14:37 comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back.' }
@@ -197,7 +197,7 @@ function TimeMachine() {
           Transaction log kept by Time Machine
         </span>
       </div>
-      <PlayBar clock={clock} label="Time Machine animation" fmt={() => line.k} extra={<Illus why="Schedule and retention are examples; you set your own. Snapshots are application-consistent; logs are captured continuously and copied into Time Machine at the catch-up interval, which bounds how close to now you can recover." />} />
+      <PlayBar clock={clock} label="Time Machine animation" fmt={() => line.k} extra={<Illus why="Schedule and retention are examples; you set your own. Snapshots are application-consistent; logs are captured continuously and copied into Time Machine at the catch-up interval, which bounds how close to now you can recover. Recovery options vary by engine." />} />
     </Show>
   );
 }

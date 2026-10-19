@@ -13,12 +13,12 @@ export const content: ModuleContent = {
     'Recover side by side as a clone to pull back just what you need, or restore in place when you want production rolled back.',
     'Database clones come from AOS snapshots, the same mechanism as in Snapshots & Clones: ready in minutes, using space only for what they change.',
     'Provisioning and patching follow profiles the DBA defines once, so every database is built and patched the same way.',
-    'Engines in NDB 2.11: Oracle, SQL Server, PostgreSQL (including pgvector), EDB Postgres, MySQL, MariaDB and MongoDB.',
+    'Engines in NDB 2.11: Oracle, SQL Server, PostgreSQL (including pgvector), EDB Postgres, MySQL, MariaDB and MongoDB. Recovery, HA and DR options differ by engine and version.',
   ],
   numbers: [
     { k: 'Current release', v: 'NDB 2.11 (Jul 2026)' },
     { k: 'Engines', v: 'Oracle, SQL Server, PostgreSQL, EDB Postgres, MySQL, MariaDB, MongoDB' },
-    { k: 'Point-in-time recovery', v: 'To the second, within retention' },
+    { k: 'Point-in-time recovery', v: 'To the second within retention, up to the last log catch-up; details vary by engine' },
     { k: 'NDB on NC2', v: 'AWS, Azure, Google Cloud' },
   ],
   qa: [

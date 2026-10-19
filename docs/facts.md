@@ -182,6 +182,24 @@ The Cloud Native AOS module (`src/ui/modules/cnaos/`). The message: stateful Kub
 | CNA-12 | Moving apps between bare metal, on-premises clusters and public clouds is planned. | Product page: "Move workloads seamlessly between on-prem, public clouds and bare metal servers*", with the footnote "*future development". | [pg-cnaos] | 2026-10-18 | keep, shown as planned |
 | CNA-13 | On bare metal, AOS pools the servers' local drives and keeps two copies. | Nutanix hasn't published NKP Metal storage details. Local drives follow from bare-metal servers; the two copies follow release 1.0 on EKS. | [pr-nkpm]; [rn-cnaos10] | 2026-10-18 | keep (inferred; the caption says "as release 1.0 does on Amazon EKS") |
 
+## 11. Documentation review pass (October 2026)
+
+An internal documentation review asked for release and configuration caveats across the modules. These rows cover the values that changed or were added in the presenter numbers and on screen. Wording-only caveats ("target", "typical", "by release") are not listed.
+
+| ID | Claim (as the app states it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| REV-1 | NUS 5.4 (Jul 2026): Files 5.4 adds encrypted NFS; Objects 5.4 drops load balancer VMs on supported AHV setups. | "new enhancements to Nutanix Unified Storage (NUS) 5.4"; Files 5.4 adds encrypted NFS shares; Objects 5.4 is "removing load balancer VMs from supported AHV deployments". | [nus54]; [files54]; [obj54] | 2026-10-19 | keep |
+| REV-2 | NUS Starter is for hybrid, backup and archive; with NCI Starter, Volumes serve in-cluster VMs only. | Software options page: NUS is "licensed per usable TiB"; "For NCI-Starter licenses, Volume Group access is only supported for VMs running within the cluster". | [sw-opt] | 2026-10-19 | keep |
+| REV-3 | Data Lens On-Prem 2.1 (Aug 2026) adds Objects (5.4 or later), UBA (Pro) and granular RBAC; Starter has signatures and blocking; UBA and automated recovery are for Files. | "On-Prem now fully supports Nutanix Objects (Objects 5.4+)"; "custom roles using 28 granular operations"; Starter has "Basic ransomware signatures and file blocking". The software options page marks Behaviour Analytics and Automated Ransomware Recovery "Available for Nutanix Files only". | [dl21]; [sw-opt] | 2026-10-19 | keep. "SaaS 2026.2" not found in any Nutanix source, so not shown |
+| REV-4 | NDB recovers to the second within retention, up to the last captured log; details vary by engine. | "restores to any precise second within the retention window"; sharded MongoDB restores are "forward-only". NDB 2.11 notes list engine-specific PITR, DR and TDE support. | [ndb-mongo]; [ndb211] | 2026-10-19 | keep |
+| REV-5 | NAI runs on NKP or other CNCF Kubernetes (tested on EKS, AKS and GKE), is licensed by GPU memory (or vCPUs), licenses Agent Gateway separately, and serves across several nodes only in tech preview. | FAQ: "CNCF-certified … Kubernetes runtime", "tested to support" GKE, EKS and AKS. Software options: "metered by either aggregate GPU RAM … or vCPUs". NAI 2.8 notes: "License Agent Gateway capabilities separately"; multi-GPU-node serving is "a new tech preview". | [nai-faq]; [sw-opt]; [nai28] | 2026-10-19 | keep |
+| REV-6 | NKP 2.18 is the newest posted release; 2.19 was announced in August 2026 and not yet posted. EKS and AKS management needs a separate NKP Cloud Kubernetes SKU. | Press release (Aug 26, 2026): "NKP 2.19 will be available soon." No 2.19 post on product-updates by 2026-10-19. Software options: "A separate 'NKP Cloud Kubernetes' SKU is available for managing Amazon EKS or Azure AKS clusters". | [pr-nai28]; [sw-opt] | 2026-10-19 | keep 2.18. The reviewer's "update to 2.19" is early |
+| REV-7 | Flow Network Security Next-Gen 7.6 comes with AOS 7.6 and pc.7.6 and adds rule-centric and FQDN-based policies. | "Install automatically with AOS 7.6 and Prism Central pc.7.6"; "new rule-centric policy model"; "Define policies with fully qualified domain names (FQDNs)". Legacy clusters need a planned upgrade; policy migration is a separate statement of work. | [fns76]; [fns-sd] | 2026-10-19 | keep |
+| REV-8 | Security profiles need AOS 7.6, Prism Central 7.6 and AHV 11.2, are checked every 2 hours, and fix drift where possible (otherwise an alert). The FIPS line reads "FIPS 140-2 Level 1 (per Nutanix)". | TME post: "you will need to be running AOS 7.6, Prism Central 7.6, and AHV 11.2", "a built-in 2 hour security cron job", drift fixed "wherever possible", reboot-only changes raise an "NCC alert". NIST certificate #4584 (140-2 Level 1) is now "Historical". | [sec76]; [nist4584] | 2026-10-19 | fix. "validated" removed |
+| REV-9 | NCM 2.1 (GA Aug 2026) adds a 3-node Small form factor for about 2,500 VMs; Medium is about 10,000; NCM 2.x requires Nutanix Central on-prem. | See item 14 in section 5. | [ncm21]; [ncm2x] | 2026-10-19 | keep |
+| REV-10 | Move zero-copy applies when the VM disks already sit on a supported external array, such as Everpure FlashArray, that the AHV cluster also uses. Move 6.3.3 is for new deployments only. | Move 6.3: "zero-copy migration with supported external storage"; the Sep 29, 2026 blog names only FlashArray. "Move 6.3.3 supports new deployments only". | [move63]; [move-zc]; [move633] | 2026-10-19 | fix. Dell PowerStore removed from the zero-copy claim |
+| REV-11 | NetApp ONTAP support was still planned for this fall in mid-October 2026. | Oct 15, 2026 coverage: "Planned for availability this autumn with an upcoming NCI release", over NFS. | Intelligent CIO (Oct 15, 2026) | 2026-10-19 | keep (presenter Q&A) |
+
 ---
 
 ## Changes needed in the app
@@ -339,3 +357,20 @@ No contradictions were found for:
 [gc2-esc]: https://www.nutanix.com/blog/nutanix-government-cloud-clusters-is-available-in-aws-european-sovereign-cloud
 [ncm21]: https://www.nutanix.com/blog/introducing-nutanix-cloud-manager-2-1
 [ncm2x]: https://next.nutanix.com/community-blog-154/sovereign-ready-unified-insight-driven-nutanix-cloud-manager-2-x-45618
+[nus54]: https://www.nutanix.com/blog/unleashing-modern-workloads
+[files54]: https://next.nutanix.com/product-updates/nutanix-files-5-4-45836
+[obj54]: https://next.nutanix.com/product-updates/nutanix-objects-5-4-45798
+[sw-opt]: https://www.nutanix.com/products/cloud-platform/software-options
+[dl21]: https://next.nutanix.com/data-lens-239/nutanix-data-lens-update-aligning-features-and-licensing-across-on-prem-and-saas-45838
+[ndb-mongo]: https://nutanix.com/blog/mongodb-sharded-cluster-database-data-protection
+[ndb211]: https://www.nutanix.com/blog/announcing-nutanix-database-service-2-11
+[nai-faq]: https://www.nutanix.com/products/nutanix-enterprise-ai/faq
+[nai28]: https://next.nutanix.com/product-updates/nutanix-enterprise-ai-2-8-45849
+[pr-nai28]: https://www.nutanix.com/press-releases/2026/nutanix-gives-enterprises-the-freedom-to-run-production-agentic-ai-their-way
+[fns76]: https://next.nutanix.com/product-updates/flow-network-security-next-gen-release-7-6-45769
+[fns-sd]: https://www.nutanix.com/content/dam/nutanix/en/resources/service-descriptions/sd-nutanix-flow-network-security-next-gen-readiness.pdf
+[sec76]: https://next.nutanix.com/community-blog-154/nutanix-cloud-infrastructure-nci-episode-7-6-a-nutanix-aos-software-and-ahv-hypervisor-security-story-45746
+[nist4584]: https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/4584
+[move63]: https://next.nutanix.com/product-updates/nutanix-move-6-3-45782
+[move-zc]: https://www.nutanix.com/blog/accelerating-workload-mobility-using-nutanix-move
+[move633]: https://next.nutanix.com/product-updates/nutanix-move-6-3-3-45958
