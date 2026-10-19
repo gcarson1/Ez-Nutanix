@@ -27,6 +27,7 @@ test('landing page renders every pane and opens a module', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(FILE);
   await expect(page.getByRole('heading', { name: /One Platform For All Apps/ })).toBeVisible();
+  await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
   for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'AWS', 'Azure', 'Google Cloud', 'Any Bare Metal Linux']) {
     await expect(page.getByRole('button', { name: new RegExp(name) }).first()).toBeVisible();
   }

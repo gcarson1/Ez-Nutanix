@@ -105,7 +105,7 @@ const LANDING_NOTES = {
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
     'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
-    'Use the presets in the top bar to load a cluster size that matches the customer into Protection & Capacity.',
+    'Inside any module, the Presets menu in the top bar loads a cluster size that matches the customer into Protection & Capacity.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
@@ -416,27 +416,32 @@ export function App() {
                 <span class="lbl">{def.parent ? 'Back' : 'Back to platform'}</span>
               </button>
             )}
-            <label class="sr-only" for="preset">
-              Scenario preset
-            </label>
-            <select
-              id="preset"
-              class="input preset"
-              value=""
-              onChange={(e) => {
-                const v = (e.target as HTMLSelectElement).value;
-                (e.target as HTMLSelectElement).value = '';
-                if (v) applyPreset(v);
-              }}
-            >
-              <option value="">Presets…</option>
-              {PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            <span class="bar-div" />
+            {/* No presets on the home page; inside a module they size Protection & Capacity. */}
+            {def && (
+              <>
+                <label class="sr-only" for="preset">
+                  Scenario preset
+                </label>
+                <select
+                  id="preset"
+                  class="input preset"
+                  value=""
+                  onChange={(e) => {
+                    const v = (e.target as HTMLSelectElement).value;
+                    (e.target as HTMLSelectElement).value = '';
+                    if (v) applyPreset(v);
+                  }}
+                >
+                  <option value="">Presets…</option>
+                  {PRESETS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <span class="bar-div" />
+              </>
+            )}
             <button type="button" class={`tbtn${panel === 'presenter' ? ' on' : ''}`} onClick={() => setPanel(panel === 'presenter' ? null : 'presenter')} title="Presenter notes (P)" aria-pressed={panel === 'presenter'}>
               <Icon name="podium" />
               <span class="lbl wide-only">Presenter</span>
