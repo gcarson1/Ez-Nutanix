@@ -2,7 +2,7 @@
 // panel, glossary, shortcuts and about dialogs, toasts and global keyboard shortcuts.
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { useRoute, getRoute, setParams, urlIsShareable } from '../../state/route';
+import { useRoute, getRoute, setParams } from '../../state/route';
 import { PRESETS, clearedScenario, setScenario } from '../../state/scenario';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
@@ -11,7 +11,6 @@ import { simKey } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG } from './config';
 import { go } from './nav';
-import { downloadPng } from './export';
 
 // ── toast ──
 let pushToast: (msg: string) => void = () => undefined;
@@ -246,52 +245,10 @@ function ModuleView({ def }: { def: ModuleDef }) {
           <h1>{c.title}</h1>
           <p>{c.summary}</p>
         </div>
-        <div class="acts">
-          <button type="button" class="btn" onClick={copyLink}>
-            <Icon name="link" />
-            Copy link
-          </button>
-          <button
-            type="button"
-            class="btn"
-            onClick={async () => {
-              const ok = await downloadPng(c.title).catch(() => false);
-              toast(ok ? 'Saved the diagram as PNG' : 'There is no diagram on this view to save');
-            }}
-          >
-            <Icon name="image" />
-            PNG
-          </button>
-        </div>
       </header>
       <Component />
     </div>
   );
-}
-
-function copyLink() {
-  if (!urlIsShareable()) {
-    toast('This preview can’t hold a link. Open the HTML file in a browser to copy a scenario link.');
-    return;
-  }
-  const url = location.href;
-  const done = () => toast('Link to this exact scenario copied');
-  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, () => fallbackCopy(url, done));
-  else fallbackCopy(url, done);
-}
-
-function fallbackCopy(text: string, done: () => void) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  document.body.appendChild(ta);
-  ta.select();
-  try {
-    document.execCommand('copy');
-    done();
-  } catch {
-    toast('Copy failed: select the address bar and copy it');
-  }
-  ta.remove();
 }
 
 function crumbsFor(def: ModuleDef | undefined): { label: string; path: string }[] {
@@ -467,7 +424,7 @@ export function App() {
         {def ? <ModuleView def={def} key={def.content.path} /> : route.path ? <NotFound /> : <Landing />}
       </main>
 
-      <footer class="foot-bar">
+      <footer class={`foot-bar${route.path ? '' : ' fab-room'}`}>
         <div class="in">
           <div class="foot-row">
             {CONFIG.credit && <span class="credit">{CONFIG.credit}</span>}

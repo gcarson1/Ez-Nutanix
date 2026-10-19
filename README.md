@@ -34,7 +34,7 @@ Tips:
 - Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is one fixed 4-node cluster with five scenarios (data placement, live migration, planned shutdown, VM failover, drive failure) and a right-hand pane that explains the chosen one.
 - Under the slide, **Don’t want the full stack?** opens two partial starting points: Nutanix with external storage (AHV on the customer’s own array) and ESXi on Nutanix (stay on vSphere, or convert to AHV later). Each leads with why customers choose it.
 - On Protection & Capacity and Scale-out vs 3-tier, use **Presets** in the top bar to load a cluster size that matches the customer into Protection & Capacity (3-node edge, 4-node starter, 8-node production, 12-node RF3). Its other tabs show erasure coding and block and rack awareness.
-- Everything you change is kept in the address bar. **Copy link** sends the customer exactly the scenario you showed. **PNG** saves the current diagram.
+- Everything you change is kept in the address bar, so the page's link points to exactly the scenario you showed.
 - Anything simplified carries an **Illustrative** tag; hover it to see what was simplified.
 
 ## Changing the presenter details

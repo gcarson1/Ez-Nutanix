@@ -49,7 +49,6 @@ body { min-height: 100vh; }
   font-size: clamp(1.75rem, 1.1rem + 2.1vw, 3.25rem); margin: 0 auto var(--sp-4); max-width: 22em;
 }
 :root[data-theme='light'] .slide-title { color: #0b0b10; }
-.slide-actions { display: flex; justify-content: center; gap: var(--sp-3); flex-wrap: wrap; margin-top: calc(var(--sp-2) * -1); margin-bottom: var(--sp-2); }
 
 .band { position: relative; }
 .pane {
@@ -140,6 +139,19 @@ body { min-height: 100vh; }
 /* tour spotlight */
 .tour-on .pane, .tour-on .central-head, .tour-on .beacon { transition: none; }
 .spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
+/* Guided tour: a round button fixed to the bottom right of the home page */
+.tour-fab {
+  position: fixed; right: var(--sp-6); bottom: var(--sp-6); z-index: 50;
+  width: 3.5rem; height: 3.5rem; border: 0; border-radius: 50%;
+  display: grid; place-items: center; padding: 0;
+  background: var(--ink); color: var(--ink-text);
+  box-shadow: 0 0.5rem 1.5rem -0.25rem rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast);
+}
+.tour-fab:hover { background: var(--ink-hover); transform: translateY(-0.125rem); }
+.tour-fab:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+.tour-fab svg { width: 1.5rem; height: 1.5rem; }
+.foot-bar.fab-room .in { padding-right: calc(var(--gutter) + 4.5rem); }
 .tour-card {
   position: fixed; z-index: 70; left: 50%; bottom: var(--sp-8); transform: translateX(-50%);
   width: min(34rem, calc(100vw - 2rem)); background: var(--bg); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--radius);
@@ -429,12 +441,13 @@ body { min-height: 100vh; }
   .bar-div { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .tour-fab:hover { transform: none; }
   .flowline { display: none; }
   .diagram .beat { animation: none; }
   .pane:hover, .pane:focus-visible { transform: none; }
 }
 @media print {
-  .bar, .foot-bar, .playbar, .drawer { display: none !important; }
+  .bar, .foot-bar, .playbar, .drawer, .tour-fab { display: none !important; }
 }
 
 /* ── shell additions ──────────────────────────────────────────────── */

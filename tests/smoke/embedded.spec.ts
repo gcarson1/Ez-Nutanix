@@ -30,10 +30,6 @@ test('works inside an about:srcdoc preview frame', async ({ page }) => {
   await stolen.click();
   await expect(stolen).toHaveAttribute('aria-pressed', 'true');
 
-  // Copy link explains instead of copying an unusable about:srcdoc address.
-  await app.getByRole('button', { name: 'Copy link' }).click();
-  await expect(app.locator('.toast')).toContainText('Open the HTML file in a browser');
-
   // Back still works through the in-memory route.
   await app.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(app.locator('.mod-head h1')).toHaveText('Nutanix Cloud Infrastructure');
