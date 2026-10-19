@@ -68,7 +68,7 @@ const SCENARIOS: Record<Size, Partial<Record<EventId, Step[]>>> = {
     node: [
       { k: 'Node fails', text: 'The node fails.', tone: 'bad', down: [0] },
       { k: 'Site down', text: 'Every VM at the site stops. There is no second node to restart them on.', tone: 'bad', down: [0], vmsOff: true },
-      { k: 'Recover', text: 'Recover by repairing the node, or from a backup or replica elsewhere. Async replication from a single node is limited to a 6-hour RPO.', tone: 'bad', down: [0], vmsOff: true },
+      { k: 'Recover', text: 'Recover by repairing the node, or from a backup or replica elsewhere. Nutanix guidance limits async from a single node to a 6-hour RPO.', tone: 'bad', down: [0], vmsOff: true },
     ],
     wan: WAN_STEPS(),
     upgrade: [

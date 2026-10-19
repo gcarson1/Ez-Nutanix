@@ -8,7 +8,7 @@ export const content: ModuleContent = {
     'Firewall rules that follow each VM by its labels, enforced on every host, and private networks created in software without touching the physical network.',
   priority: 'P0',
   talk: [
-    'Flow Network Security is a stateful, distributed firewall built into AHV. Rules are written against categories (labels such as AppTier: Web), not IP addresses, and enforced at each VM’s network interface.',
+    'Flow Network Security is a stateful, distributed firewall built into AHV; its current generation, Next-Gen, comes with AOS 7.6 and pc.7.6. Rules are written against categories (labels such as AppTier: Web), not IP addresses, and enforced at each VM’s network interface.',
     'Start in Monitoring: everything still flows, and the rule-hit log shows exactly what a policy would block. Switch to Enforced once the log is clean.',
     'Application policies allow only the listed flows into an app; everything else is denied by default. Isolation policies wall off environments such as Production and Dev. Quarantine removes a VM from the network in one click.',
     'Because enforcement is in the hypervisor and keyed to categories, the policy moves with a VM when it live-migrates. No rule or address list changes.',
@@ -16,7 +16,8 @@ export const content: ModuleContent = {
     'For the network team, a new project on VPCs needs no new VLAN, trunk, gateway or unique IP range.',
   ],
   numbers: [
-    { k: 'Policy types', v: 'Application, Isolation, Quarantine (Strict or Forensic), Shared Services, VDI' },
+    { k: 'Policy types', v: 'Application, Isolation, Quarantine (Strict or Forensic), Shared Services, VDI (by release)' },
+    { k: 'Current release (Oct 2026)', v: 'Flow Network Security Next-Gen 7.6, bundled with AOS 7.6 and pc.7.6; adds rule-centric and FQDN-based policies' },
     { k: 'Policy states', v: 'Saved, Monitoring, Enforced' },
     { k: 'Overlay encapsulation', v: 'Geneve between AHV hosts (VTEP gateways use VXLAN)' },
     { k: 'Geneve overhead', v: '58 bytes; guest MTU 1442 if the network cannot carry jumbo frames' },
@@ -34,6 +35,10 @@ export const content: ModuleContent = {
     {
       q: 'Do overlay networks replace VLANs?',
       a: 'Not necessarily. Both can run on the same cluster. VPCs suit self-service projects, overlapping ranges and multi-tenant setups; VLAN-backed subnets still fit workloads that must sit on an existing physical segment. VPCs need Prism Central with the Network Controller and an external VLAN for traffic in and out.',
+    },
+    {
+      q: 'Is this the older Flow or Flow Network Security Next-Gen?',
+      a: 'The ideas shown here are the same in both: rules on categories, Monitoring before Enforced, and quarantine. Next-Gen is the current generation. It runs through the Network Controller in Prism Central, lets a VM belong to several policies with any category, and from 7.6 adds rule-centric and FQDN-based policies. Clusters still on the legacy generation (Flow Microsegmentation) need a planned upgrade, and moving existing policies is a separate step.',
     },
   ],
   next: [

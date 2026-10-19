@@ -12,11 +12,11 @@ export const content: ModuleContent = {
     'Then it goes strictly one node at a time: VMs move off live, the node updates and comes back, data catches up, and only then does LCM move on.',
     'AOS updates are lighter: only the controller VM restarts. Its host’s storage traffic goes to the other controllers for a moment, and the VMs never move.',
     'Pick “A node fails mid-upgrade”: LCM finishes the node it was on and waits instead of taking a second node down, then resumes once the node is repaired.',
-    'Point at VM downtime: for a planned upgrade on three or more nodes it stays at none. Total time grows with node count because the work is one node at a time.',
+    'Point at VM downtime: for a planned upgrade on three or more nodes it stays at none. Total time grows with node count because the work is one node at a time. The times on the timeline are illustrative, not official.',
   ],
   numbers: [
     { k: 'Nodes out at once during LCM', v: '1' },
-    { k: 'Current releases (Oct 2026)', v: 'LCM 3.4 · AOS 7.6 · AHV 11.2 · pc.7.6' },
+    { k: 'Current release lines (Oct 2026)', v: 'LCM 3.4 · AOS 7.6 · AHV 11.2 · pc.7.6 (patch levels vary; check the portal)' },
     { k: 'Firmware reboots on NX', v: 'BMC 2 · BIOS and CPLD 3' },
     { k: 'Illustrative per-node time', v: 'AOS ~15 min · AHV ~25 min · firmware 30–60 min (older estimates, not official)' },
     { k: '2-node clusters', v: 'Witness required for LCM' },

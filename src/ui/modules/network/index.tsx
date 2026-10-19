@@ -296,7 +296,7 @@ export default function Network() {
         clock={clock}
         label="Network traffic animation"
         fmt={() => ['Both links up', 'Link fails', 'On one link'][phase]}
-        extra={<Illus why="One host shown; every host in the cluster is cabled the same way. Which link a VM or connection gets is a simplified hash: real Open vSwitch hashes by MAC address or by connection and rebalances by load." />}
+        extra={<Illus why="One host shown; every host in the cluster is cabled the same way. Which link a VM or connection gets is a simplified hash: real Open vSwitch hashes by MAC address or by connection and rebalances by load. Bond behavior follows AHV 11.2 guidance and can differ by release and switch setup." />}
       />
     </Show>
   );
