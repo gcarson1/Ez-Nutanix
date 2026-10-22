@@ -438,30 +438,31 @@ export function App() {
           <div class="foot-row">
             {(CONFIG.credit || authors.length > 0) && (
               <span class="credit">
-                {CONFIG.credit}
-                {authors.map((a, i) => (
-                  <Fragment key={a.name}>
-                    {i === 0 ? ' ' : i === authors.length - 1 ? ' and ' : ', '}
-                    <span class="author">
-                      {a.name}
-                      {a.handle && (
-                        <span class="handle">
-                          {a.handle}
-                          {i === authors.length - 1 && <span class="on"> on Slack</span>}
-                        </span>
-                      )}
-                    </span>
-                  </Fragment>
-                ))}
+                {CONFIG.credit && <span class="by">{CONFIG.credit}</span>}
+                {authors.length > 0 && (
+                  <span class="authors">
+                    {authors.map((a, i) => (
+                      <span class="author" key={a.name}>
+                        {a.name}
+                        {a.handle && (
+                          <span class="handle">
+                            {a.handle}
+                            {i === authors.length - 1 && <span class="on"> on Slack</span>}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </span>
             )}
-            <span class="ver">{VERSION}</span>
             {(CONFIG.presenterName || CONFIG.organization) && (
               <span class="who">
                 {[CONFIG.presenterName, CONFIG.presenterRole, CONFIG.organization].filter(Boolean).join(' · ')}
                 {CONFIG.contact ? ` · ${CONFIG.contact}` : ''}
               </span>
             )}
+            <span class="ver">{VERSION}</span>
             <button type="button" class="tbtn" onClick={() => setDialog('about')}>
               About this simulation
             </button>
