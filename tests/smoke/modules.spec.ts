@@ -267,3 +267,25 @@ test('external storage offers NetApp ONTAP over NFS, marked as announced, and th
   await expect(page.locator('.foot-row .ver')).toHaveText('v1.1');
   expect(errors).toEqual([]);
 });
+
+test('arrow keys pause and scrub the animation in steps', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/dr`);
+  const scrub = page.locator('.playbar input.scrub');
+  await page.locator('.mod-head h1').click();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('.playbar .pbtn')).toHaveAttribute('aria-label', 'Play');
+  const max = Number(await scrub.getAttribute('max'));
+  const a = Number(await scrub.inputValue());
+  await page.keyboard.press('ArrowRight');
+  const b = Number(await scrub.inputValue());
+  expect(b - a).toBeCloseTo(max / 40, 1);
+  await page.keyboard.press('ArrowLeft');
+  expect(Number(await scrub.inputValue())).toBeCloseTo(a, 1);
+  await page.keyboard.press('Shift+ArrowRight');
+  const c = Number(await scrub.inputValue());
+  expect(c).toBeGreaterThan(a);
+  await page.keyboard.press('Shift+ArrowLeft');
+  expect(Number(await scrub.inputValue())).toBeLessThan(c);
+  expect(errors).toEqual([]);
+});

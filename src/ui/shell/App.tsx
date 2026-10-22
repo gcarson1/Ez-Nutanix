@@ -185,6 +185,8 @@ const SHORTCUTS: [string, string][] = [
   ['G', 'Glossary'],
   ['?', 'This list'],
   ['Space', 'Pause / play the animation'],
+  ['← →', 'Scrub the animation back / forward'],
+  ['Shift ← →', 'Jump to the previous / next step'],
   ['< >', 'Slower / faster animation'],
   ['T', 'Light / dark theme'],
   ['Esc', 'Close panel, or go back'],
@@ -333,6 +335,8 @@ export function App() {
       else if (s.dialog) return;
       else if (k === ' ' && t.tagName !== 'BUTTON' && simKey('toggle')) e.preventDefault();
       else if (k === '<' || k === '>') stepSpeed(k === '>' ? 1 : -1);
+      // On the scrub bar itself the arrows keep their own finer steps.
+      else if ((k === 'ArrowLeft' || k === 'ArrowRight') && !(t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'range') && simKey(k === 'ArrowRight' ? 'forward' : 'back', e.shiftKey)) e.preventDefault();
       else return;
       if (k !== ' ') e.preventDefault();
     };

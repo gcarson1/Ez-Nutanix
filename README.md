@@ -32,6 +32,7 @@ Tips:
 - Start with the **Guided tour** on the landing page. It walks the panes bottom-up: infrastructure, then services, then Nutanix Central.
 - Animations start on their own and loop without stopping between steps. A step whose caption needs more time plays slower, with at least 0.3 seconds per word, and the speed eases in and out. Drag the scrub bar to pause on a moment; press Play (or Space) to carry on.
 - The **1x** button next to Play sets the playback speed for every animation, from 0.25x to 2x (or press `<` and `>`).
+- The **Left** and **Right** arrow keys pause and scrub the animation a step at a time (a fortieth of the loop); with **Shift** they jump to the previous or next caption.
 - Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is one fixed 4-node cluster with five scenarios (data placement, live migration, planned shutdown, VM failover, drive failure) and a right-hand pane that explains the chosen one.
 - Under the slide, **Don’t want the full stack?** opens two partial starting points: Nutanix with external storage (AHV on the customer’s own array) and ESXi on Nutanix (stay on vSphere, or convert to AHV later). Each leads with why customers choose it.
 - On Protection & Capacity and Scale-out vs 3-tier, use **Presets** in the top bar to load a cluster size that matches the customer into Protection & Capacity (3-node edge, 4-node starter, 8-node production, 12-node RF3). Its other tabs show erasure coding and block and rack awareness.

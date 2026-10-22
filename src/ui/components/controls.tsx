@@ -253,6 +253,7 @@ export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: {
           step={clock.duration / 400}
           value={clock.t}
           aria-label="Scrub the animation"
+          title="Scrub (Left and Right arrows; Shift jumps to the next step)"
           onInput={(e) => {
             clock.pause();
             clock.seek(Number((e.target as HTMLInputElement).value));
