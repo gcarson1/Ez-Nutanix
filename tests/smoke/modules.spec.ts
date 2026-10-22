@@ -268,6 +268,17 @@ test('external storage offers NetApp ONTAP over NFS, marked as announced, and th
   expect(errors).toEqual([]);
 });
 
+test('the home page footer sits at the bottom of a tall window and shows the Slack handles', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(`${FILE}#/`);
+  await expect(page.locator('.foot-row .handle')).toHaveText(['@Besaw', '@GabeC on Slack']);
+  const m = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight, bottom: document.querySelector('.foot-bar')!.getBoundingClientRect().bottom }));
+  expect(m.doc).toBeLessThanOrEqual(1080);
+  expect(Math.round(m.bottom)).toBe(1080);
+  expect(errors).toEqual([]);
+});
+
 test('arrow keys pause and scrub the animation in steps', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/nci/dr`);
