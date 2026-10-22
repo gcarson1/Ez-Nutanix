@@ -29,6 +29,7 @@ body { min-height: 100vh; }
 /* Line 1: credit (and presenter, if set) on the left, About on the right. Line 2: the disclaimer. */
 .foot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-4); }
 .foot-row .credit { color: var(--muted); }
+.foot-row .ver { color: var(--faint); font: 600 var(--fs-12) / 1 var(--mono); }
 .foot-row .who { color: var(--muted); padding-left: var(--sp-4); border-left: 1px solid var(--line-2); }
 .foot-row .tbtn { margin-left: auto; height: auto; padding: 0; font-size: var(--fs-12); color: var(--muted); }
 .foot-bar .disclaimer { margin-top: var(--sp-1); color: var(--faint); }
@@ -253,8 +254,17 @@ body { min-height: 100vh; }
 .playbar .btn { height: var(--h-sm); padding: 0 var(--sp-3); }
 .playbar .btn svg { width: 0.875rem; height: 0.875rem; }
 .playbar .pbtn { width: var(--h-sm); padding: 0; justify-content: center; flex: none; }
-.playbar .clock { font: 600 var(--fs-13) / 1 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.playbar .clock { font: 600 var(--fs-13) / 1.2 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .playbar .scrub { flex: 1; min-width: 6rem; }
+.speed { position: relative; flex: none; }
+.playbar .speed-btn { min-width: 3.25rem; justify-content: center; font: 600 var(--fs-13) / 1 var(--mono); font-variant-numeric: tabular-nums; }
+.playbar .speed-btn.on { color: var(--ink-fg); border-color: var(--ink); }
+.speed-menu { position: absolute; left: 0; bottom: calc(100% + var(--sp-1)); z-index: 30; min-width: 9.5rem; padding: var(--sp-1) 0; background: var(--bg-2); box-shadow: var(--shadow); }
+.speed-h { padding: var(--sp-1) var(--sp-3) var(--sp-2); font-size: var(--fs-12); color: var(--muted); }
+.speed-opt { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-1) var(--sp-3); background: none; border: 0; color: var(--text); font: inherit; font-size: var(--fs-13); text-align: left; cursor: pointer; }
+.speed-opt:hover, .speed-opt:focus-visible { background: var(--bg-3); outline: none; }
+.speed-opt[aria-checked="true"] { color: var(--ink-fg); font-weight: 600; }
+.speed-mark { width: 1em; text-align: center; }
 
 /* showcase layout: presets on top, one big picture, caption + key numbers */
 .show { padding-top: var(--sp-1); }

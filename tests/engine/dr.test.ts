@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { FAIL_AT, STAGES, buildScene, type DrEvent, type Tier } from '../../src/engine/dr';
 
-const TIERS: Tier[] = ['async', 'nearsync', 'sync'];
+const TIERS: Tier[] = ['async', 'nearsync', 'metro'];
 const EVENTS: DrEvent[] = ['planned', 'unplanned'];
 
 describe('replication before the event', () => {
@@ -12,8 +12,8 @@ describe('replication before the event', () => {
       for (const w of s.writes) expect(w.t).toBeLessThan(s.fail);
     }
   });
-  it('synchronous writes reach Site B before the next write, with no recovery points', () => {
-    const s = buildScene('sync', 'unplanned');
+  it('Metro writes reach Site B before the next write, with no recovery points', () => {
+    const s = buildScene('metro', 'unplanned');
     expect(s.ships).toEqual([]);
     for (const w of s.writes) {
       expect(w.atB).toBeGreaterThan(w.t);
@@ -70,18 +70,30 @@ describe('unplanned failover', () => {
       expect(s.lost).toBe(s.writes.filter((w) => w.lost).length);
     }
   });
-  it('sync loses nothing, NearSync a little, async the most', () => {
+  it('Metro loses nothing, NearSync a little, async the most', () => {
     const lost = (t: Tier) => buildScene(t, 'unplanned').lost;
-    expect(lost('sync')).toBe(0);
+    expect(lost('metro')).toBe(0);
     expect(lost('nearsync')).toBeGreaterThan(0);
     expect(lost('async')).toBeGreaterThan(lost('nearsync'));
   });
-  it('sync fails over on its own (Witness); the others wait for a person, which takes longer', () => {
-    const s = buildScene('sync', 'unplanned');
+  it('Metro fails over on its own (Witness); the others wait for a person, which takes longer', () => {
+    const s = buildScene('metro', 'unplanned');
     const a = buildScene('async', 'unplanned');
     expect(s.decision).toBe('witness');
     expect(a.decision).toBe('person');
     expect(a.go - a.fail).toBeGreaterThan(s.go - s.fail);
+  });
+});
+
+describe('planned Metro move', () => {
+  it('live-migrates the apps with no shutdown, no final copy and no restart', () => {
+    const s = buildScene('metro', 'planned');
+    expect(s.live).toBe(true);
+    expect(s.go).toBe(s.fail);
+    expect(s.ships).toEqual([]);
+    expect(s.phases.map((p) => p.id)).toEqual(['replicate', 'migrate', 'running']);
+    for (const tier of ['async', 'nearsync'] as Tier[]) for (const ev of EVENTS) expect(buildScene(tier, ev).live).toBe(false);
+    expect(buildScene('metro', 'unplanned').live).toBe(false);
   });
 });
 

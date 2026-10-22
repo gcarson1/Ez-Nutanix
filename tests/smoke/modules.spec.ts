@@ -187,3 +187,78 @@ test('scenario state round-trips through the URL', async ({ page }) => {
   await page.getByLabel('Scenario preset').selectOption({ label: '4-node starter (RF2)' });
   await expect.poll(() => page.url()).toContain('nodes=4');
 });
+
+test('playback speed: the 1x button picks a speed every animation shares', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/edge`);
+  const btn = page.locator('.playbar .speed-btn');
+  await expect(btn).toHaveText('1x');
+  await btn.click();
+  const menu = page.getByRole('menu', { name: 'Playback speed' });
+  await expect(menu.getByRole('menuitemradio')).toHaveText(['0.25', '0.5', '0.75', '✓Normal', '1.25', '1.5', '1.75', '2']);
+  await menu.getByRole('menuitemradio', { name: '2', exact: true }).click();
+  await expect(menu).toHaveCount(0);
+  await expect(btn).toHaveText('2x');
+  await page.keyboard.press('Shift+Comma');
+  await expect(btn).toHaveText('1.75x');
+  await page.goto(`${FILE}#/nci/lcm`);
+  await expect(page.locator('.playbar .speed-btn')).toHaveText('1.75x');
+  expect(errors).toEqual([]);
+});
+
+test('edge: nodes lose contact on two and three nodes, and adding a node on every size', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/edge`);
+  const size = page.getByRole('group', { name: 'Site size' });
+  const ev = page.getByRole('group', { name: 'What happens' });
+  for (const [s, peer] of [['1 node', false], ['2 nodes + Witness', true], ['3 nodes', true]] as const) {
+    await size.getByRole('button', { name: s }).click();
+    if (peer) await expect(ev.getByRole('button', { name: 'Nodes lose contact' })).toBeEnabled();
+    else await expect(ev.getByRole('button', { name: 'Nodes lose contact' })).toBeDisabled();
+    await expect(ev.getByRole('button', { name: 'Add a node' })).toBeEnabled();
+  }
+  await ev.getByRole('button', { name: 'Nodes lose contact' }).click();
+  await expect(ev.getByRole('button', { name: 'Nodes lose contact' })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => page.url()).toContain('ev=peer');
+  await ev.getByRole('button', { name: 'Add a node' }).click();
+  await expect.poll(() => page.url()).toContain('ev=expand');
+  await size.getByRole('button', { name: '1 node' }).click();
+  await expect(page.locator('.kpi .v', { hasText: 'Not supported' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('disaster recovery: NearSync and Sync share a choice, and Metro Availability live-migrates a planned move', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/dr`);
+  const rep = page.getByRole('group', { name: 'Replication' });
+  await expect(rep.getByRole('button')).toHaveText(['Async', 'NearSync / Sync', 'Metro Availability']);
+  await rep.getByRole('button', { name: 'Metro Availability' }).click();
+  await page.getByRole('button', { name: 'Planned failover' }).click();
+  await expect.poll(() => page.url()).toContain('rep=metro');
+  await expect(page.locator('.kpi .v', { hasText: 'No downtime' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('LCM: the failure scenario gives nothing away before the node fails', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nci/lcm?sc=fail`);
+  await expect(page.getByRole('group', { name: 'Scenario' }).getByRole('button')).toHaveText(['Healthy cluster', 'A node fails mid-upgrade']);
+  const scrub = page.locator('.playbar input.scrub');
+  await scrub.fill('0');
+  await expect(page.locator('.lcm-dia')).not.toContainText('failed');
+  await expect(page.locator('.lcm-dia')).not.toContainText('LCM holds');
+  // a range input only takes values on its step, so set it the way a drag would
+  await scrub.evaluate((r: HTMLInputElement) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, String(Number(r.max) * 0.55));
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('.lcm-dia')).toContainText('failed');
+  await expect(page.locator('.lcm-dia')).toContainText('LCM holds');
+  expect(errors).toEqual([]);
+});
+
+test('external storage lists NetApp ONTAP as coming, and the footer shows the release', async ({ page }) => {
+  await page.goto(`${FILE}#/partial`);
+  await expect(page.getByRole('button', { name: 'NetApp ONTAP · coming' })).toBeDisabled();
+  await expect(page.locator('.foot-row .ver')).toHaveText('v1.1');
+});

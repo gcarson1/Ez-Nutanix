@@ -1,6 +1,7 @@
-// Disaster Recovery: pick a replication tier and a planned or unplanned failover, and watch
+// Disaster Recovery: pick how data is replicated and a planned or unplanned failover, and watch
 // two sites on a loop: the app writes at Site A, copies reach Site B, then the apps move to
-// Site B. The scene (what is copied when, what is lost) comes from src/engine/dr.ts.
+// Site B. NearSync and Sync share one choice; Metro Availability (sync plus a Witness) has its
+// own. The scene (what is copied when, what is lost) comes from src/engine/dr.ts.
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { STAGES, buildScene, type DrEvent, type DrPhase, type DrScene, type Tier } from '../../../engine/dr';
@@ -9,7 +10,7 @@ import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/cont
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
-const TIERS: readonly Tier[] = ['async', 'nearsync', 'sync'];
+const TIERS: readonly Tier[] = ['async', 'nearsync', 'metro'];
 const EVENTS: readonly DrEvent[] = ['planned', 'unplanned'];
 
 // ── geometry ──
@@ -35,7 +36,7 @@ const LINK_B = gridX(BX);
 const LINK_WORDS: Record<Tier, [string, string]> = {
   async: ['Async', 'a copy every 1 to 24 h'],
   nearsync: ['NearSync', 'a copy every 1 to 15 min'],
-  sync: ['Sync', 'every write, both sites'],
+  metro: ['Metro Availability', 'every write, both sites · under 5 ms'],
 };
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -50,31 +51,35 @@ function caption(s: DrScene, ph: DrPhase): { tone: Tone | 'ink'; k: string; text
           s.tier === 'async'
             ? 'The apps write at Site A. On a schedule (async policies run every 1 to 24 hours) a recovery point is taken and copied to Site B. Anything written since the last copy exists only at Site A.'
             : s.tier === 'nearsync'
-              ? 'The apps write at Site A. Every 1 to 15 minutes a small recovery point is copied to Site B, so only the last few minutes exist only at Site A.'
-              : 'Every write is stored at both sites before the app is told it is done, so Site B is never behind. The sites must be under 5 ms apart, and each write waits about one round trip.',
+              ? 'The apps write at Site A. With NearSync a small recovery point is copied to Site B every 1 to 15 minutes, so only the last few minutes exist only at Site A. Sync replication, for sites under 5 ms apart, copies every write instead.'
+              : 'Metro Availability: every write is stored at both sites before the app is told it is done, so Site B is never behind. The sites must be under 5 ms round trip apart, and each write waits about one round trip.',
       };
     case 'shutdown':
       return { tone: 'warn', k: 'Planned move', text: 'The apps at Site A shut down cleanly, so nothing new is written while they move.' };
     case 'final':
-      return s.tier === 'sync'
-        ? { tone: 'flow', k: 'Final copy', text: 'Nothing is left to copy: with synchronous replication every write is already at Site B.' }
-        : { tone: 'flow', k: 'Final copy', text: 'The changes made since the last recovery point are copied to Site B, so nothing is left behind.' };
+      return { tone: 'flow', k: 'Final copy', text: 'The changes made since the last recovery point are copied to Site B, so nothing is left behind.' };
+    case 'migrate':
+      return { tone: 'flow', k: 'Live migration', text: 'For a planned move the apps live-migrate to Site B one at a time and never stop. Every write is already there, so nothing waits for a final copy.' };
     case 'lost':
       return {
         tone: 'bad',
         k: 'Site A is lost',
         text: s.lost
-          ? `Power, network or the whole building is gone. ${plural(s.lost, 'recent write', 'recent writes')} had not reached Site B yet and ${s.lost === 1 ? 'is' : 'are'} lost with it.`
+          ? `Power, network or the whole building is gone. ${plural(s.lost, 'recent write', 'recent writes')} had not reached Site B yet and ${s.lost === 1 ? 'is' : 'are'} lost with it.${s.tier === 'nearsync' ? ' With sync replication they would already be there.' : ''}`
           : 'Power, network or the whole building is gone. Every write the apps were told was done is already at Site B, so nothing is lost.',
       };
     case 'decide':
       return s.decision === 'witness'
-        ? { tone: 'warn', k: 'The Witness decides', text: 'The Witness, in a third location, can tell a lost site from a broken link, so Site B takes over on its own.' }
-        : { tone: 'warn', k: 'A person decides', text: 'Someone confirms the outage and starts the recovery plan. Without a Witness and synchronous replication, a person makes this call.' };
+        ? { tone: 'warn', k: 'The Witness decides', text: 'The Witness, in a third location, can tell a lost site from a broken link. It gives Site B the lock, so Site B takes over on its own.' }
+        : { tone: 'warn', k: 'A person decides', text: 'Someone confirms the outage and starts the recovery plan. Without Metro Availability’s Witness a person makes this call, even with sync replication.' };
     case 'boot':
-      return { tone: 'flow', k: 'Starting at Site B', text: 'The recovery plan starts the apps at Site B in order: database first, then the app, then the web tier.' };
+      return s.decision === 'witness'
+        ? { tone: 'flow', k: 'Restarting at Site B', text: 'The VMs restart at Site B automatically, in the recovery plan’s order: database first, then the app, then the web tier. It is a restart, so it takes minutes.' }
+        : { tone: 'flow', k: 'Starting at Site B', text: 'The recovery plan starts the apps at Site B in order: database first, then the app, then the web tier.' };
     default:
-      return s.event === 'planned'
+      return s.live
+        ? { tone: 'ok', k: 'Running at Site B', text: 'Running at Site B with no data lost and no downtime. The apps can move back the same way.' }
+        : s.event === 'planned'
         ? { tone: 'ok', k: 'Running at Site B', text: 'Running at Site B with no data lost. Site A is still healthy, so the apps can move back later the same way.' }
         : s.lost
           ? { tone: 'warn', k: 'Running at Site B', text: `Running at Site B from the last recovery point that arrived. The ${plural(s.lost, 'write', 'writes')} made after it ${s.lost === 1 ? 'is' : 'are'} gone.` }
@@ -85,18 +90,19 @@ function caption(s: DrScene, ph: DrPhase): { tone: Tone | 'ink'; k: string; text
 function Sites({ s, t }: { s: DrScene; t: number }) {
   const unplanned = s.event === 'unplanned';
   const aLost = unplanned && t >= s.fail;
-  const aOff = !unplanned && t >= s.fail + 1;
-  const aStopping = !unplanned && t >= s.fail && !aOff;
+  const aOff = !unplanned && !s.live && t >= s.fail + 1;
+  const aStopping = !unplanned && !s.live && t >= s.fail && !aOff;
+  const moved = s.live && t >= s.done;
   const decideAt = s.phases.find((p) => p.id === 'decide')?.t ?? Infinity;
   const deciding = t >= decideAt && t < s.go;
   const [tierWord, cadence] = LINK_WORDS[s.tier];
   const ship = s.ships.find((p) => t >= p.t && t < p.land && !(p.lost && t >= s.fail));
 
-  const aWord = aLost ? { w: '✕ site lost', c: 'bad' } : aOff ? { w: 'apps off · site still healthy', c: 'muted' } : aStopping ? { w: 'shutting the apps down', c: 'warn' } : { w: '✓ apps running', c: 'ok' };
-  const bWord = t >= s.done ? { w: '✓ apps running here', c: 'ok' } : t >= s.go ? { w: 'starting the apps in order', c: 'flow' } : aLost ? { w: 'waiting for the go', c: 'warn' } : { w: 'standby · receiving copies', c: 'flow' };
+  const aWord = aLost ? { w: '✕ site lost', c: 'bad' } : moved ? { w: 'apps moved · site still healthy', c: 'muted' } : s.live && t >= s.fail ? { w: 'apps moving live', c: 'flow' } : aOff ? { w: 'apps off · site still healthy', c: 'muted' } : aStopping ? { w: 'shutting the apps down', c: 'warn' } : { w: '✓ apps running', c: 'ok' };
+  const bWord = t >= s.done ? { w: '✓ apps running here', c: 'ok' } : s.live && t >= s.go ? { w: 'apps arriving live', c: 'flow' } : t >= s.go ? { w: s.decision === 'witness' ? 'restarting the apps' : 'starting the apps in order', c: 'flow' } : aLost ? { w: 'waiting for the go', c: 'warn' } : { w: 'standby · receiving copies', c: 'flow' };
 
-  const linkLabel = aLost ? ['Link lost', 'no more copies'] : t >= s.fail + 1 && t < s.go && !unplanned ? ['Final copy', s.tier === 'sync' ? 'already there' : 'last changes'] : [tierWord, cadence];
-  const linkCls = aLost ? 'bad broken' : s.tier === 'sync' ? 'ok' : 'flow';
+  const linkLabel = aLost ? ['Link lost', 'no more copies'] : s.live && t >= s.fail ? ['Live migration', 'memory and state cross over'] : t >= s.fail + 1 && t < s.go && !unplanned ? ['Final copy', 'last changes'] : [tierWord, cadence];
+  const linkCls = aLost ? 'bad broken' : s.tier === 'metro' ? 'ok' : 'flow';
 
   const vm = (site: number, i: number, cls: string, word: string) => {
     const x = site + 14 + i * (VMW + 10);
@@ -143,7 +149,7 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
     >
       <defs>
         <marker id="dr-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-          <path d="M0 0 L10 5 L0 10 z" class={aLost ? 'dr-mk bad' : s.tier === 'sync' ? 'dr-mk ok' : 'dr-mk flow'} />
+          <path d="M0 0 L10 5 L0 10 z" class={aLost ? 'dr-mk bad' : s.tier === 'metro' ? 'dr-mk ok' : 'dr-mk flow'} />
         </marker>
       </defs>
 
@@ -157,7 +163,7 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
       </text>
 
       {/* who decides */}
-      {s.tier === 'sync' && (
+      {s.tier === 'metro' && (
         <g>
           <path d={`M${MID - 70} ${ST + 206} H${AX + SW}`} class="dr-wline" />
           <path d={`M${MID + 70} ${ST + 206} H${BX}`} class="dr-wline" />
@@ -183,7 +189,13 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
       {/* Site A */}
       <g class={aLost ? 'dr-dim' : ''}>
         {site(AX, 'Site A', 'runs the apps', aLost, aWord)}
-        {STAGES.map((_, i) => vm(AX, i, aLost ? 'lost' : aOff ? 'off' : aStopping ? 'stopping' : 'on', aLost ? 'down' : aOff ? 'off' : aStopping ? 'stopping' : 'running'))}
+        {STAGES.map((_, i) => {
+          if (s.live) {
+            const b = s.boot[i];
+            return vm(AX, i, t >= b + 0.5 ? 'off' : t >= b ? 'boot' : 'on', t >= b + 0.5 ? 'moved' : t >= b ? 'moving' : 'running');
+          }
+          return vm(AX, i, aLost ? 'lost' : aOff ? 'off' : aStopping ? 'stopping' : 'on', aLost ? 'down' : aOff ? 'off' : aStopping ? 'stopping' : 'running');
+        })}
         {s.writes.map((w, i) => {
           const p = slot(AX, i);
           if (t < w.t) return <rect key={i} x={p.x} y={p.y} width={CELL} height={CELL} class="dr-slot" />;
@@ -197,8 +209,23 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
       {site(BX, 'Site B', 'recovery site', false, bWord)}
       {STAGES.map((_, i) => {
         const b = s.boot[i];
-        return vm(BX, i, t >= b + 0.5 ? 'on' : t >= b ? 'boot' : 'off', t >= b + 0.5 ? 'running' : t >= b ? 'starting' : 'off');
+        return vm(BX, i, t >= b + 0.5 ? 'on' : t >= b ? 'boot' : 'off', t >= b + 0.5 ? 'running' : t >= b ? (s.live ? 'arriving' : 'starting') : 'off');
       })}
+      {/* live migration: each app crosses while it keeps running */}
+      {s.live &&
+        STAGES.map((_, i) => {
+          const b = s.boot[i];
+          if (t < b || t >= b + 0.5) return null;
+          const cx = AX + SW + 40 + (BX - AX - SW - 80) * ease(prog(t, b, b + 0.5)); // stays in the gap between the sites
+          return (
+            <g key={`lm${i}`}>
+              <rect x={cx - 36} y={LINK_Y - 11} width={72} height={22} class="dr-vm boot" />
+              <text x={cx} y={LINK_Y + 4} text-anchor="middle" style={{ fontSize: '11px', fontWeight: 600 }}>
+                {STAGES[i]}
+              </text>
+            </g>
+          );
+        })}
       {s.writes.map((w, i) => {
         const p = slot(BX, i);
         if (t >= w.atB) return <rect key={i} x={p.x} y={p.y} width={CELL} height={CELL} class="dr-cell both" />;
@@ -214,7 +241,7 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
         return <circle key={`d${i}`} cx={appX + (p.x + CELL / 2 - appX) * k} cy={ST + 96 + (p.y + CELL / 2 - ST - 96) * k} r={4.5} class="dr-dot" />;
       })}
       {/* synchronous writes crossing the link */}
-      {s.tier === 'sync' &&
+      {s.tier === 'metro' &&
         s.writes.map((w, i) => {
           if (t < w.t || t >= w.atB) return null;
           const k = prog(t, w.t, w.atB);
@@ -258,13 +285,15 @@ export default function Dr() {
   const ph = s.phases[phaseAt(s.phases.map((p) => p.t), t)].id;
   const cap = caption(s, ph);
 
-  const none = event === 'planned' || tier === 'sync';
+  const none = event === 'planned' || tier === 'metro';
   const rpo = none
-    ? { v: 'None', sub: event === 'planned' ? 'the last changes are copied first' : 'RPO zero' }
+    ? { v: 'None', sub: event === 'planned' && tier !== 'metro' ? 'the last changes are copied first' : 'RPO zero' }
     : tier === 'async'
       ? { v: 'Hours', sub: 'RPO target 1 to 24 hours' }
-      : { v: 'Minutes', sub: 'RPO target 1 to 15 minutes' };
-  const rto = event === 'planned' ? 'a move you schedule' : s.decision === 'witness' ? 'starts on its own' : 'after someone declares a disaster';
+      : { v: 'Minutes', sub: 'NearSync 1 to 15 min · Sync none' };
+  const rto = s.live
+    ? { v: 'No downtime', sub: 'live migration' }
+    : { v: 'Minutes', sub: event === 'planned' ? 'a move you schedule' : s.decision === 'witness' ? 'restarts on its own' : 'after someone declares a disaster' };
 
   return (
     <Show
@@ -276,8 +305,8 @@ export default function Dr() {
             onChange={setTier}
             options={[
               { value: 'async', label: 'Async' },
-              { value: 'nearsync', label: 'NearSync' },
-              { value: 'sync', label: 'Sync' },
+              { value: 'nearsync', label: 'NearSync / Sync' },
+              { value: 'metro', label: 'Metro Availability' },
             ]}
           />
           <Choice<DrEvent>
@@ -299,8 +328,8 @@ export default function Dr() {
           <Kpis
             items={[
               { k: 'Data you could lose', v: rpo.v, sub: rpo.sub, tone: none ? 'ok' : 'warn', tip: 'The recovery point objective (RPO): how much recent data a failover can lose. The protection policy sets it as a target; link bandwidth and change rate decide whether it is met.' },
-              { k: 'Running again in', v: 'Minutes', sub: rto, tip: 'The recovery time objective (RTO): how long until the apps are back. Mostly the recovery plan starting the apps in order, plus the time to decide in a real disaster.' },
-              { k: 'Each write waits for', v: tier === 'sync' ? 'Both sites' : 'Site A only', sub: tier === 'sync' ? 'sites under 5 ms apart' : 'copies follow in the background' },
+              { k: 'Running again in', v: rto.v, sub: rto.sub, tone: s.live ? 'ok' : undefined, tip: 'The recovery time objective (RTO): how long until the apps are back. Mostly the recovery plan starting the apps in order, plus the time to decide in a real disaster. With Metro Availability a planned move can live-migrate the apps instead.' },
+              { k: 'Each write waits for', v: tier === 'metro' ? 'Both sites' : 'Site A only', sub: tier === 'metro' ? 'sites under 5 ms round trip' : tier === 'nearsync' ? 'Sync: both sites, under 5 ms' : 'copies follow in the background' },
             ]}
           />
         </>
@@ -320,7 +349,7 @@ export default function Dr() {
         clock={clock}
         label="Disaster recovery animation"
         fmt={() => cap.k}
-        extra={<Illus why="Time is compressed: an hour between async copies is drawn as a few seconds. The RPO ranges, the 5 ms limit for synchronous replication and the Witness for automatic failover follow Nutanix documentation. RPOs are targets, not guarantees, and automatic failover needs a supported synchronous setup with a Witness. Site layout and boot timing are simplified." />}
+        extra={<Illus why="Time is compressed: an hour between async copies is drawn as a few seconds. The RPO ranges, the 5 ms round-trip limit for synchronous replication and the Witness for automatic failover follow Nutanix sources. RPOs are targets, not guarantees. Metro Availability is shown as on AHV, set up in Prism Central: unplanned failover restarts the VMs, and a planned move can live-migrate them. On ESXi, Metro stretches a storage container and vSphere HA restarts the VMs. Site layout and boot timing are simplified." />}
       />
     </Show>
   );

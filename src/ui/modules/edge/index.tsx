@@ -44,9 +44,12 @@ export default function Edge() {
   const step = tl.steps[idx];
   const prev = tl.steps[Math.max(0, idx - 1)];
   const nodes = SIZES.find((s) => s.id === size)!.nodes;
+  // Adding a node needs one more place in the drawing, kept for the whole loop so nothing shifts.
+  const slots = nodes + (ev === 'expand' ? 1 : 0);
   const vms = placeVms(nodes, step);
   const running = vms.filter((v) => !v.off).length;
-  const down = step.down?.length ?? 0;
+  const inCluster = nodes + (step.extra === 'joined' ? 1 : 0);
+  const serving = inCluster - (step.down?.length ?? 0) - (step.cut?.length ?? 0);
   const cell = MATRIX.find((r) => r.ev === ev)!.cells[size];
   const tone = (n: number, of: number): ChipTone => (n === of ? 'ok' : n === 0 ? 'bad' : 'warn');
 
@@ -68,7 +71,7 @@ export default function Edge() {
               label="What happens"
               value={ev}
               onChange={setEv}
-              options={EVENTS.map((e) => ({ value: e.id, label: e.label, disabled: !applies(size, e.id), title: applies(size, e.id) ? e.tip : 'Applies to two-node clusters, where a Witness breaks the tie' }))}
+              options={EVENTS.map((e) => ({ value: e.id, label: e.label, disabled: !applies(size, e.id), title: applies(size, e.id) ? e.tip : MATRIX.find((r) => r.ev === e.id)?.cells[size].text }))}
             />
           </>
         }
@@ -82,15 +85,15 @@ export default function Edge() {
             <Kpis
               items={[
                 { k: 'VMs running', v: `${running} of ${vms.length}`, tone: tone(running, vms.length) },
-                { k: 'Nodes up', v: `${nodes - down} of ${nodes}`, tone: tone(nodes - down, nodes) },
-                { k: 'Outcome at this size', v: TONE_WORD[cell.tone], tone: cell.tone === 'na' ? undefined : cell.tone, tip: cell.text },
+                { k: 'Nodes serving', v: `${serving} of ${inCluster}`, tone: tone(serving, inCluster) },
+                { k: 'Outcome at this size', v: cell.word ?? TONE_WORD[cell.tone], tone: cell.tone === 'na' ? undefined : cell.tone, tip: cell.text },
               ]}
             />
           </>
         }
       >
         <div class="diagram-scroll">
-          <SiteDiagram size={size} nodes={nodes} step={step} prev={prev} t={t} t0={tl.starts[idx]} />
+          <SiteDiagram size={size} nodes={nodes} slots={slots} step={step} prev={prev} t={t} t0={tl.starts[idx]} />
         </div>
         <Legend
           items={[
@@ -128,7 +131,7 @@ export default function Edge() {
                         <span class="muted">{c.text}</span>
                       ) : (
                         <>
-                          <Chip tone={c.tone}>{TONE_WORD[c.tone]}</Chip>
+                          <Chip tone={c.tone}>{c.word ?? TONE_WORD[c.tone]}</Chip>
                           <div class="small edge-cell">{c.text}</div>
                         </>
                       )}
@@ -159,9 +162,20 @@ const VM = 22;
 const VM_GAP = 6;
 const DRIVE_Y = NY + NH - 38;
 
-const rowX = (nodes: number) => SITE.x + (SITE.w - (nodes * NW + (nodes - 1) * NG)) / 2;
-const nodeX = (nodes: number, i: number) => rowX(nodes) + i * (NW + NG);
 const vmsPerNode = (nodes: number) => (nodes === 1 ? 6 : nodes === 2 ? 4 : 3);
+
+/** Node places across the site: `slots` boxes, centered, narrower when four must fit. */
+interface Geo {
+  nw: number;
+  x: (i: number) => number;
+  /** VMs per row inside a node. */
+  perRow: number;
+}
+function geo(slots: number): Geo {
+  const nw = Math.min(NW, (SITE.w - 28 - (slots - 1) * NG) / slots);
+  const x0 = SITE.x + (SITE.w - (slots * nw + (slots - 1) * NG)) / 2;
+  return { nw, x: (i) => x0 + i * (nw + NG), perRow: Math.floor((nw - 24 + VM_GAP) / (VM + VM_GAP)) };
+}
 
 interface PlacedVm {
   id: string;
@@ -174,6 +188,7 @@ interface PlacedVm {
 /** Where every VM runs at a moment: VMs of a down node go to `vmsTo` in turn. */
 function placeVms(nodes: number, s: Step): PlacedVm[] {
   const down = new Set(s.down ?? []);
+  const fenced = new Set(s.fenced ? (s.cut ?? []) : []);
   const all: { id: string; owner: number; host: number }[] = [];
   for (let o = 0; o < nodes; o++)
     for (let k = 0; k < vmsPerNode(nodes); k++) {
@@ -186,28 +201,36 @@ function placeVms(nodes: number, s: Step): PlacedVm[] {
   for (const v of [...all.filter((v) => v.host === v.owner), ...all.filter((v) => v.host !== v.owner)]) {
     const slot = count.get(v.host) ?? 0;
     count.set(v.host, slot + 1);
-    out.push({ id: v.id, host: v.host, slot, moved: v.host !== v.owner, off: !!s.vmsOff || (down.has(v.host) && !s.planned) });
+    out.push({ id: v.id, host: v.host, slot, moved: v.host !== v.owner, off: !!s.vmsOff || (down.has(v.host) && !s.planned) || fenced.has(v.host) });
   }
   return out;
 }
 
-function vmXY(nodes: number, v: PlacedVm) {
-  return { x: nodeX(nodes, v.host) + 12 + (v.slot % 5) * (VM + VM_GAP), y: NY + 72 + Math.floor(v.slot / 5) * (VM + VM_GAP) };
+function vmXY(g: Geo, v: PlacedVm) {
+  return { x: g.x(v.host) + 12 + (v.slot % g.perRow) * (VM + VM_GAP), y: NY + 72 + Math.floor(v.slot / g.perRow) * (VM + VM_GAP) };
 }
 
 /** Center of a node's drive `d` (0..3). */
-function driveXY(nodes: number, n: number, d: number) {
-  const dw = (NW - 20) / 4;
-  return { x: nodeX(nodes, n) + 10 + d * dw + (dw - 6) / 2, y: DRIVE_Y + 13 };
+function driveXY(g: Geo, n: number, d: number) {
+  const dw = (g.nw - 20) / 4;
+  return { x: g.x(n) + 10 + d * dw + (dw - 6) / 2, y: DRIVE_Y + 13 };
 }
+
+const MODE_CLS: Record<string, string> = { 'Two-node mode': 'ok-fill', 'Three-node cluster': 'ok-fill', 'Adding N3': 'flow-fill' };
+const EXTRA_WORD = { new: { w: 'new node', c: 'flow-fill' }, blocked: { w: '✕ can’t join', c: 'bad-fill' } } as const;
 
 function quad(a: { x: number; y: number }, c: { x: number; y: number }, b: { x: number; y: number }, f: number) {
   const u = 1 - f;
   return { x: u * u * a.x + 2 * u * f * c.x + f * f * b.x, y: u * u * a.y + 2 * u * f * c.y + f * f * b.y };
 }
 
-function SiteDiagram({ size, nodes, step, prev, t, t0 }: { size: Size; nodes: number; step: Step; prev: Step; t: number; t0: number }) {
+function SiteDiagram({ size, nodes, slots, step, prev, t, t0 }: { size: Size; nodes: number; slots: number; step: Step; prev: Step; t: number; t0: number }) {
+  const g = geo(slots);
+  const NW = g.nw;
+  const nodeX = (_: number, i: number) => g.x(i);
   const down = new Set(step.down ?? []);
+  const cut = new Set(step.cut ?? []);
+  const members = nodes + (step.extra === 'joined' ? 1 : 0);
   const two = size === '2';
   const wanCut = !!step.wan;
   const vms = placeVms(nodes, step);
@@ -286,36 +309,41 @@ function SiteDiagram({ size, nodes, step, prev, t, t0 }: { size: Size; nodes: nu
         Prism Element runs on the cluster
       </text>
       {step.mode && (
-        <text x={SITE.x + SITE.w - 14} y={SITE.y + 28} text-anchor="end" class={`edge-s edge-mode ${step.mode === 'Two-node mode' ? 'ok-fill' : 'warn-fill'}`}>
+        <text x={SITE.x + SITE.w - 14} y={SITE.y + 28} text-anchor="end" class={`edge-s edge-mode ${MODE_CLS[step.mode] ?? 'warn-fill'}`}>
           {step.mode}
         </text>
       )}
-      {two && (
-        <g>
-          <line x1={nodeX(nodes, 0) + NW} y1={NY + 47} x2={nodeX(nodes, 1)} y2={NY + 47} class={step.peer ? 'bad-stroke' : 'edge-link'} stroke-width={2.5} stroke-dasharray={step.peer ? '6 5' : undefined} />
-          {step.peer && (
-            <text x={nodeX(nodes, 0) + NW + NG / 2} y={NY + 36} text-anchor="middle" class="edge-s bad-fill">
-              ✕
-            </text>
-          )}
-        </g>
-      )}
-      {nodes === 3 && [0, 1].map((i) => <line key={i} x1={nodeX(nodes, i) + NW} y1={NY + 47} x2={nodeX(nodes, i + 1)} y2={NY + 47} class="edge-link" stroke-width={1.5} />)}
-      {Array.from({ length: nodes }, (_, i) => {
+      {/* links between the nodes; when they lose contact, the one next to N1 is cut */}
+      {Array.from({ length: members - 1 }, (_, i) => {
+        const broken = !!step.peer && i === 0;
+        return (
+          <g key={`l${i}`}>
+            <line x1={nodeX(nodes, i) + NW} y1={NY + 47} x2={nodeX(nodes, i + 1)} y2={NY + 47} class={broken ? 'bad-stroke' : 'edge-link'} stroke-width={two ? 2.5 : 1.5} stroke-dasharray={broken ? '6 5' : undefined} />
+            {broken && (
+              <text x={nodeX(nodes, 0) + NW + NG / 2} y={NY - 10} text-anchor="middle" class="edge-s bad-fill">
+                ✕ no link
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {Array.from({ length: members }, (_, i) => {
         const isDown = down.has(i);
         const planned = isDown && step.planned;
+        const off = cut.has(i);
+        const warm = planned || (off && !isDown);
         const x = nodeX(nodes, i);
         return (
           <g key={i}>
-            <rect x={x} y={NY} width={NW} height={NH} class={`node-box ${isDown ? (planned ? 'warn' : 'down') : ''}`} />
+            <rect x={x} y={NY} width={NW} height={NH} class={`node-box ${isDown ? (planned ? 'warn' : 'down') : off ? 'warn' : ''}`} />
             <text x={x + 12} y={NY + 24} class="edge-t">
               N{i + 1}
             </text>
-            <text x={x + NW - 12} y={NY + 24} text-anchor="end" class={`edge-xs ${isDown ? (planned ? 'warn-fill' : 'bad-fill') : 'ok-fill'}`}>
-              {isDown ? (planned ? '⚠ upgrading' : '✕ down') : '✓ up'}
+            <text x={x + NW - 12} y={NY + 24} text-anchor="end" class={`edge-xs ${isDown ? (planned ? 'warn-fill' : 'bad-fill') : off ? 'warn-fill' : 'ok-fill'}`}>
+              {isDown ? (planned ? '⚠ upgrading' : '✕ down') : off ? `⚠ ${step.cutWord ?? 'cut off'}` : '✓ up'}
             </text>
-            <rect x={x + 10} y={NY + 36} width={NW - 20} height={22} class={`cvm ${isDown ? (planned ? 'warn' : 'down') : ''}`} />
-            <text x={x + 18} y={NY + 51} class="edge-xs" style={{ fill: planned ? '#16161b' : '#fff' }}>
+            <rect x={x + 10} y={NY + 36} width={NW - 20} height={22} class={`cvm ${isDown ? (planned ? 'warn' : 'down') : off ? 'warn' : ''}`} />
+            <text x={x + 18} y={NY + 51} class="edge-xs" style={{ fill: warm ? '#16161b' : '#fff' }}>
               CVM
             </text>
             <text x={x + 12} y={DRIVE_Y - 8} class="edge-xs muted">
@@ -329,22 +357,51 @@ function SiteDiagram({ size, nodes, step, prev, t, t0 }: { size: Size; nodes: nu
           </g>
         );
       })}
+      {/* the node being added, before it joins */}
+      {step.extra && step.extra !== 'joined' && (() => {
+        const x = nodeX(nodes, nodes);
+        const cluster = step.extra === 'cluster';
+        const word = step.extra === 'cluster' ? null : EXTRA_WORD[step.extra];
+        return (
+          <g class="edge-new">
+            <rect x={x} y={NY} width={NW} height={NH} class={`node-box ${step.extra === 'blocked' ? 'down' : ''}`} stroke-dasharray="6 5" />
+            <text x={x + 12} y={NY + 24} class="edge-t">
+              {cluster ? 'New cluster' : `N${nodes + 1}`}
+            </text>
+            {word && (
+              <text x={x + NW - 12} y={NY + 24} text-anchor="end" class={`edge-xs ${word.c}`}>
+                {word.w}
+              </text>
+            )}
+            <text x={x + 12} y={NY + 51} class="edge-xs muted">
+              {cluster ? 'built on new nodes' : 'imaged to match'}
+            </text>
+            <text x={x + 12} y={DRIVE_Y - 8} class="edge-xs muted">
+              drives
+            </text>
+            {Array.from({ length: 4 }, (_, d) => {
+              const dw = (NW - 20) / 4;
+              return <rect key={d} x={x + 10 + d * dw} y={DRIVE_Y} width={dw - 6} height={26} class="disk" />;
+            })}
+          </g>
+        );
+      })()}
       {vms.map((v) => {
-        const to = vmXY(nodes, v);
+        const to = vmXY(g, v);
         const was = before.get(v.id)!;
         const cls = `vm ${v.off ? 'failed' : v.moved && !step.planned && !prev.planned ? 'restart' : 'hl'}`;
         if (was.host === v.host || !slide) {
           const appear = was.host !== v.host ? fadeIn : 1;
           return <rect key={v.id} x={to.x} y={to.y} width={VM} height={VM} class={cls} style={{ opacity: appear }} />;
         }
-        const from = vmXY(nodes, was);
+        const from = vmXY(g, was);
         return <rect key={v.id} x={from.x + (to.x - from.x) * k} y={from.y + (to.y - from.y) * k} width={VM} height={VM} class={cls} />;
       })}
       {(step.heal ?? []).map(([a, b], j) => {
         const same = a === b;
         // an arc underneath the drives, within one node or across to another
-        const p0 = driveXY(nodes, a, same || a > b ? 0 : 3);
-        const p1 = driveXY(nodes, b, same || a > b ? 3 : 0);
+        const p0 = driveXY(g, a, same || a > b ? 0 : 3);
+        const p1 = driveXY(g, b, same || a > b ? 3 : 0);
         const c = { x: (p0.x + p1.x) / 2, y: same ? DRIVE_Y + 52 : NY + NH + 40 + j * 12 };
         return (
           <g key={j}>

@@ -239,15 +239,17 @@ export default function ExtStorage() {
     <Show
       top={
         <>
-          <Choice<Ar>
+          <Choice<Ar | 'netapp'>
             label="Your array"
             value={ar}
-            onChange={setAr}
+            onChange={(v) => v !== 'netapp' && setAr(v)}
             why={ar === 'fa' ? 'Needs a new Nutanix cluster (3 to 32 nodes, one FlashArray); the array itself can be one you already own.' : null}
             options={[
               { value: 'fa', label: 'Everpure FlashArray' },
               { value: 'ps', label: 'Dell PowerStore' },
               { value: 'pf', label: 'Dell PowerFlex' },
+              // Announced, not generally available yet (docs/facts.md EXT-2, EXT-15): shown so nobody thinks it was forgotten.
+              { value: 'netapp', label: 'NetApp ONTAP · coming', disabled: true, title: 'Announced with NetApp in April 2026 (NFS, AFF and select FAS systems). Not generally available yet: planned for an upcoming NCI release.' },
             ]}
           />
           <Points label="Why customers choose it" items={POINTS} t={t} />

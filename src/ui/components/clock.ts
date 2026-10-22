@@ -1,5 +1,6 @@
-// Animation clock: plays on its own and loops, with pause and scrub. There are no step,
-// speed or reset controls; scrubbing pauses, Play resumes from where the scrubber is.
+// Animation clock: plays on its own and loops, with pause, scrub and a playback speed that
+// every animation shares (0.25x to 2x, as on YouTube). There are no step or reset controls;
+// scrubbing pauses, Play resumes from where the scrubber is.
 // With prefers-reduced-motion the clock starts paused and moves only when scrubbed or
 // played. Space toggles whichever clock registered last. The clock never stops between
 // steps: a step whose caption needs longer to read than the step lasts plays slower instead,
@@ -14,6 +15,57 @@ export function simKey(action: 'toggle'): boolean {
   if (!h) return false;
   if (action === 'toggle') h.toggle();
   return true;
+}
+
+/** Playback speeds offered next to play/pause, as on YouTube. */
+export const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
+const SPEED_KEY = 'nax-speed';
+let speed = (() => {
+  try {
+    const v = Number(localStorage.getItem(SPEED_KEY));
+    return (SPEEDS as readonly number[]).includes(v) ? v : 1;
+  } catch {
+    return 1;
+  }
+})();
+const speedListeners = new Set<(s: number) => void>();
+
+export function getSpeed(): number {
+  return speed;
+}
+
+/** Set the shared playback speed; every playing clock picks it up on its next frame. */
+export function setSpeed(s: number) {
+  if (!(SPEEDS as readonly number[]).includes(s)) return;
+  speed = s;
+  try {
+    localStorage.setItem(SPEED_KEY, String(s));
+  } catch {
+    /* storage unavailable */
+  }
+  speedListeners.forEach((f) => f(s));
+}
+
+/** One step slower (-1) or faster (+1) through SPEEDS. */
+export function stepSpeed(dir: -1 | 1) {
+  const i = SPEEDS.indexOf(speed as (typeof SPEEDS)[number]);
+  setSpeed(SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 3 : i) + dir))]);
+}
+
+export function useSpeed(): number {
+  const [s, set] = useState(speed);
+  useEffect(() => {
+    speedListeners.add(set);
+    set(speed);
+    return () => {
+      speedListeners.delete(set);
+    };
+  }, []);
+  return s;
+}
+
+export function fmtSpeed(s: number): string {
+  return `${s}x`;
 }
 
 export function prefersReducedMotion(): boolean {
@@ -206,7 +258,7 @@ export function useClock(opts: ClockOptions): Clock {
           ref.current.held = 0;
           set(0);
         }
-      } else set(ref.current.t + dt * rateAt(ref.current.t, o.rate, o.steps, d));
+      } else set(ref.current.t + dt * speed * rateAt(ref.current.t, o.rate, o.steps, d));
       if (ref.current.playing) raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

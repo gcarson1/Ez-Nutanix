@@ -11,7 +11,7 @@ const SUBS = [
   { path: 'nci/lcm', icon: 'upgrade', t: 'LCM Rolling Upgrade', s: 'Updates one node at a time while every VM keeps running.', pri: 'Day 2' },
   { path: 'nci/network', icon: 'net', t: 'AHV Networking', s: 'How a node’s bonded uplinks carry traffic, and what happens when a link fails.', pri: 'Networking' },
   { path: 'nci/flow', icon: 'lock', t: 'Flow', s: 'Policies that allow or block traffic between apps, and quarantine.', pri: 'Security' },
-  { path: 'nci/dr', icon: 'globe', t: 'Disaster Recovery', s: 'Async, NearSync or Sync replication between sites, and a failover.', pri: 'Protection' },
+  { path: 'nci/dr', icon: 'globe', t: 'Disaster Recovery', s: 'Async, NearSync, Sync or Metro Availability between sites, and a failover.', pri: 'Protection' },
   { path: 'nci/snapshots', icon: 'clone', t: 'Snapshots & Clones', s: 'A snapshot copies the map, not the data; clones share blocks until they change.', pri: 'Data services' },
   { path: 'nci/security', icon: 'shield', t: 'Data Security', s: 'Encryption at rest and its keys, against a stolen drive or node.', pri: 'Security' },
   { path: 'nci/move', icon: 'move', t: 'Migration with Move', s: 'VMs copied over, kept in sync, then cut over with minimal downtime.', pri: 'Adoption' },

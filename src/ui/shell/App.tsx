@@ -7,9 +7,9 @@ import { KEYS, PRESETS, clearedScenario, setScenario } from '../../state/scenari
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
-import { simKey } from '../components/clock';
+import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
-import { CONFIG } from './config';
+import { CONFIG, VERSION } from './config';
 import { go } from './nav';
 
 // ── toast ──
@@ -185,6 +185,7 @@ const SHORTCUTS: [string, string][] = [
   ['G', 'Glossary'],
   ['?', 'This list'],
   ['Space', 'Pause / play the animation'],
+  ['< >', 'Slower / faster animation'],
   ['T', 'Light / dark theme'],
   ['Esc', 'Close panel, or go back'],
 ];
@@ -218,7 +219,7 @@ function About({ onClose }: { onClose: () => void }) {
       </div>
       <div class="modal-sec">
         <p class="muted small">
-          Facts checked on {CONFIG.factsCheckedOn}. Product names are used descriptively. {CONFIG.disclaimer}
+          Version {VERSION.slice(1)}. Facts checked on {CONFIG.factsCheckedOn}. Product names are used descriptively. {CONFIG.disclaimer}
         </p>
       </div>
       <div class="modal-foot">
@@ -331,6 +332,7 @@ export function App() {
       else if (k === 't' || k === 'T') setTheme((x) => (x === 'dark' ? 'light' : 'dark'));
       else if (s.dialog) return;
       else if (k === ' ' && t.tagName !== 'BUTTON' && simKey('toggle')) e.preventDefault();
+      else if (k === '<' || k === '>') stepSpeed(k === '>' ? 1 : -1);
       else return;
       if (k !== ' ') e.preventDefault();
     };
@@ -430,6 +432,7 @@ export function App() {
         <div class="in">
           <div class="foot-row">
             {CONFIG.credit && <span class="credit">{CONFIG.credit}</span>}
+            <span class="ver">{VERSION}</span>
             {(CONFIG.presenterName || CONFIG.organization) && (
               <span class="who">
                 {[CONFIG.presenterName, CONFIG.presenterRole, CONFIG.organization].filter(Boolean).join(' · ')}

@@ -8,10 +8,10 @@ export const content: ModuleContent = {
   priority: 'P0',
   talk: [
     'One tool for software and firmware: LCM finds what is installed, shows what is available, and orders the updates for you.',
-    'Nothing runs until the pre-checks pass. Pick “Cluster already degraded” to show LCM refusing to start while data is not fully protected.',
+    'Nothing runs until the pre-checks pass: health, data protection, free room for VMs and connectivity. If the cluster is already degraded, LCM does not start.',
     'Then it goes strictly one node at a time: VMs move off live, the node updates and comes back, data catches up, and only then does LCM move on.',
     'AOS updates are lighter: only the controller VM restarts. Its host’s storage traffic goes to the other controllers for a moment, and the VMs never move.',
-    'Pick “A node fails mid-upgrade”: LCM finishes the node it was on and waits instead of taking a second node down, then resumes once the node is repaired.',
+    'Pick “A node fails mid-upgrade” and let it play: nothing hints at the failure beforehand. When the node drops, HA restarts its VMs and the cluster starts rebuilding copies. LCM finishes the node it was on, then holds instead of taking a second node down, and resumes once the node is repaired and its data has caught up.',
     'Point at VM downtime: for a planned upgrade on three or more nodes it stays at none. Total time grows with node count because the work is one node at a time. The times on the timeline are illustrative, not official.',
   ],
   numbers: [
@@ -35,5 +35,5 @@ export const content: ModuleContent = {
       a: 'It scales with node count because nodes go one at a time. Nutanix does not publish current official per-node figures; older Nutanix-employee estimates are about 15 minutes per node for AOS and 25 or more for AHV, and firmware with several reboots takes longer. Run the pre-checks and view the upgrade plan to see the expected steps for your cluster.',
     },
   ],
-  next: ['Healthy cluster: let one loop play and point at one node out at a time and VM downtime staying at none.', 'Cluster already degraded: the pre-checks stop it before anything changes.', 'A node fails mid-upgrade: LCM waits, then resumes after the repair.', 'Then Failure Gauntlet for what an unplanned failure does on its own.'],
+  next: ['Healthy cluster: let one loop play and point at one node out at a time and VM downtime staying at none.', 'A node fails mid-upgrade: the failure comes without warning, LCM holds, then resumes after the repair.', 'Then Failure Gauntlet for what an unplanned failure does on its own.'],
 };

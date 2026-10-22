@@ -16,3 +16,4 @@
 .edge-dia text.ok-fill { fill: var(--ok); }
 .edge-dia text.warn-fill { fill: var(--warn); }
 .edge-dia text.bad-fill { fill: var(--bad); }
+.edge-dia text.flow-fill { fill: var(--flow); }

@@ -13,4 +13,4 @@
 .lcm-dia text.bad-fill { fill: var(--bad); }
 .lcm-dia text.flow-fill { fill: var(--flow); }
 .lcm-dia text.warn-fill { fill: var(--warn); }
-.lcm-dia .lcm-stop { fill: var(--bad); }
+.lcm-dia text.ok-fill { fill: var(--ok); }
