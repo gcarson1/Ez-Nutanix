@@ -8,8 +8,8 @@ From a coworker review of 1.0. Sources for every new claim are in `docs/facts.md
 - **LCM Rolling Upgrade:** "Cluster already degraded" is gone. In "A node fails mid-upgrade" nothing hints at the failure until it happens; then HA restarts the VMs, the cluster rebuilds, and LCM holds until the node is repaired and data has caught up.
 - **Disaster Recovery:** NearSync and Sync are one choice. New Metro Availability choice: sync replication under 5 ms round trip plus a Witness, with automatic failover that restarts the VMs, and live migration for a planned move.
 - **Edge & ROBO:** "Nodes lose contact" now works on two and three nodes. New "Add a node": a single node can't be expanded, two nodes can grow to three from AOS 7.6, three nodes use Expand Cluster.
-- **External storage:** NetApp ONTAP is listed as coming. It is announced but not generally available yet.
-- The footer and About show the version.
+- **External storage:** NetApp ONTAP is a fourth array, over NFS. It is marked as announced, because it was not generally available yet as of October 22, 2026.
+- The footer and About show the version, and the footer credit is larger.
 
 ## 1.0 (October 2026)
 

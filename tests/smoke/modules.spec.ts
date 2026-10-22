@@ -257,8 +257,13 @@ test('LCM: the failure scenario gives nothing away before the node fails', async
   expect(errors).toEqual([]);
 });
 
-test('external storage lists NetApp ONTAP as coming, and the footer shows the release', async ({ page }) => {
+test('external storage offers NetApp ONTAP over NFS, marked as announced, and the footer shows the release', async ({ page }) => {
+  const errors = watchErrors(page);
   await page.goto(`${FILE}#/partial`);
-  await expect(page.getByRole('button', { name: 'NetApp ONTAP · coming' })).toBeDisabled();
+  await page.getByRole('button', { name: 'NetApp ONTAP' }).click();
+  await expect.poll(() => page.url()).toContain('ar=na');
+  await expect(page.locator('.kpi .v', { hasText: 'NFS' })).toBeVisible();
+  await expect(page.locator('.kpi .v', { hasText: 'Announced' })).toBeVisible();
   await expect(page.locator('.foot-row .ver')).toHaveText('v1.1');
+  expect(errors).toEqual([]);
 });

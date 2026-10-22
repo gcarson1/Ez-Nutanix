@@ -49,7 +49,7 @@ Edit `src/config.json`:
   "presenterRole": "Systems Engineer",
   "organization": "Your Company",
   "contact": "you@example.com",
-  "credit": "Built by: Alex Besaw, Gabriel Carson, and Claude :)",
+  "credit": "Built by Alex Besaw and Gabriel Carson",
   "disclaimer": "Illustrative visualization for education. …",
   "factsCheckedOn": "2026-10-16"
 }
