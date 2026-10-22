@@ -1,19 +1,77 @@
-// Animation clock: plays on its own and loops, with pause and scrub. There are no step,
-// speed or reset controls; scrubbing pauses, Play resumes from where the scrubber is.
+// Animation clock: plays on its own and loops, with pause, scrub and a playback speed that
+// every animation shares (0.25x to 2x, as on YouTube). There are no step or reset buttons;
+// scrubbing pauses, Play resumes from where the scrubber is. The arrow keys scrub too: Left
+// and Right move a fortieth of the loop, and with Shift they jump to the previous or next step.
 // With prefers-reduced-motion the clock starts paused and moves only when scrubbed or
 // played. Space toggles whichever clock registered last. The clock never stops between
 // steps: a step whose caption needs longer to read than the step lasts plays slower instead,
 // at least `SECS_PER_WORD` real seconds per word, easing into and out of the slower speed.
 import { useEffect, useRef, useState } from 'preact/hooks';
 
-type Handler = { toggle: () => void };
+type Handler = { toggle: () => void; nudge: (dir: -1 | 1, toStep: boolean) => void };
 const stack: Handler[] = [];
 
-export function simKey(action: 'toggle'): boolean {
+/** Keyboard control of whichever clock registered last. False when no animation is on screen. */
+export function simKey(action: 'toggle' | 'back' | 'forward', toStep = false): boolean {
   const h = stack[stack.length - 1];
   if (!h) return false;
   if (action === 'toggle') h.toggle();
+  else h.nudge(action === 'forward' ? 1 : -1, toStep);
   return true;
+}
+
+/** Share of the loop one arrow-key press moves. */
+export const NUDGE = 1 / 40;
+
+/** Playback speeds offered next to play/pause, as on YouTube. */
+export const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
+const SPEED_KEY = 'nax-speed';
+let speed = (() => {
+  try {
+    const v = Number(localStorage.getItem(SPEED_KEY));
+    return (SPEEDS as readonly number[]).includes(v) ? v : 1;
+  } catch {
+    return 1;
+  }
+})();
+const speedListeners = new Set<(s: number) => void>();
+
+export function getSpeed(): number {
+  return speed;
+}
+
+/** Set the shared playback speed; every playing clock picks it up on its next frame. */
+export function setSpeed(s: number) {
+  if (!(SPEEDS as readonly number[]).includes(s)) return;
+  speed = s;
+  try {
+    localStorage.setItem(SPEED_KEY, String(s));
+  } catch {
+    /* storage unavailable */
+  }
+  speedListeners.forEach((f) => f(s));
+}
+
+/** One step slower (-1) or faster (+1) through SPEEDS. */
+export function stepSpeed(dir: -1 | 1) {
+  const i = SPEEDS.indexOf(speed as (typeof SPEEDS)[number]);
+  setSpeed(SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 3 : i) + dir))]);
+}
+
+export function useSpeed(): number {
+  const [s, set] = useState(speed);
+  useEffect(() => {
+    speedListeners.add(set);
+    set(speed);
+    return () => {
+      speedListeners.delete(set);
+    };
+  }, []);
+  return s;
+}
+
+export function fmtSpeed(s: number): string {
+  return `${s}x`;
 }
 
 export function prefersReducedMotion(): boolean {
@@ -167,6 +225,8 @@ export interface Clock {
   seek: (t: number) => void;
   /** Back to the start; keeps playing if it was playing. */
   restart: () => void;
+  /** Pause and move a fortieth of the loop, or to the previous or next step's start. */
+  nudge: (dir: -1 | 1, toStep?: boolean) => void;
 }
 
 export function useClock(opts: ClockOptions): Clock {
@@ -206,7 +266,7 @@ export function useClock(opts: ClockOptions): Clock {
           ref.current.held = 0;
           set(0);
         }
-      } else set(ref.current.t + dt * rateAt(ref.current.t, o.rate, o.steps, d));
+      } else set(ref.current.t + dt * speed * rateAt(ref.current.t, o.rate, o.steps, d));
       if (ref.current.playing) raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -237,13 +297,28 @@ export function useClock(opts: ClockOptions): Clock {
       ref.current.held = 0;
       set(0);
     },
+    nudge: (dir, toStep = false) => {
+      const o = ref.current.opts;
+      const now = ref.current.t;
+      // Without a loop length, a press moves what two seconds of playback would.
+      const len = o.duration ?? o.rate * 2 / NUDGE;
+      let to = now + dir * len * NUDGE;
+      if (toStep && o.steps?.length) {
+        const ats = o.steps.map((x) => x.at).sort((a, b) => a - b);
+        const eps = len / 400;
+        to = dir > 0 ? (ats.find((a) => a > now + eps) ?? o.duration ?? to) : ([...ats].reverse().find((a) => a < now - eps) ?? 0);
+      }
+      api.pause();
+      ref.current.held = 0;
+      set(to);
+    },
   };
 
   const apiRef = useRef(api);
   apiRef.current = api;
   useEffect(() => {
     if (!opts.keys) return;
-    const h: Handler = { toggle: () => apiRef.current.toggle() };
+    const h: Handler = { toggle: () => apiRef.current.toggle(), nudge: (dir, toStep) => apiRef.current.nudge(dir, toStep) };
     stack.push(h);
     return () => {
       const i = stack.indexOf(h);

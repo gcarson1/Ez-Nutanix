@@ -4,7 +4,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from './Icon';
-import { fmtClock, type Clock } from './clock';
+import { SPEEDS, fmtClock, fmtSpeed, setSpeed, useSpeed, type Clock } from './clock';
 
 // ── explain-this tooltip ──
 export function Tip({ text, detail, children, align }: { text: string; detail?: string; children: ComponentChildren; align?: 'right' | 'up' }) {
@@ -243,6 +243,7 @@ export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: {
       <button type="button" class="btn pbtn" onClick={clock.toggle} aria-label={clock.playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
         <Icon name={clock.playing ? 'pause' : 'play'} />
       </button>
+      <SpeedMenu />
       {scrub && clock.duration !== undefined && (
         <input
           class="range scrub"
@@ -252,6 +253,7 @@ export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: {
           step={clock.duration / 400}
           value={clock.t}
           aria-label="Scrub the animation"
+          title="Scrub (Left and Right arrows; Shift jumps to the next step)"
           onInput={(e) => {
             clock.pause();
             clock.seek(Number((e.target as HTMLInputElement).value));
@@ -260,6 +262,63 @@ export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: {
       )}
       <span class="clock" aria-live="off">{fmt(clock.t)}</span>
       {extra}
+    </div>
+  );
+}
+
+/** The playback speed button: shows the speed, opens a list of speeds above it. */
+export function SpeedMenu() {
+  const s = useSpeed();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        (ref.current?.querySelector('.speed-btn') as HTMLElement | null)?.focus();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey, true);
+    (ref.current?.querySelector('[aria-checked="true"]') as HTMLElement | null)?.focus();
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [open]);
+  const pick = (v: number) => {
+    setSpeed(v);
+    setOpen(false);
+    (ref.current?.querySelector('.speed-btn') as HTMLElement | null)?.focus();
+  };
+  const move = (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    const items = [...(ref.current?.querySelectorAll<HTMLElement>('.speed-opt') ?? [])];
+    const i = items.indexOf(document.activeElement as HTMLElement);
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+    e.preventDefault();
+  };
+  return (
+    <div class="speed" ref={ref}>
+      <button type="button" class={`btn speed-btn${s !== 1 ? ' on' : ''}`} onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={`Playback speed ${fmtSpeed(s)}`} title="Playback speed (< and >)">
+        {fmtSpeed(s)}
+      </button>
+      {open && (
+        <div class="speed-menu" role="menu" aria-label="Playback speed" onKeyDown={move}>
+          <div class="speed-h">Playback speed</div>
+          {SPEEDS.map((v) => (
+            <button key={v} type="button" class="speed-opt" role="menuitemradio" aria-checked={v === s} onClick={() => pick(v)}>
+              <span class="speed-mark">{v === s ? '✓' : ''}</span>
+              {v === 1 ? 'Normal' : v}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

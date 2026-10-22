@@ -1,18 +1,18 @@
 // LCM Rolling Upgrade: pick a scenario and watch a 4-node cluster update one node at a time
-// on a loop: VMs move off live, the node updates and comes back, then the next one. All
-// behavior comes from src/engine/lcm.ts.
+// on a loop: VMs move off live, the node updates and comes back, then the next one. In the
+// failure scenario nothing hints at the failure until it happens. All behavior comes from
+// src/engine/lcm.ts.
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
 import { stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
-import { COMP, DEFAULT_MINUTES, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
+import { COMP, DEFAULT_MINUTES, HA_RESTART_SEC, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
 
-type Scenario = 'healthy' | 'degraded' | 'fail';
+type Scenario = 'healthy' | 'fail';
 const SCENARIOS: { value: Scenario; label: string }[] = [
   { value: 'healthy', label: 'Healthy cluster' },
-  { value: 'degraded', label: 'Cluster already degraded' },
   { value: 'fail', label: 'A node fails mid-upgrade' },
 ];
 const NODES = 4;
@@ -27,17 +27,23 @@ const PROTECTION: Record<Resil, { v: string; tone: Tone }> = {
 };
 const BATCH_SHORT: Record<BatchId, string> = { foundation: 'Foundation', aos: 'AOS', ahv: 'AHV', fw: 'Firmware', ncc: 'NCC' };
 
-function simFor(sc: Scenario): LcmSim {
-  const base: LcmConfig = { nodes: NODES, rf: 2, vms: NODES * 4, memLoadPct: 50, selected: SELECTED, minutes: DEFAULT_MINUTES, degraded: sc === 'degraded', witness: true, vmsShutDown: false, fail: null, repairAt: null };
+/** `sim` is what happens; `plan` is what LCM expects before anything goes wrong. */
+interface Run {
+  sim: LcmSim;
+  plan: LcmSim;
+}
+
+function simFor(sc: Scenario): Run {
+  const base: LcmConfig = { nodes: NODES, rf: 2, vms: NODES * 4, memLoadPct: 50, selected: SELECTED, minutes: DEFAULT_MINUTES, degraded: false, witness: true, vmsShutDown: false, fail: null, repairAt: null };
   const healthy = simulateLcm(base);
-  if (sc !== 'fail') return healthy;
+  if (sc !== 'fail') return { sim: healthy, plan: healthy };
   // Fail a node while LCM is bringing VMs back to the node it just finished, so only the failed
-  // node is down: LCM pauses, the node is repaired 40 minutes later, and LCM resumes.
+  // node is down: LCM holds, the node is repaired 40 minutes later, and LCM resumes.
   for (let t = Math.round(healthy.end * 0.55); t < healthy.end; t += 10) {
     const c = lcmStateAt(healthy, t).current;
-    if (c && c.phase === 'return-vms') return simulateLcm({ ...base, fail: { at: t + 20, node: (c.node + 2) % NODES }, repairAt: t + 20 + 2400 });
+    if (c && c.phase === 'return-vms') return { sim: simulateLcm({ ...base, fail: { at: t + 20, node: (c.node + 2) % NODES }, repairAt: t + 20 + 2400 }), plan: healthy };
   }
-  return healthy;
+  return { sim: healthy, plan: healthy };
 }
 
 const PHASE_TEXT: Record<string, string> = {
@@ -52,41 +58,52 @@ const PHASE_TEXT: Record<string, string> = {
   'return-vms': 'VMs move back so their data is local again.',
 };
 
-function caption(sc: Scenario, sim: LcmSim, v: LcmView): { tone: Tone | 'ink'; k: string; text: string } {
-  if (sim.blocked) return { tone: 'bad', k: 'LCM will not start', text: 'A drive has failed and its data is still being re-protected. The pre-checks catch it, so LCM changes nothing until the cluster is healthy again.' };
+function caption(sim: LcmSim, v: LcmView): { tone: Tone | 'ink'; k: string; text: string } {
+  const [failAt, healthyAt] = sim.unhealthy ?? [Infinity, Infinity];
+  const failed = `N${(sim.failNode ?? 0) + 1}`;
   if (v.done)
-    return sc === 'fail'
+    return sim.unhealthy
       ? { tone: 'ok', k: 'Upgrade complete', text: 'Every node is updated. The only VM downtime came from the failure, when its VMs restarted on other nodes, not from the upgrade.' }
       : { tone: 'ok', k: 'Upgrade complete', text: `All ${NODES} nodes are updated, one at a time, and every VM kept running the whole way.` };
-  if (v.paused) return { tone: 'warn', k: 'LCM waits', text: `Another node failed. LCM finished the node it was on and now waits, taking no other node down until data is fully protected again.${sim.repairAt !== null && v.t >= sim.repairAt ? ' The node is back; data is catching up.' : ''}` };
+  if (v.t >= failAt && v.t < failAt + HA_RESTART_SEC)
+    return { tone: 'bad', k: `${failed} failed`, text: `No warning: ${failed} just went down. HA restarts its VMs on the other nodes, and the cluster starts rebuilding the missing data copies right away.` };
+  if (v.paused)
+    return sim.repairAt !== null && v.t >= sim.repairAt
+      ? { tone: 'warn', k: `${failed} is back`, text: `${failed} is repaired and rejoins. Its data catches up, and LCM still holds until every piece of data has both copies again.` }
+      : { tone: 'warn', k: 'LCM holds', text: `The upgrade pauses, the cluster does not. LCM takes no other node down while ${failed} is out, so every VM keeps running on the healthy nodes until ${failed} is repaired.` };
   if (v.current) {
     const name = v.nodes[v.current.node].name;
-    return { tone: 'flow', k: `${name} · ${BATCH_SHORT[v.current.batch]}`, text: PHASE_TEXT[v.current.phase] ?? v.current.label };
+    const what = PHASE_TEXT[v.current.phase] ?? v.current.label;
+    if (v.t >= failAt && v.t < healthyAt) return { tone: 'warn', k: `LCM finishes ${name}`, text: `LCM completes the node it was already on, then goes no further while ${failed} is out.` };
+    if (v.current === sim.segs.find((s) => s.start >= healthyAt)) return { tone: 'flow', k: `LCM resumes · ${name}`, text: `Data is fully protected again, so LCM picks up where it stopped. ${what}` };
+    return { tone: 'flow', k: `${name} · ${BATCH_SHORT[v.current.batch]}`, text: what };
   }
   if (v.cluster?.kind === 'precheck') return { tone: 'ink', k: 'Pre-checks', text: 'Before touching anything, LCM checks health, data protection, free room for VMs and connectivity.' };
   return { tone: 'ink', k: 'Next node', text: 'One node at a time: LCM moves on only when the last node is fully back.' };
 }
 
-function phaseLabel(sim: LcmSim, v: LcmView): string {
-  if (sim.blocked) return 'Pre-checks failed';
+function phaseLabel(v: LcmView): string {
   if (v.done) return 'Done';
-  if (v.paused) return 'Waiting';
+  if (v.paused) return 'Holding';
   if (v.current) return `${v.nodes[v.current.node].name} · ${BATCH_SHORT[v.current.batch]}`;
   return 'Pre-checks';
 }
 
 export default function Lcm() {
   const [sc, setSc] = useEnum<Scenario>('sc', 'healthy', SCENARIOS.map((s) => s.value));
-  const sim = useMemo(() => simFor(sc), [sc]);
-  // About 22 seconds per loop at full speed (6 when the pre-checks stop it), slower where a caption needs it.
-  // The upgrade is done exactly at sim.end, so a short tail after it gives the closing caption its reading time.
-  const end = sim.end + (sim.blocked ? 0 : sim.end / 22);
-  const steps = useMemo(() => stepsFrom(end, (t) => caption(sc, sim, lcmStateAt(sim, t))), [sc, sim, end]);
-  const clock = useClock({ rate: sim.end / (sim.blocked ? 6 : 22), duration: end, keys: true, poster: sim.blocked ? sim.end : (sim.visits[NODES]?.start ?? 0) + 400, steps });
+  const { sim, plan } = useMemo(() => simFor(sc), [sc]);
+  // About 22 seconds per loop at full speed, slower where a caption needs it. The upgrade is
+  // done exactly at sim.end, so a short tail after it gives the closing caption its reading time.
+  const end = sim.end + sim.end / 22;
+  const steps = useMemo(() => stepsFrom(end, (t) => caption(sim, lcmStateAt(sim, t))), [sim, end]);
+  // With reduced motion the still frame is the second batch, or LCM holding after the failure.
+  const poster = sim.unhealthy ? sim.unhealthy[0] + HA_RESTART_SEC + 600 : (sim.visits[NODES]?.start ?? 0) + 400;
+  const clock = useClock({ rate: sim.end / 22, duration: end, keys: true, poster, steps });
   useRestartOn(clock, [sc]);
   const view = lcmStateAt(sim, clock.t);
-  const line = caption(sc, sim, view);
-  const prot = PROTECTION[view.resiliency.state];
+  const line = caption(sim, view);
+  // An unplanned failure starts a rebuild of the lost copies at once; a planned upgrade does not.
+  const prot = view.resiliency.state === 'reduced' && view.nodes.some((n) => n.failed) ? { v: 'Rebuilding', tone: 'warn' as Tone } : PROTECTION[view.resiliency.state];
   const down = Math.round(view.impact.vmDownMin);
 
   return (
@@ -109,7 +126,7 @@ export default function Lcm() {
       }
     >
       <div class="diagram-scroll">
-        <UpgradeDiagram sim={sim} view={view} />
+        <UpgradeDiagram sim={sim} plan={plan} view={view} />
       </div>
       <Legend
         items={[
@@ -117,25 +134,30 @@ export default function Lcm() {
           { color: 'var(--warn)', label: 'Out of service for the update' },
           { color: 'var(--bad)', label: 'Failed' },
           { color: 'var(--flow)', label: 'Node being updated · VM moving' },
-          { color: 'var(--warn)', dashed: true, label: 'LCM waiting' },
+          { color: 'var(--warn)', dashed: true, label: 'LCM holding' },
         ]}
       />
       <PlayBar
         clock={clock}
         label="Upgrade animation"
-        fmt={() => phaseLabel(sim, view)}
+        fmt={() => phaseLabel(view)}
         extra={<Illus why="The times on the timeline use older, unofficial per-node estimates (about 15 minutes for AOS and 25 for AHV). Real times depend on the cluster, its load and the release." />}
       />
     </Show>
   );
 }
 
-function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
+function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: LcmView }) {
   const W = 820;
   const n = sim.cfg.nodes;
   const railY = 40;
   const railH = 34;
-  const end = sim.end || 1;
+  // Until a node fails the rail shows LCM's plan, so nothing gives the failure away. From the
+  // failure on it shows the new plan, with LCM holding.
+  const failAt = sim.unhealthy?.[0] ?? Infinity;
+  const hit = view.t >= failAt;
+  const rail = hit ? sim : plan;
+  const end = rail.end || 1;
   const X = (t: number) => 10 + (Math.min(t, end) / end) * (W - 20);
 
   const perRow = n <= 4 ? n : n <= 16 ? 4 : 8;
@@ -165,11 +187,11 @@ function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
     });
   }
 
-  const failX = sim.unhealthy ? X(sim.unhealthy[0]) : null;
+  const failX = hit ? X(failAt) : null;
+  const repairX = sim.repairAt !== null && view.t >= sim.repairAt ? X(sim.repairAt) : null;
   const playX = X(view.t);
-  const stopped = sim.blocked && view.t >= sim.end * 0.7;
-  const batchSpans = sim.batches.map((b) => {
-    const segs = b.scope === 'cluster' ? sim.csegs.filter((c) => c.batch === b.id) : [...sim.csegs.filter((c) => c.batch === b.id), ...sim.segs.filter((s) => s.batch === b.id)];
+  const batchSpans = rail.batches.map((b) => {
+    const segs = b.scope === 'cluster' ? rail.csegs.filter((c) => c.batch === b.id) : [...rail.csegs.filter((c) => c.batch === b.id), ...rail.segs.filter((s) => s.batch === b.id)];
     if (!segs.length) return null;
     return { b, a: Math.min(...segs.map((s) => s.start)), z: Math.max(...segs.map((s) => s.end)) };
   });
@@ -194,15 +216,24 @@ function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
           ),
       )}
       <rect x={10} y={railY} width={W - 20} height={railH} class="bg2" stroke="var(--line-2)" />
-      {sim.csegs.map((c, i) => (
-        <rect key={`c${i}`} x={X(c.start)} y={railY + 1} width={Math.max(1, X(c.end) - X(c.start))} height={railH - 2} class={stopped ? 'lcm-stop' : c.kind === 'wait' ? 'lcm-wait' : view.t >= c.end ? 'lcm-done' : view.t >= c.start ? 'lcm-now' : 'bg3'} />
-      ))}
-      {stopped && (
-        <text x={W / 2} y={railY + railH / 2 + 5} text-anchor="middle" class="lcm-small lcm-on-ink">
-          ✕ Pre-checks failed: nothing is changed
-        </text>
-      )}
-      {sim.visits.map((v, i) => {
+      {rail.csegs.map((c, i) => {
+        if (c.kind !== 'wait') return <rect key={`c${i}`} x={X(c.start)} y={railY + 1} width={Math.max(1, X(c.end) - X(c.start))} height={railH - 2} class={view.t >= c.end ? 'lcm-done' : view.t >= c.start ? 'lcm-now' : 'bg3'} />;
+        // The hold grows as it happens: how long it lasts depends on the repair.
+        if (view.t < c.start) return null;
+        const a = X(c.start);
+        const z = X(Math.min(view.t, c.end));
+        return (
+          <g key={`c${i}`}>
+            <rect x={a} y={railY + 1} width={Math.max(2, z - a)} height={railH - 2} class="lcm-wait" />
+            {z - a > 70 && (
+              <text x={a + 6} y={railY + railH / 2 + 5} class="lcm-small warn-fill">
+                LCM holds
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {rail.visits.map((v, i) => {
         const a = X(v.start);
         const z = X(v.end);
         const st = view.t >= v.end ? 'lcm-done' : view.t >= v.start ? 'lcm-now' : 'lcm-todo';
@@ -217,8 +248,8 @@ function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
           </g>
         );
       })}
-      {sim.segs
-        .filter((s) => s.aborted)
+      {rail.segs
+        .filter((s) => s.aborted && view.t >= s.start)
         .map((s, i) => (
           <rect key={`ab${i}`} x={X(s.start)} y={railY + 1} width={Math.max(2, X(s.end) - X(s.start))} height={railH - 2} class="lcm-wait" />
         ))}
@@ -230,9 +261,12 @@ function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
           </text>
         </g>
       )}
-      {sim.repairAt !== null && (
+      {repairX !== null && (
         <g>
-          <line x1={X(sim.repairAt)} x2={X(sim.repairAt)} y1={railY - 8} y2={railY + railH + 18} class="ok-stroke" stroke-width={2} />
+          <line x1={repairX} x2={repairX} y1={railY - 8} y2={railY + railH + 18} class="ok-stroke" stroke-width={2} />
+          <text x={Math.min(repairX + 4, W - 120)} y={railY + railH + 16} class="lcm-small ok-fill">
+            ✓ N{(sim.failNode ?? 0) + 1} repaired
+          </text>
         </g>
       )}
       <line x1={playX} x2={playX} y1={railY - 10} y2={railY + railH + 6} stroke="var(--text)" stroke-width={2} />
@@ -240,8 +274,8 @@ function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
         0:00
       </text>
       <text x={W - 10} y={railY + railH + 20} text-anchor="end" class="lcm-small muted">
-        {fmtDur(sim.end / 3600)}
-        {sim.pausedAt !== null ? ' (paused)' : ''}
+        {fmtDur(rail.end / 3600)}
+        {rail.pausedAt !== null ? ' (paused)' : ''}
       </text>
 
       {/* nodes */}
@@ -254,12 +288,11 @@ function UpgradeDiagram({ sim, view }: { sim: LcmSim; view: LcmView }) {
         const hasAos = sim.batches.some((b) => b.id === 'aos');
         const hasFw = sim.batches.some((b) => b.id === 'fw');
         const cvmState = nd.failed ? 'down' : nd.out ? 'warn' : '';
-        const drive = sim.cfg.degraded && nd.id === 1;
-        const word = nd.failed ? 'FAILED' : drive ? 'A drive failed' : nd.phase === 'idle' ? 'In service' : phaseWord(nd.phase);
+        const word = nd.failed ? 'FAILED' : nd.phase === 'idle' ? 'In service' : phaseWord(nd.phase);
         const boxCls = nd.failed ? 'down' : nd.out ? 'warn' : nd.phase !== 'idle' ? 'sel' : '';
         const busy = nd.phase !== 'idle';
-        const statusCls = nd.failed || drive ? 'bad-fill' : nd.out ? 'warn-fill' : busy ? 'flow-fill' : 'muted';
-        const mark = nd.failed || drive ? '✕ ' : nd.out ? '⚠ ' : busy ? '→ ' : '';
+        const statusCls = nd.failed ? 'bad-fill' : nd.out ? 'warn-fill' : busy ? 'flow-fill' : 'muted';
+        const mark = nd.failed ? '✕ ' : nd.out ? '⚠ ' : busy ? '→ ' : '';
         const cvmTxt = compact ? 'CVM' : `CVM${hasAos ? ` · AOS ${aosDone ? COMP.aos.to : COMP.aos.from}` : ''}${nd.failed || nd.out ? ' · down' : ''}`;
         const hostTxt = compact
           ? hasAhv ? `AHV ${ahvDone ? COMP.ahv.to : COMP.ahv.from}` : 'AHV'

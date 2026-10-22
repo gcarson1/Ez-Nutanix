@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   talk: [
     'Not every customer wants to replace hypervisor, storage and management at once. This page shows the two partial starting points, and why each one appeals.',
-    'External storage: keep the array. AHV runs on compute-only nodes that reach Everpure FlashArray or Dell PowerStore over NVMe/TCP, or Dell PowerFlex through Dell’s own client. Each VM disk is its own volume on the array, and Nutanix uses the array’s snapshots and clones.',
+    'External storage: keep the array. AHV runs on compute-only nodes that reach Everpure FlashArray or Dell PowerStore over NVMe/TCP, or Dell PowerFlex through Dell’s own client. Each VM disk is its own volume on the array, and Nutanix uses the array’s snapshots and clones. NetApp ONTAP, over NFS, is announced and on the page, marked as such.',
     'The value is reuse and independent scaling: leave vSphere without a storage refresh, add compute nodes without buying storage, and keep Prism, Flow and DR orchestration on top. It is licensed per core as NCI Compute.',
     'ESXi on Nutanix: keep vSphere. vCenter, vMotion, HA and DRS keep working; a Controller VM on every host owns the drives and pools them into one datastore. There is no SAN to run, and the customer uses their existing VMware licenses.',
     'It is also a stepping stone. Switch to "Convert to AHV later": the hosts change hypervisor one at a time in place, or teams move with Nutanix Move or a DR failover. Replication already works between ESXi and AHV clusters.',
@@ -16,7 +16,8 @@ export const content: ModuleContent = {
   ],
   numbers: [
     { k: 'Arrays generally available', v: 'Dell PowerFlex (Apr 2025), Everpure FlashArray (Dec 2025), Dell PowerStore (NCI 7.6, Jul 2026)' },
-    { k: 'Array protocol', v: 'NVMe/TCP on Ethernet; PowerFlex uses Dell SDC' },
+    { k: 'Announced, not yet GA', v: 'NetApp ONTAP (AFF A-series, select FAS) over NFS, planned for an upcoming NCI release' },
+    { k: 'Array protocol', v: 'NVMe/TCP on Ethernet; PowerFlex uses Dell SDC; NetApp uses NFS' },
     { k: 'FlashArray cluster', v: '3 to 32 nodes, one FlashArray, new cluster only' },
     { k: 'External storage license', v: 'NCI Compute (NCI-C), priced per core' },
     { k: 'ESXi cluster size', v: 'Up to 48 hosts (vSphere 7.0, AOS 6.8)' },
@@ -25,7 +26,7 @@ export const content: ModuleContent = {
   qa: [
     {
       q: 'Can we use our NetApp array?',
-      a: 'Not yet. Nutanix and NetApp announced ONTAP support over NFS in April 2026, for AFF A-series and some FAS systems, and in mid-October 2026 it was still planned for this fall with an upcoming NCI release. Today the generally available arrays are Everpure FlashArray, Dell PowerStore and Dell PowerFlex.',
+      a: 'Not yet. Nutanix and NetApp announced ONTAP support over NFS in April 2026, for AFF A-series and some FAS systems, and in mid-October 2026 it was still planned for this fall with an upcoming NCI release (NetApp’s own blog names NCI 7.6.0.10). Pick it on the page to walk through it; the numbers mark it as announced. Today the generally available arrays are Everpure FlashArray, Dell PowerStore and Dell PowerFlex.',
     },
     {
       q: 'Can we attach our existing Nutanix cluster to the array?',
