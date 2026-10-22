@@ -4,7 +4,11 @@
   "presenterRole": "",
   "organization": "",
   "contact": "",
-  "credit": "Built by Alex Besaw and Gabriel Carson",
+  "credit": "Built by",
+  "authors": [
+    { "name": "Alex Besaw", "handle": "@besaw" },
+    { "name": "Gabriel Carson", "handle": "@GabeC" }
+  ],
   "disclaimer": "Illustrative visualization for education. Behavior, limits, licensing, and supported topologies vary by product release and configuration. Confirm the current Compatibility Matrix and product documentation before designing a deployment.",
   "factsCheckedOn": "2026-10-16"
 }

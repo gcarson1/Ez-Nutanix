@@ -7,8 +7,10 @@ export interface AppConfig {
   presenterRole: string;
   organization: string;
   contact: string;
-  /** Credit line shown first in the footer. */
+  /** Credit line shown first in the footer, followed by the authors. */
   credit: string;
+  /** Names after the credit, each with an optional Slack handle shown beneath it in purple. */
+  authors?: { name: string; handle?: string }[];
   disclaimer: string;
   factsCheckedOn: string;
 }

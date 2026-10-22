@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Footer:** Slack handles (@besaw, @GabeC) under the authors' names, in Nutanix purple. On the home page the footer sits at the bottom of the window when the slide fits, instead of just below it.
+
 ## 1.1 (October 2026)
 
 From a coworker review of 1.0. Sources for every new claim are in `docs/facts.md` section 13, and the choices are in `docs/decisions.md` rows 27 to 32.

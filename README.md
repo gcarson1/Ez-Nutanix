@@ -50,13 +50,17 @@ Edit `src/config.json`:
   "presenterRole": "Systems Engineer",
   "organization": "Your Company",
   "contact": "you@example.com",
-  "credit": "Built by Alex Besaw and Gabriel Carson",
+  "credit": "Built by",
+  "authors": [
+    { "name": "Alex Besaw", "handle": "@besaw" },
+    { "name": "Gabriel Carson", "handle": "@GabeC" }
+  ],
   "disclaimer": "Illustrative visualization for education. …",
   "factsCheckedOn": "2026-10-16"
 }
 ```
 
-The footer shows the credit line (and the presenter line, if set) above the disclaimer. Rebuild after editing.
+The footer shows the credit and the authors, each with their Slack handle under the name in purple (and the presenter line, if set), above the disclaimer. Rebuild after editing.
 
 ## Editing content
 

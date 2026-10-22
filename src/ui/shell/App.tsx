@@ -266,6 +266,7 @@ function crumbsFor(def: ModuleDef | undefined): { label: string; path: string }[
 
 /** Modules that read the shared cluster size, where the top bar shows Presets. */
 const PRESET_PATHS = ['nci/capacity', 'nci/scale'];
+const authors = CONFIG.authors ?? [];
 
 function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);
@@ -428,14 +429,27 @@ export function App() {
         </div>
       </header>
 
-      <main class="page" id="main">
+      <main class={`page${route.path ? '' : ' home'}`} id="main">
         {def ? <ModuleView def={def} key={def.content.path} /> : route.path ? <NotFound /> : <Landing />}
       </main>
 
       <footer class={`foot-bar${route.path ? '' : ' fab-room'}`}>
         <div class="in">
           <div class="foot-row">
-            {CONFIG.credit && <span class="credit">{CONFIG.credit}</span>}
+            {(CONFIG.credit || authors.length > 0) && (
+              <span class="credit">
+                {CONFIG.credit}
+                {authors.map((a, i) => (
+                  <Fragment key={a.name}>
+                    {i === 0 ? ' ' : i === authors.length - 1 ? ' and ' : ', '}
+                    <span class="author">
+                      {a.name}
+                      {a.handle && <span class="handle">{a.handle}</span>}
+                    </span>
+                  </Fragment>
+                ))}
+              </span>
+            )}
             <span class="ver">{VERSION}</span>
             {(CONFIG.presenterName || CONFIG.organization) && (
               <span class="who">

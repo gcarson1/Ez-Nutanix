@@ -24,11 +24,16 @@ body { min-height: 100vh; }
 
 /* ── page frame ────────────────────────────────────────────────────── */
 .page { flex: 1; width: 100%; }
+/* The home slide fills the space between the top bar and the footer, so the footer sits at the bottom of the window. */
+.page.home { display: flex; flex-direction: column; }
 .foot-bar { border-top: 1px solid var(--line); }
 .foot-bar .in { max-width: var(--wide); margin: 0 auto; padding: var(--sp-4) var(--gutter) var(--sp-5); font-size: var(--fs-12); line-height: 1.5; color: var(--faint); }
 /* Line 1: credit (and presenter, if set) on the left, About on the right. Line 2: the disclaimer. */
 .foot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-4); }
 .foot-row .credit { color: var(--text-2); font-size: var(--fs-15); font-weight: 600; }
+/* Each author's Slack handle sits under their name, in Nutanix purple. */
+.foot-row .author { display: inline-flex; flex-direction: column; }
+.foot-row .handle { color: var(--ink); font-size: var(--fs-13); }
 .foot-row .ver { color: var(--faint); font: 600 var(--fs-12) / 1 var(--mono); }
 .foot-row .who { color: var(--muted); padding-left: var(--sp-4); border-left: 1px solid var(--line-2); }
 .foot-row .tbtn { margin-left: auto; height: auto; padding: 0; font-size: var(--fs-12); color: var(--muted); }
@@ -40,7 +45,7 @@ body { min-height: 100vh; }
 }
 
 /* ── landing: the slide ───────────────────────────────────────────── */
-.slide-wrap { background: var(--slide-bg); min-height: calc(100vh - var(--bar-h)); display: flex; flex-direction: column; }
+.slide-wrap { background: var(--slide-bg); flex: 1; display: flex; flex-direction: column; }
 .slide {
   width: 100%; max-width: 92rem; margin: 0 auto; padding: var(--sp-10) var(--gutter) var(--sp-8);
   display: flex; flex-direction: column; gap: var(--sp-5); flex: 1;
