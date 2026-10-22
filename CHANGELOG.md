@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Footer:** Slack handles (@besaw, @GabeC) under the authors' names, in Nutanix purple. On the home page the footer sits at the bottom of the window when the slide fits, instead of just below it.
+- **Footer:** Slack handles under the authors' names in Nutanix purple: @Besaw, and @GabeC followed by "on Slack". On the home page the footer sits at the bottom of the window when the slide fits, instead of just below it.
 
 ## 1.1 (October 2026)
 

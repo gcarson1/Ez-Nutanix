@@ -31,9 +31,10 @@ body { min-height: 100vh; }
 /* Line 1: credit (and presenter, if set) on the left, About on the right. Line 2: the disclaimer. */
 .foot-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-4); }
 .foot-row .credit { color: var(--text-2); font-size: var(--fs-15); font-weight: 600; }
-/* Each author's Slack handle sits under their name, in Nutanix purple. */
-.foot-row .author { display: inline-flex; flex-direction: column; }
-.foot-row .handle { color: var(--ink); font-size: var(--fs-13); }
+/* Each author's Slack handle sits under their name, in Nutanix purple; "on Slack" follows the last one. */
+.foot-row .author { display: inline-flex; flex-direction: column; white-space: nowrap; }
+.foot-row .handle { color: var(--ink); font-size: var(--fs-13); white-space: nowrap; }
+.foot-row .handle .on { color: var(--muted); font-weight: 400; }
 .foot-row .ver { color: var(--faint); font: 600 var(--fs-12) / 1 var(--mono); }
 .foot-row .who { color: var(--muted); padding-left: var(--sp-4); border-left: 1px solid var(--line-2); }
 .foot-row .tbtn { margin-left: auto; height: auto; padding: 0; font-size: var(--fs-12); color: var(--muted); }
@@ -42,6 +43,7 @@ body { min-height: 100vh; }
   .foot-row { flex-direction: column; align-items: flex-start; }
   .foot-row .tbtn { margin-left: 0; }
   .foot-row .who { padding-left: 0; border-left: 0; }
+  .foot-row .credit { font-size: var(--fs-14); }
 }
 
 /* ── landing: the slide ───────────────────────────────────────────── */

@@ -444,7 +444,12 @@ export function App() {
                     {i === 0 ? ' ' : i === authors.length - 1 ? ' and ' : ', '}
                     <span class="author">
                       {a.name}
-                      {a.handle && <span class="handle">{a.handle}</span>}
+                      {a.handle && (
+                        <span class="handle">
+                          {a.handle}
+                          {i === authors.length - 1 && <span class="on"> on Slack</span>}
+                        </span>
+                      )}
                     </span>
                   </Fragment>
                 ))}

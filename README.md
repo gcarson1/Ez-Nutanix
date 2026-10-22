@@ -52,7 +52,7 @@ Edit `src/config.json`:
   "contact": "you@example.com",
   "credit": "Built by",
   "authors": [
-    { "name": "Alex Besaw", "handle": "@besaw" },
+    { "name": "Alex Besaw", "handle": "@Besaw" },
     { "name": "Gabriel Carson", "handle": "@GabeC" }
   ],
   "disclaimer": "Illustrative visualization for education. …",
@@ -60,7 +60,7 @@ Edit `src/config.json`:
 }
 ```
 
-The footer shows the credit and the authors, each with their Slack handle under the name in purple (and the presenter line, if set), above the disclaimer. Rebuild after editing.
+The footer shows the credit and then each author, with their Slack handle under the name in purple and "on Slack" after the last one (and the presenter line, if set), above the disclaimer. Rebuild after editing.
 
 ## Editing content
 
