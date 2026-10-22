@@ -2,7 +2,7 @@
 // wrapped in an envelope between hosts; or out to the internet through source NAT, or in
 // through a floating IP. One choice, one looping picture.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { brisk, paced, readSecs, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar } from '../../components/controls';
 import { Choice, Kpis, Show, ease, prog, type KpiItem } from '../../components/show';
 
@@ -163,13 +163,17 @@ function Packet({ p, addr, wrap, swapped }: { p: Pt; addr: string; wrap?: string
 export function VNet() {
   const [preset, setPreset] = useEnum<Preset>('vp', 'vpc', ['vpc', 'nat', 'fip']);
   const P = PRESETS[preset];
-  const clock = useClock({ rate: 1, duration: P.hops.length * HOP, keys: true, poster: P.poster * HOP + 1.2, stops: P.hops.map((_, i) => i * HOP) });
+  const clock = useClock({ rate: 1, duration: P.hops.length * HOP, keys: true, poster: P.poster * HOP + 1.2, steps: paced(
+      P.hops.map((_, i) => i * HOP),
+      P.hops.map((h) => [h.k, h.text]),
+    ) });
   useRestartOn(clock, [preset]);
 
   const t = clock.t;
   const i = Math.min(P.hops.length - 1, Math.floor(t / HOP));
   const hop = P.hops[i];
-  const local = t - i * HOP;
+  // The packet moves at its normal pace, then waits while the caption is read.
+  const local = brisk(t, i * HOP, (i + 1) * HOP, readSecs(hop.k, hop.text));
   const pos = along(hop.pts, ease(prog(local, 0, MOVE)));
   const swapped = hop.was !== undefined && local >= SWAP_AT;
   const addr = hop.was !== undefined && !swapped ? hop.was : hop.addr;

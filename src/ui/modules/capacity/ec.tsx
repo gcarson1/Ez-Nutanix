@@ -7,7 +7,7 @@ import { useMemo } from 'preact/hooks';
 import { useScenario } from '../../../state/scenario';
 import { planStrip, blendedOverhead, type StripPlan } from '../../../engine/stripspread';
 import type { RF } from '../../../engine/rules';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { Shape } from './shapes';
@@ -189,24 +189,26 @@ export function EcView() {
   const rf: RF = cfg.rf === 3 ? 3 : 2;
   const plan = useMemo(() => planStrip(rf), [rf]);
   const tl = useEcTimeline(plan);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, stops: [tl.encode, tl.free, tl.fail, tl.rebuild, tl.done] });
-  useRestartOn(clock, [rf]);
-  const t = clock.t;
-  const phase = phaseAt([0, tl.encode, tl.free, tl.fail, tl.rebuild, tl.done], t);
   const { data, parity } = plan.strip;
   const ec = plan.overhead.strip;
   const blend = blendedOverhead(rf, ec, COLD_SHARE);
   const names = plan.failed.map((n) => `N${n + 1}`).join(' and ');
   const lostPieces = plan.recompute.length;
 
-  const caption: { tone: Tone | 'ink'; k: string; text: string } = [
+  const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, k: 'Writing', text: `New data is written as ${rf} copies on different nodes, like any other data.` },
     { tone: 'flow' as const, k: 'Encoding cold data', text: `Data that hasn’t been overwritten for a while is encoded in the background into a strip: ${data} data pieces and ${parity} parity piece${parity === 1 ? '' : 's'}, each on a different node.` },
     { tone: 'ok' as const, k: 'Extra copies deleted', text: `The encoded data’s extra copies are deleted. Cold data now uses ${x2(ec)} its size instead of ${rf}×. Hot data keeps its copies.` },
     { tone: 'bad' as const, k: rf === 2 ? 'A node fails' : 'Two nodes fail at once', text: `${names} ${rf === 2 ? 'goes' : 'go'} down. The strip loses ${lostPieces === 1 ? 'a piece' : `${lostPieces} pieces`} and some hot copies are gone, but nothing is lost.` },
     { tone: 'flow' as const, k: 'Rebuilding', text: `A lost strip piece is recomputed by reading the rest of its strip, which takes more work than copying. Lost hot copies are simply copied again.` },
     { tone: 'ok' as const, k: 'Protected again', text: `Full protection again, with less capacity spent on cold data than ${rf} copies would use.` },
-  ][phase];
+  ];
+  const starts = [0, tl.encode, tl.free, tl.fail, tl.rebuild, tl.done];
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
+  useRestartOn(clock, [rf]);
+  const t = clock.t;
+  const phase = phaseAt(starts, t);
+  const caption = captions[phase];
 
   const bars = [
     { k: `Copies only (RF${rf})`, v: 1 / rf, note: '' },

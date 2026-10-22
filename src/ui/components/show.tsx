@@ -94,3 +94,31 @@ export function prog(t: number, a: number, b: number): number {
 export function ease(x: number): number {
   return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
+
+/** How fast looping dots travel along a link, in diagram units per sim second at full speed. */
+export const FLOW_SPEED = 70;
+
+/**
+ * Positions (0..1) of dots looping along a path `len` units long. Every link's dots move at the
+ * same calm speed whatever its length, and longer links get more of them (`n` overrides).
+ */
+export function flowDots(t: number, len: number, n?: number, speed = FLOW_SPEED): number[] {
+  const count = n ?? Math.max(1, Math.min(4, Math.round(len / 150)));
+  const f = (t * speed) / Math.max(1, len);
+  return Array.from({ length: count }, (_, k) => (((f + k / count) % 1) + 1) % 1);
+}
+
+type XY = { x: number; y: number } | readonly [number, number];
+const xy = (p: XY) => ('x' in p ? p : { x: p[0], y: p[1] });
+
+/** Length of a path given as a function from 0..1 to a point. */
+export function pathLength(at: (p: number) => XY, samples = 24): number {
+  let len = 0;
+  let prev = xy(at(0));
+  for (let k = 1; k <= samples; k++) {
+    const q = xy(at(k / samples));
+    len += Math.hypot(q.x - prev.x, q.y - prev.y);
+    prev = q;
+  }
+  return len;
+}

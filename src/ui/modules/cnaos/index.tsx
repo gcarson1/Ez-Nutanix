@@ -4,9 +4,9 @@
 // Pick Amazon EKS (generally available) or bare metal (NKP Metal, early access). The landing's
 // "Any Bare Metal Linux" pane opens this module with on=metal. Claims: docs/facts.md section 10.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Choice, Kpis, Points, Show, ease, flowDots, phaseAt, prog, type Point } from '../../components/show';
 import './style.css';
 
 type On = 'eks' | 'metal';
@@ -275,12 +275,11 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       )}
       {ready &&
         t < P[3] &&
-        [0, 0.5].map((o) => {
-          const f = ((t - READY) * 0.9 + o) % 1;
+        (() => {
           const x0 = wx(1) + NW / 2;
           const x1 = NEW_DB_X + NEW_DB_W / 2;
-          return <circle key={o} cx={x0 + (x1 - x0) * f} cy={AOS_CY} r={4.5} class="cn-io" />;
-        })}
+          return flowDots(t - READY, Math.abs(x1 - x0), 2).map((f, k) => <circle key={k} cx={x0 + (x1 - x0) * f} cy={AOS_CY} r={4.5} class="cn-io" />);
+        })()}
 
       {/* NDK snapshots the app: its Kubernetes resources and its volume data */}
       {outline > 0 && <rect x={NEW_DB_X - 4} y={POD_Y - 4} width={NEW_DB_W + 8} height={POD_H + 8} rx={4} class="cn-snap" style={{ opacity: outline }} />}
@@ -331,21 +330,19 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       )}
       {t >= REPL[0] &&
         t < REPL[1] &&
-        [0, 0.5].map((o) => {
-          const f = ((t - REPL[0]) * 1.1 + o) % 1;
+        (() => {
           const x0 = CW - PAD - 150;
           const x1 = DR_X + 40;
-          return <circle key={o} cx={x0 + (x1 - x0) * f} cy={LINK_Y} r={4.5} class={`cn-io${metal ? ' warn' : ''}`} />;
-        })}
+          return flowDots(t - REPL[0], Math.abs(x1 - x0), 2).map((f, k) => <circle key={k} cx={x0 + (x1 - x0) * f} cy={LINK_Y} r={4.5} class={`cn-io${metal ? ' warn' : ''}`} />);
+        })()}
       {dc > 0 && <line x1={wx(2) + NW} x2={DR_X} y1={LINK2_Y} y2={LINK2_Y} class={`cn-link${metal ? ' warn' : ''}`} stroke-dasharray="5 4" style={{ opacity: dc }} />}
       {t >= DC_FLOW[0] &&
         t < DC_FLOW[1] &&
-        [0, 0.5].map((o) => {
-          const f = ((t - DC_FLOW[0]) * 1.1 + o) % 1;
+        (() => {
           const x0 = DR_X + 30;
           const x1 = wx(2) + NW - 30;
-          return <circle key={o} cx={x0 + (x1 - x0) * f} cy={LINK2_Y} r={4.5} class={`cn-io${metal ? ' warn' : ''}`} />;
-        })}
+          return flowDots(t - DC_FLOW[0], Math.abs(x1 - x0), 2).map((f, k) => <circle key={k} cx={x0 + (x1 - x0) * f} cy={LINK2_Y} r={4.5} class={`cn-io${metal ? ' warn' : ''}`} />);
+        })()}
     </svg>
   );
 }
@@ -373,11 +370,11 @@ function DrBox({ y, k, warn, head, sub, foot, sel }: { y: number; k: number; war
 
 export default function Cnaos() {
   const [on, setOn] = useEnum<On>('on', 'eks', ['eks', 'metal']);
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: P });
+  const names = phases(on);
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, steps: paced(P, names.map((k, i) => [k, caption(on, i)])) });
   useRestartOn(clock, [on]);
   const t = clock.t;
   const phase = phaseAt(P, t);
-  const names = phases(on);
   const tone: Tone | 'ink' = phase === 0 || phase === 3 ? 'ink' : phase === 2 ? 'ok' : phase === 4 && on === 'metal' ? 'warn' : 'flow';
 
   return (

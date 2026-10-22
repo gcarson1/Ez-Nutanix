@@ -5,7 +5,7 @@
 import { useEnum } from '../../../state/route';
 import { useMemo } from 'preact/hooks';
 import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -217,17 +217,10 @@ export default function Ai() {
   const n = Number(repS);
   const plan = useMemo(() => planServing(n), [n]);
   const site = SITE[where];
-  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2, stops: [T.start, plan.stop.from, plan.stop.to] });
-  useRestartOn(clock, [where, n]);
-  const t = clock.t;
-  const phase = phaseAt([0, T.start, plan.stop.from, plan.stop.to], t);
-  const up = phase === 0 ? 0 : n - (phase === 2 ? 1 : 0);
-  const waiting = plan.jobs.filter((j) => t >= j.arrive && t < j.dispatch).length;
-
   const load =
     (n === 1 ? 'The replica loads the model' : `Each of the ${n} replicas loads its own copy of the model`) +
     (site.online ? ', downloaded from NVIDIA NIM or Hugging Face, or uploaded by you.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later.');
-  const caption: { tone: Tone | 'ink'; k: string; text: string } = [
+  const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, k: 'Loading the model', text: load },
     n === 1
       ? { tone: 'warn' as const, k: 'Requests queue', text: 'Apps call one endpoint address with an API token. With one replica, every request waits its turn at the same model server, so a queue builds in busy moments.' }
@@ -238,7 +231,15 @@ export default function Ai() {
     n === 1
       ? { tone: 'ok' as const, k: 'Back', text: 'The replica is back and works through the waiting requests. With one replica, every stop means a pause for the apps.' }
       : { tone: 'ok' as const, k: 'Back to full strength', text: 'Replica 1 is back and takes its share again. The endpoint kept answering the whole time.' },
-  ][phase];
+  ];
+  const starts = [0, T.start, plan.stop.from, plan.stop.to];
+  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
+  useRestartOn(clock, [where, n]);
+  const t = clock.t;
+  const phase = phaseAt(starts, t);
+  const up = phase === 0 ? 0 : n - (phase === 2 ? 1 : 0);
+  const waiting = plan.jobs.filter((j) => t >= j.arrive && t < j.dispatch).length;
+  const caption = captions[phase];
 
   return (
     <Show

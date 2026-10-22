@@ -3,7 +3,7 @@
 // switches, on a loop. Bond behavior lives in src/engine/ahvnet.ts; this file only animates it.
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, phaseAt } from '../../components/show';
 import { BONDS, BOND_ORDER, limits, uplinkFor, uplinkRole, type BondMode, type LinkFail, type Uplink, type UplinkRole } from '../../../engine/ahvnet';
@@ -237,19 +237,23 @@ export default function Network() {
   const [bond, setBond] = useEnum<BondMode>('bond', 'ab', BOND_ORDER);
   const [fail, setFail] = useEnum<LinkFail>('lf', 'none', ['none', 'one']);
   const pkts = useMemo(() => plan(bond, fail), [bond, fail]);
-  const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3, stops: fail === 'none' ? undefined : [FAIL_AT, MOVED_AT] });
-  useRestartOn(clock, [bond, fail]);
-  const t = clock.t;
-
-  const phase = fail === 'none' ? 0 : phaseAt([0, FAIL_AT, MOVED_AT], t);
-  const now: LinkFail = phase > 0 ? 'one' : 'none';
-  const lim = limits(bond, now);
-  const inUse = ([0, 1] as Uplink[]).filter((u) => ['active', 'carrying'].includes(uplinkRole(bond, u, now, N))).length;
-  const caption: { tone: Tone | 'ink'; k: string; text: string } = [
+  const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, ...STEADY[bond] },
     { tone: 'bad' as const, k: 'Link A fails', text: 'NIC A loses its link to switch A. The few packets on it are lost and sent again, and the bond stops using NIC A at once.' },
     { tone: 'ok' as const, k: 'Still connected, on one link', text: MOVED[bond] },
-  ][phase];
+  ];
+  // With both links up the loop is seamless, so its one caption needs no slowing down.
+  const starts = [0, FAIL_AT, MOVED_AT];
+  const steps = fail === 'none' ? undefined : paced(starts, captions.map((c) => [c.k, c.text]));
+  const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3, steps });
+  useRestartOn(clock, [bond, fail]);
+  const t = clock.t;
+
+  const phase = fail === 'none' ? 0 : phaseAt(starts, t);
+  const now: LinkFail = phase > 0 ? 'one' : 'none';
+  const lim = limits(bond, now);
+  const inUse = ([0, 1] as Uplink[]).filter((u) => ['active', 'carrying'].includes(uplinkRole(bond, u, now, N))).length;
+  const caption = captions[phase];
 
   return (
     <Show

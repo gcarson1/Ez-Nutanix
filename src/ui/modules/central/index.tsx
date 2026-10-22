@@ -6,7 +6,7 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { CLUSTERS, DOMAINS, consolesToSeeAll, inView, totals, type Console } from '../../../engine/fleet';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -316,11 +316,11 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
 export default function Central() {
   const [view, setView] = useEnum<View>('tab', 'fed', VIEWS);
   const tl = useMemo(() => timeline(view), [view]);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.view + 0.5, stops: tl.starts });
+  const L = lines(view);
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.view + 0.5, steps: paced(tl.starts, L.map((l) => [l.k, l.text])) });
   useRestartOn(clock, [view]);
   const t = clock.t;
   const phase = phaseAt(tl.starts, t);
-  const L = lines(view);
   const line = L[phase];
   const level = LEVEL[view];
   const tot = totals(inView(level, FOCUS.id));

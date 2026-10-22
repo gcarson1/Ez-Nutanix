@@ -4,7 +4,7 @@
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn, useStepKey } from '../../components/clock';
+import { stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import { COMP, DEFAULT_MINUTES, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
@@ -78,12 +78,14 @@ function phaseLabel(sim: LcmSim, v: LcmView): string {
 export default function Lcm() {
   const [sc, setSc] = useEnum<Scenario>('sc', 'healthy', SCENARIOS.map((s) => s.value));
   const sim = useMemo(() => simFor(sc), [sc]);
-  // About 22 seconds per loop (6 when the pre-checks stop it).
-  const clock = useClock({ rate: sim.end / (sim.blocked ? 6 : 22), duration: sim.end, keys: true, poster: sim.blocked ? sim.end : (sim.visits[NODES]?.start ?? 0) + 400 });
+  // About 22 seconds per loop at full speed (6 when the pre-checks stop it), slower where a caption needs it.
+  // The upgrade is done exactly at sim.end, so a short tail after it gives the closing caption its reading time.
+  const end = sim.end + (sim.blocked ? 0 : sim.end / 22);
+  const steps = useMemo(() => stepsFrom(end, (t) => caption(sc, sim, lcmStateAt(sim, t))), [sc, sim, end]);
+  const clock = useClock({ rate: sim.end / (sim.blocked ? 6 : 22), duration: end, keys: true, poster: sim.blocked ? sim.end : (sim.visits[NODES]?.start ?? 0) + 400, steps });
   useRestartOn(clock, [sc]);
   const view = lcmStateAt(sim, clock.t);
   const line = caption(sc, sim, view);
-  useStepKey(clock, line.k);
   const prot = PROTECTION[view.resiliency.state];
   const down = Math.round(view.impact.vmDownMin);
 

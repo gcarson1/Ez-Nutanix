@@ -36,7 +36,7 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Node: click through the steps above the picture, or let it play; it pauses briefly after each step.',
+    'Node: click through the steps above the picture, or let it play; it slows down where a step needs more reading time.',
     'Two nodes: these two are in different blocks, so with 2 copies some data goes red (unavailable); switch Copies kept to 3 and it survives.',
     'Block: copies were kept in different blocks, so a whole chassis can fail with nothing unavailable.',
     'Nearly full: drives fill up before every copy is back; read the outcome on the right.',

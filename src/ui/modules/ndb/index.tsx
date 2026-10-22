@@ -4,7 +4,7 @@
 // src/engine/ndb.ts.
 import { useEnum } from '../../../state/route';
 import { lastCaptured, patchDowntime, planRecovery, snapshots, type DbServer, type TmPolicy } from '../../../engine/ndb';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -58,9 +58,21 @@ const T_MISTAKE = SWEEP[0] + ((SWEEP[1] - SWEEP[0]) * MISTAKE) / NOW;
 const TM_PH = [0, T_MISTAKE, 4.6, 6, 8.8];
 const TM_END = 12.4;
 
+function tmLines(clone: boolean): Line[] {
+  return [
+      { tone: 'ink', k: 'Protecting', text: 'Time Machine takes a snapshot of the database every day and copies its transaction log every 30 minutes, so any moment in the window can be rebuilt.' },
+      { tone: 'bad', k: 'A mistake', text: 'Saturday 14:38: someone drops a table. Time Machine keeps capturing, so the moment just before it is still there.' },
+      { tone: 'flow', k: 'Pick a moment', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window up to the last captured log.' },
+      { tone: 'flow', k: 'Rebuild it', text: `NDB starts from the nearest earlier snapshot (${fmtT(BASE)}) and replays ${fmtSpan(TARGET - BASE)} of transaction log on top of it, up to ${fmtT(TARGET)}.` },
+      clone
+        ? { tone: 'ok', k: 'Clone ready', text: 'A copy of the database at 14:37 comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back.' }
+        : { tone: 'warn', k: 'Restored', text: 'Production is rolled back to 14:37 and the table is back. Anything written after 14:37 is gone, which is why many teams clone first.' },
+  ];
+}
+
 function TimeMachine() {
   const [mode, setMode] = useEnum<'clone' | 'restore'>('rm', 'clone', ['clone', 'restore']);
-  const clock = useClock({ rate: 1, duration: TM_END, keys: true, poster: TM_END - 0.5, stops: TM_PH });
+  const clock = useClock({ rate: 1, duration: TM_END, keys: true, poster: TM_END - 0.5, steps: paced(TM_PH, tmLines(mode === 'clone').map((l) => [l.k, l.text])) });
   useRestartOn(clock, [mode]);
   const t = clock.t;
   const ph = phaseAt(TM_PH, t);
@@ -75,15 +87,7 @@ function TimeMachine() {
   const logTo = lastCaptured(POLICY, now);
   const broken = t >= T_MISTAKE;
 
-  const lines: Line[] = [
-    { tone: 'ink', k: 'Protecting', text: 'Time Machine takes a snapshot of the database every day and copies its transaction log every 30 minutes, so any moment in the window can be rebuilt.' },
-    { tone: 'bad', k: 'A mistake', text: 'Saturday 14:38: someone drops a table. Time Machine keeps capturing, so the moment just before it is still there.' },
-    { tone: 'flow', k: 'Pick a moment', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window up to the last captured log.' },
-    { tone: 'flow', k: 'Rebuild it', text: `NDB starts from the nearest earlier snapshot (${fmtT(BASE)}) and replays ${fmtSpan(TARGET - BASE)} of transaction log on top of it, up to ${fmtT(TARGET)}.` },
-    clone
-      ? { tone: 'ok', k: 'Clone ready', text: 'A copy of the database at 14:37 comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back.' }
-      : { tone: 'warn', k: 'Restored', text: 'Production is rolled back to 14:37 and the table is back. Anything written after 14:37 is gone, which is why many teams clone first.' },
-  ];
+  const lines = tmLines(clone);
   const line = lines[ph];
 
   const prodStatus =
@@ -212,9 +216,19 @@ const PROFILES = [
 const PV_PH = [0, 1.4, 3.2, 5, 6.6];
 const PV_END = 10;
 
+function pvLines(ha: boolean): Line[] {
+  return [
+      { tone: 'ink', k: 'One request', text: 'A developer or DBA asks for a database: engine, size and protection level. Everything else comes from profiles the DBA defined once.' },
+      { tone: 'flow', k: 'Build the servers', text: ha ? 'NDB creates the database server VMs for a high-availability cluster from the software and compute profiles.' : 'NDB creates the database server VM from the software and compute profiles.' },
+      { tone: 'flow', k: 'Create the database', text: ha ? 'It creates the database on the primary and sets up standby copies that follow every change, so one server can fail without an outage.' : 'It creates the database and applies the database settings, the same way every time.' },
+      { tone: 'ok', k: 'Protect it', text: 'Time Machine takes the first snapshot, so the database is protected from its first minute.' },
+      { tone: 'ok', k: 'Ready', text: 'The connection details go back to whoever asked. No tickets passed between the DBA, storage and VM teams.' },
+  ];
+}
+
 function Provisioning() {
   const [topo, setTopo] = useEnum<'single' | 'ha'>('tp', 'single', ['single', 'ha']);
-  const clock = useClock({ rate: 1, duration: PV_END, keys: true, poster: PV_END - 0.5, stops: PV_PH });
+  const clock = useClock({ rate: 1, duration: PV_END, keys: true, poster: PV_END - 0.5, steps: paced(PV_PH, pvLines(topo === 'ha').map((l) => [l.k, l.text])) });
   useRestartOn(clock, [topo]);
   const t = clock.t;
   const ph = phaseAt(PV_PH, t);
@@ -241,13 +255,7 @@ function Provisioning() {
     [88, 164],
   ];
 
-  const lines: Line[] = [
-    { tone: 'ink', k: 'One request', text: 'A developer or DBA asks for a database: engine, size and protection level. Everything else comes from profiles the DBA defined once.' },
-    { tone: 'flow', k: 'Build the servers', text: ha ? 'NDB creates the database server VMs for a high-availability cluster from the software and compute profiles.' : 'NDB creates the database server VM from the software and compute profiles.' },
-    { tone: 'flow', k: 'Create the database', text: ha ? 'It creates the database on the primary and sets up standby copies that follow every change, so one server can fail without an outage.' : 'It creates the database and applies the database settings, the same way every time.' },
-    { tone: 'ok', k: 'Protect it', text: 'Time Machine takes the first snapshot, so the database is protected from its first minute.' },
-    { tone: 'ok', k: 'Ready', text: 'The connection details go back to whoever asked. No tickets passed between the DBA, storage and VM teams.' },
-  ];
+  const lines = pvLines(ha);
   const line = lines[ph];
 
   return (
@@ -394,8 +402,15 @@ function patchWindows(db: DbServer): [number, number][] {
   ];
 }
 
+const PT_LINES: Line[] = [
+  { tone: 'ink', k: 'New profile version', text: 'The DBA publishes a new version of the software profile, with OS and database patches. Every database built from it shows a patch is due.' },
+  { tone: 'flow', k: 'Patching', text: 'One operation patches every database built from that profile, inside a maintenance window. HA databases are patched one member at a time; single instances restart briefly.' },
+  { tone: 'flow', k: 'Role switch', text: 'On the HA databases the primary role moves to a member that is already patched, so apps keep running, then the old primary is patched.' },
+  { tone: 'ok', k: 'All patched', text: 'Every database runs the new version, built and patched the same way. No one-off servers to patch by hand.' },
+];
+
 function Patching() {
-  const clock = useClock({ rate: 1, duration: PT_END, keys: true, poster: PT_END - 0.5, stops: PT_PH });
+  const clock = useClock({ rate: 1, duration: PT_END, keys: true, poster: PT_END - 0.5, steps: paced(PT_PH, PT_LINES.map((l) => [l.k, l.text])) });
   const t = clock.t;
   const ph = phaseAt(PT_PH, t);
   const v2 = t >= 0.8;
@@ -405,13 +420,7 @@ function Patching() {
   const GX = 250;
   const GW = 162;
   const gx = (i: number) => GX + i * (GW + 12);
-  const lines: Line[] = [
-    { tone: 'ink', k: 'New profile version', text: 'The DBA publishes a new version of the software profile, with OS and database patches. Every database built from it shows a patch is due.' },
-    { tone: 'flow', k: 'Patching', text: 'One operation patches every database built from that profile, inside a maintenance window. HA databases are patched one member at a time; single instances restart briefly.' },
-    { tone: 'flow', k: 'Role switch', text: 'On the HA databases the primary role moves to a member that is already patched, so apps keep running, then the old primary is patched.' },
-    { tone: 'ok', k: 'All patched', text: 'Every database runs the new version, built and patched the same way. No one-off servers to patch by hand.' },
-  ];
-  const line = lines[ph];
+  const line = PT_LINES[ph];
 
   return (
     <Show

@@ -4,19 +4,18 @@
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, readSecs, useClock, useRestartOn } from '../../components/clock';
 import { Chip, Follow, Illus, Legend, PlayBar, type Tone as ChipTone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Choice, Kpis, Show, ease, flowDots, pathLength, phaseAt, prog } from '../../components/show';
 import { EVENTS, MATRIX, SIZES, applies, stepsFor, type EventId, type Size, type Step } from './data';
 
 const SIZE_IDS = SIZES.map((s) => s.id);
 const EVENT_IDS = EVENTS.map((e) => e.id);
 const TONE_WORD = { ok: 'Keeps running', warn: 'Degraded', bad: 'Down', na: 'n/a' } as const;
 
-/** Seconds each moment stays on screen, long enough to read its caption. */
+/** Seconds each moment stays on screen: long enough to read its caption, plus a beat to look. */
 function hold(s: Step): number {
-  const words = s.text.split(/\s+/).length;
-  return Math.min(6.5, Math.max(2.6, 1.4 + words * 0.2));
+  return Math.max(2.6, 1 + readSecs(s.k, s.text));
 }
 
 function useTimeline(size: Size, ev: EventId) {
@@ -28,7 +27,7 @@ function useTimeline(size: Size, ev: EventId) {
       starts.push(t);
       t += hold(s);
     }
-    return { steps, starts, end: t };
+    return { steps, starts, end: t, paced: paced(starts, steps.map((s) => [s.k, s.text])) };
   }, [size, ev]);
 }
 
@@ -38,7 +37,7 @@ export default function Edge() {
   const ev: EventId = applies(size, evRaw) ? evRaw : 'node';
   const tl = useTimeline(size, ev);
   const tell = Math.min(tl.steps.length - 1, 2);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.starts[tell] + 0.8, stops: tl.starts });
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.starts[tell] + 0.8, steps: tl.paced });
   useRestartOn(clock, [size, ev]);
   const t = clock.t;
   const idx = phaseAt(tl.starts, t);
@@ -270,9 +269,9 @@ function SiteDiagram({ size, nodes, step, prev, t, t0 }: { size: Size; nodes: nu
             <g key={i}>
               <path d={`M${a.x} ${a.y} Q ${c.x} ${c.y}, ${b.x} ${b.y}`} fill="none" class={wanCut ? 'bad-stroke' : step.ask ? 'flow-stroke' : 'edge-wit'} stroke-dasharray="4 4" stroke-width={1.5} />
               {step.ask &&
-                [0, 0.5].map((o) => {
-                  const p = quad(b, c, a, (t * 0.6 + o) % 1);
-                  return <circle key={o} cx={p.x} cy={p.y} r={4} class="flow-fill" />;
+                flowDots(t, pathLength((f) => quad(b, c, a, f)), 2).map((f, k) => {
+                  const p = quad(b, c, a, f);
+                  return <circle key={k} cx={p.x} cy={p.y} r={4} class="flow-fill" />;
                 })}
             </g>
           );
@@ -350,9 +349,9 @@ function SiteDiagram({ size, nodes, step, prev, t, t0 }: { size: Size; nodes: nu
         return (
           <g key={j}>
             <path d={`M${p0.x} ${p0.y} Q ${c.x} ${c.y}, ${p1.x} ${p1.y}`} fill="none" class="edge-heal" />
-            {[0, 1 / 3, 2 / 3].map((o) => {
-              const p = quad(p0, c, p1, (t * 0.7 + o) % 1);
-              return <circle key={o} cx={p.x} cy={p.y} r={4.5} class="flow-fill" />;
+            {flowDots(t, pathLength((f) => quad(p0, c, p1, f)), 3).map((f, k) => {
+              const p = quad(p0, c, p1, f);
+              return <circle key={k} cx={p.x} cy={p.y} r={4.5} class="flow-fill" />;
             })}
           </g>
         );

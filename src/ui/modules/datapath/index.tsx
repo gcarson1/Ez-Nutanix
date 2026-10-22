@@ -3,7 +3,7 @@
 // draws it.
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { brisk, paced, readSecs, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, Tip } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import {
@@ -289,6 +289,10 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
   );
 }
 
+function locWord(f: LocalityFrame): string {
+  return f.phase === 'before' ? 'Before the move' : f.phase === 'migrate' ? 'Live migration' : f.readRemote ? 'Remote read, then copied here' : 'Local again';
+}
+
 const SRC_WORD: Record<ReadSource, string> = { cache: 'Memory cache', oplog: 'OpLog', local: 'Local drive', remote: 'Another node' };
 
 export default function Datapath() {
@@ -300,19 +304,28 @@ export default function Datapath() {
   const steps = useMemo(() => (mode === 'rd' ? readSequence({ source: 'local', seed: SEED }) : mode === 'loc' ? [] : writeSequence({ rf, kind: mode === 'ws' ? 'sequential' : 'random', seed: SEED })), [mode, rf]);
   const frames = useMemo(() => localitySequence({ extents: 8, seed: SEED }), []);
   const len = mode === 'loc' ? frames.length : steps.length;
-  const clock = useClock({ rate: mode === 'loc' ? 1.4 : 0.6, duration: len - 0.001, keys: true, poster: len - 0.001, stops: Array.from({ length: len }, (_, k) => k) });
+  const paceSteps = useMemo(
+    () =>
+      paced(
+        Array.from({ length: len }, (_, k) => k),
+        Array.from({ length: len }, (_, k) => (mode === 'loc' ? [locWord(frames[k]), frames[k].text] : [steps[k].title, steps[k].text])),
+      ),
+    [mode, steps, frames, len],
+  );
+  const clock = useClock({ rate: mode === 'loc' ? 1.4 : 0.6, duration: len - 0.001, keys: true, poster: len - 0.001, steps: paceSteps });
   useRestartOn(clock, [mode, rf]);
 
   const i = Math.min(len - 1, Math.floor(clock.t));
-  const frac = clock.t - Math.floor(clock.t);
   const step = steps[i];
+  // The packet crosses at its normal pace, then waits at the far end while the caption is read.
+  const frac = step ? brisk(clock.t, i, i + 1, readSecs(step.title, step.text), 0.6) : clock.t - i;
   const f = frames[i];
   const sum = localitySummary(frames);
 
   const isWrite = mode === 'wr' || mode === 'ws';
   const copies = step ? new Set([...step.oplogCopies, ...step.extentCopies]).size : 0;
   const tone = mode === 'loc' ? (f.readRemote ? 'flow' : f.phase === 'migrate' ? 'warn' : 'ok') : step.acked || step.servedFrom ? 'ok' : step.hops.some((h) => h.kind === 'replicate' || h.kind === 'network-read') ? 'flow' : 'ink';
-  const k = mode === 'loc' ? (f.phase === 'before' ? 'Before the move' : f.phase === 'migrate' ? 'Live migration' : f.readRemote ? 'Remote read, then copied here' : 'Local again') : step.title;
+  const k = mode === 'loc' ? locWord(f) : step.title;
   const text = mode === 'loc' ? f.text : step.text;
 
   return (

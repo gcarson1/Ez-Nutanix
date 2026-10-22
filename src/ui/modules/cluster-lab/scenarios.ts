@@ -4,7 +4,7 @@
 // Pure (no DOM), so the frames are unit tested.
 import { createCluster, type ClusterConfig, type ClusterState } from '../../../engine/cluster';
 import { applyFailure } from '../../../engine/failures';
-import { arrivalSlots as arrive, ease, flight, prog, rebuilt, settle, stream, type Slot } from './story';
+import { arrivalSlots as arrive, ease, flight, prog, rebuilt, settle, type Slot } from './story';
 
 export { prog, ease };
 export type { Slot };
@@ -77,6 +77,8 @@ export interface ArcF {
   to: Anchor;
   /** Positions (0..1) of the moving dots along the arc. */
   dots: number[];
+  /** Sim time for dots looping along the whole arc at the shared calm speed (drawn by the diagram). */
+  flow?: number;
 }
 
 export interface Frame {
@@ -311,7 +313,7 @@ function migrateFrame(t: number): Frame {
   if (t < MIG.fly[0]) {
     for (const it of myItems) {
       const m = it.members.find((x) => x.node === home.node);
-      if (m) arcs.push({ id: `rl${it.id}`, kind: 'read', from: { k: 'disk', disk: m.disk }, to: { k: 'vm', at }, dots: stream(t + it.id * 0.13, 2, 0.6) });
+      if (m) arcs.push({ id: `rl${it.id}`, kind: 'read', from: { k: 'disk', disk: m.disk }, to: { k: 'vm', at }, dots: [], flow: t + it.id * 0.9 });
     }
   } else if (arrived && t < MIG.loc[0]) {
     for (const it of myItems) {
@@ -319,7 +321,7 @@ function migrateFrame(t: number): Frame {
       const src = local ?? it.members.find((x) => x.node === home.node) ?? it.members[0];
       // Data already on Node 2 is read locally; the rest crosses the network from its old node.
       const to: Anchor = local ? { k: 'vm', at } : { k: 'lane', node: MIG.to };
-      arcs.push({ id: `rr${it.id}`, kind: 'read', from: { k: 'disk', disk: src.disk }, to, dots: stream(t + it.id * 0.13, local ? 2 : 3, local ? 0.6 : 0.45) });
+      arcs.push({ id: `rr${it.id}`, kind: 'read', from: { k: 'disk', disk: src.disk }, to, dots: [], flow: t + it.id * 0.9 });
     }
   } else if (arrived && t < MIG.end) {
     for (const mv of P.moves) {
@@ -330,7 +332,7 @@ function migrateFrame(t: number): Frame {
     for (const it of myItems) {
       const mv = P.moves.find((x) => x.item === it.id);
       const disk = mv ? mv.to.disk : it.members.find((x) => x.node === MIG.to)?.disk;
-      if (disk) arcs.push({ id: `rl2${it.id}`, kind: 'read', from: { k: 'disk', disk }, to: { k: 'vm', at }, dots: stream(t + it.id * 0.13, 2, 0.6) });
+      if (disk) arcs.push({ id: `rl2${it.id}`, kind: 'read', from: { k: 'disk', disk }, to: { k: 'vm', at }, dots: [], flow: t + it.id * 0.9 });
     }
   }
   return { nodes: Array(NODES).fill('up'), vms, tiles, failedDisks: [], arcs, pool: false };
@@ -413,7 +415,7 @@ function maintFrame(t: number): Frame {
 
 // ── 4. VM failover (node failure) ────────────────────────────────────────────
 
-const FAIL = { node: 1, at: 2, fly: [5.8, 9.6], rebuild: [10.2, 15.0], arc: 1.2 } as const;
+const FAIL = { node: 1, at: 2, fly: [5.8, 9.6], rebuild: [10.0, 15.3], arc: 2.2 } as const;
 
 interface FailPlan {
   restarts: { vm: number; dest: Slot; order: number }[];
@@ -480,7 +482,7 @@ function failoverFrame(t: number): Frame {
 
 // ── 5. Drive failure ─────────────────────────────────────────────────────────
 
-const DRIVE = { disk: '0.1', at: 2, lostFor: 0.9, rebuild: [5.8, 10.6], arc: 1.2 } as const;
+const DRIVE = { disk: '0.1', at: 2, lostFor: 0.9, rebuild: [5.7, 10.8], arc: 2.2 } as const;
 
 interface DrivePlan {
   rebuilds: { item: number; from: string; to: string; start: number; end: number }[];

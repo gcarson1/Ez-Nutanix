@@ -1,11 +1,11 @@
 // Failure Gauntlet: pick what fails and watch one fixed 8-node cluster ride through it, step by
 // step. The steps sit above the picture (click one to jump there), the picture plays on a loop
-// with pauses between steps, and the right-hand pane states the outcome and does not change
-// while it plays. The story model lives in scenarios.ts.
+// slowly enough to read each step, and the right-hand pane states the outcome and does not
+// change while it plays. The story model lives in scenarios.ts.
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Illus, PlayBar, Seg } from '../../components/controls';
 import { Icon } from '../../components/Icon';
 import { GauntletDiagram, GauntletLegend } from './GauntletDiagram';
@@ -27,7 +27,7 @@ export default function Failures() {
   const [cp, setCp] = useEnum<'2' | '3'>('cp', '2', ['2', '3']);
   const copies: Copies = sc === 'double' && cp === '3' ? 3 : 2;
   const def = useMemo(() => defFor(sc, copies), [sc, copies]);
-  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, stops: def.steps.map((s) => s.at) });
+  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, steps: paced(def.steps.map((s) => s.at), def.steps.map((s) => [s.label, s.text])) });
   useRestartOn(clock, [sc, copies]);
   const frame = useMemo(() => frameAt(sc, copies, clock.t), [sc, copies, clock.t]);
   const step = stepIndex(def, clock.t);

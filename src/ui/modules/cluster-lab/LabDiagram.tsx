@@ -4,6 +4,7 @@
 // node is a short straight line. Renders a Frame only.
 import type { JSX } from 'preact';
 import { DRIVES, NODES, TILE_CAP, type Anchor, type ArcF, type Frame, type NodeLook, type Slot, type TileF, type VmF } from './scenarios';
+import { flowDots, pathLength } from '../../components/show';
 
 // ── geometry (viewBox units) ──
 export const W = 1000;
@@ -197,7 +198,7 @@ export function LabDiagram({ frame, label }: { frame: Frame; label: string }) {
   const lines: JSX.Element[] = arcs.map(({ a, g }) => <path key={`l-${a.id}`} class={`dl-arc ${a.kind}`} d={g.d} />);
   const dots: JSX.Element[] = [];
   arcs.forEach(({ a, g }) =>
-    a.dots.forEach((p, k) => {
+    (a.flow !== undefined ? flowDots(a.flow, pathLength(g.at)) : a.dots).forEach((p, k) => {
       const pt = g.at(p);
       dots.push(<circle key={`d-${a.id}-${k}`} class={`dl-dot ${a.kind}`} cx={pt.x} cy={pt.y} r={4.5} />);
     }),

@@ -2,7 +2,7 @@
 // writes go to new blocks; clones share blocks until they change them. The states come from
 // the walkthrough in src/engine/snapshots.ts; this file only animates between them.
 import { exclusiveBlocks, fullCopyBlocks, refCounts, usedBlocks, walkthrough, type SnapState } from '../../../engine/snapshots';
-import { useClock } from '../../components/clock';
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -175,8 +175,13 @@ function Maps({ k, t }: { k: number; t: number }) {
   );
 }
 
+const PACE = paced(
+  T,
+  STEPS.map((st) => [st.title, st.text]),
+);
+
 export default function Snapshots() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 0.5, stops: T });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 0.5, steps: PACE });
   const t = clock.t;
   const k = phaseAt(T, t);
   const st = STEPS[k];

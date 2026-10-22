@@ -5,6 +5,7 @@
 import type { JSX } from 'preact';
 import { DRIVE_SLOTS, FULL_AT, G_DRIVES, G_NODES, PER_BLOCK, type GAnchor, type GArcF, type GFrame, type GNodeLook, type GTileF, type GVmF } from './scenarios';
 import type { Slot } from '../cluster-lab/story';
+import { flowDots, pathLength } from '../../components/show';
 
 const W = 1000;
 const PAD = 6;
@@ -164,7 +165,7 @@ export function GauntletDiagram({ frame, label }: { frame: GFrame; label: string
   const lines: JSX.Element[] = arcs.map(({ a, g }) => <path key={`l-${a.id}`} class={`gx-arc ${a.kind}`} d={g.d} />);
   const dots: JSX.Element[] = [];
   arcs.forEach(({ a, g }) =>
-    a.dots.forEach((p, k) => {
+    (a.flow !== undefined ? flowDots(a.flow, pathLength(g.at)) : a.dots).forEach((p, k) => {
       const pt = g.at(p);
       dots.push(<circle key={`d-${a.id}-${k}`} class={`gx-dot ${a.kind}`} cx={pt.x} cy={pt.y} r={4} />);
     }),

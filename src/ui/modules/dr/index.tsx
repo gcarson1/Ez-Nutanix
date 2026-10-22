@@ -4,7 +4,7 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { STAGES, buildScene, type DrEvent, type DrPhase, type DrScene, type Tier } from '../../../engine/dr';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -244,7 +244,15 @@ export default function Dr() {
   const [tier, setTier] = useEnum<Tier>('rep', 'async', TIERS);
   const [event, setEvent] = useEnum<DrEvent>('ev', 'unplanned', EVENTS);
   const s = useMemo(() => buildScene(tier, event), [tier, event]);
-  const clock = useClock({ rate: 1, duration: s.end, keys: true, poster: s.done + 0.6, stops: s.phases.map((p) => p.t) });
+  const steps = useMemo(
+    () =>
+      paced(
+        s.phases.map((p) => p.t),
+        s.phases.map((p) => [caption(s, p.id).k, caption(s, p.id).text]),
+      ),
+    [s],
+  );
+  const clock = useClock({ rate: 1, duration: s.end, keys: true, poster: s.done + 0.6, steps });
   useRestartOn(clock, [tier, event]);
   const t = clock.t;
   const ph = s.phases[phaseAt(s.phases.map((p) => p.t), t)].id;

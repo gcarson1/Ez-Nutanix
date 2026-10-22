@@ -2,7 +2,7 @@
 // watch data being written to a small cluster, a drive or a whole node being carried off, and
 // whether the stolen data can be read, on a loop.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -276,17 +276,18 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
 export default function Security() {
   const [enc, setEnc] = useEnum<Enc>('enc', 'native', ['off', 'native', 'ext']);
   const [th, setTh] = useEnum<Threat>('th', 'drive', ['drive', 'node']);
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: RESULT + 1, stops: [STEAL, RESULT] });
-  useRestartOn(clock, [enc, th]);
-  const t = clock.t;
-  const phase = phaseAt([0, STEAL, RESULT], t);
   const v = verdict(enc, th);
-
-  const caption: { tone: Tone | 'ink'; k: string; text: string } = [
+  const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, k: enc === 'off' ? 'Writing, not encrypted' : 'Writing, encrypted', text: writeCaption(enc) },
     { tone: 'warn' as const, k: THREAT_LABEL[th], text: th === 'drive' ? 'Someone pulls a drive out of node 3 and walks out of the data center with it.' : 'Someone takes node 3, with all of its drives, out of the data center.' },
     { tone: v.tone, k: v.k, text: v.text },
-  ][phase];
+  ];
+  const starts = [0, STEAL, RESULT];
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: RESULT + 1, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
+  useRestartOn(clock, [enc, th]);
+  const t = clock.t;
+  const phase = phaseAt(starts, t);
+  const caption = captions[phase];
 
   return (
     <Show

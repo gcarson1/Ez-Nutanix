@@ -3,9 +3,9 @@
 // host each time but keeps one array's two controllers. Math in src/engine/scaleout.ts.
 import './style.css';
 import { useScenario } from '../../../state/scenario';
-import { useClock } from '../../components/clock';
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtTB } from '../../components/controls';
-import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Kpis, Show, ease, flowDots, pathLength, phaseAt, prog } from '../../components/show';
 import { JOIN_STEPS, scaleModel, type JoinStep } from '../../../engine/scaleout';
 
 const FROM = 4;
@@ -35,19 +35,15 @@ function countsAt(i: number) {
   return { present: FROM + upTo.filter((p) => p.id === 'add').length, joined: FROM + upTo.filter((p) => p.id === 'join').length };
 }
 
-export default function Scale() {
-  const { cfg } = useScenario();
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: STARTS });
-  const t = clock.t;
-  const i = phaseAt(STARTS, t);
-  const ph = PHASES[i];
-  const lp = prog(t, ph.t, PHASES[i + 1]?.t ?? END);
-  const { present, joined } = countsAt(i);
-  const m = scaleModel({ nodes: joined, drivesPerNode: cfg.drivesPerNode, driveTB: cfg.driveTB });
-  const name = `N${ph.node + 1}`;
-  const perCtl = (h: number) => (Number.isInteger(h / 2) ? String(h / 2) : (h / 2).toFixed(1));
+/** Hosts per controller in a 2-controller array. */
+const perCtl = (h: number) => (Number.isInteger(h / 2) ? String(h / 2) : (h / 2).toFixed(1));
 
-  const caption =
+/** The caption at phase index i. */
+function captionAt(i: number) {
+  const ph = PHASES[i];
+  const name = `N${ph.node + 1}`;
+  const { joined } = countsAt(i);
+  return (
     ph.id === 'start'
       ? { tone: 'ink' as const, k: `${FROM} nodes`, text: `Each node brings its own storage controller (its CVM), so ${FROM} nodes means ${FROM} controllers.`, rest: `3-tier: ${FROM} hosts share one array’s 2 controllers.` }
       : ph.id === 'done'
@@ -57,7 +53,27 @@ export default function Scale() {
             k: ph.id === 'add' ? `Adding ${name}` : ph.id === 'join' ? `${name} joins` : 'Disk balancing',
             text: STEP[ph.id].text,
             rest: ph.id === 'balance' ? null : `3-tier: host ${ph.node + 1} ${ph.id === 'add' ? 'is cabled to the storage network' : `shares the same 2 controllers, now ${perCtl(joined)} hosts each`}.`,
-          };
+          }
+  );
+}
+
+const STEPS = paced(
+  STARTS,
+  PHASES.map((_, i) => [captionAt(i).k, captionAt(i).text, captionAt(i).rest]),
+);
+
+export default function Scale() {
+  const { cfg } = useScenario();
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, steps: STEPS });
+  const t = clock.t;
+  const i = phaseAt(STARTS, t);
+  const ph = PHASES[i];
+  const lp = prog(t, ph.t, PHASES[i + 1]?.t ?? END);
+  const { present, joined } = countsAt(i);
+  const m = scaleModel({ nodes: joined, drivesPerNode: cfg.drivesPerNode, driveTB: cfg.driveTB });
+  const name = `N${ph.node + 1}`;
+
+  const caption = captionAt(i);
   const word = ph.id === 'start' ? `${FROM} nodes` : ph.id === 'done' ? `${TO} nodes` : ph.id === 'add' ? `Adding ${name}` : ph.id === 'join' ? `${name} joins` : 'Balancing';
 
   return (
@@ -208,7 +224,7 @@ function ScaleDiagram({ ph, lp, t, present, joined, drives }: { ph: Phase; lp: n
           [CTL_X[i % 2], SAN_Y + 10],
           [CTL_X[i % 2], AY + 10],
         ];
-        const [dx, dy] = along(path, (t * 0.45 + i * 0.137) % 1);
+        const [dx, dy] = along(path, flowDots(t + i * 1.9, pathLength((p) => along(path, p)), 1)[0]);
         return (
           <g key={i} style={{ opacity: fresh ? Math.min(1, lp * 2) : 1 }}>
             <line x1={hx} y1={Y2 + NH2} x2={hx} y2={SAN_Y} class="scale-link" stroke-dasharray={linked ? undefined : '3 3'} />

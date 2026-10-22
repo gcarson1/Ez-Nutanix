@@ -7,7 +7,7 @@ import { setParams, useEnum, useRoute } from '../../../state/route';
 import { KEYS, useScenario } from '../../../state/scenario';
 import { capacityShares, planSpread } from '../../../engine/spread';
 import type { RF } from '../../../engine/rules';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, PlayBar } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { Shape } from './shapes';
@@ -116,20 +116,21 @@ function CopiesView() {
   // explicitly; otherwise picking 8 would fall back to the first view.
   const setNodes = (n: number) => setParams({ [KEYS.nodes]: n });
   const tl = useTimeline(nodes, rf);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, stops: [tl.fail, tl.detect, tl.done] });
-  useRestartOn(clock, [nodes, rf]);
-  const t = clock.t;
-  const phase = phaseAt([0, tl.fail, tl.detect, tl.done], t);
-  const share = capacityShares(nodes, rf);
   const failedNames = tl.plan.failed.map((n) => `N${n + 1}`).join(' and ');
-
-  const opts = NODE_OPTS.includes(nodes) ? NODE_OPTS : [...NODE_OPTS, nodes].sort((a, b) => a - b);
-  const caption = [
+  const captions = [
     { tone: 'ink' as const, k: 'Writing', text: `Every piece of data is stored as ${rf} copies, each on a different node. No node holds two copies of the same piece.` },
     { tone: 'bad' as const, k: rf === 2 ? 'A node fails' : 'Two nodes fail at once', text: `${failedNames} ${rf === 2 ? 'goes' : 'go'} down. Every piece still has a copy on a healthy node, so nothing is lost and VMs keep running.` },
     { tone: 'flow' as const, k: 'Self-healing', text: 'Each missing copy is copied from a surviving copy to another healthy node. Different nodes copy at the same time, so the cluster heals quickly.' },
     { tone: 'ok' as const, k: 'Protected again', text: `Back to ${rf} copies of everything, on the nodes that are left. The cluster can take another failure.` },
-  ][phase];
+  ];
+  const starts = [0, tl.fail, tl.detect, tl.done];
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
+  useRestartOn(clock, [nodes, rf]);
+  const t = clock.t;
+  const phase = phaseAt(starts, t);
+  const caption = captions[phase];
+  const share = capacityShares(nodes, rf);
+  const opts = NODE_OPTS.includes(nodes) ? NODE_OPTS : [...NODE_OPTS, nodes].sort((a, b) => a - b);
 
   return (
     <Show

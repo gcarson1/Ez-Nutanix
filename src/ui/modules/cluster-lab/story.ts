@@ -8,8 +8,6 @@ import { itemLiveCount } from '../../../engine/status';
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 export const prog = (t: number, a: number, b: number) => (b <= a ? (t >= b ? 1 : 0) : clamp01((t - a) / (b - a)));
 export const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
-/** Evenly spaced dots streaming along an arc, looping with time. */
-export const stream = (t: number, n = 3, speed = 0.7) => Array.from({ length: n }, (_, k) => (t * speed + k / n) % 1);
 
 export interface Slot {
   node: number;
@@ -66,7 +64,7 @@ export function arrivalSlots(moves: { vm: number; to: number }[], firstFree: num
 }
 
 /** The k-th of n moves spread across a time window, each lasting `each` seconds. */
-export function flight(t: number, k: number, window: readonly [number, number], n: number, each = 1.6) {
+export function flight(t: number, k: number, window: readonly [number, number], n: number, each = 2) {
   const gap = n > 1 ? (window[1] - window[0] - each) / (n - 1) : 0;
   const a = window[0] + k * gap;
   return { a, b: a + each, p: ease(prog(t, a, a + each)) };

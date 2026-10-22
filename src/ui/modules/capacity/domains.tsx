@@ -6,7 +6,7 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { planDomains, type Awareness, type DomainPlan } from '../../../engine/domainspread';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { Shape } from './shapes';
@@ -133,10 +133,6 @@ export function DomainsView() {
   const [aw, setAw] = useEnum<Awareness>('aw', 'block', ['node', 'block', 'rack']);
   const plan = useMemo(() => planDomains(aw), [aw]);
   const tl = useDomainTimeline(plan);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, stops: [tl.fail, tl.rebuild, tl.done] });
-  useRestartOn(clock, [aw]);
-  const t = clock.t;
-  const phase = phaseAt([0, tl.fail, tl.rebuild, tl.done], t);
   const kind = plan.groupKind;
   const failedName = `${kind === 'rack' ? 'Rack' : 'Block'} ${plan.failedGroup + 1}`;
   const lost = plan.unavailable.length;
@@ -161,6 +157,11 @@ export function DomainsView() {
       { tone: 'ok', k: 'Protected again', text: 'No piece was unavailable at any point. Rack awareness needs at least 3 racks with RF2, or 5 with RF3.' },
     ],
   };
+  const starts = [0, tl.fail, tl.rebuild, tl.done];
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, steps: paced(starts, captions[aw].map((c) => [c.k, c.text])) });
+  useRestartOn(clock, [aw]);
+  const t = clock.t;
+  const phase = phaseAt(starts, t);
   const caption = captions[aw][phase];
   const third =
     aw === 'block'

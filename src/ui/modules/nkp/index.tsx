@@ -1,9 +1,9 @@
 // Kubernetes Platform (NKP): a Kubernetes version upgrade rolled across a fleet of clusters at
 // the edge, in the data center and in the cloud, on a loop. Pick a healthy rollout or a canary
 // that fails its health check. All rollout logic is in engine/nkp-upgrade.ts.
-import { useMemo, useRef } from 'preact/hooks';
+import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn, useStepKey } from '../../components/clock';
+import { stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt } from '../../components/show';
 import { FLEET, TIMING, clusterState, planRollout, waveGroups, type ClusterState, type ClusterStatus, type FleetCluster, type Plan } from '../../../engine/nkp-upgrade';
@@ -44,10 +44,8 @@ const H = LEG_Y + 14;
 const colX = (w: number) => w * (COL_W + GAP);
 
 /** Sim seconds per real second: slow through the canary so the node swap can be read, faster after. */
-function rateAt(run: Run, plan: Plan, t: number): number {
-  if (run === 'fail') return 80;
-  return t < plan.waves[1] ? 160 : 400;
-}
+/** Sim seconds per real second at full speed. */
+const RATE: Record<Run, number> = { ok: 400, fail: 80 };
 
 function version(s: ClusterState): string {
   if (s.status === 'upgrading') return `${FROM} → ${TO}`;
@@ -146,8 +144,7 @@ const LEGEND: { cls: string; label: string; w: number }[] = [
 
 function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: Map<string, ClusterState>; t: number }) {
   const wave = phaseAt(plan.waves, t);
-  const rate = rateAt(run, plan, t);
-  const cyc = (t / (rate * 0.9)) % 1;
+  const cyc = (t / (RATE[run] * 1.8)) % 1;
   const legend = LEGEND.filter((l) => (run === 'fail' ? l.cls !== 'new' && l.cls !== 'old drain' : l.cls !== 'failed'));
   return (
     <svg class="diagram nkp-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A fleet of ${FLEET.length} Kubernetes clusters upgraded from ${FROM} to ${TO} in waves: one canary edge cluster, the other edge sites, the data center, then the cloud. Inside each cluster a new node joins before an old one drains and leaves.${run === 'fail' ? ' Here the canary’s new node fails its health check, so the rollout stops and the canary stays on the old version.' : ''}`}>
@@ -226,10 +223,9 @@ export default function Nkp() {
   const plan = useMemo(() => planRollout({ canaryFails: run === 'fail' }), [run]);
   const tail = run === 'fail' ? 3 * 80 : 400;
   const poster = run === 'fail' ? plan.haltAt! + 0.2 * TIMING.node : plan.waves[2] + 2.5 * TIMING.node;
-  // The clock reads its rate on every frame, so the rollout runs slowly through the canary and faster after.
-  const tRef = useRef(0);
-  const clock = useClock({ rate: rateAt(run, plan, tRef.current), duration: plan.end + tail, keys: true, poster });
-  tRef.current = clock.t;
+  // Each caption gets time to be read, so the rollout runs slowly through the canary and faster after.
+  const steps = useMemo(() => stepsFrom(plan.end + tail, (t) => caption(run, plan, t, phaseAt(plan.waves, t))), [run, plan, tail]);
+  const clock = useClock({ rate: RATE[run], duration: plan.end + tail, keys: true, poster, steps });
   useRestartOn(clock, [run]);
   const t = clock.t;
 
@@ -239,7 +235,6 @@ export default function Nkp() {
   const out = list.reduce((n, s) => n + s.unavailable, 0);
   const wave = phaseAt(plan.waves, t);
   const cap = caption(run, plan, t, wave);
-  useStepKey(clock, cap.k);
   const stopped = plan.haltAt !== null && t >= plan.haltAt;
   const word = run === 'fail' ? (t < plan.haltAt! ? 'Canary' : t < plan.end ? 'Check failed' : 'Rolled back') : t >= plan.end ? 'Done' : WAVE_LABEL[wave];
 

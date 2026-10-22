@@ -1,10 +1,10 @@
 // Cluster & DSF Lab: one fixed 4-node cluster and five stories, picked from the buttons above
-// the picture. Each story plays on a loop, pausing briefly after each step, with pause and
-// scrub. The right-hand pane explains the chosen story and does not change while it plays.
+// the picture. Each story plays on a loop, slowing down in steps with more to read, with pause
+// and scrub. The right-hand pane explains the chosen story and does not change while it plays.
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Illus, PlayBar, Seg } from '../../components/controls';
 import { Icon } from '../../components/Icon';
 import { LabDiagram, LabLegend } from './LabDiagram';
@@ -13,7 +13,7 @@ import { DRIVES, NODES, ORDER, SCENARIOS, VMS_PER_NODE, frameAt, stepAt, type Sc
 export default function ClusterLab() {
   const [sc, setSc] = useEnum<ScenarioId>('sc', 'place', ORDER);
   const def = SCENARIOS[sc];
-  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, stops: def.steps.map((s) => s.at) });
+  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, steps: paced(def.steps.map((s) => s.at), def.steps.map((s) => s.text)) });
   useRestartOn(clock, [sc]);
   const frame = useMemo(() => frameAt(sc, clock.t), [sc, clock.t]);
   const step = stepAt(def, clock.t);

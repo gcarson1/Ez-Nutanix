@@ -7,7 +7,7 @@ import { applyFailure, type Failure } from '../../../engine/failures';
 import { victims } from '../../../engine/timeline';
 import { itemLiveCount } from '../../../engine/status';
 import type { RF } from '../../../engine/rules';
-import { arrivalSlots, flight, prog, rebuilt, settle, stagger, stream, type Slot } from '../cluster-lab/story';
+import { arrivalSlots, flight, prog, rebuilt, settle, stagger, type Slot } from '../cluster-lab/story';
 
 export const G_NODES = 8;
 export const PER_BLOCK = 2;
@@ -50,6 +50,8 @@ export interface GArcF {
   from: GAnchor;
   to: GAnchor;
   dots: number[];
+  /** Sim time for dots looping along the whole arc at the shared calm speed (drawn by the diagram). */
+  flow?: number;
 }
 
 export interface GFrame {
@@ -244,11 +246,11 @@ function planFor(fill: number, rf: RF, f: Failure[], tm: Timing): Plan {
   return { b, failAt: tm.failAt, downNodes, failedDisk, restarts, rebuilds, shortUntil, unavailable, recs };
 }
 
-const T_NODE: Timing = { failAt: 2, fly: [5.8, 9.0], rebuild: [10.0, 14.6], arc: 1.3 };
-const T_DISK: Timing = { failAt: 2, fly: [0, 0], rebuild: [5.8, 10.2], arc: 1.3 };
-const T_BLOCK: Timing = { failAt: 2, fly: [5.8, 9.6], rebuild: [10.4, 15.0], arc: 1.3 };
-const T_DOUBLE: Timing = { failAt: 2, fly: [8.8, 12.4], rebuild: [12.8, 16.2], arc: 1.3 };
-const T_FULL: Timing = { failAt: 2, fly: [5.8, 9.0], rebuild: [10.0, 14.0], arc: 1.3 };
+const T_NODE: Timing = { failAt: 2, fly: [5.8, 9.0], rebuild: [9.8, 14.9], arc: 2.2 };
+const T_DISK: Timing = { failAt: 2, fly: [0, 0], rebuild: [5.6, 10.4], arc: 2.2 };
+const T_BLOCK: Timing = { failAt: 2, fly: [5.8, 9.6], rebuild: [10.2, 15.3], arc: 2.2 };
+const T_DOUBLE: Timing = { failAt: 2, fly: [8.8, 12.4], rebuild: [12.6, 16.5], arc: 2.2 };
+const T_FULL: Timing = { failAt: 2, fly: [5.8, 9.0], rebuild: [9.8, 14.5], arc: 2.2 };
 const CVM = { failAt: 2, redirect: 4.5, back: 10 } as const;
 
 const PLANS = new Map<string, Plan>();
@@ -323,7 +325,7 @@ function vmsAt(p: Plan, t: number, fly: readonly [number, number]): GVmF[] {
     if (!failed || !p.downNodes.includes(at.node)) return { id: v.id, at, look: 'run' as GVmLook };
     const k = order.indexOf(v.id);
     if (k < 0) return { id: v.id, at, look: 'stopped' as GVmLook };
-    const f = flight(t, k, fly, order.length, 1.5);
+    const f = flight(t, k, fly, order.length);
     if (t < f.a) return { id: v.id, at, look: 'stopped' as GVmLook };
     if (t < f.b) return { id: v.id, at, to: p.restarts[k].dest, p: f.p, look: 'restarting' as GVmLook };
     return { id: v.id, at: p.restarts[k].dest, look: 'run' as GVmLook };
@@ -352,7 +354,7 @@ export function frameAt(id: GId, copies: Copies, t: number): GFrame {
         .filter((x) => x !== v)
         .sort((a, b) => Math.abs(a - v) - Math.abs(b - v) || a - b)
         .slice(0, 2);
-      for (const q of peers) arcs.push({ id: `io${q}`, kind: 'redirect', from: { k: 'vms', node: v }, to: { k: 'cvm', node: q }, dots: stream(t, 2, 0.6) });
+      for (const q of peers) arcs.push({ id: `io${q}`, kind: 'redirect', from: { k: 'vms', node: v }, to: { k: 'cvm', node: q }, dots: [], flow: t + q * 0.9 });
     }
     return {
       nodes: Array.from({ length: G_NODES }, (_, n) => (n === v && down ? 'cvm' : 'up')),

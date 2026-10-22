@@ -3,7 +3,7 @@
 // disk to its own array volume, adds a node without touching the array, then puts Prism on top.
 // Every product and support claim is checked in docs/facts.md section 7.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
@@ -228,7 +228,7 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
 
 export default function ExtStorage() {
   const [ar, setAr] = useEnum<Ar>('ar', 'fa', ['fa', 'ps', 'pf']);
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: P });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, steps: paced(P, PHASES.map((k, i) => [k, caption(ar, i)])) });
   useRestartOn(clock, [ar]);
   const t = clock.t;
   const phase = phaseAt(P, t);

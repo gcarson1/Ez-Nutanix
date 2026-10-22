@@ -3,9 +3,9 @@
 // to a cheaper S3-compatible store). Each tab is one looping picture; the models are in engine/unistore.ts.
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Choice, Kpis, Show, ease, flowDots, pathLength, phaseAt, prog } from '../../components/show';
 import { iscsiTargets, loadPerFsvm, makeFiles, ownership, tierSplit } from '../../../engine/unistore';
 import './style.css';
 
@@ -54,17 +54,37 @@ const CHIP_H = 24;
 function Files() {
   const [nS, setN] = useEnum<'3' | '1'>('fv', '3', ['3', '1']);
   const n = Number(nS);
-  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1, stops: F_STARTS });
-  useRestartOn(clock, [n]);
-  const t = clock.t;
-  const ph = phaseAt(F_STARTS, t);
   const failed = n === 1 ? 0 : 1;
-  const down = t >= F.fail && t < F.back;
   const base = useMemo(() => makeFiles(n), [n]);
   const home = useMemo(() => ownership(base), [base]);
   const taken = useMemo(() => ownership({ ...base, down: [failed] }), [base, failed]);
+  const survivor = taken.find((o) => o.moved)?.servedBy ?? null;
   // Takeover only happens with a survivor: it slides in after the failure and back after the return.
   const ha = n > 1;
+  const capAt = (t: number): Cap => {
+    const down = t >= F.fail && t < F.back;
+    return ha
+      ? [
+          { tone: 'ink' as const, k: 'One namespace', text: 'Three file server VMs (FSVMs) share the work. Users connect to one path and never need to know which FSVM serves a folder.' },
+          { tone: 'bad' as const, k: 'An FSVM fails', text: `FSVM-${failed + 1} goes down. Its folders are out of reach for a moment.` },
+          { tone: 'warn' as const, k: 'Takeover', text: `FSVM-${(survivor ?? 0) + 1} takes over FSVM-${failed + 1}’s volume group and IP address, so its folders come back at the same path.` },
+          { tone: 'ok' as const, k: 'Still serving', text: 'Every folder is reachable. Users may have seen a short pause or reconnect, but the path never changed.' },
+          { tone: 'flow' as const, k: `FSVM-${failed + 1} is back`, text: `FSVM-${failed + 1} is running again and ready to take its work back.` },
+          { tone: 'flow' as const, k: 'Handing back', text: `FSVM-${failed + 1} takes its volume group and IP address back, and the work is spread evenly again.` },
+          { tone: 'ok' as const, k: 'Back to normal', text: 'All three FSVMs serve their own folders again. Nobody had to change a path or a drive mapping.' },
+        ][phaseAt(F_STARTS, t)]
+      : t < F.fail
+        ? { tone: 'ink', k: 'One FSVM', text: 'A single file server VM serves every folder. It works, but nothing can take over if it fails.' }
+        : down
+          ? { tone: 'bad', k: 'No high availability', text: 'The only FSVM is down, so every folder is out of reach until it comes back. Three FSVMs is the minimum for high availability.' }
+          : { tone: 'ok', k: 'Back', text: 'The FSVM is back and serves every folder again.' };
+  };
+  const steps = useMemo(() => stepsFrom(F.end, capAt), [n, survivor]);
+  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1, steps });
+  useRestartOn(clock, [n]);
+  const t = clock.t;
+  const ph = phaseAt(F_STARTS, t);
+  const down = t >= F.fail && t < F.back;
   const k = !ha ? 0 : t < F.take ? 0 : t < F.taken ? ease(prog(t, F.take, F.taken)) : t < F.give ? 1 : t < F.given ? 1 - ease(prog(t, F.give, F.given)) : 0;
   const load = loadPerFsvm({ ...base, down: down ? [failed] : [] });
   const unreachable = (home: number) => down && home === failed && !(ha && t >= F.taken);
@@ -80,23 +100,7 @@ function Files() {
   const homeSlot = home.map((o, i) => slot(o.home, home.slice(0, i).filter((q) => q.home === o.home).length));
   const ownCount = (fs: number) => home.filter((o) => o.home === fs).length;
   const takenSlot = taken.map((o, i) => (o.moved ? slot(o.servedBy!, ownCount(o.servedBy!) + taken.slice(0, i).filter((q) => q.moved && q.servedBy === o.servedBy).length) : homeSlot[i]));
-  const survivor = taken.find((o) => o.moved)?.servedBy ?? null;
-
-  const cap: Cap = ha
-    ? [
-        { tone: 'ink' as const, k: 'One namespace', text: 'Three file server VMs (FSVMs) share the work. Users connect to one path and never need to know which FSVM serves a folder.' },
-        { tone: 'bad' as const, k: 'An FSVM fails', text: `FSVM-${failed + 1} goes down. Its folders are out of reach for a moment.` },
-        { tone: 'warn' as const, k: 'Takeover', text: `FSVM-${(survivor ?? 0) + 1} takes over FSVM-${failed + 1}’s volume group and IP address, so its folders come back at the same path.` },
-        { tone: 'ok' as const, k: 'Still serving', text: 'Every folder is reachable. Users may have seen a short pause or reconnect, but the path never changed.' },
-        { tone: 'flow' as const, k: `FSVM-${failed + 1} is back`, text: `FSVM-${failed + 1} is running again and ready to take its work back.` },
-        { tone: 'flow' as const, k: 'Handing back', text: `FSVM-${failed + 1} takes its volume group and IP address back, and the work is spread evenly again.` },
-        { tone: 'ok' as const, k: 'Back to normal', text: 'All three FSVMs serve their own folders again. Nobody had to change a path or a drive mapping.' },
-      ][ph]
-    : t < F.fail
-      ? { tone: 'ink', k: 'One FSVM', text: 'A single file server VM serves every folder. It works, but nothing can take over if it fails.' }
-      : down
-        ? { tone: 'bad', k: 'No high availability', text: 'The only FSVM is down, so every folder is out of reach until it comes back. Three FSVMs is the minimum for high availability.' }
-        : { tone: 'ok', k: 'Back', text: 'The FSVM is back and serves every folder again.' };
+  const cap = capAt(t);
   const word = ha ? ['Normal', 'Failure', 'Takeover', 'Serving', 'Return', 'Hand back', 'Normal'][ph] : t < F.fail ? 'Normal' : down ? 'Down' : 'Back';
 
   const H = FS_Y + FS_H + 94;
@@ -240,26 +244,27 @@ function sessionPath(c: number, cvm: number): [number, number][] {
 }
 
 function Volumes() {
-  const clock = useClock({ rate: 1, duration: V.end, keys: true, poster: V.back + 1.5, stops: V_STARTS });
-  const t = clock.t;
-  const ph = phaseAt(V_STARTS, t);
   const before = useMemo(() => iscsiTargets(HOSTS, CVMS, []), []);
   const after = useMemo(() => iscsiTargets(HOSTS, CVMS, [0]), []);
-  const cvmDown = t >= V.fail;
   const lostHost = before.findIndex((c) => c === 0);
-  // Every CVM but one stays up, so each host always has a CVM to go to.
-  const target = (c: number) => (t >= V.relog ? after[c] : before[c]) ?? 0;
-  const connected = (c: number) => (c === lostHost ? !cvmDown || t >= V.back : true) && t >= V.work;
-  const nConn = Array.from({ length: HOSTS }, (_, c) => c).filter(connected).length;
   const newCvm = after[lostHost]!;
-
-  const cap: Cap = [
+  const caps: Cap[] = [
     { tone: 'ink' as const, k: 'One address', text: 'Hosts outside the cluster log in to one Data Services IP. The cluster points each host to a CVM that will serve it.' },
     { tone: 'ok' as const, k: 'Connected', text: 'Each host’s disk reads and writes go to its CVM. Every CVM can reach every disk in the volume group, because the data is spread across all nodes.' },
     { tone: 'bad' as const, k: 'A CVM fails', text: `CVM-1 goes down and Host ${lostHost + 1} loses its session.` },
     { tone: 'warn' as const, k: 'Redirected', text: `Host ${lostHost + 1} logs in again to the same address and is sent to a healthy CVM. No multipath setup is needed on the host.` },
     { tone: 'ok' as const, k: 'Back to work', text: `Host ${lostHost + 1} carries on through CVM-${newCvm + 1}. The data never moved: CVM-${newCvm + 1} reads and writes the same disks.` },
-  ][ph];
+  ];
+  const clock = useClock({ rate: 1, duration: V.end, keys: true, poster: V.back + 1.5, steps: paced(V_STARTS, caps.map((c) => [c.k, c.text])) });
+  const t = clock.t;
+  const ph = phaseAt(V_STARTS, t);
+  const cvmDown = t >= V.fail;
+  // Every CVM but one stays up, so each host always has a CVM to go to.
+  const target = (c: number) => (t >= V.relog ? after[c] : before[c]) ?? 0;
+  const connected = (c: number) => (c === lostHost ? !cvmDown || t >= V.back : true) && t >= V.work;
+  const nConn = Array.from({ length: HOSTS }, (_, c) => c).filter(connected).length;
+
+  const cap = caps[ph];
 
   const H = VG_Y + 92;
   return (
@@ -308,9 +313,9 @@ function Volumes() {
                   })()}
                 {live &&
                   !loggingIn &&
-                  [0, 0.33, 0.66].map((off) => {
-                    const [x, y] = along(pts, (t * 0.9 + off + c * 0.15) % 1);
-                    return <circle key={off} class="sto-dot" cx={x} cy={y} r={4} />;
+                  flowDots(t + c * 1.3, pathLength((p) => along(pts, p)), 3).map((f, k) => {
+                    const [x, y] = along(pts, f);
+                    return <circle key={k} class="sto-dot" cx={x} cy={y} r={4} />;
                   })}
               </g>
             );
@@ -379,20 +384,27 @@ const TILE_GAP = 4.6;
 const bucketTile = (i: number) => ({ x: BKT.x + 20 + i * (TILE_W + TILE_GAP), y: BKT.y + 54 });
 const targetTile = (i: number) => ({ x: TGT.x + 18 + (i % 8) * 29, y: TGT.y + 62 + Math.floor(i / 8) * 26 });
 
+/** The Objects caption on day d. */
+function objectsCap(d: number): Cap {
+  const today = Math.min(YEAR, d);
+  const split = tierSplit((TOTAL_TB * today) / YEAR, DAYS, today);
+  return d >= YEAR
+    ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob and other S3 clouds also work as targets; reading a tiered object back is slower, and from a public cloud it may cost egress.` }
+    : today < DAYS
+      ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
+      : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket has Objects move anything older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. The bucket keeps the metadata and the recent data, which is read most.` };
+}
+const OBJECT_STEPS = stepsFrom(YEAR + 30, objectsCap);
+
 function Objects() {
-  const clock = useClock({ rate: 24, duration: YEAR + 30, keys: true, poster: YEAR, stops: [DAYS, YEAR] });
+  const clock = useClock({ rate: 24, duration: YEAR + 30, keys: true, poster: YEAR, steps: OBJECT_STEPS });
   const d = clock.t;
   const today = Math.min(YEAR, d);
   const written = (TOTAL_TB * today) / YEAR;
   const split = tierSplit(written, DAYS, today);
   const month = Math.min(12, Math.floor(today / (YEAR / 12)) + 1);
 
-  const cap: Cap =
-    d >= YEAR
-      ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob and other S3 clouds also work as targets; reading a tiered object back is slower, and from a public cloud it may cost egress.` }
-      : today < DAYS
-        ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
-        : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket has Objects move anything older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. The bucket keeps the metadata and the recent data, which is read most.` };
+  const cap = objectsCap(d);
 
   const H = BKT.y + BKT.h + 78;
   const DSF_Y = BKT.y + BKT.h + 16;

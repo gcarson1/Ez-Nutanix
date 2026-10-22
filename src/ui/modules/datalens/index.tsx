@@ -2,7 +2,7 @@
 // auto-blocks the PC right away, then the hit files come back from the last clean snapshot.
 // Logic is in engine/ransomware.ts.
 import { useMemo } from 'preact/hooks';
-import { useClock } from '../../components/clock';
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, prog } from '../../components/show';
 import { FILES, PER_SHARE, SHARES, SIM, attackState, encryptTime, restoreTime, timeline, type FileState, type Phase, type Timeline } from '../../../engine/ransomware';
@@ -210,7 +210,14 @@ function caption(tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; t
 
 export default function Datalens() {
   const tl = useMemo(() => timeline('block'), []);
-  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.stopAt + 1, stops: [SIM.attackStart, tl.detectAt, tl.stopAt, tl.recoverAt, tl.recoveredAt] });
+  const steps = useMemo(() => {
+    const order: Phase[] = ['quiet', 'attack', 'detected', 'stopped', 'recovering', 'recovered'];
+    return paced(
+      [0, SIM.attackStart, tl.detectAt, tl.stopAt, tl.recoverAt, tl.recoveredAt],
+      order.map((ph) => [caption(tl, ph).k, caption(tl, ph).text]),
+    );
+  }, [tl]);
+  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.stopAt + 1, steps });
   const s = attackState(tl, clock.t);
   const cap = caption(tl, s.phase);
 

@@ -2,7 +2,7 @@
 // runs, kept in sync with only its changes, then cut over in a short window, on a loop.
 // Timeline math lives in engine/move.ts; this file maps its phases onto the animation.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { naiveDowntime, planMove, type MoveInput, type PhaseKind } from '../../../engine/move';
@@ -68,7 +68,11 @@ function caption(kind: PhaseKind, src: string): { tone: Tone | 'ink'; k: string;
 export default function Migration() {
   const [src, setSrc] = useEnum<Src>('src', 'esxi', SRC_IDS);
   const syncSeg = SEGS.filter((s) => s.kind === 'sync')[1];
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (syncSeg.a + syncSeg.b) / 2, stops: STARTS });
+  const steps = paced(
+    STARTS,
+    SEGS.map((sg) => [caption(sg.kind, SRC[src].box).k, caption(sg.kind, SRC[src].box).text]),
+  );
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (syncSeg.a + syncSeg.b) / 2, steps });
   useRestartOn(clock, [src]);
   const t = clock.t;
   const seg = SEGS[phaseAt(STARTS, t)];

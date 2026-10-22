@@ -26,7 +26,7 @@ import {
   type Surge,
   type Usage,
 } from '../../../engine/ncm';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 import './style.css';
@@ -142,12 +142,6 @@ function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; 
 
 function AiOps() {
   const wk = useWeek();
-  const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END, stops: [DRAW_FROM, ...wk.flagAt] });
-  const t = clock.t;
-  const hc = prog(t, DRAW_FROM, DRAW_FROM + DRAW_DUR) * (wk.pts.length - 1);
-  const phase = phaseAt([0, DRAW_FROM, ...wk.flagAt], t);
-  const flaggedNow = wk.flagged.filter((s) => s.start <= hc).length;
-  const firedNow = wk.fixed.filter((s) => s.start <= hc).length;
   const [night, day] = wk.peaks.map((v) => Math.round(v));
   const lines: Line[] = [
     { tone: 'ink', k: 'Normal, learned', text: 'The shaded band is what normal CPU looks like for each hour of the week, learned from the two weeks before.' },
@@ -155,6 +149,13 @@ function AiOps() {
     { tone: 'bad', k: `Flagged ${SPIKES[0].when}`, text: `CPU jumps to ${night}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` },
     { tone: 'bad', k: `Flagged ${SPIKES[1].when}`, text: `CPU jumps to ${day}% on a busy afternoon, above normal even for that hour, so it is flagged too. This one crosses ${FIXED}%, so the fixed alarm fires as well. Only the learned band caught both.` },
   ];
+  const starts = [0, DRAW_FROM, ...wk.flagAt];
+  const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END, steps: paced(starts, lines.map((l) => [l.k, l.text])) });
+  const t = clock.t;
+  const hc = prog(t, DRAW_FROM, DRAW_FROM + DRAW_DUR) * (wk.pts.length - 1);
+  const phase = phaseAt(starts, t);
+  const flaggedNow = wk.flagged.filter((s) => s.start <= hc).length;
+  const firedNow = wk.fixed.filter((s) => s.start <= hc).length;
   const line = lines[phase];
   return (
     <Show
@@ -370,10 +371,6 @@ function SelfService() {
   const v = evaluate(p, d, true);
   const steps = useMemo(() => requestSteps(item, v), [req]);
   const total = steps.reduce((s, x) => s + x.dur, 0);
-  const clock = useClock({ rate: 1.5, duration: total, keys: true, poster: total, stops: steps.map((_, i) => steps.slice(0, i).reduce((s, x) => s + x.dur, 0)) });
-  useRestartOn(clock, [req]);
-  const at = stepAt(steps, clock.t);
-  const id = steps[at.idx].id;
   const left = p.quota.vcpu - p.used.vcpu;
   const LINES: Record<ProvStep['id'], Line> = {
     policy: { tone: 'ink', k: 'Checking quota and policy', text: `The ${p.label} team orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
@@ -383,6 +380,14 @@ function SelfService() {
     ready: { tone: 'ok', k: 'Ready, no ticket', text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
     refused: { tone: 'bad', k: 'Sent back', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. The request is refused before anything is created, and the reason goes back to the team.` },
   };
+  const paceSteps = paced(
+    steps.map((_, i) => steps.slice(0, i).reduce((s, x) => s + x.dur, 0)),
+    steps.map((x) => [LINES[x.id].k, LINES[x.id].text]),
+  );
+  const clock = useClock({ rate: 1.5, duration: total, keys: true, poster: total, steps: paceSteps });
+  useRestartOn(clock, [req]);
+  const at = stepAt(steps, clock.t);
+  const id = steps[at.idx].id;
   const line = LINES[id];
   return (
     <Show
@@ -534,12 +539,6 @@ function SpendChart({ t }: { t: number }) {
 }
 
 function Cost() {
-  const clock = useClock({ rate: 2, duration: MONTH + 1, keys: true, poster: MONTH + 1, stops: COST_STARTS });
-  const t = clock.t;
-  const day = Math.min(MONTH, t);
-  const spent = accrued(PLANNED, day, MONTH, WITH_NCM);
-  const pace = paceEnd(PLANNED, day, MONTH, WITH_NCM);
-  const st = budgetState(spent, DEV.budget, ALERT_AT);
   const overPct = Math.round((ALONE_END / DEV.budget - 1) * 100);
   const lines: Line[] = [
     { tone: 'ink', k: 'Metered every day', text: `Cost Governance meters dev-test’s CPU, memory and storage every day at the rates you set, and tracks the total against its ${usd(DEV.budget)} budget for the month.` },
@@ -549,6 +548,12 @@ function Cost() {
     { tone: 'ok', k: '3 · Quotas and policies', text: 'Self-Service keeps it from happening again: the project quota caps the CPU, memory and storage dev-test can deploy, an approval policy holds large requests for sign-off, and a scheduler policy stops dev-test apps at night and on weekends.' },
     { tone: 'ok', k: 'Under budget', text: `dev-test closes the month at ${usd(NCM_END)} of its ${usd(DEV.budget)} budget instead of ${usd(ALONE_END)}. The alert caught it early, the recommendations cut the waste, and the quota and policies stop it coming back.` },
   ];
+  const clock = useClock({ rate: 2, duration: MONTH + 1, keys: true, poster: MONTH + 1, steps: paced(COST_STARTS, lines.map((l) => [l.k, l.text])) });
+  const t = clock.t;
+  const day = Math.min(MONTH, t);
+  const spent = accrued(PLANNED, day, MONTH, WITH_NCM);
+  const pace = paceEnd(PLANNED, day, MONTH, WITH_NCM);
+  const st = budgetState(spent, DEV.budget, ALERT_AT);
   const line = lines[phaseAt(COST_STARTS, t)];
   return (
     <Show
@@ -748,13 +753,9 @@ function Compliance({ base, t, tl }: { base: Base; t: number; tl: ReturnType<typ
   );
 }
 
-function SecOps() {
-  const [base, setBase] = useEnum<Base>('bl', 'hard', ['hard', 'reg']);
+/** What the compliance view shows at time t: phase, open findings, score and caption. */
+function secView(base: Base, tl: ReturnType<typeof secTimeline>, t: number) {
   const B = BASELINES[base];
-  const tl = useMemo(() => secTimeline(base), [base]);
-  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.scanEnd + 0.8, stops: [tl.scanEnd, tl.fix0, tl.fixEnd, tl.drift, tl.caught] });
-  useRestartOn(clock, [base]);
-  const t = clock.t;
   const phase = phaseAt([0, tl.scanEnd, tl.fix0, tl.fixEnd, tl.drift, tl.caught], t);
   const states = B.checks.map((_, i) => tileState(base, i, t, tl));
   const open = states.filter((s) => s === 'fail' || s === 'caught' || s === 'fixing').length;
@@ -770,7 +771,17 @@ function SecOps() {
     { tone: 'warn', k: 'Changed by hand', text: `${B.drift.text} Nothing has looked yet.` },
     { tone: drifted.sev === 'high' ? 'bad' : 'warn', k: 'Drift caught', text: `The next scan catches “${drifted.label}” failing again, so compliance does not quietly decay between audits.` },
   ];
-  const line = lines[phase];
+  return { phase, open, sc, line: lines[phase] };
+}
+
+function SecOps() {
+  const [base, setBase] = useEnum<Base>('bl', 'hard', ['hard', 'reg']);
+  const tl = useMemo(() => secTimeline(base), [base]);
+  const steps = useMemo(() => stepsFrom(tl.end, (t) => secView(base, tl, t).line), [base, tl]);
+  const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.scanEnd + 0.8, steps });
+  useRestartOn(clock, [base]);
+  const t = clock.t;
+  const { phase, open, sc, line } = secView(base, tl, t);
   return (
     <Show
       top={

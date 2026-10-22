@@ -1,7 +1,7 @@
 // Project Beacon: a short vision story on one timeline. Beacon is a direction (2023), not a
 // product you buy; a marker walks 2023 to 2026 on a loop and each year's delivered piece appears
 // with its status in words.
-import { useClock } from '../../components/clock';
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
@@ -51,6 +51,7 @@ const MOVE = 0.9;
 const AT = YEARS.map((_, i) => FIRST + i * DWELL);
 const END = AT[AT.length - 1] + DWELL;
 const MARK = { ok: '✓', warn: '△' } as const;
+const STEPS = paced([0, ...AT.slice(1)], YEARS.map((y) => [y.year, y.title, y.text]));
 
 function wrap(s: string, n: number): string[] {
   const out: string[] = [];
@@ -126,7 +127,7 @@ function Timeline({ t, now }: { t: number; now: number }) {
 }
 
 export default function Beacon() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, stops: AT });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, steps: STEPS });
   const t = clock.t;
   const now = phaseAt([0, ...AT.slice(1)], t);
   const y = YEARS[now];

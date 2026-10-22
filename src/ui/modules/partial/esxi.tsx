@@ -3,7 +3,7 @@
 // host from Prism. "Convert to AHV later" changes the hypervisor in place, one host at a time.
 // Every product and support claim is checked in docs/facts.md section 8.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
@@ -221,7 +221,8 @@ export default function EsxiOnNutanix() {
   const [go, setGo] = useEnum<Go>('go', 'stay', ['stay', 'conv']);
   const conv = go === 'conv';
   const stops = conv ? CONV : STAY;
-  const clock = useClock({ rate: 1, duration: conv ? CONV_END : STAY_END, keys: true, poster: conv ? CONV_END : STAY_END, stops });
+  const steps = paced(stops, (conv ? CONV_PH : STAY_PH).map((k, i) => [k, conv ? CONV_CAP(i) : STAY_CAP[i]]));
+  const clock = useClock({ rate: 1, duration: conv ? CONV_END : STAY_END, keys: true, poster: conv ? CONV_END : STAY_END, steps });
   useRestartOn(clock, [go]);
   const t = clock.t;
   const phase = phaseAt(stops, t);

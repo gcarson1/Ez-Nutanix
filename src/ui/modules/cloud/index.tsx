@@ -3,9 +3,9 @@
 // VMs and cloud nodes move on a loop. Migration has its own module (Move), and the cloud-native
 // path has Cloud Native AOS.
 import { useEnum } from '../../../state/route';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Choice, Kpis, Show, ease, flowDots, phaseAt, prog } from '../../components/show';
 import './style.css';
 
 type Prov = 'aws' | 'azure' | 'gcp';
@@ -98,7 +98,12 @@ export default function Cloud() {
   const [use, setUse] = useEnum<Use>('u', 'dr', USE_IDS);
   const U = USES[use];
   const P = PROV[prov];
-  const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[2].at + 2.6, stops: U.phases.map((p) => p.at) });
+  // The provider's status line stays put, so it is read once, in the first step.
+  const steps = paced(
+    U.phases.map((p) => p.at),
+    U.phases.map((p, k) => [p.k, p.text(P.short), k === 0 ? P.status : '']),
+  );
+  const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[2].at + 2.6, steps });
   useRestartOn(clock, [prov, use]);
   const t = clock.t;
   const i = phaseAt(
@@ -258,7 +263,7 @@ function Scene({ prov, use, t, sc }: { prov: Prov; use: Use; t: number; sc: Retu
       <text x={(DC_X + PANEL.w + CL_X) / 2} y={LINK_Y - 12} text-anchor="middle" class="cld-xs muted">
         {U.link}
       </text>
-      {use === 'dr' && !sc.dcDown && [0, 1 / 3, 2 / 3].map((o) => <circle key={o} cx={DC_X + PANEL.w + ((t * 0.6 + o) % 1) * (CL_X - DC_X - PANEL.w)} cy={LINK_Y} r={4.5} class="flow-fill" />)}
+      {use === 'dr' && !sc.dcDown && flowDots(t, CL_X - DC_X - PANEL.w, 3).map((f, k) => <circle key={k} cx={DC_X + PANEL.w + f * (CL_X - DC_X - PANEL.w)} cy={LINK_Y} r={4.5} class="flow-fill" />)}
 
       {/* cloud */}
       <rect x={CL_X} y={PANEL.y} width={PANEL.w} height={PANEL.h} class="cld-cloud" />

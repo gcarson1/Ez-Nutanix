@@ -393,7 +393,7 @@ body { min-height: 100vh; }
 .diagram .tile-dim { opacity: 0.18; }
 .diagram .xfer { stroke: var(--flow); stroke-width: 1.5; fill: none; opacity: 0.8; }
 .diagram .xfer.balance { stroke: var(--s2); stroke-dasharray: 3 3; }
-.diagram .beat { animation: beat 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.diagram .beat { animation: beat 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes beat { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 .diagram .vm { fill: var(--bg); stroke: var(--line-2); }
 .diagram .vm.hl { stroke: var(--ink); stroke-width: 2; fill: var(--ink-soft); }

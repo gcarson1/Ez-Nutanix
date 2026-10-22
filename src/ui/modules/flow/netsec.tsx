@@ -4,7 +4,7 @@
 import { useMemo } from 'preact/hooks';
 import { useBool, useEnum } from '../../../state/route';
 import { evaluate, setQuarantine, type FlowVm, type Packet, type Policies, type Verdict } from '../../../engine/flow';
-import { useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 
@@ -247,7 +247,29 @@ export function NetSec() {
   const pol = useMemo(() => policies(mode, quar), [mode, quar]);
   const { shots, verdicts } = useShots(pol);
   const starts = TRIES.map((_, i) => PHASE * i).concat(PHASE * TRIES.length);
-  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: PHASE + TRY_AT[0] + TRY_FLIGHT + 0.6, stops: starts });
+  const captionAt = (p: number) => {
+    const res = p > 0 ? outcome(verdicts[p - 1], TRIES[p - 1].dst) : null;
+    return res
+      ? { tone: res.tone, k: `${TRIES[p - 1].word} · ${res.k}`, text: `${TRIES[p - 1].what} ${res.text}` }
+      : {
+          tone: 'flow' as const,
+          k: 'App traffic',
+          text: `Users reach the web servers, web talks to app, and app talks to the database. ${
+            quar
+              ? 'Web-2 is quarantined, so nothing gets in or out of it; Web-1 keeps the app running.'
+              : mode === 'off'
+                ? 'No policy is applied, so any VM could also reach any other.'
+                : mode === 'monitor'
+                  ? 'These are the only paths the policy allows; in Monitor it logs anything else but blocks nothing.'
+                  : 'These are the only paths the policy allows; anything else is denied by default.'
+          }`,
+        };
+  };
+  const steps = paced(
+    starts,
+    starts.map((_, p) => [captionAt(p).k, captionAt(p).text]),
+  );
+  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: PHASE + TRY_AT[0] + TRY_FLIGHT + 0.6, steps });
   useRestartOn(clock, [mode, quar]);
   const t = clock.t;
   const phase = phaseAt(starts, t);
@@ -258,21 +280,7 @@ export function NetSec() {
 
   const stopped = verdicts.filter((v) => !v.allowed).length;
   const logged = verdicts.filter((v) => flagged(v)).length;
-  const caption = res
-    ? { tone: res.tone, k: `${tryNow!.word} · ${res.k}`, text: `${tryNow!.what} ${res.text}` }
-    : {
-        tone: 'flow' as const,
-        k: 'App traffic',
-        text: `Users reach the web servers, web talks to app, and app talks to the database. ${
-          quar
-            ? 'Web-2 is quarantined, so nothing gets in or out of it; Web-1 keeps the app running.'
-            : mode === 'off'
-              ? 'No policy is applied, so any VM could also reach any other.'
-              : mode === 'monitor'
-                ? 'These are the only paths the policy allows; in Monitor it logs anything else but blocks nothing.'
-                : 'These are the only paths the policy allows; anything else is denied by default.'
-        }`,
-      };
+  const caption = captionAt(phase);
   const lbl =
     tryNow && vNow && res && t >= shownAt
       ? { at: !vNow.allowed && vNow.atVm === tryNow.src ? tryNow.lblStart : tryNow.lblEnd, cls: res.tone === 'ok' ? 'ok-fill' : res.tone === 'warn' ? 'warn-fill' : 'bad-fill', text: res.lbl, end: tryNow.lblLeft }
