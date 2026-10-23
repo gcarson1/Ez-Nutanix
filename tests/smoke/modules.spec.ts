@@ -121,9 +121,7 @@ test('full-stack band opens the external storage and ESXi tabs', async ({ page }
   await expect.poll(() => page.url()).toContain('go=conv');
   await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
   await tabs.getByRole('tab', { name: 'Nutanix with external storage' }).click();
-  await page.getByRole('button', { name: 'Dell PowerFlex' }).click();
-  await expect.poll(() => page.url()).toContain('ar=pf');
-  await expect(page.locator('.kpi .v', { hasText: 'Dell SDC' })).toBeVisible();
+  await expect(page.locator('.xs-arrays li', { hasText: 'Dell PowerFlex' })).toContainText('Dell SDC');
   expect(errors).toEqual([]);
 });
 
@@ -257,13 +255,17 @@ test('LCM: the failure scenario gives nothing away before the node fails', async
   expect(errors).toEqual([]);
 });
 
-test('external storage offers NetApp ONTAP over NFS, marked as announced, and the footer shows the release', async ({ page }) => {
+test('external storage lists all four arrays without a picker, NetApp marked as announced, and the footer shows the release', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/partial`);
-  await page.getByRole('button', { name: 'NetApp ONTAP' }).click();
-  await expect.poll(() => page.url()).toContain('ar=na');
-  await expect(page.locator('.kpi .v', { hasText: 'NFS' })).toBeVisible();
-  await expect(page.locator('.kpi .v', { hasText: 'Announced' })).toBeVisible();
+  const arrays = page.locator('.xs-arrays li');
+  await expect(arrays).toHaveCount(4);
+  await expect(arrays.filter({ hasText: 'NetApp ONTAP' })).toContainText('NFS');
+  await expect(arrays.filter({ hasText: 'NetApp ONTAP' })).toContainText('Announced');
+  await expect(arrays.filter({ hasText: 'Everpure FlashArray' })).toContainText('GA Dec 2025');
+  // The names are hover details, not a picker: nothing above the picture is a toggle.
+  await expect(page.locator('.show-top [aria-pressed]')).toHaveCount(0);
+  await expect(page.locator('.kpi', { hasText: 'Supported arrays' }).locator('.v')).toHaveText('4');
   await expect(page.locator('.foot-row .ver')).toHaveText('v1.1');
   expect(errors).toEqual([]);
 });
