@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   talk: [
     'Not every customer wants to replace hypervisor, storage and management at once. This page shows the two partial starting points, and why each one appeals.',
-    'External storage: keep the array. AHV runs on compute-only nodes that reach Everpure FlashArray or Dell PowerStore over NVMe/TCP, or Dell PowerFlex through Dell’s own client. Each VM disk is its own volume on the array, and Nutanix uses the array’s snapshots and clones. NetApp ONTAP, over NFS, is announced and on the page, marked as such.',
+    'External storage: keep the array. The page lists the four arrays together rather than making you pick one: AHV compute-only nodes reach Everpure FlashArray or Dell PowerStore over NVMe/TCP, Dell PowerFlex through Dell’s own client, and NetApp ONTAP, which is announced, over NFS. On the generally available arrays each VM disk is its own volume, and Nutanix uses the array’s snapshots and clones.',
     'The value is reuse and independent scaling: leave vSphere without a storage refresh, add compute nodes without buying storage, and keep Prism, Flow and DR orchestration on top. It is licensed per core as NCI Compute.',
     'ESXi on Nutanix: keep vSphere. vCenter, vMotion, HA and DRS keep working; a Controller VM on every host owns the drives and pools them into one datastore. There is no SAN to run, and the customer uses their existing VMware licenses.',
     'It is also a stepping stone. Switch to "Convert to AHV later": the hosts change hypervisor one at a time in place, or teams move with Nutanix Move or a DR failover. Replication already works between ESXi and AHV clusters.',
@@ -26,7 +26,7 @@ export const content: ModuleContent = {
   qa: [
     {
       q: 'Can we use our NetApp array?',
-      a: 'Not yet. Nutanix and NetApp announced ONTAP support over NFS in April 2026, for AFF A-series and some FAS systems, and in mid-October 2026 it was still planned for this fall with an upcoming NCI release (NetApp’s own blog names NCI 7.6.0.10). Pick it on the page to walk through it; the numbers mark it as announced. Today the generally available arrays are Everpure FlashArray, Dell PowerStore and Dell PowerFlex.',
+      a: 'Not yet. Nutanix and NetApp announced ONTAP support over NFS in April 2026, for AFF A-series and some FAS systems, and in mid-October 2026 it was still planned for this fall with an upcoming NCI release (NetApp’s own blog names NCI 7.6.0.10). The page lists it with the other arrays, marked as announced. Today the generally available arrays are Everpure FlashArray, Dell PowerStore and Dell PowerFlex.',
     },
     {
       q: 'Can we attach our existing Nutanix cluster to the array?',
@@ -39,7 +39,7 @@ export const content: ModuleContent = {
   ],
   next: [
     'Start on "Nutanix with external storage" and let the loop run: the array stays, compute nodes connect, and each VM disk becomes its own volume.',
-    'Switch arrays to show the protocol and dates change, then open "ESXi on Nutanix" and play "Stay on ESXi" and "Convert to AHV later".',
+    'Point at “Works with”: three arrays are generally available and NetApp ONTAP is announced. Then open "ESXi on Nutanix" and play "Stay on ESXi" and "Convert to AHV later".',
     'Then open Migration with Nutanix Move, Scale-out vs 3-tier or Disaster Recovery.',
   ],
 };

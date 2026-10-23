@@ -1,25 +1,29 @@
 // Nutanix with external storage: AHV compute-only nodes on the array the customer already owns.
-// Pick the array; the loop keeps the array, adds compute nodes, connects them, maps each VM
-// disk to its own array volume, adds a node without touching the array, then puts Prism on top.
+// The supported arrays are named above one array-neutral loop: it keeps the array, adds compute
+// nodes, connects them, maps each VM disk to its own array volume, adds a node without touching
+// the array, then puts Prism on top.
 // Every product and support claim is checked in docs/facts.md section 7 (NetApp: EXT-2, EXT-15).
-// NetApp ONTAP is announced but not generally available, so its numbers say so and the captions
-// claim only what has been published: NFS over Ethernet, AFF and select FAS systems.
-import { useEnum } from '../../../state/route';
-import { paced, useClock, useRestartOn } from '../../components/clock';
+// NetApp ONTAP is announced but not generally available, so the numbers say so, and the per-disk
+// volume and snapshot lines are worded for the generally available arrays.
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
-type Ar = 'fa' | 'ps' | 'pf' | 'na';
-type Link = 'nvme' | 'sdc' | 'nfs';
+/** The supported arrays, by name only (Dell once for both of its arrays). */
+const ARRAYS = ['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP'];
 
-const ARRAY: Record<Ar, { name: string; link: Link; ga: string | null; gaSub: string }> = {
-  fa: { name: 'Everpure FlashArray', link: 'nvme', ga: 'Dec 2025', gaSub: 'AOS 7.5, AHV 11 or later' },
-  ps: { name: 'Dell PowerStore', link: 'nvme', ga: 'Jul 2026', gaSub: 'NCI 7.6, generations 1 to 3' },
-  pf: { name: 'Dell PowerFlex', link: 'sdc', ga: 'Apr 2025', gaSub: 'the first array supported' },
-  na: { name: 'NetApp ONTAP', link: 'nfs', ga: null, gaSub: 'planned for an upcoming NCI release' },
-};
-const PROTO: Record<Link, string> = { nvme: 'NVMe/TCP', sdc: 'Dell SDC', nfs: 'NFS' };
-const CVM_WORD: Record<Link, string> = { nvme: 'NVMe/TCP initiator', sdc: 'PowerFlex SDC', nfs: 'NFS' };
+function Arrays() {
+  return (
+    <div class="xs-arrays">
+      <span class="choice-l">Works with</span>
+      <ul>
+        {ARRAYS.map((a) => (
+          <li key={a}>{a}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 const P = [0, 3.2, 6.6, 10.4, 13.8];
 const END = 17.2;
@@ -31,27 +35,13 @@ const SNAP_IN = 9.2;
 const PC_IN = P[4];
 
 const PHASES = ['Keep your array', 'Connect over Ethernet', 'One volume per disk', 'Add compute only', 'Run it from Prism'];
-const phaseName = (ar: Ar, i: number) => (ar === 'na' && i === 2 ? 'Disks on ONTAP' : PHASES[i]);
-
-function caption(ar: Ar, i: number): string {
-  const a = ARRAY[ar];
-  const na = ar === 'na';
-  return [
-    `Keep the ${na ? `${a.name} system (AFF A-series or select FAS)` : a.name} you already run. Nutanix adds compute-only nodes running AHV: each has a boot drive but no data drives.`,
-    a.link === 'nvme'
-      ? 'The nodes reach the array over NVMe/TCP on standard Ethernet, so there is no Fibre Channel fabric to run. The Controller VM (CVM) on each node still handles every I/O.'
-      : a.link === 'sdc'
-        ? 'The nodes reach PowerFlex over Ethernet through Dell’s own client (SDC), which runs in the Controller VM (CVM) on each node and handles every I/O.'
-        : 'The nodes reach ONTAP over NFS on standard Ethernet, so there is no Fibre Channel fabric to run.',
-    na
-      ? 'The VM disks live on ONTAP, reached over NFS. How each disk maps onto ONTAP, and which ONTAP features Nutanix drives, will be in the release documentation.'
-      : 'Each VM disk is its own volume on the array, with no shared datastore in between. Nutanix takes snapshots and clones through the array’s own APIs, per disk, and drives the replication for DR.',
-    'Need more CPU and memory? Add a compute node, and the array doesn’t change. When you need capacity, grow the array on its own schedule.',
-    na
-      ? 'Prism Central runs it like any AHV cluster: VMs, networks, Flow security and DR orchestration.'
-      : 'Prism Central runs it like any AHV cluster: VMs, networks, Flow security and DR orchestration, including failover to a full Nutanix cluster. From NCI 7.6 the array’s storage is managed in Prism Central too.',
-  ][i];
-}
+const CAPTIONS = [
+  'Keep the storage array you already run. Nutanix adds compute-only nodes running AHV: each has a boot drive but no data drives.',
+  'The nodes reach the array over standard Ethernet, so there is no Fibre Channel fabric to run: NVMe/TCP for FlashArray and PowerStore, Dell’s own client (SDC) for PowerFlex, and NFS for NetApp ONTAP.',
+  'On the generally available arrays each VM disk is its own volume, with no shared datastore in between. Nutanix takes snapshots and clones through the array’s own APIs, per disk, and drives the replication for DR.',
+  'Need more CPU and memory? Add a compute node, and the array doesn’t change. When you need capacity, grow the array on its own schedule.',
+  'Prism Central runs it like any AHV cluster: VMs, networks, Flow security and DR orchestration, including failover to a full Nutanix cluster. From NCI 7.6 the array’s storage is managed in Prism Central too.',
+];
 
 const POINTS: Point[] = [
   { k: 'Keep your array', by: 'No storage refresh', text: 'Move VMs off vSphere onto AHV and keep the array you already own, instead of a forklift upgrade.', tone: 'ink', at: 0 },
@@ -88,8 +78,7 @@ function nodeIn(i: number, t: number): number {
   return prog(t, i < 3 ? NODE_IN[i] : NODE4_IN, (i < 3 ? NODE_IN[i] : NODE4_IN) + 0.6);
 }
 
-function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
-  const a = ARRAY[ar];
+function ExtDiagram({ t }: { t: number }) {
   const arrIn = prog(t, 0, 0.5);
   const link = prog(t, LINK_IN, LINK_IN + 0.8);
   const flowing = t >= LINK_IN + 0.8;
@@ -98,11 +87,9 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
   const vols = Array.from({ length: 12 }, (_, k) => prog(t, VOL_AT(k), VOL_AT(k) + 0.3));
   const latest = vols.reduce((m, v, k) => (v > 0 && v < 1 ? k : m), -1);
   const nodes = t >= NODE4_IN ? 4 : 3;
-  const proto = PROTO[a.link];
-  const na = ar === 'na';
 
   return (
-    <svg class="diagram xs-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} AHV compute-only nodes connect over Ethernet (${proto}) to an existing ${a.name}. ${na ? 'The VM disks live on ONTAP.' : 'Each VM disk is its own volume on the array.'} Adding a compute node leaves the array unchanged.`}>
+    <svg class="diagram xs-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} AHV compute-only nodes connect over Ethernet to the Everpure, Dell or NetApp array you already own. Each VM disk is its own volume on the array. Adding a compute node leaves the array unchanged.`}>
       {/* Prism Central on top */}
       {pc > 0 ? (
         <g style={{ opacity: pc }}>
@@ -111,7 +98,7 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
             Prism Central
           </text>
           <text x={W - 14} y={22} text-anchor="end" class="xs-on-ink soft" style={{ fontSize: '12.5px' }}>
-            VMs · networks · Flow security · DR orchestration{na ? '' : ' · the array’s storage'}
+            VMs · networks · Flow security · DR orchestration · the array’s storage
           </text>
           {Array.from({ length: nodes }, (_, i) => (
             <line key={i} x1={nx(i) + NW / 2} x2={nx(i) + NW / 2} y1={PC_H} y2={NODE_Y} class="ink-stroke" stroke-dasharray="3 3" />
@@ -158,7 +145,7 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
             ))}
             <rect x={x + 12} y={NODE_Y + 64} width={NW - 24} height={20} class="cvm" />
             <text x={x + 20} y={NODE_Y + 78} class="xs-on-ink" style={{ fontSize: '11.5px' }}>
-              CVM · {CVM_WORD[a.link]}
+              CVM · storage client
             </text>
             <rect x={x + 12} y={NODE_Y + 92} width={30} height={12} class="disk" />
             <text x={x + 50} y={NODE_Y + 102} class="faint" style={{ fontSize: '11px' }}>
@@ -178,10 +165,10 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
           })}
           <rect x={0} y={NET_Y} width={W * link} height={NET_H} class="xs-net" />
           <text x={12} y={NET_Y + 15} class="mono" style={{ fontSize: '12px' }}>
-            Ethernet · {proto}
+            Ethernet · NVMe/TCP, Dell SDC or NFS
           </text>
           <text x={W - 12} y={NET_Y + 15} text-anchor="end" class="muted" style={{ fontSize: '11.5px' }}>
-            {a.link === 'sdc' ? 'Dell’s own protocol' : 'no Fibre Channel fabric'}
+            no Fibre Channel fabric
           </text>
           {LINK_X.map((lx) => (
             <line key={lx} x1={lx} x2={lx} y1={NET_Y + NET_H} y2={ARR_Y} class="xs-link" />
@@ -207,7 +194,7 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
       <g style={{ opacity: arrIn }}>
         <rect x={ARR_X} y={ARR_Y} width={ARR_W} height={ARR_H} class="xs-array" rx={4} />
         <text x={ARR_X + 20} y={ARR_Y + 24} style={{ fontWeight: 600, fontSize: '15px' }}>
-          {a.name}
+          Your Everpure / Dell / NetApp array
         </text>
         <text x={ARR_X + ARR_W - 20} y={ARR_Y + 24} text-anchor="end" class="muted" style={{ fontSize: '12.5px' }}>
           {t >= P[3] && t < P[4] + 1 ? 'unchanged' : 'already in your data center'}
@@ -217,7 +204,7 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
             <rect key={k} x={tileX(k)} y={tileY(k)} width={TW} height={TH} class="xs-slot" />
           ) : (
             <g key={k} style={{ opacity: v }}>
-              {!na && snap > 0 && k < 9 && <rect x={tileX(k) + 5} y={tileY(k) - 5} width={TW} height={TH} class="xs-snap" style={{ opacity: snap }} />}
+              {snap > 0 && k < 9 && <rect x={tileX(k) + 5} y={tileY(k) - 5} width={TW} height={TH} class="xs-snap" style={{ opacity: snap }} />}
               <rect x={tileX(k)} y={tileY(k)} width={TW} height={TH} class={`xs-vol${k === latest ? ' hl' : ''}`} />
               <text x={tileX(k) + 10} y={tileY(k) + 19} class="mono" style={{ fontSize: '11.5px' }}>
                 N{Math.floor(k / 3) + 1} VM{(k % 3) + 1} disk
@@ -226,7 +213,7 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
           ),
         )}
         <text x={ARR_X + 20} y={ARR_Y + ARR_H - 12} class="muted" style={{ fontSize: '12px' }}>
-          {na ? 'VM disks on ONTAP, over NFS' : snap > 0 ? 'One volume per VM disk, with the array’s own snapshots per disk' : 'One volume per VM disk · no datastore'}
+          {snap > 0 ? 'One volume per VM disk, with the array’s own snapshots per disk' : 'One volume per VM disk · no datastore'}
         </text>
       </g>
       {latest >= 0 &&
@@ -241,49 +228,31 @@ function ExtDiagram({ ar, t }: { ar: Ar; t: number }) {
   );
 }
 
+const STEPS = paced(P, PHASES.map((k, i) => [k, CAPTIONS[i]]));
+
 export default function ExtStorage() {
-  const [ar, setAr] = useEnum<Ar>('ar', 'fa', ['fa', 'ps', 'pf', 'na']);
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, steps: paced(P, PHASES.map((_, i) => [phaseName(ar, i), caption(ar, i)])) });
-  useRestartOn(clock, [ar]);
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END, steps: STEPS });
   const t = clock.t;
   const phase = phaseAt(P, t);
-  const a = ARRAY[ar];
   const tone: Tone | 'ink' = phase === 0 ? 'ink' : phase === 3 ? 'ok' : 'flow';
 
   return (
     <Show
       top={
         <>
-          <Choice<Ar>
-            label="Your array"
-            value={ar}
-            onChange={setAr}
-            why={
-              ar === 'fa'
-                ? 'Needs a new Nutanix cluster (3 to 32 nodes, one FlashArray); the array itself can be one you already own.'
-                : ar === 'na'
-                  ? 'Announced in April 2026 and planned for an upcoming NCI release (NetApp names NCI 7.6.0.10). Check it is generally available before planning on it.'
-                  : null
-            }
-            options={[
-              { value: 'fa', label: 'Everpure FlashArray' },
-              { value: 'ps', label: 'Dell PowerStore' },
-              { value: 'pf', label: 'Dell PowerFlex' },
-              { value: 'na', label: 'NetApp ONTAP' },
-            ]}
-          />
+          <Arrays />
           <Points label="Why customers choose it" items={POINTS} t={t} />
         </>
       }
       foot={
         <>
-          <Follow tone={tone} k={phaseName(ar, phase)}>
-            <p>{caption(ar, phase)}</p>
+          <Follow tone={tone} k={PHASES[phase]}>
+            <p>{CAPTIONS[phase]}</p>
           </Follow>
           <Kpis
             items={[
-              { k: 'Connects over', v: PROTO[a.link], sub: 'on standard Ethernet' },
-              a.ga ? { k: 'Generally available', v: a.ga, sub: a.gaSub, tone: 'ok' } : { k: 'Availability', v: 'Announced', sub: a.gaSub, tone: 'warn', tip: 'Announced with NetApp in April 2026 for AFF A-series and select FAS systems over NFS. As of October 22, 2026 no general availability had been announced.' },
+              { k: 'Connects over', v: 'Ethernet', sub: 'NVMe/TCP, Dell SDC or NFS' },
+              { k: 'Supported arrays', v: '4', sub: '3 generally available, NetApp announced' },
               { k: 'Licensed as', v: 'NCI-C', sub: 'per core', tip: 'NCI Compute: AHV, Prism and DR automation, priced per core. Snapshots and clones are left to the storage array.' },
             ]}
           />
@@ -291,9 +260,9 @@ export default function ExtStorage() {
       }
     >
       <div class="diagram-scroll">
-        <ExtDiagram ar={ar} t={t} />
+        <ExtDiagram t={t} />
       </div>
-      <PlayBar clock={clock} label="External storage animation" fmt={() => phaseName(ar, phase)} />
+      <PlayBar clock={clock} label="External storage animation" fmt={() => PHASES[phase]} />
       <div class="xs-legend">
         <Legend
           items={[
