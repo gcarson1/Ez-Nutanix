@@ -1,21 +1,16 @@
 // Nutanix with external storage: AHV compute-only nodes on the array the customer already owns.
-// The supported arrays are listed side by side above one array-neutral loop: it keeps the array,
-// adds compute nodes, connects them, maps each VM disk to its own array volume, adds a node
-// without touching the array, then puts Prism on top.
+// The supported arrays are named above one array-neutral loop: it keeps the array, adds compute
+// nodes, connects them, maps each VM disk to its own array volume, adds a node without touching
+// the array, then puts Prism on top.
 // Every product and support claim is checked in docs/facts.md section 7 (NetApp: EXT-2, EXT-15).
-// NetApp ONTAP is announced but not generally available, so its card says so, and the per-disk
+// NetApp ONTAP is announced but not generally available, so the numbers say so, and the per-disk
 // volume and snapshot lines are worded for the generally available arrays.
 import { paced, useClock } from '../../components/clock';
-import { Follow, Illus, Legend, PlayBar, Tip, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
-/** The supported arrays: how the nodes reach each one, and when it became generally available. */
-const ARRAYS: { name: string; proto: string; ga: string | null; note: string; tip: string }[] = [
-  { name: 'Everpure FlashArray', proto: 'NVMe/TCP', ga: 'Dec 2025', note: 'new Nutanix cluster only', tip: 'AOS 7.5 and AHV 11 or later. Needs a new Nutanix cluster (3 to 32 nodes, one FlashArray); the array itself can be one you already own.' },
-  { name: 'Dell PowerStore', proto: 'NVMe/TCP', ga: 'Jul 2026', note: 'NCI 7.6, generations 1 to 3', tip: 'Generally available with NCI 7.6, for PowerStore generations 1 to 3.' },
-  { name: 'Dell PowerFlex', proto: 'Dell SDC', ga: 'Apr 2025', note: 'the first array supported', tip: 'Reached through Dell’s own client (SDC), which runs in the Controller VM on each node.' },
-  { name: 'NetApp ONTAP', proto: 'NFS', ga: null, note: 'planned for an upcoming NCI release', tip: 'Announced with NetApp in April 2026 for AFF A-series and select FAS systems over NFS (NetApp names NCI 7.6.0.10). As of October 22, 2026 no general availability had been announced, so check before planning on it.' },
-];
+/** The supported arrays, by name only (Dell once for both of its arrays). */
+const ARRAYS = ['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP'];
 
 function Arrays() {
   return (
@@ -23,16 +18,7 @@ function Arrays() {
       <span class="choice-l">Works with</span>
       <ul>
         {ARRAYS.map((a) => (
-          <li key={a.name} class={a.ga ? '' : 'soon'}>
-            <b>
-              <Tip text={a.tip}>{a.name}</Tip>
-            </b>
-            <span class="xs-arr-meta">
-              <span class="mono">{a.proto}</span>
-              <span class={a.ga ? 'ok-text' : 'warn-text'}>{a.ga ? `GA ${a.ga}` : 'Announced'}</span>
-            </span>
-            <span class="xs-arr-note">{a.note}</span>
-          </li>
+          <li key={a}>{a}</li>
         ))}
       </ul>
     </div>
@@ -103,7 +89,7 @@ function ExtDiagram({ t }: { t: number }) {
   const nodes = t >= NODE4_IN ? 4 : 3;
 
   return (
-    <svg class="diagram xs-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} AHV compute-only nodes connect over Ethernet to the storage array you already own. Each VM disk is its own volume on the array. Adding a compute node leaves the array unchanged.`}>
+    <svg class="diagram xs-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} AHV compute-only nodes connect over Ethernet to the Everpure, Dell or NetApp array you already own. Each VM disk is its own volume on the array. Adding a compute node leaves the array unchanged.`}>
       {/* Prism Central on top */}
       {pc > 0 ? (
         <g style={{ opacity: pc }}>
@@ -208,7 +194,7 @@ function ExtDiagram({ t }: { t: number }) {
       <g style={{ opacity: arrIn }}>
         <rect x={ARR_X} y={ARR_Y} width={ARR_W} height={ARR_H} class="xs-array" rx={4} />
         <text x={ARR_X + 20} y={ARR_Y + 24} style={{ fontWeight: 600, fontSize: '15px' }}>
-          Your storage array
+          Your Everpure / Dell / NetApp array
         </text>
         <text x={ARR_X + ARR_W - 20} y={ARR_Y + 24} text-anchor="end" class="muted" style={{ fontSize: '12.5px' }}>
           {t >= P[3] && t < P[4] + 1 ? 'unchanged' : 'already in your data center'}

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **External storage:** no more array picker. A "Works with" list shows all four supported arrays at once, with each one's protocol and GA date (NetApp ONTAP marked as announced), and the animation is the same for every array.
+- **External storage:** no more array picker. A "Works with" list names the supported arrays (Everpure FlashArray, Dell PowerStore · PowerFlex, NetApp ONTAP), and the animation is the same for every array: "Your Everpure / Dell / NetApp array". The numbers still mark NetApp ONTAP as announced.
 - **Footer:** a "Built by" label, then each author's name with their Slack handle under it in Nutanix purple: @Besaw, and @GabeC followed by "on Slack". The version moved beside About. On the home page the footer sits at the bottom of the window when the slide fits, instead of just below it.
 
 ## 1.1 (October 2026)

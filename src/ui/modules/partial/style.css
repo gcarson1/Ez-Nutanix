@@ -19,15 +19,10 @@
 .diagram .es-link { stroke: var(--ink-line); stroke-width: 1.5; }
 .diagram text.es-ink { fill: var(--ink-fg); font-weight: 600; }
 .diagram text.es-warn { fill: var(--warn); }
-/* The supported arrays, listed side by side (not a picker): announced ones get a dashed card. */
-.xs-arrays { display: flex; flex-direction: column; gap: var(--sp-2); flex: 0 1 34rem; min-width: 0; }
-.xs-arrays ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
-.xs-arrays li { display: flex; flex-direction: column; gap: 0.125rem; margin: 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-2); border-radius: var(--radius); }
-.xs-arrays li.soon { border-style: dashed; }
-.xs-arrays li b { font-size: var(--fs-14); }
-.xs-arr-meta { display: flex; flex-wrap: wrap; gap: 0 var(--sp-2); font-size: var(--fs-12); font-weight: 600; }
-.xs-arr-meta .mono { color: var(--text-2); font-weight: 500; }
-.xs-arr-note { font-size: var(--fs-12); color: var(--faint); }
+/* The supported arrays, by name: a plain list, not a picker. */
+.xs-arrays { display: flex; flex-direction: column; gap: var(--sp-2); flex: 0 1 auto; min-width: 0; }
+.xs-arrays ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.xs-arrays li { margin: 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-2); border-radius: var(--radius); font-size: var(--fs-14); font-weight: 600; white-space: nowrap; }
 .show-top > .xs-arrays + .points { flex: 1 1 36rem; width: auto; }
 .xs-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
 .xs-legend .legend { margin-top: 0; }
