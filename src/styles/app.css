@@ -359,7 +359,8 @@ body { min-height: 100vh; }
 .diagram [role='button'] { cursor: pointer; }
 .diagram [role='button']:focus-visible { outline: none; }
 .diagram [role='button']:focus-visible > .hit { stroke: var(--text); stroke-width: 2.5; }
-.diagram-scroll { overflow-x: auto; background-image: radial-gradient(circle, var(--line) 1px, transparent 1.3px); background-size: 1.25rem 1.25rem; background-position: center; }
+.diagram-scroll { overflow-x: auto; }
+.diagram-scroll > .diagram { background-image: radial-gradient(circle, var(--line) 1px, transparent 1.3px); background-size: 1.25rem 1.25rem; background-position: center; }
 
 .legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-12); color: var(--muted); margin-top: var(--sp-3); }
 .legend .sw { display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: var(--sp-1h); vertical-align: -0.1rem; }

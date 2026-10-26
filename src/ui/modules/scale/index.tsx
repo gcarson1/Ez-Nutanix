@@ -176,7 +176,7 @@ function ScaleDiagram({ ph, lp, t, present, joined, drives }: { ph: Phase; lp: n
               {isNew ? ' · new' : ''}
             </text>
             <Vms x={x + 10} y={Y1 + 28} />
-            <rect x={x + 10} y={Y1 + 52} width={NW - 20} height={20} class="bg3" />
+            <rect x={x + 10} y={Y1 + 52} width={NW - 20} height={20} rx={3} class="bg3" />
             {ctl > 0 && <rect x={x + 10} y={Y1 + 52} width={(NW - 20) * ctl} height={20} class="cvm" />}
             <text x={x + 16} y={Y1 + 66} class="scale-xs" style={{ fill: ctl > 0.3 ? '#fff' : undefined }}>
               CVM

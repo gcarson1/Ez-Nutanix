@@ -212,7 +212,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
             })}
             {aos > 0 ? (
               <g style={{ opacity: aos }}>
-                <rect x={x + 12 + (1 - ease(aos)) * 20} y={AOS_Y} width={NW - 24} height={AOS_H} class={down ? 'cvm down' : 'cvm'} rx={2} />
+                <rect x={x + 12 + (1 - ease(aos)) * 20} y={AOS_Y} width={NW - 24} height={AOS_H} class={down ? 'cvm down' : 'cvm'} />
                 <text x={x + 20} y={AOS_Y + 16} class="cn-on-ink" style={{ fontSize: '11.5px', fontWeight: 600 }}>
                   AOS pod
                 </text>
@@ -266,7 +266,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       {/* after the failure: the database pod restarts on worker 3 and reads the surviving copies */}
       {restart > 0 && (
         <g style={{ opacity: restart }}>
-          <rect x={NEW_DB_X} y={POD_Y} width={NEW_DB_W} height={POD_H} rx={3} class={ready ? 'vm hl' : 'vm restart'} />
+          <rect x={NEW_DB_X} y={POD_Y} width={NEW_DB_W} height={POD_H} class={ready ? 'vm hl' : 'vm restart'} />
           <text x={NEW_DB_X + NEW_DB_W / 2} y={POD_Y + 17} text-anchor="middle" style={{ fontSize: '11.5px', fontWeight: 600 }}>
             Database
           </text>
@@ -294,7 +294,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
             { x: PAD + 350, w: 112, label: 'Volume data' },
           ].map((c, i) => (
             <g key={c.label} style={{ opacity: chips[i] }}>
-              <rect x={c.x} y={SNAP_Y + 9} width={c.w} height={26} rx={3} class="vm hl" />
+              <rect x={c.x} y={SNAP_Y + 9} width={c.w} height={26} class="vm hl" />
               <text x={c.x + c.w / 2} y={SNAP_Y + 26} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
                 {c.label}
               </text>
@@ -322,7 +322,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       {region > 0 && <line x1={CW - PAD} x2={DR_X} y1={LINK_Y} y2={LINK_Y} class={`cn-link${metal ? ' warn' : ''}`} style={{ opacity: region }} />}
       {copy > 0 && (
         <g style={{ opacity: copy }}>
-          <rect x={DR_X + 14} y={LINK_Y - 13} width={150} height={26} rx={3} class="vm hl" />
+          <rect x={DR_X + 14} y={LINK_Y - 13} width={150} height={26} class="vm hl" />
           <text x={DR_X + 89} y={LINK_Y + 4} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
             App snapshot copy
           </text>
@@ -352,7 +352,7 @@ function DrBox({ y, k, warn, head, sub, foot, sel }: { y: number; k: number; war
   const txt = on ? undefined : 'faint';
   return (
     <g>
-      <rect x={DR_X} y={y} width={DR_W} height={BOX_H} class={on ? `node-box${warn ? ' warn' : sel ? ' sel' : ''}` : 'frame-dash'} rx={3} />
+      <rect x={DR_X} y={y} width={DR_W} height={BOX_H} class={on ? `node-box${warn ? ' warn' : sel ? ' sel' : ''}` : 'frame-dash'} rx={6} />
       <text x={DR_X + 14} y={y + 22} class={txt} style={{ fontSize: '13.5px', fontWeight: 600 }}>
         {head}
       </text>

@@ -11,7 +11,7 @@
 .sc-dia .sc-keyline { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
 .sc-dia .sc-keyline.cut { stroke: var(--bad); }
 .sc-dia .sc-out { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 7 5; opacity: 0.7; }
-.sc-dia .sc-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.sc-dia .sc-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; rx: 3px; }
 .sc-dia .sc-piece { fill: var(--ink); }
 .sc-dia .sc-piece.exposed { stroke: var(--bad); stroke-width: 2.5; }
 .sc-dia .sc-cipher { stroke: var(--s2); stroke-width: 1; }
