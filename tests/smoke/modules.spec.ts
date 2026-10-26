@@ -264,7 +264,7 @@ test('external storage names every array without a picker, NetApp counted as ann
   await expect(page.locator('.xs-dia')).toContainText('Your Everpure / Dell / NetApp array');
   await expect(page.locator('.kpi', { hasText: 'Supported arrays' })).toContainText('NetApp announced');
   await expect(page.locator('.kpi', { hasText: 'Supported arrays' }).locator('.v')).toHaveText('4');
-  await expect(page.locator('.foot-row .ver')).toHaveText('v1.1');
+  await expect(page.locator('.foot-bar .ver')).toHaveText('v1.1');
   expect(errors).toEqual([]);
 });
 
@@ -272,7 +272,7 @@ test('the home page footer sits at the bottom of a tall window and shows the Sla
   const errors = watchErrors(page);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto(`${FILE}#/`);
-  await expect(page.locator('.foot-row .handle')).toHaveText(['@Besaw', '@GabeC on Slack']);
+  await expect(page.locator('.foot-bar .handle')).toHaveText(['@Besaw', '@GabeC on Slack']);
   const m = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight, bottom: document.querySelector('.foot-bar')!.getBoundingClientRect().bottom }));
   expect(m.doc).toBeLessThanOrEqual(1080);
   expect(Math.round(m.bottom)).toBe(1080);

@@ -439,8 +439,8 @@ export function App() {
       </main>
 
       <footer class={`foot-bar${route.path ? '' : ' fab-room'}`}>
-        <div class="in">
-          <div class="foot-row">
+        <div class="in foot-cols">
+          <div class="foot-col">
             {(CONFIG.credit || authors.length > 0) && (
               <span class="credit">
                 {CONFIG.credit && <span class="by">{CONFIG.credit}</span>}
@@ -461,6 +461,8 @@ export function App() {
                 )}
               </span>
             )}
+          </div>
+          <div class="foot-col">
             {(CONFIG.presenterName || CONFIG.organization) && (
               <span class="who">
                 {[CONFIG.presenterName, CONFIG.presenterRole, CONFIG.organization].filter(Boolean).join(' · ')}
@@ -472,7 +474,7 @@ export function App() {
               About this simulation
             </button>
           </div>
-          <p class="disclaimer">{CONFIG.disclaimer}</p>
+          <p class="foot-col disclaimer">{CONFIG.disclaimer}</p>
         </div>
       </footer>
 
