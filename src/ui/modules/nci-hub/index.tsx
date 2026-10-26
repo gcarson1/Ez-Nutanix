@@ -59,8 +59,11 @@ function NodeCutaway() {
         </g>
       ))}
       <path d="M400 96 V 112 M400 148 V 190 H 190 V 198" class="flow-stroke" fill="none" stroke-width={1.5} stroke-dasharray="4 3" />
-      <text x={410} y={176} class="flow-fill" style={{ fontSize: '11px' }}>
-        drives passed to the CVM
+      <text x={410} y={178} class="flow-fill" style={{ fontSize: '11px' }}>
+        <tspan>drives passed</tspan>
+        <tspan x={410} dy={14}>
+          to the CVM
+        </tspan>
       </text>
       {[0, 1].map((i) => (
         <g key={i}>

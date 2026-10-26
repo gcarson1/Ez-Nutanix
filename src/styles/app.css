@@ -68,7 +68,9 @@ body { min-height: 100vh; }
   transition: transform var(--t-med) var(--ease), background var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
   cursor: pointer;
 }
-.pane:hover, .pane:focus-visible { transform: translateY(-0.1875rem); box-shadow: 0 0.75rem 2rem -0.75rem rgba(120, 85, 250, 0.55); }
+.pane { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+.pane::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 60%); pointer-events: none; }
+.pane:hover, .pane:focus-visible { transform: translateY(-0.1875rem); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0.75rem 2rem -0.75rem rgba(120, 85, 250, 0.55); }
 .pane:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .pane .pt { font-weight: 650; font-size: clamp(1rem, 0.85rem + 0.45vw, 1.375rem); letter-spacing: -0.012em; line-height: 1.2; }
 .pane .ps { font-size: clamp(0.75rem, 0.68rem + 0.22vw, 0.9375rem); color: var(--slide-sub); line-height: 1.35; }
@@ -106,8 +108,9 @@ body { min-height: 100vh; }
 .infra-row .nci .pt { font-size: clamp(1.125rem, 0.9rem + 0.7vw, 1.75rem); }
 .gray { background: var(--slide-gray); color: var(--slide-gray-text); border-radius: var(--radius-slide); }
 .clouds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-1); padding: var(--sp-2); }
-.clouds .pane { background: transparent; color: var(--slide-gray-text); min-height: 0; border-radius: var(--radius); }
+.clouds .pane { background: transparent; box-shadow: none; color: var(--slide-gray-text); min-height: 0; border-radius: var(--radius); }
 .clouds .pane:hover, .clouds .pane:focus-visible { background: rgba(0, 0, 0, 0.06); box-shadow: none; }
+.clouds .pane::after { content: none; }
 .clouds .pane:focus-visible { outline-color: var(--slide-gray-text); }
 .clouds .pane .ps { color: rgba(0, 0, 0, 0.6); }
 .cloud-mark { font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.0625rem, 0.9rem + 0.5vw, 1.5rem); }
@@ -328,8 +331,8 @@ body { min-height: 100vh; }
 .tabs button[aria-selected='true'] { color: var(--text); box-shadow: inset 0 -2px 0 var(--ink); }
 
 /* hub rows */
-.subgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
-.subtile { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); padding: var(--sp-5); border: 0; background: var(--bg); text-align: left; transition: background var(--t-fast); min-height: 8rem; }
+.subgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.subtile { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-1); padding: var(--sp-5); border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg); text-align: left; transition: background var(--t-fast); min-height: 8rem; }
 .subtile:hover { background: var(--bg-3); }
 .subtile .t { font-weight: 600; font-size: var(--fs-16); display: flex; align-items: center; gap: var(--sp-2); }
 .subtile .s { font-size: var(--fs-13); color: var(--muted); }
@@ -356,7 +359,7 @@ body { min-height: 100vh; }
 .diagram [role='button'] { cursor: pointer; }
 .diagram [role='button']:focus-visible { outline: none; }
 .diagram [role='button']:focus-visible > .hit { stroke: var(--text); stroke-width: 2.5; }
-.diagram-scroll { overflow-x: auto; }
+.diagram-scroll { overflow-x: auto; background-image: radial-gradient(circle, var(--line) 1px, transparent 1.3px); background-size: 1.25rem 1.25rem; background-position: center; }
 
 .legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-12); color: var(--muted); margin-top: var(--sp-3); }
 .legend .sw { display: inline-block; width: 0.75rem; height: 0.75rem; margin-right: var(--sp-1h); vertical-align: -0.1rem; }
@@ -392,7 +395,8 @@ body { min-height: 100vh; }
 /* toast lives in base.css */
 
 /* ── node visuals (cluster lab etc.) ───────────────────────────────── */
-.diagram .node-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .node-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; rx: 6px; }
+.diagram .vm, .diagram .cvm, .diagram .disk { rx: 3px; }
 .diagram .node-box.down { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 5 4; }
 .diagram .node-box.warn { fill: var(--warn-bg); stroke: var(--warn); }
 .diagram .node-box.removed { opacity: 0.25; }

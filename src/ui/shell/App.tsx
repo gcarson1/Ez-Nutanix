@@ -7,6 +7,7 @@ import { KEYS, PRESETS, clearedScenario, setScenario } from '../../state/scenari
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
+import lucideLicense from '../../assets/licenses/lucide.txt?raw';
 import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG, VERSION } from './config';
@@ -223,6 +224,10 @@ function About({ onClose }: { onClose: () => void }) {
         <p class="muted small">
           Version {VERSION.slice(1)}. Facts checked on {CONFIG.factsCheckedOn}. Product names are used descriptively. {CONFIG.disclaimer}
         </p>
+        <details class="credits">
+          <summary class="muted small">Icons: Lucide, ISC license</summary>
+          <pre>{lucideLicense}</pre>
+        </details>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn primary" onClick={onClose}>

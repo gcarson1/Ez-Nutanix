@@ -40,7 +40,7 @@
 .gx-dia .gx-block { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
 .gx-dia .gx-block.down { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
 .gx-dia .gx-blabel { font-size: 10.5px; font-weight: 600; fill: var(--faint); letter-spacing: 0.02em; }
-.gx-dia .gx-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; transition: fill var(--t-med), stroke var(--t-med); }
+.gx-dia .gx-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; rx: 6px; transition: fill var(--t-med), stroke var(--t-med); }
 .gx-dia .gx-node.down .gx-card { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 5 4; }
 .gx-dia .gx-node.cvm .gx-card { stroke: var(--warn); stroke-width: 1.75; }
 .gx-dia .gx-name { font-size: 13px; font-weight: 700; }

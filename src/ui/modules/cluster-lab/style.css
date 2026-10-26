@@ -25,7 +25,7 @@
 
 /* diagram */
 .dl-dia { max-width: 70rem; }
-.dl-dia .dl-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; transition: fill var(--t-med), stroke var(--t-med); }
+.dl-dia .dl-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; rx: 6px; transition: fill var(--t-med), stroke var(--t-med); }
 .dl-dia .dl-node.off .dl-card { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
 .dl-dia .dl-node.entering .dl-card { stroke: var(--warn); stroke-width: 1.75; }
 .dl-dia .dl-node.maint .dl-card { fill: var(--warn-bg); stroke: var(--warn); stroke-dasharray: 6 4; }
