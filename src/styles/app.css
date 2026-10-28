@@ -154,9 +154,76 @@ body { min-height: 100vh; }
 @media (max-width: 900px) { .partial { grid-template-columns: minmax(0, 1fr); } }
 .slide-hint { text-align: center; color: var(--faint); font-size: var(--fs-13); margin-top: var(--sp-2); }
 
+/* liquid glass on the home slide (glass.ts adds .glass-on once the GPU effect starts). The glass
+   refracts .glass-bg; tiles turn transparent so the glass shows through, and their text sits above it.
+   Stacking: band glass 2, band heading 3, tile glass 5, tile text 6. */
+.slide-wrap { position: relative; }
+.glass-bg { display: none; }
+.glass-on .glass-bg {
+  display: block; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 45% at 16% 20%, rgba(130, 92, 255, 0.75), transparent 70%),
+    radial-gradient(ellipse 45% 50% at 88% 24%, rgba(60, 128, 255, 0.6), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 50% 62%, rgba(110, 70, 230, 0.55), transparent 72%),
+    radial-gradient(ellipse 50% 40% at 56% 96%, rgba(190, 96, 255, 0.55), transparent 70%),
+    radial-gradient(ellipse 38% 38% at 6% 82%, rgba(40, 196, 255, 0.35), transparent 70%),
+    linear-gradient(160deg, #150f33, #0b0920 55%, #1a1140);
+}
+:root[data-theme='light'].glass-on .glass-bg {
+  background:
+    radial-gradient(ellipse 50% 45% at 16% 20%, rgba(140, 110, 255, 0.5), transparent 70%),
+    radial-gradient(ellipse 45% 50% at 88% 24%, rgba(90, 150, 255, 0.42), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 50% 62%, rgba(160, 120, 255, 0.35), transparent 72%),
+    radial-gradient(ellipse 50% 40% at 56% 96%, rgba(200, 130, 255, 0.42), transparent 70%),
+    radial-gradient(ellipse 38% 38% at 6% 82%, rgba(80, 200, 255, 0.3), transparent 70%),
+    linear-gradient(160deg, #e9e6fb, #f4f3fc 55%, #e3dffa);
+}
+.glass-on .slide { position: relative; }
+/* Brand color over clear glass (liquidGL sets the tiles transparent inline, hence !important). */
+.glass-on .lg-band { --lg-fill: rgba(51, 34, 127, 0.24); }
+.glass-on .lg-card { --lg-fill: rgba(24, 15, 74, 0.4); }
+.glass-on .lg-svc { --lg-fill: rgba(82, 53, 207, 0.4); }
+.glass-on .lg-nci { --lg-fill: rgba(120, 85, 250, 0.46); }
+.glass-on .lg-light { --lg-fill: rgba(240, 240, 248, 0.62); }
+:root[data-theme='light'].glass-on .lg-band { --lg-fill: rgba(50, 34, 128, 0.8); }
+:root[data-theme='light'].glass-on .lg-card { --lg-fill: rgba(30, 20, 88, 0.72); }
+:root[data-theme='light'].glass-on .lg-svc { --lg-fill: rgba(78, 50, 200, 0.84); }
+:root[data-theme='light'].glass-on .lg-nci { --lg-fill: rgba(98, 66, 228, 0.9); }
+:root[data-theme='light'].glass-on .lg-light { --lg-fill: rgba(255, 255, 255, 0.55); }
+.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { background: var(--lg-fill) !important; }
+/* The band can't take a z-index (its tiles must stack above the tile glass), so its fill is a layer at 3, over its own glass. */
+.glass-on .lg-band { background: transparent !important; }
+.glass-on .lg-band::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: var(--lg-fill); pointer-events: none; }
+.glass-on .central-head { position: relative; z-index: 3; }
+.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { position: relative; z-index: 6; }
+/* Light catching the glass: a bright rim fading round the edge, an inner top highlight and a soft drop shadow. */
+.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light {
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -1px 1px rgba(255, 255, 255, 0.08), inset 0 0 1.5rem rgba(255, 255, 255, 0.05), 0 0.75rem 2rem -0.75rem rgba(8, 4, 30, 0.55) !important;
+}
+.glass-on .pane::after, .glass-on .lg-light::after, .glass-on .lg-band::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.12) 32%, rgba(255, 255, 255, 0.03) 60%, rgba(255, 255, 255, 0.3));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.glass-on .lg-band::after { z-index: 3; }
+/* Small text over glass and the brighter backdrop needs a little more weight to stay above 4.5:1. */
+.glass-on .lg-card .ps, .glass-on .lg-svc .ps, .glass-on .lg-nci .ps { color: rgba(255, 255, 255, 0.88); }
+.glass-on .partial-head .ps, .glass-on .slide-hint, .glass-on .slide-hint kbd { color: var(--text-2); }
+.glass-on .partial-head:focus-visible { outline-color: var(--text); }
+:root[data-theme='light'].glass-on .lg-nci .ps { color: #fff; }
+.glass-on .clouds .pane::after { content: none; }
+/* liquidGL turns off pointer events on its targets; the tiles are buttons, so keep them clickable. */
+.glass-on .lg-band, .glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { pointer-events: auto !important; }
+.glass-on .pane:hover, .glass-on .pane:focus-visible { background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), var(--lg-fill) !important; }
+.glass-on .clouds .pane { background: transparent !important; }
+.glass-on .clouds .pane:hover, .glass-on .clouds .pane:focus-visible { background: rgba(0, 0, 0, 0.06) !important; }
+
 /* tour spotlight */
 .tour-on .pane, .tour-on .central-head, .tour-on .beacon { transition: none; }
 .spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
+/* The glass rules set tiles' z-index and shadow; the tour spotlight must still win over them. */
+.glass-on .spot { z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; }
 /* Guided tour: a round button fixed to the bottom right of the home page */
 .tour-fab {
   position: fixed; right: var(--sp-6); bottom: var(--sp-6); z-index: 50;

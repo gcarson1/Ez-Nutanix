@@ -8,6 +8,7 @@ import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
 import lucideLicense from '../../assets/licenses/lucide.txt?raw';
+import liquidglLicense from '../../assets/licenses/liquidgl.txt?raw';
 import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG, VERSION } from './config';
@@ -227,6 +228,10 @@ function About({ onClose }: { onClose: () => void }) {
         <details class="credits">
           <summary class="muted small">Icons: Lucide, ISC license</summary>
           <pre>{lucideLicense}</pre>
+        </details>
+        <details class="credits">
+          <summary class="muted small">Home page glass: liquidGL, MIT license</summary>
+          <pre>{liquidglLicense}</pre>
         </details>
       </div>
       <div class="modal-foot">

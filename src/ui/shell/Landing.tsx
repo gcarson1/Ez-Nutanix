@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon';
 import awsLogo from '../../assets/logos/aws.svg';
 import azureLogo from '../../assets/logos/azure.svg';
 import googleCloudLogo from '../../assets/logos/google-cloud-icon.svg';
+import { startGlass } from './glass';
 import { go } from './nav';
 
 interface PaneDef {
@@ -110,19 +111,22 @@ export function Landing() {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [tour]);
 
+  useEffect(startGlass, []);
+
   const step = tour !== null ? TOUR[tour] : null;
   return (
     <div class={`slide-wrap${tour !== null ? ' tour-on' : ''}`} ref={wrap}>
+      <div class="glass-bg" aria-hidden="true" />
       <div class="slide">
         <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
 
-        <section class="band central" data-tour="central" aria-label="Nutanix Central">
+        <section class="band central lg-band" data-tour="central" aria-label="Nutanix Central">
           <button type="button" class="central-head" data-pane="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
             Nutanix Central
           </button>
           <div class="central-grid">
             {CENTRAL.map((p) => (
-              <Pane key={p.id} p={p} />
+              <Pane key={p.id} p={p} cls="lg-card" />
             ))}
           </div>
         </section>
@@ -131,7 +135,7 @@ export function Landing() {
 
         <section class="band svc-row" data-tour="services" aria-label="Platform services">
           {SERVICES.map((p) => (
-            <Pane key={p.id} p={p} />
+            <Pane key={p.id} p={p} cls="lg-svc" />
           ))}
           <button type="button" class="beacon" data-pane="beacon" onClick={(e) => go('beacon', undefined, e.currentTarget as HTMLElement)}>
             <Icon name="beacon" />
@@ -142,15 +146,15 @@ export function Landing() {
         <div class="flowline" aria-hidden="true" />
 
         <section class="band infra-row" aria-label="Infrastructure">
-          <Pane p={{ id: 'nci', title: 'Nutanix Cloud Infrastructure', sub: '(AOS, AHV, Flow, DR)', path: 'nci' }} cls="nci" tour="nci" />
-          <div class="gray clouds" data-tour="clouds">
+          <Pane p={{ id: 'nci', title: 'Nutanix Cloud Infrastructure', sub: '(AOS, AHV, Flow, DR)', path: 'nci' }} cls="nci lg-nci" tour="nci" />
+          <div class="gray clouds lg-light" data-tour="clouds">
             {CLOUDS.map((p) => (
               <Pane key={p.id} p={p}>
                 <CloudLogo id={p.id} />
               </Pane>
             ))}
           </div>
-          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'cnaos', params: { on: 'metal' } }} cls="bare" tour="bare">
+          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'cnaos', params: { on: 'metal' } }} cls="bare lg-light" tour="bare">
             <Icon name="server" />
             <span class="pt">Any Bare Metal Linux</span>
           </Pane>
@@ -162,7 +166,7 @@ export function Landing() {
             <span class="ps">Start with the part you need</span>
           </button>
           {PARTIAL.map((p) => (
-            <Pane key={p.id} p={p} />
+            <Pane key={p.id} p={p} cls="lg-card" />
           ))}
         </section>
 

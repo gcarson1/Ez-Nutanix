@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Home page liquid glass (experimental branch only):** the home slide's tiles are liquid glass rendered with liquidGL over a glowing gradient, keeping each tile's purple. It runs only on a hardware GPU and outside embedded previews; with reduced transparency or forced colors the tiles stay solid. liquidGL's license is in About.
 - **Icons and polish:** every icon is now from Lucide (license in About). Home tiles have a soft sheen, diagrams sit on a faint dot grid with rounded node boxes, the Explore grid no longer shows a gray block after the last tile, and the node cutaway's "drives passed to the CVM" label is no longer cut off.
 - **External storage:** no more array picker. A "Works with" list names the supported arrays (Everpure FlashArray, Dell PowerStore · PowerFlex, NetApp ONTAP), and the animation is the same for every array: "Your Everpure / Dell / NetApp array". The numbers still mark NetApp ONTAP as announced.
 - **Footer:** a "Built by" label, then each author's name with their Slack handle under it in Nutanix purple: @Besaw, and @GabeC followed by "on Slack". The version moved beside About. On the home page the footer sits at the bottom of the window when the slide fits, instead of just below it.
