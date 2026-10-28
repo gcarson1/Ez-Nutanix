@@ -213,17 +213,16 @@ body { min-height: 100vh; }
 .glass-on .partial-head:focus-visible { outline-color: var(--text); }
 :root[data-theme='light'].glass-on .lg-nci .ps { color: #fff; }
 .glass-on .clouds .pane::after { content: none; }
-/* liquidGL turns off pointer events on its targets; the tiles are buttons, so keep them clickable. */
-.glass-on .lg-band, .glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { pointer-events: auto !important; }
+/* liquidGL hides its targets until the glass is ready and turns off their pointer events. The tiles are
+   buttons, so keep them visible (no blink on a theme switch, no blank slide if the glass never loads) and clickable. */
+.glass-on .lg-band, .glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { opacity: 1 !important; pointer-events: auto !important; }
 .glass-on .pane:hover, .glass-on .pane:focus-visible { background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), var(--lg-fill) !important; }
-.glass-on .clouds .pane { background: transparent !important; }
 .glass-on .clouds .pane:hover, .glass-on .clouds .pane:focus-visible { background: rgba(0, 0, 0, 0.06) !important; }
 
 /* tour spotlight */
 .tour-on .pane, .tour-on .central-head, .tour-on .beacon { transition: none; }
-.spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
-/* The glass rules set tiles' z-index and shadow; the tour spotlight must still win over them. */
-.glass-on .spot { z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; }
+/* .tour-on lifts it over the glass rules, which also set the tiles' z-index and shadow. */
+.tour-on .spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
 /* Guided tour: a round button fixed to the bottom right of the home page */
 .tour-fab {
   position: fixed; right: var(--sp-6); bottom: var(--sp-6); z-index: 50;

@@ -1,9 +1,9 @@
 // Liquid glass for the home slide only, rendered by liquidGL (WebGPU/WebGL, MIT). The glass
 // refracts the slide's gradient backdrop (.glass-bg). The "Nutanix Central" band is a lower lens
 // and its tiles stack on it. Tile text stays in the DOM above the glass (content: false), so it
-// stays crisp, selectable and focusable. Without a hardware GPU, with reduced transparency or
-// forced colors, or inside another page's frame (a file preview in a chat or mail app, where a
-// constant GPU loop would slow the host), nothing starts and the tiles keep their solid colors.
+// stays crisp, selectable and focusable. Without a hardware GPU, with reduced transparency, more
+// contrast or forced colors, or inside another page's frame (a file preview in a chat or mail app,
+// where a constant GPU loop would slow the host), nothing starts and the tiles keep their solid colors.
 import liquidGL from 'liquid-gl';
 
 type Lens = { destroy: () => void };
@@ -36,7 +36,9 @@ function hardwareGpu(): boolean {
 
 function wanted(): boolean {
   if (typeof matchMedia === 'undefined' || window.self !== window.top) return false;
-  return !matchMedia('(prefers-reduced-transparency: reduce)').matches && !matchMedia('(forced-colors: active)').matches && hardwareGpu();
+  // Safari's Increase Contrast reports prefers-contrast, not reduced transparency.
+  const off = ['(prefers-reduced-transparency: reduce)', '(prefers-contrast: more)', '(forced-colors: active)'];
+  return !off.some((q) => matchMedia(q).matches) && hardwareGpu();
 }
 
 /**

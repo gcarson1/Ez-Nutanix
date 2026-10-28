@@ -4,8 +4,8 @@ declare module 'liquid-gl' {
     target: string;
     snapshot?: string;
     zIndex?: number;
+    resolution?: number;
     content?: string | false;
-    tint?: string | null;
     frost?: number;
     refraction?: number;
     bevelDepth?: number;
