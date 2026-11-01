@@ -17,6 +17,15 @@
 .diagram .ai-model.off { opacity: 0.35; }
 .diagram .ai-req { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .ai-ans { fill: var(--ok); stroke: var(--bg); stroke-width: 1.5; }
+/* Agent Gateway tab */
+.diagram .ai-chip { fill: var(--bg-2); stroke: var(--line-2); }
+.diagram .ai-chip.on.flow { fill: var(--flow-bg); stroke: var(--flow); }
+.diagram .ai-chip.on.warn { fill: var(--warn-bg); stroke: var(--warn); }
+.diagram .ai-chip.on.bad { fill: var(--bad-bg); stroke: var(--bad); }
+.diagram .ai-chip.on.ok { fill: var(--ok-bg); stroke: var(--ok); }
+.diagram .gw-down { stroke: var(--bad); stroke-dasharray: 5 4; }
+.diagram .gw-tool { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .gw-x { fill: none; stroke: var(--bad); stroke-width: 2.5; stroke-linecap: round; }
 @media (max-width: 600px) {
   .diagram-scroll > .ai-svg { min-width: 44rem; }
 }

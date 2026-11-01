@@ -119,6 +119,14 @@ export function setParams(patch: Record<string, string | number | boolean | null
   emit();
 }
 
+/** Swap the current route for another path without adding history (an old link opening its new module). */
+export function replacePath(path: string) {
+  current = { path, params: current.params };
+  writeHash(buildHash(path, current.params), false);
+  if (trail.length) trail[trail.length - 1] = location.hash;
+  emit();
+}
+
 export function replaceParams(params: Record<string, string>) {
   current = { path: current.path, params: { ...params } };
   writeHash(buildHash(current.path, current.params), false);

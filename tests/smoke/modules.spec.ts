@@ -154,7 +154,7 @@ test('Any Bare Metal Linux opens Cloud Native AOS on bare metal', async ({ page 
 test('Presets show only on the modules that use the shared cluster', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity`);
   await expect(page.getByLabel('Scenario preset')).toBeVisible();
-  for (const path of ['nci/scale', 'nkp', 'nci/failures']) {
+  for (const path of ['nkp', 'nci/failures']) {
     await page.goto(`${FILE}#/${path}`);
     await expect(page.locator('.mod-head h1')).toBeVisible();
     await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
@@ -284,13 +284,34 @@ test('legacy vs HCI: three tiers fold into one node, then nodes form a cluster',
   await seek(0.1);
   await expect(dia).toContainText('SAN switch');
   await expect(kpi('Consoles')).toHaveText('3');
-  await seek(0.6);
+  await seek(0.48);
   await expect(dia).toContainText('Array controllers');
   // faded-out 3-tier parts are unmounted, not left at opacity 0
   await expect(dia).not.toContainText('SAN switch');
   await seek(1);
   await expect(kpi('Nodes')).toHaveText('5');
   await expect(kpi('Consoles')).toHaveText('1');
+  await expect(kpi('Storage controllers')).toHaveText('5');
+  await expect(dia).toContainText('Top-of-rack switches');
+  // Scale-Out vs 3-Tier was folded in here; its old links open this module
+  await page.goto(`${FILE}#/nci/scale`);
+  await expect(page.locator('.mod-head h1')).toHaveText('Legacy vs Nutanix HCI');
+  expect(errors).toEqual([]);
+});
+
+test('Enterprise AI: the Agent Gateway tab routes, falls back, rate-limits and governs tools', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/ai`);
+  await page.getByRole('tablist', { name: 'Enterprise AI topics' }).getByRole('tab', { name: 'Agent Gateway' }).click();
+  await expect.poll(() => page.url()).toContain('tab=gw');
+  const dia = page.locator('.gw-dia');
+  await expect(dia).toContainText('Unified endpoint');
+  await expect(dia).toContainText('MCP Gateway');
+  await page.locator('.playbar input.scrub').evaluate((r: HTMLInputElement) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, r.max);
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(dia).toContainText('customers.update · denied');
   expect(errors).toEqual([]);
 });
 

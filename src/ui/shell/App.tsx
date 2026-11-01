@@ -2,7 +2,7 @@
 // panel, glossary, shortcuts and about dialogs, toasts and global keyboard shortcuts.
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { useRoute, getRoute, replaceParams } from '../../state/route';
+import { useRoute, getRoute, replaceParams, replacePath } from '../../state/route';
 import { KEYS, PRESETS, clearedScenario, scenarioParams } from '../../state/scenario';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
@@ -440,6 +440,12 @@ export function App() {
   useEffect(() => {
     document.title = def ? `${def.content.title} · ${CONFIG.title}` : CONFIG.title;
   }, [def]);
+
+  // An old link (an alias in the registry) is rewritten to its module's own path, so copied links
+  // and going back up use the current route.
+  useEffect(() => {
+    if (def && def.content.path !== route.path) replacePath(def.content.path);
+  }, [def, route.path]);
 
   const state = useRef({ panel, dialog, def });
   state.current = { panel, dialog, def };

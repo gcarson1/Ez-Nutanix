@@ -22,3 +22,4 @@
 @media (max-width: 600px) {
   .diagram-scroll > .hci-dia { min-width: 40rem; }
 }
+.diagram .hci-used { fill: var(--s2); }

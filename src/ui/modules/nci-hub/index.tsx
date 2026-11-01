@@ -7,8 +7,7 @@ import { MODULES } from '../registry';
 // What each tile says. Its title and icon come from the registry, so a tile always matches the
 // module it opens, and the registry's order (basics first) is the hub's order.
 const TILES: Record<string, { s: string; pri: string }> = {
-  'nci/hci': { s: 'Three tiers fold into one node, and nodes join into a cluster.', pri: 'Architecture' },
-  'nci/scale': { s: 'As the cluster grows, every node adds its own storage controller; an array keeps two.', pri: 'Architecture' },
+  'nci/hci': { s: 'Three tiers fold into one node; the cluster then grows node by node, each with its own storage controller.', pri: 'Architecture' },
   'nci/cluster': { s: 'One 4-node cluster: data placement, live migration, planned shutdown, VM failover and drive failure.', pri: 'Storage' },
   'nci/datapath': { s: 'Follow a write or a read from the VM through the controller to its copies.', pri: 'Storage' },
   'nci/capacity': { s: 'Copies, erasure coding and block or rack awareness: what protection costs and how it heals.', pri: 'Storage' },

@@ -1,13 +1,14 @@
-// Enterprise AI (NAI): pick where the endpoint runs and how many model replicas it has, then watch
-// the model load, apps' requests reach one endpoint and be spread over the replicas, and one
-// replica stop while the others carry on. Scheduling lives in src/engine/ai-endpoint.ts; this file
-// only draws it.
+// Enterprise AI (NAI), two tabs. Model endpoint: pick where the endpoint runs and how many model
+// replicas it has, then watch the model load, apps' requests reach one endpoint and be spread over the
+// replicas, and one replica stop while the others carry on (scheduling in src/engine/ai-endpoint.ts).
+// Agent Gateway: see gateway.tsx.
 import { useEnum } from '../../../state/route';
 import { useMemo } from 'preact/hooks';
 import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Choice, Kpis, Show, Tabs, ease, phaseAt, prog } from '../../components/show';
+import GatewayView from './gateway';
 import './style.css';
 
 type Pt = [number, number];
@@ -209,7 +210,7 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
   );
 }
 
-export default function Ai() {
+function EndpointView() {
   const [where, setWhere] = useEnum<Where>('w', 'dc', WHERES);
   const [repS, setRep] = useEnum<'1' | '2' | '4'>('r', '2', ['1', '2', '4']);
   const n = Number(repS);
@@ -284,5 +285,21 @@ export default function Ai() {
         extra={<Illus why="Simplified and compressed: real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. The point is how one endpoint spreads requests over replicas." />}
       />
     </Show>
+  );
+}
+
+type TabId = 'ep' | 'gw';
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'ep', label: 'Model endpoint' },
+  { id: 'gw', label: 'Agent Gateway' },
+];
+
+export default function Ai() {
+  const [tab, setTab] = useEnum<TabId>('tab', 'ep', ['ep', 'gw']);
+  return (
+    <Tabs label="Enterprise AI topics" value={tab} tabs={TABS} onChange={setTab}>
+      {tab === 'ep' && <EndpointView />}
+      {tab === 'gw' && <GatewayView />}
+    </Tabs>
   );
 }

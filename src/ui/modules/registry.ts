@@ -31,8 +31,6 @@ import Migration from './migration';
 import { content as MigrationC } from './migration/content';
 import Edge from './edge';
 import { content as EdgeC } from './edge/content';
-import Scale from './scale';
-import { content as ScaleC } from './scale/content';
 import Central from './central';
 import { content as CentralC } from './central/content';
 import Ncm from './ncm';
@@ -67,7 +65,6 @@ export interface ModuleDef {
 export const MODULES: ModuleDef[] = [
   { content: NciHubC, Component: NciHub, icon: 'layers', parent: '' },
   { content: HciC, Component: Hci, icon: 'combine', parent: 'nci' },
-  { content: ScaleC, Component: Scale, icon: 'plus', parent: 'nci' },
   { content: ClusterLabC, Component: ClusterLab, icon: 'server', parent: 'nci' },
   { content: DatapathC, Component: Datapath, icon: 'zap', parent: 'nci' },
   { content: CapacityC, Component: Capacity, icon: 'shield', parent: 'nci' },
@@ -93,6 +90,10 @@ export const MODULES: ModuleDef[] = [
   { content: PartialC, Component: Partial, icon: 'puzzle', parent: '' },
 ];
 
+/** Old routes that now open another module (Scale-Out vs 3-Tier was folded into Legacy vs Nutanix HCI). */
+const ALIASES: Record<string, string> = { 'nci/scale': 'nci/hci' };
+
 export function findModule(path: string): ModuleDef | undefined {
-  return MODULES.find((m) => m.content.path === path);
+  const p = ALIASES[path] ?? path;
+  return MODULES.find((m) => m.content.path === p);
 }

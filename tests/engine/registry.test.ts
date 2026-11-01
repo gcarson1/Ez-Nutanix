@@ -14,6 +14,10 @@ describe('module registry', () => {
     for (const m of MODULES) if (m.parent) expect(findModule(m.parent), m.content.path).toBeDefined();
   });
 
+  it('opens old Scale-Out links in the module that absorbed it', () => {
+    expect(findModule('nci/scale')?.content.path).toBe('nci/hci');
+  });
+
   it('links presenter "open next" entries only to registered modules', () => {
     for (const m of MODULES) for (const p of m.content.then ?? []) expect(findModule(p), `${m.content.path} → ${p}`).toBeDefined();
   });

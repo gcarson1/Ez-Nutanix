@@ -42,7 +42,7 @@ export const content: ModuleContent = {
     'Start on the “Nutanix with external storage” tab and let the loop run: the array stays, compute nodes connect and each VM disk becomes its own volume.',
     'Point at Works with: three arrays are generally available and NetApp ONTAP is announced.',
     'Open the “ESXi on Nutanix” tab, play Stay on ESXi, then set Path to Convert to AHV later.',
-    'Then open Migration with Nutanix Move for how VMs get across, Scale-Out vs 3-Tier for how the full stack scales or Disaster Recovery for failover to a full Nutanix cluster.',
+    'Then open Migration with Nutanix Move for how VMs get across, Legacy vs Nutanix HCI for how the full stack scales or Disaster Recovery for failover to a full Nutanix cluster.',
   ],
-  then: ['nci/move', 'nci/scale', 'nci/dr'],
+  then: ['nci/move', 'nci/hci', 'nci/dr'],
 };

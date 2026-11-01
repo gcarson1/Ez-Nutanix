@@ -4,14 +4,14 @@ export const content: ModuleContent = {
   path: 'ai',
   title: 'Enterprise AI',
   tag: 'Platform services',
-  summary: 'Nutanix Enterprise AI (NAI) runs large language model (LLM) inference endpoints on Kubernetes you control, in your data center or public cloud, with your choice of model and secure API access for apps and agents.',
+  summary: 'Nutanix Enterprise AI (NAI) runs large language model (LLM) inference endpoints on Kubernetes you control, in your data center or public cloud, and its Agent Gateway governs how apps and agents reach models and tools.',
   priority: 'P2',
   talk: [
     'Most teams do not want to send sensitive prompts to a shared public service. NAI lets them run models on infrastructure they control.',
     'Pick where it runs: your data center (NKP on Nutanix), public cloud (EKS, AKS or GKE in your own account) or an air-gapped site, which means NKP in your data center with no internet and no Hugging Face.',
-    'Each replica loads its own copy of the model onto its GPUs. Apps and agents call one endpoint address with an API token; role-based access control decides who creates endpoints and tokens, with GPU and model monitoring built in.',
+    'Each replica loads its own copy of the model onto its GPUs. Apps and agents call one endpoint address with an API token; role-based access control decides who creates endpoints and tokens, with GPU and model monitoring built in. A supported model can span several GPUs; spanning GPU nodes is a tech preview.',
     'The endpoint spreads requests over the replicas. With one replica, requests queue in busy moments, and a stop for an update or a fault means a pause. With two or more, the others keep answering.',
-    'NAI 2.8 adds an Agent Gateway in front of endpoints, with token quotas per app and a Model Context Protocol (MCP) Gateway for governed tool access. A supported model can span several GPUs; spanning GPU nodes is a tech preview.',
+    'Agent Gateway, licensed separately, gives apps one address for every model: your NAI endpoints, a remote NAI cluster or an external provider, with fallback and per-client rate limits. Its Model Context Protocol (MCP) Gateway adds API keys, limits tool actions and logs every call.',
     'Naming: NAI is the product, now at 2.8. Nutanix Agentic AI is the wider full-stack solution around it, and GPT-in-a-Box is the earlier name for the bundle NAI was part of.',
   ],
   numbers: [
@@ -19,7 +19,8 @@ export const content: ModuleContent = {
     { k: 'Runs on', v: 'NKP or other CNCF Kubernetes; tested on EKS, AKS and GKE' },
     { k: 'Model sources', v: 'NVIDIA Inference Microservices (NIM), Hugging Face, your own files; a catalog of pre-validated models. Air-gapped sites use air-gapped NIM or your own files' },
     { k: 'Licensing', v: 'By GPU memory (vCPUs on clusters without GPUs), not tokens' },
-    { k: 'Also in NAI 2.8', v: 'Agent Gateway (licensed separately) with MCP Gateway, multi-GPU serving (multi-node in tech preview), batch inference, speculative decoding, LoRA fine-tuning (models under 8B), custom IAM roles, air-gapped NIM' },
+    { k: 'Agent Gateway', v: 'Licensed separately · one unified endpoint for NAI endpoints, remote NAI clusters and external provider APIs · fallback · token rate limits, global or per client · MCP Gateway (GA in 2.8) with API keys added at the gateway, tool permissions and audit logs' }, // AGW-1 to AGW-5
+    { k: 'Also in NAI 2.8', v: 'Multi-GPU serving (multi-node in tech preview), batch inference, speculative decoding, LoRA fine-tuning (models under 8B), custom IAM roles, air-gapped NIM' },
   ],
   qa: [
     {
@@ -39,6 +40,7 @@ export const content: ModuleContent = {
     'Under Where it runs, keep Your data center and set Model replicas to 2: requests spread over both, then one stops and the other keeps answering.',
     'Set Model replicas to 1 to show the queue, and the pause when the only replica stops.',
     'Pick Air-gapped site under Where it runs: the model comes in as files, with no internet connection.',
+    'Open the Agent Gateway tab: one address for every model, a fallback when the NAI endpoint fails, the looping coding agent capped, then a tool write blocked and logged.',
     'Then open Kubernetes Platform for what the endpoint runs on.',
   ],
   then: ['nkp'],

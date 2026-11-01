@@ -20,7 +20,7 @@ export const content: ModuleContent = {
   ],
   qa: [
     { q: 'Do we still need a storage array?', a: 'Not in the standard design: storage comes from the drives inside each node, pooled by the CVMs. To keep an array you already own, see “Don’t want the full stack?”, where compute-only nodes use Everpure FlashArray, Dell PowerStore or Dell PowerFlex.' },
-    { q: 'What does the CVM cost us in resources?', a: 'Each node reserves CPU and memory for its CVM. That is the price of having the storage controller distributed; size for it from the start (see Scale-Out vs 3-Tier).' },
+    { q: 'What does the CVM cost us in resources?', a: 'Each node reserves CPU and memory for its CVM. That is the price of having the storage controller distributed; size for it from the start (see Legacy vs Nutanix HCI).' },
     { q: 'Can we keep VMware?', a: 'Yes, Nutanix clusters also run ESXi. AHV is included with the platform and some features, such as Flow, require it.' },
   ],
   next: [
