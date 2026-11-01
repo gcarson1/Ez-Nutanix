@@ -197,7 +197,7 @@ export function evaluate(pkt: Packet, vms: FlowVm[], pol: Policies): Verdict {
     hits,
     at: dst.host,
     atVm: dst.id,
-    reason: wouldDrop ? 'Allowed, but a policy in Monitoring logged that it would block this flow.' : hits[0].kind === 'none' ? 'No policy covers these VMs, so traffic flows freely.' : 'Allowed by policy.',
+    reason: wouldDrop ? 'Allowed, but a policy in Monitor mode logged that it would block this flow.' : hits[0].kind === 'none' ? 'No policy covers these VMs, so traffic flows freely.' : 'Allowed by policy.',
   };
 }
 

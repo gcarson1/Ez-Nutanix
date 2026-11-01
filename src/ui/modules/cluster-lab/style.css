@@ -6,9 +6,7 @@
 .dl-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
 
 /* one line saying what is happening now; fixed height so the picture never jumps */
-.dl-cap { display: flex; gap: var(--sp-3); align-items: flex-start; margin: var(--sp-6) 0 var(--sp-2); min-height: 3.25rem; }
-.dl-cap .dl-n { flex: none; margin-top: 0.1rem; padding: var(--sp-1) var(--sp-1h); border: 1px solid var(--ink-line); color: var(--ink-fg); font: 600 var(--fs-13) / 1 var(--mono); font-variant-numeric: tabular-nums; }
-.dl-cap p { font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
+.dl-cap { margin: var(--sp-4) 0 var(--sp-2); min-height: 3.25rem; font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
 
 /* static explanation pane */
 .dl-rail .side-sec h2 { font-size: var(--fs-20); margin: var(--sp-2) 0 var(--sp-1); }
@@ -96,5 +94,5 @@
 }
 @media (max-width: 900px) {
   .dl-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
-  .dl-cap p { font-size: var(--fs-16); }
+  .dl-cap { font-size: var(--fs-16); }
 }

@@ -5,8 +5,8 @@
 import { useEnum } from '../../../state/route';
 import { lastCaptured, patchDowntime, planRecovery, snapshots, type DbServer, type TmPolicy } from '../../../engine/ndb';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt, prog, Tabs } from '../../components/show';
 import './style.css';
 
 const W = 960;
@@ -42,17 +42,20 @@ const poly = (pts: [number, number][]) => pts.map((p) => p.join(',')).join(' ');
 const DAY = 1440;
 const WINDOW = 7 * DAY;
 const NOW = WINDOW - 12;
-const MISTAKE = 5 * DAY + 14 * 60 + 38; // Sat 14:38
+const MISTAKE = 5 * DAY + 14 * 60 + 38; // Saturday 2:38 p.m.
 const TARGET = MISTAKE - 1;
 const POLICY: TmPolicy = { windowMin: WINDOW, snapEveryMin: DAY, snapOffsetMin: 60, logEveryMin: 30 };
 const PLAN = planRecovery(POLICY, NOW, TARGET);
 const BASE = PLAN.snapshot ?? 0;
 const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const fmtT = (m: number) => {
-  const mm = Math.round(m);
-  return `${DOW[Math.floor(mm / DAY) % 7]} ${String(Math.floor((mm % DAY) / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
+/** Time of day, 12-hour: 2:37 p.m. */
+const clockOf = (m: number) => {
+  const mm = Math.round(m) % DAY;
+  const h = Math.floor(mm / 60);
+  return `${h % 12 || 12}:${String(mm % 60).padStart(2, '0')}\u00a0${h < 12 ? 'a.m.' : 'p.m.'}`;
 };
-const fmtSpan = (m: number) => `${Math.floor(m / 60)} h ${Math.round(m % 60)} min`;
+const fmtT = (m: number) => `${DOW[Math.floor(Math.round(m) / DAY) % 7]}\u00a0${clockOf(m)}`;
+const fmtSpan = (m: number) => `${Math.floor(m / 60)}\u00a0h\u00a0${Math.round(m % 60)}\u00a0min`;
 const SWEEP: [number, number] = [0.2, 4.6];
 const T_MISTAKE = SWEEP[0] + ((SWEEP[1] - SWEEP[0]) * MISTAKE) / NOW;
 const TM_PH = [0, T_MISTAKE, 4.6, 6, 8.8];
@@ -60,13 +63,13 @@ const TM_END = 12.4;
 
 function tmLines(clone: boolean): Line[] {
   return [
-      { tone: 'ink', k: 'Protecting', text: 'Time Machine takes a snapshot of the database every day and copies its transaction log every 30 minutes, so any moment in the window can be rebuilt.' },
-      { tone: 'bad', k: 'A mistake', text: 'Saturday 14:38: someone drops a table. Time Machine keeps capturing, so the moment just before it is still there.' },
-      { tone: 'flow', k: 'Pick a moment', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window up to the last captured log.' },
-      { tone: 'flow', k: 'Rebuild it', text: `NDB starts from the nearest earlier snapshot (${fmtT(BASE)}) and replays ${fmtSpan(TARGET - BASE)} of transaction log on top of it, up to ${fmtT(TARGET)}.` },
+      { tone: 'ink', k: 'Time Machine protects', text: 'Time Machine takes a snapshot of the database every day and copies its transaction log every 30 minutes, so any moment in the window can be rebuilt.' },
+      { tone: 'bad', k: 'A table is dropped', text: `Saturday at ${clockOf(MISTAKE)}, someone drops a table. Time Machine keeps capturing, so the moment just before it is still there.` },
+      { tone: 'flow', k: 'Point in time chosen', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window up to the last captured log.' },
+      { tone: 'flow', k: 'Database rebuilt', text: `To get to ${fmtT(TARGET)}, NDB starts from the nearest earlier snapshot (${fmtT(BASE)}) and replays ${fmtSpan(TARGET - BASE)} of transaction log on top of it.` },
       clone
-        ? { tone: 'ok', k: 'Clone ready', text: 'A copy of the database at 14:37 comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back.' }
-        : { tone: 'warn', k: 'Restored', text: 'Production is rolled back to 14:37 and the table is back. Anything written after 14:37 is gone, which is why many teams clone first.' },
+        ? { tone: 'ok', k: 'Clone ready', text: `A copy of the database at ${clockOf(TARGET)} comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back.` }
+        : { tone: 'warn', k: 'Production rolled back', text: `Production is rolled back to ${clockOf(TARGET)} and the table is back. Anything written after ${clockOf(TARGET)} is gone, which is why many teams clone first.` },
   ];
 }
 
@@ -91,7 +94,7 @@ function TimeMachine() {
   const line = lines[ph];
 
   const prodStatus =
-    !clone && ph >= 4 ? { w: '✓ rolled back to Sat 14:37 · table is back', c: 'ok' } : !clone && ph === 3 ? { w: 'being rolled back…', c: 'warn' } : broken ? { w: 'running · a table is missing', c: 'bad' } : { w: '✓ running', c: 'ok' };
+    !clone && ph >= 4 ? { w: `✓ rolled back to ${fmtT(TARGET)} · table is back`, c: 'ok' } : !clone && ph === 3 ? { w: 'being rolled back…', c: 'warn' } : broken ? { w: 'running · a table is missing', c: 'bad' } : { w: '✓ running', c: 'ok' };
 
   return (
     <Show
@@ -115,7 +118,7 @@ function TimeMachine() {
             items={[
               { k: 'Recovered to', v: fmtT(TARGET), sub: 'one minute before the mistake' },
               { k: 'Starting snapshot', v: fmtT(BASE), sub: `plus ${fmtSpan(TARGET - BASE)} of log` },
-              clone ? { k: 'Production', v: 'Keeps running', tone: 'ok', sub: 'copy the table back' } : { k: 'Production', v: 'Rolled back', tone: 'warn', sub: 'changes after 14:37 are lost' },
+              clone ? { k: 'Production', v: 'Keeps running', tone: 'ok', sub: 'copy the table back' } : { k: 'Production', v: 'Rolled back', tone: 'warn', sub: `changes after ${clockOf(TARGET)} are lost` },
             ]}
           />
         </>
@@ -153,7 +156,7 @@ function TimeMachine() {
           {broken && (
             <g>
               <line x1={sx(MISTAKE)} x2={sx(MISTAKE)} y1={34} y2={176} class="bad-stroke" stroke-width={2} />
-              <text x={sx(MISTAKE) + 6} y={24} class="bad-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+              <text x={sx(MISTAKE) - 6} y={24} text-anchor="end" class="bad-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
                 ✕ table dropped {fmtT(MISTAKE)}
               </text>
             </g>
@@ -191,17 +194,13 @@ function TimeMachine() {
           )}
         </svg>
       </div>
-      <div class="legend">
-        <span>
-          <i class="sw" style={{ background: 'var(--ink)' }} />
-          Snapshot used, and log replayed on top of it
-        </span>
-        <span>
-          <i class="sw" style={{ background: 'var(--flow)', opacity: 0.5 }} />
-          Transaction log kept by Time Machine
-        </span>
-      </div>
-      <PlayBar clock={clock} label="Time Machine animation" fmt={() => line.k} extra={<Illus why="Schedule and retention are examples; you set your own. Snapshots are application-consistent; logs are captured continuously and copied into Time Machine at the catch-up interval, which bounds how close to now you can recover. Recovery options vary by engine." />} />
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Snapshot used, and log replayed on top of it' },
+          { color: 'color-mix(in srgb, var(--flow) 50%, transparent)', label: 'Transaction log kept by Time Machine' },
+        ]}
+      />
+      <PlayBar clock={clock} label="Time Machine animation" extra={<Illus why="Schedule and retention are examples; you set your own. Snapshots are application-consistent; logs are captured continuously and copied into Time Machine at the catch-up interval, which bounds how close to now you can recover. Recovery options vary by engine." />} />
     </Show>
   );
 }
@@ -219,10 +218,10 @@ const PV_END = 10;
 function pvLines(ha: boolean): Line[] {
   return [
       { tone: 'ink', k: 'One request', text: 'A developer or DBA asks for a database: engine, size and protection level. Everything else comes from profiles the DBA defined once.' },
-      { tone: 'flow', k: 'Build the servers', text: ha ? 'NDB creates the database server VMs for a high-availability cluster from the software and compute profiles.' : 'NDB creates the database server VM from the software and compute profiles.' },
-      { tone: 'flow', k: 'Create the database', text: ha ? 'It creates the database on the primary and sets up standby copies that follow every change, so one server can fail without an outage.' : 'It creates the database and applies the database settings, the same way every time.' },
-      { tone: 'ok', k: 'Protect it', text: 'Time Machine takes the first snapshot, so the database is protected from its first minute.' },
-      { tone: 'ok', k: 'Ready', text: 'The connection details go back to whoever asked. No tickets passed between the DBA, storage and VM teams.' },
+      { tone: 'flow', k: 'Servers built', text: ha ? 'NDB creates the database server VMs for a high-availability cluster from the software and compute profiles.' : 'NDB creates the database server VM from the software and compute profiles.' },
+      { tone: 'flow', k: 'Database created', text: ha ? 'It creates the database on the primary and sets up standby copies that follow every change, so one server can fail without an outage.' : 'It creates the database and applies the database settings, the same way every time.' },
+      { tone: 'ok', k: 'First snapshot taken', text: 'Time Machine takes the first snapshot, so the database is protected from its first minute.' },
+      { tone: 'ok', k: 'Database ready', text: 'The connection details go back to whoever asked. No tickets passed between the DBA, storage and VM teams.' },
   ];
 }
 
@@ -370,10 +369,16 @@ function Provisioning() {
           {back > 0 && back < 1 && <circle cx={along(BACK, ease(back))[0]} cy={along(BACK, ease(back))[1]} r={6} class="ndb-dot ok" />}
         </svg>
       </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Request and profile settings' },
+          ...(ha ? [{ color: 'var(--flow)', label: 'Standby follows every change' }] : []),
+          { color: 'var(--ok)', dashed: true, label: 'Connection details back to the requester' },
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Provisioning animation"
-        fmt={() => line.k}
         extra={<Illus why="Durations are compressed. NDB 2.11 supports Oracle, SQL Server, PostgreSQL, EDB Postgres, MySQL, MariaDB and MongoDB; high-availability layouts differ by engine (for example SQL Server availability groups, PostgreSQL HA clusters, MongoDB replica sets) and are simplified here." />}
       />
     </Show>
@@ -403,10 +408,10 @@ function patchWindows(db: DbServer): [number, number][] {
 }
 
 const PT_LINES: Line[] = [
-  { tone: 'ink', k: 'New profile version', text: 'The DBA publishes a new version of the software profile, with OS and database patches. Every database built from it shows a patch is due.' },
-  { tone: 'flow', k: 'Patching', text: 'One operation patches every database built from that profile, inside a maintenance window. HA databases are patched one member at a time; single instances restart briefly.' },
-  { tone: 'flow', k: 'Role switch', text: 'On the HA databases the primary role moves to a member that is already patched, so apps keep running, then the old primary is patched.' },
-  { tone: 'ok', k: 'All patched', text: 'Every database runs the new version, built and patched the same way. No one-off servers to patch by hand.' },
+  { tone: 'ink', k: 'New version published', text: 'The DBA publishes a new version of the software profile, with OS and database patches. Every database built from it shows a patch is due.' },
+  { tone: 'flow', k: 'Patching starts', text: 'One operation patches every database built from that profile, inside a maintenance window. High availability (HA) databases are patched one member at a time; single instances restart briefly.' },
+  { tone: 'flow', k: 'Primary role moves', text: 'On the HA databases the primary role moves to a member that is already patched, so apps keep running, then the old primary is patched.' },
+  { tone: 'ok', k: 'All databases patched', text: 'Every database runs the new version, built and patched the same way. No one-off servers to patch by hand.' },
 ];
 
 function Patching() {
@@ -501,7 +506,14 @@ function Patching() {
           })}
         </svg>
       </div>
-      <PlayBar clock={clock} label="Patching animation" fmt={() => line.k} extra={<Illus why="Simplified: real patching runs pre-checks and follows the maintenance window you schedule. Patching behavior differs by engine and topology; check the NDB documentation." />} />
+      <Legend
+        items={[
+          { color: 'var(--warn)', label: 'On v1, patch due' },
+          { color: 'var(--flow)', label: 'Being patched' },
+          { color: 'var(--ok)', label: 'On v2' },
+        ]}
+      />
+      <PlayBar clock={clock} label="Patching animation" extra={<Illus why="Simplified: real patching runs pre-checks and follows the maintenance window you schedule. Patching behavior differs by engine and topology; check the NDB documentation." />} />
     </Show>
   );
 }
@@ -515,17 +527,10 @@ export default function Ndb() {
     ['patch', 'Patching'],
   ];
   return (
-    <>
-      <div class="tabs" role="tablist" aria-label="Database Service">
-        {tabs.map(([id, l]) => (
-          <button type="button" role="tab" key={id} aria-selected={tab === id} onClick={() => setTab(id)}>
-            {l}
-          </button>
-        ))}
-      </div>
+    <Tabs label="Database Service" value={tab} tabs={tabs.map(([id, label]) => ({ id, label }))} onChange={setTab}>
       {tab === 'tm' && <TimeMachine />}
       {tab === 'prov' && <Provisioning />}
       {tab === 'patch' && <Patching />}
-    </>
+    </Tabs>
   );
 }

@@ -1,23 +1,27 @@
-// NCI hub: a "what's in a node" cutaway, centered, then the sub-modules.
+// NCI hub: the sub-modules first, then a "what's in a node" cutaway for reference.
 import { Icon } from '../../components/Icon';
 import './style.css';
 import { go } from '../../shell/nav';
+import { MODULES } from '../registry';
 
-const SUBS = [
-  { path: 'nci/cluster', icon: 'server', t: 'Cluster & DSF Lab', s: 'One 4-node cluster: data placement, live migration, planned shutdown, VM failover and drive failure.', pri: 'Lab' },
-  { path: 'nci/datapath', icon: 'zap', t: 'Data Path', s: 'Follow a write or a read from the VM through the controller to its copies.', pri: 'Write & read' },
-  { path: 'nci/capacity', icon: 'shield', t: 'Protection & Capacity', s: 'RF2 or RF3: copies land on different nodes and heal after a failure.', pri: 'Sizing' },
-  { path: 'nci/failures', icon: 'power', t: 'Failure Gauntlet', s: 'Pick a failure, from one drive to two nodes at once, and watch the cluster heal.', pri: 'Resilience' },
-  { path: 'nci/lcm', icon: 'upgrade', t: 'LCM Rolling Upgrade', s: 'Updates one node at a time while every VM keeps running.', pri: 'Day 2' },
-  { path: 'nci/network', icon: 'net', t: 'AHV Networking', s: 'How a node’s bonded uplinks carry traffic, and what happens when a link fails.', pri: 'Networking' },
-  { path: 'nci/flow', icon: 'lock', t: 'Flow', s: 'Policies that allow or block traffic between apps, and quarantine.', pri: 'Security' },
-  { path: 'nci/dr', icon: 'globe', t: 'Disaster Recovery', s: 'Async, NearSync, Sync or Metro Availability between sites, and a failover.', pri: 'Protection' },
-  { path: 'nci/snapshots', icon: 'clone', t: 'Snapshots & Clones', s: 'A snapshot copies the map, not the data; clones share blocks until they change.', pri: 'Data services' },
-  { path: 'nci/security', icon: 'shield', t: 'Data Security', s: 'Encryption at rest and its keys, against a stolen drive or node.', pri: 'Security' },
-  { path: 'nci/move', icon: 'move', t: 'Migration with Move', s: 'VMs copied over, kept in sync, then cut over with minimal downtime.', pri: 'Adoption' },
-  { path: 'nci/edge', icon: 'edge', t: 'Edge & ROBO', s: '1-, 2- and 3-node sites, and what each survives.', pri: 'Edge' },
-  { path: 'nci/scale', icon: 'plus', t: 'Scale-out vs 3-tier', s: 'Each node adds compute, storage and its own controller.', pri: 'Architecture' },
-];
+// What each tile says. Its title and icon come from the registry, so a tile always matches the
+// module it opens, and the registry's order (basics first) is the hub's order.
+const TILES: Record<string, { s: string; pri: string }> = {
+  'nci/hci': { s: 'Three tiers fold into one node, and nodes join into a cluster.', pri: 'Architecture' },
+  'nci/scale': { s: 'As the cluster grows, every node adds its own storage controller; an array keeps two.', pri: 'Architecture' },
+  'nci/cluster': { s: 'One 4-node cluster: data placement, live migration, planned shutdown, VM failover and drive failure.', pri: 'Storage' },
+  'nci/datapath': { s: 'Follow a write or a read from the VM through the controller to its copies.', pri: 'Storage' },
+  'nci/capacity': { s: 'Copies, erasure coding and block or rack awareness: what protection costs and how it heals.', pri: 'Storage' },
+  'nci/snapshots': { s: 'A snapshot copies the map, not the data; clones share blocks until they change.', pri: 'Storage' },
+  'nci/failures': { s: 'Pick a failure, from one drive to two nodes at once, and watch the cluster heal.', pri: 'Resilience' },
+  'nci/lcm': { s: 'Updates one node at a time while workloads keep running.', pri: 'Operations' },
+  'nci/network': { s: 'How a node’s bonded uplinks carry traffic, and what happens when a link fails.', pri: 'Networking' },
+  'nci/flow': { s: 'Rules that follow each VM by its labels, and private networks (VPCs) built in software.', pri: 'Microsegmentation' },
+  'nci/security': { s: 'Encryption at rest and its keys, against a stolen drive or node.', pri: 'Encryption' },
+  'nci/dr': { s: 'Async, NearSync / Sync or Metro Availability between sites, and a failover.', pri: 'Protection' },
+  'nci/move': { s: 'VMs copied over, kept in sync, then cut over with minimal downtime.', pri: 'Adoption' },
+  'nci/edge': { s: '1-, 2- and 3-node sites, and what each survives.', pri: 'Edge' },
+};
 
 function NodeCutaway() {
   // One node: hypervisor hosting user VMs and the CVM; CVM owns the local drives (passthrough).
@@ -80,6 +84,19 @@ function NodeCutaway() {
 export default function NciHub() {
   return (
     <>
+      <h2 class="sec-h">Explore</h2>
+      <div class="subgrid">
+        {MODULES.filter((m) => m.parent === 'nci').map(({ content: c, icon }) => (
+          <button type="button" class="subtile" key={c.path} data-path={c.path} onClick={(e) => go(c.path, undefined, e.currentTarget as HTMLElement)}>
+            <span class="t">
+              <Icon name={icon} />
+              {c.title}
+            </span>
+            <span class="s">{TILES[c.path]?.s ?? c.summary}</span>
+            {TILES[c.path] && <span class="pri">{TILES[c.path].pri}</span>}
+          </button>
+        ))}
+      </div>
       <section class="hub-node" aria-labelledby="hub-node-h">
         <h2 class="sec-h" id="hub-node-h">
           What’s in a node
@@ -87,19 +104,6 @@ export default function NciHub() {
         <NodeCutaway />
         <p class="field-note">Every node runs the hypervisor, the user VMs and one CVM. The CVM talks to the node’s drives directly, and all CVMs together form the cluster’s storage controller.</p>
       </section>
-      <h2 class="sec-h">Explore</h2>
-      <div class="subgrid">
-        {SUBS.map((s) => (
-          <button type="button" class="subtile" key={s.path} onClick={(e) => go(s.path, undefined, e.currentTarget as HTMLElement)}>
-            <span class="t">
-              <Icon name={s.icon} />
-              {s.t}
-            </span>
-            <span class="s">{s.s}</span>
-            <span class="pri">{s.pri}</span>
-          </button>
-        ))}
-      </div>
     </>
   );
 }

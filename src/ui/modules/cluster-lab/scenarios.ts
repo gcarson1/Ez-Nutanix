@@ -96,6 +96,8 @@ export interface Frame {
 
 export interface Step {
   at: number;
+  /** Short event phrase for the step tracker and the caption heading. */
+  label: string;
   text: string;
 }
 
@@ -543,10 +545,10 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     title: 'Data placement',
     lede: 'How the cluster stores data so that any one node or drive can fail.',
     steps: [
-      { at: 0, text: 'The drives in all four nodes form one storage pool: the Distributed Storage Fabric (DSF).' },
-      { at: 3.5, text: 'VM1 writes. The Controller VM (CVM) on its node keeps one copy on Node 1’s own drives.' },
-      { at: 7, text: 'It sends a second copy to another node. The write is confirmed only after both copies are saved.' },
-      { at: 10.5, text: 'Every VM works this way, so second copies end up spread across all the other nodes.' },
+      { at: 0, label: 'Drives form a pool', text: 'The drives in all four nodes form one storage pool: the Distributed Storage Fabric (DSF).' },
+      { at: 3.5, label: 'First copy saved', text: 'VM1 writes. The Controller VM (CVM) on its node keeps one copy on Node 1’s own drives.' },
+      { at: 7, label: 'Second copy sent', text: 'It sends a second copy to another node. The write is confirmed only after both copies are saved.' },
+      { at: 10.5, label: 'Copies spread out', text: 'Every VM works this way, so second copies end up spread across all the other nodes.' },
     ],
     why: 'There is no separate storage array to buy or outgrow. Each node adds drives and a CVM, and if any one node or drive fails, every piece of data still has a copy.',
     legend: [
@@ -564,11 +566,11 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     title: 'Live migration',
     lede: 'Move a running VM to another node and watch its data follow.',
     steps: [
-      { at: 0, text: 'VM2 runs on Node 1 and reads its data from Node 1’s own drives.' },
-      { at: 3.5, text: 'VM2 live-migrates to Node 2. It keeps running the whole time.' },
-      { at: 6.5, text: 'At first, its reads go over the network to the node that holds its data.' },
-      { at: 10, text: 'As VM2 reads, that data is copied to Node 2. New writes land there right away.' },
-      { at: 14, text: 'VM2 reads locally again. Its data kept two copies the whole time.' },
+      { at: 0, label: 'VM2 runs on Node 1', text: 'VM2 runs on Node 1 and reads its data from Node 1’s own drives.' },
+      { at: 3.5, label: 'VM2 moves to Node 2', text: 'VM2 live-migrates to Node 2. It keeps running the whole time.' },
+      { at: 6.5, label: 'Reads cross the network', text: 'At first, its reads go over the network to the node that holds its data.' },
+      { at: 10, label: 'Data follows VM2', text: 'As VM2 reads, that data is copied to Node 2. New writes land there right away.' },
+      { at: 14, label: 'Reads local again', text: 'VM2 reads locally again. Its data kept two copies the whole time.' },
     ],
     why: 'Keeping a VM’s data on the node where it runs (data locality) keeps reads fast and off the network, even after VMs move for maintenance or balancing.',
     legend: [
@@ -587,13 +589,13 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     title: 'Planned shutdown',
     lede: 'Take a node down for maintenance without stopping any VM.',
     steps: [
-      { at: 0, text: 'Node 3 needs maintenance, such as a firmware or hypervisor upgrade.' },
-      { at: 2.5, text: 'Its VMs live-migrate to the other nodes. They keep running: no downtime.' },
-      { at: 7, text: 'Node 3’s CVM shuts down. Data with a copy on Node 3 is read from its other copy.' },
-      { at: 11, text: 'Node 3 comes back and catches up on changes made while it was away.' },
-      { at: 14.5, text: 'Its VMs move back, and every piece of data has two copies again.' },
+      { at: 0, label: 'Maintenance starts', text: 'Node 3 needs maintenance, such as a firmware or hypervisor upgrade.' },
+      { at: 2.5, label: 'VMs move off Node 3', text: 'Its VMs live-migrate to the other nodes. They keep running: no downtime.' },
+      { at: 7, label: 'Node 3 goes offline', text: 'Node 3’s CVM shuts down. Data with a copy on Node 3 is read from its other copy.' },
+      { at: 11, label: 'Node 3 returns', text: 'Node 3 comes back and catches up on changes made while it was away.' },
+      { at: 14.5, label: 'VMs move back', text: 'Its VMs move back, and every piece of data has two copies again.' },
     ],
-    why: 'Upgrades and hardware fixes don’t need VM downtime. Life Cycle Manager (LCM) runs this sequence for each node in turn.',
+    why: 'Upgrades and hardware fixes do not need VM downtime. Life Cycle Manager (LCM) runs this sequence for each node in turn.',
     legend: [
       { look: 'copy', label: 'Copy of a piece of data' },
       { look: 'single', label: 'Only one copy online' },
@@ -610,11 +612,11 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     title: 'VM failover',
     lede: 'A node loses power. Its VMs restart on other nodes and the cluster heals itself.',
     steps: [
-      { at: 0, text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
-      { at: 2, text: 'Node 2 loses power. Its 4 VMs stop and the copies on its drives go offline.' },
-      { at: 5.5, text: 'High availability (HA) restarts those VMs on other nodes with free memory, typically within about two minutes.' },
-      { at: 10, text: 'At the same time, every surviving node re-creates the missing copies, in parallel.' },
-      { at: 15.5, text: 'Every piece of data has two copies again, without anyone stepping in.' },
+      { at: 0, label: 'Cluster healthy', text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
+      { at: 2, label: 'Node 2 fails', text: 'Node 2 loses power. Its 4 VMs stop and the copies on its drives go offline.' },
+      { at: 5.5, label: 'VMs restart', text: 'High availability (HA) restarts those VMs on other nodes with free memory, typically within about two minutes.' },
+      { at: 10, label: 'Copies re-created', text: 'At the same time, every surviving node re-creates the missing copies, in parallel.' },
+      { at: 15.5, label: 'Fully protected', text: 'Every piece of data has two copies again, without anyone stepping in.' },
     ],
     why: 'Recovery is automatic. VMs are typically back in minutes, and full protection returns on its own, before anyone repairs the failed node.',
     legend: [
@@ -633,11 +635,11 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     title: 'Drive failure',
     lede: 'A drive dies. Every node helps rebuild its data from the other copies.',
     steps: [
-      { at: 0, text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
-      { at: 2, text: 'Drive 2 in Node 1 fails. The copies it held are gone.' },
-      { at: 3.6, text: 'Each of those pieces still has its other copy on another node, so VMs keep running.' },
-      { at: 5.5, text: 'Every node helps re-create the missing copies from the surviving ones, in parallel.' },
-      { at: 11, text: 'Two copies of everything again. Replace the drive whenever it suits you.' },
+      { at: 0, label: 'Cluster healthy', text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
+      { at: 2, label: 'A drive fails', text: 'Drive 2 in Node 1 fails. The copies it held are gone.' },
+      { at: 3.6, label: 'VMs keep running', text: 'Each of those pieces still has its other copy on another node, so VMs keep running.' },
+      { at: 5.5, label: 'Copies re-created', text: 'Every node helps re-create the missing copies from the surviving ones, in parallel.' },
+      { at: 11, label: 'Fully protected', text: 'Two copies of everything again. Replace the drive whenever it suits you.' },
     ],
     why: 'Rebuild work is shared by every node instead of funneled into one spare drive, so no single drive or node becomes the bottleneck.',
     legend: [

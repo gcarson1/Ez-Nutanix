@@ -31,6 +31,22 @@ function useTimeline(size: Size, ev: EventId) {
   }, [size, ev]);
 }
 
+/** Which legend marks a scenario draws at some point, so the legend lists only those. */
+function marksUsed(nodes: number, steps: Step[]) {
+  const m = { stopped: false, restarted: false, healed: false };
+  steps.forEach((s, i) => {
+    const prev = steps[Math.max(0, i - 1)];
+    if (s.heal?.length) m.healed = true;
+    for (const v of placeVms(nodes, s)) {
+      if (v.off) m.stopped = true;
+      else if (v.moved && !s.planned && !prev.planned && !s.extra) m.restarted = true;
+    }
+  });
+  return m;
+}
+
+const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
 export default function Edge() {
   const [size, setSize] = useEnum<Size>('sz', '2', SIZE_IDS);
   const [evRaw, setEv] = useEnum<EventId>('ev', 'node', EVENT_IDS);
@@ -52,6 +68,9 @@ export default function Edge() {
   const serving = inCluster - (step.down?.length ?? 0) - (step.cut?.length ?? 0);
   const cell = MATRIX.find((r) => r.ev === ev)!.cells[size];
   const tone = (n: number, of: number): ChipTone => (n === of ? 'ok' : n === 0 ? 'bad' : 'warn');
+  const marks = marksUsed(nodes, tl.steps);
+  const off = EVENTS.filter((e) => !applies(size, e.id));
+  const why = off.length ? off.map((e) => `“${e.label}” is unavailable: ${lowerFirst(MATRIX.find((r) => r.ev === e.id)!.cells[size].text)}.`).join(' ') : null;
 
   return (
     <>
@@ -72,6 +91,7 @@ export default function Edge() {
               value={ev}
               onChange={setEv}
               options={EVENTS.map((e) => ({ value: e.id, label: e.label, disabled: !applies(size, e.id), title: applies(size, e.id) ? e.tip : MATRIX.find((r) => r.ev === e.id)?.cells[size].text }))}
+              why={why}
             />
           </>
         }
@@ -98,12 +118,16 @@ export default function Edge() {
         <Legend
           items={[
             { color: 'var(--ink)', label: 'VM running' },
-            { color: 'var(--bad)', label: 'VM stopped' },
-            { color: 'var(--warn)', label: 'VM restarted by HA', dashed: true },
-            { color: 'var(--flow)', label: 'Copies being re-created' },
+            ...(marks.stopped ? [{ color: 'var(--bad)', label: 'VM stopped' }] : []),
+            ...(marks.restarted ? [{ color: 'var(--warn)', label: 'VM restarted by HA', dashed: true }] : []),
+            ...(marks.healed ? [{ color: 'var(--flow)', label: 'Copies being re-created' }] : []),
           ]}
         />
-        <PlayBar clock={clock} label="Site animation" fmt={() => step.k} />
+        <PlayBar
+          clock={clock}
+          label="Site animation"
+          extra={<Illus why="Time is compressed: a resync that takes hours is drawn in seconds. Each node is drawn with a few VMs and four drives; real sites vary. The timings in the captions (30 to 60 seconds, about 15 minutes, hours) are typical, not guaranteed." />}
+        />
       </Show>
 
       <h2 class="sec-h">What each size survives</h2>
@@ -171,10 +195,10 @@ interface Geo {
   /** VMs per row inside a node. */
   perRow: number;
 }
-function geo(slots: number): Geo {
+function geo(slots: number, nodes: number): Geo {
   const nw = Math.min(NW, (SITE.w - 28 - (slots - 1) * NG) / slots);
   const x0 = SITE.x + (SITE.w - (slots * nw + (slots - 1) * NG)) / 2;
-  return { nw, x: (i) => x0 + i * (nw + NG), perRow: Math.floor((nw - 24 + VM_GAP) / (VM + VM_GAP)) };
+  return { nw, x: (i) => x0 + i * (nw + NG), perRow: nodes === 1 ? 3 : Math.floor((nw - 24 + VM_GAP) / (VM + VM_GAP)) };
 }
 
 interface PlacedVm {
@@ -217,7 +241,7 @@ function driveXY(g: Geo, n: number, d: number) {
 }
 
 const MODE_CLS: Record<string, string> = { 'Two-node mode': 'ok-fill', 'Three-node cluster': 'ok-fill', 'Adding N3': 'flow-fill' };
-const EXTRA_WORD = { new: { w: 'new node', c: 'flow-fill' }, blocked: { w: '✕ can’t join', c: 'bad-fill' } } as const;
+const EXTRA_WORD = { new: { w: 'new node', c: 'flow-fill' }, blocked: { w: '✕ cannot join', c: 'bad-fill' } } as const;
 
 function quad(a: { x: number; y: number }, c: { x: number; y: number }, b: { x: number; y: number }, f: number) {
   const u = 1 - f;
@@ -225,7 +249,7 @@ function quad(a: { x: number; y: number }, c: { x: number; y: number }, b: { x: 
 }
 
 function SiteDiagram({ size, nodes, slots, step, prev, t, t0 }: { size: Size; nodes: number; slots: number; step: Step; prev: Step; t: number; t0: number }) {
-  const g = geo(slots);
+  const g = geo(slots, nodes);
   const NW = g.nw;
   const nodeX = (_: number, i: number) => g.x(i);
   const down = new Set(step.down ?? []);
@@ -389,7 +413,7 @@ function SiteDiagram({ size, nodes, slots, step, prev, t, t0 }: { size: Size; no
       {vms.map((v) => {
         const to = vmXY(g, v);
         const was = before.get(v.id)!;
-        const cls = `vm ${v.off ? 'failed' : v.moved && !step.planned && !prev.planned ? 'restart' : 'hl'}`;
+        const cls = `vm ${v.off ? 'failed' : v.moved && !step.planned && !prev.planned && !step.extra ? 'restart' : 'hl'}`;
         if (was.host === v.host || !slide) {
           const appear = was.host !== v.host ? fadeIn : 1;
           return <rect key={v.id} x={to.x} y={to.y} width={VM} height={VM} class={cls} style={{ opacity: appear }} />;

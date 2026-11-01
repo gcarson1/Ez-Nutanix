@@ -4,10 +4,10 @@ export const content: ModuleContent = {
   path: 'nci/snapshots',
   title: 'Snapshots & Clones',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'Snapshots copy a map of where the data lives, not the data itself, and clones start out sharing every block. Space is used only by what changes afterwards. Snapshots are local restore points, not backups.',
+  summary: 'Snapshots and clones are created almost instantly and use space only for what changes, because they copy a map of where data lives, not the data. They are local restore points, not backups.',
   priority: 'P1',
   talk: [
-    'A virtual disk is a map: each logical block points to where the data physically lives in the storage fabric.',
+    'A virtual disk is a map: each logical block points to where the data physically lives in the Distributed Storage Fabric (DSF).',
     'A snapshot copies the map, not the data. That is why it completes almost immediately and starts out using no extra data space.',
     'After the snapshot, new writes go to new blocks and only the live disk’s map changes (redirect-on-write). The snapshot keeps pointing at the old blocks.',
     'A clone is a new writable disk built from a snapshot’s map. It is ready at once and shares every block until it changes one.',
@@ -34,9 +34,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Let one loop play and pause on the snapshot: the number of stored blocks does not change.',
-    'Pause after the new writes: only the changed blocks add space, and the snapshot still points at the old ones.',
-    'Pause on the clones: each shares every block until it writes its own.',
-    'Then open Database Service for database clones built on the same mechanism, or Disaster Recovery for copying snapshots to another site.',
+    'Let one loop play and pause on Snapshot taken: the number of stored blocks does not change.',
+    'Pause on The VM keeps writing: only the changed blocks add space, and the snapshot still points at the old ones.',
+    'Pause on Two clones created: each shares every block until it writes its own.',
+    'Then open Disaster Recovery to copy snapshots to another site, or Database Service for database clones built on the same mechanism.',
   ],
+  then: ['nci/dr', 'ndb'],
 };

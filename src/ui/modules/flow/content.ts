@@ -2,26 +2,26 @@ import type { ModuleContent } from '../../../content/types';
 
 export const content: ModuleContent = {
   path: 'nci/flow',
-  title: 'Flow: Security & Virtual Networking',
+  title: 'Flow: Network Security & Virtual Networking',
   tag: 'Nutanix Cloud Infrastructure',
   summary:
-    'Firewall rules that follow each VM by its labels, enforced on every host, and private networks created in software without touching the physical network.',
+    'Flow Network Security keeps firewall rules with each VM by its labels on every host, and Flow Virtual Networking builds virtual private clouds (VPCs) in software without touching the physical network.',
   priority: 'P0',
   talk: [
-    'Flow Network Security is a stateful, distributed firewall built into AHV; its current generation, Next-Gen, comes with AOS 7.6 and pc.7.6. Rules are written against categories (labels such as AppTier: Web), not IP addresses, and enforced at each VM’s network interface.',
-    'Start in Monitoring: everything still flows, and the rule-hit log shows exactly what a policy would block. Switch to Enforced once the log is clean.',
+    'Flow Network Security is a stateful, distributed firewall in AHV. Rules name categories such as AppTier: Web, not IP addresses. Next-Gen, the current generation, comes with AOS 7.6 and Prism Central pc.7.6; legacy clusters need a planned upgrade and a separate policy migration.',
+    'Start in Monitor: everything still flows, and the rule-hit log shows exactly what a policy would block. Switch to Enforce once the log is clean.',
     'Application policies allow only the listed flows into an app; everything else is denied by default. Isolation policies wall off environments such as Production and Dev. Quarantine removes a VM from the network in one click.',
-    'Because enforcement is in the hypervisor and keyed to categories, the policy moves with a VM when it live-migrates. No rule or address list changes.',
-    'Flow Virtual Networking adds VPCs: overlay networks with their own subnets, routing, NAT and floating IPs. Traffic between hosts is wrapped in Geneve, so the physical network only needs host-to-host reachability.',
+    'Enforcement happens at each VM’s network interface in the hypervisor and is keyed to categories, so the policy moves with a VM when it live-migrates. No rule or address list changes.',
+    'Flow Virtual Networking adds VPCs: overlay networks with their own subnets, routing, network address translation (NAT) and floating IPs. Traffic between hosts is wrapped in Geneve, so the physical network only needs host-to-host reachability.',
     'For the network team, a new project on VPCs needs no new VLAN, trunk, gateway or unique IP range.',
   ],
   numbers: [
-    { k: 'Policy types', v: 'Application, Isolation, Quarantine (Strict or Forensic), Shared Services, VDI (by release)' },
-    { k: 'Current release (Oct 2026)', v: 'Flow Network Security Next-Gen 7.6, bundled with AOS 7.6 and pc.7.6; adds rule-centric and FQDN-based policies' },
-    { k: 'Policy states', v: 'Saved, Monitoring, Enforced' },
-    { k: 'Overlay encapsulation', v: 'Geneve between AHV hosts (VTEP gateways use VXLAN)' },
-    { k: 'Geneve overhead', v: '58 bytes; guest MTU 1442 if the network cannot carry jumbo frames' },
-    { k: 'External networks', v: 'NAT (source NAT + floating IPs) or routed (no NAT)' },
+    { k: 'Policy types', v: 'Application, Isolation, Quarantine (Strict or Forensic), Shared Services, VDI (virtual desktop infrastructure; by release)' },
+    { k: 'Current release', v: 'Flow Network Security Next-Gen 7.6 (Oct 2026), bundled with AOS 7.6 and Prism Central pc.7.6; adds rule-centric policies and policies by fully qualified domain name (FQDN)' },
+    { k: 'Policy states (Prism)', v: 'Saved, Monitoring, Enforced' },
+    { k: 'Overlay encapsulation', v: 'Geneve between AHV hosts; VTEP (virtual tunnel endpoint) gateways use VXLAN (Virtual Extensible LAN)' },
+    { k: 'Geneve overhead', v: '58 bytes per packet; Dynamic Host Configuration Protocol (DHCP) gives guests a maximum transmission unit (MTU) of 1442 (1500 less 58); the physical network needs at least 1558, ideally 9000' },
+    { k: 'External networks', v: 'NAT (source NAT and floating IPs) or routed (no NAT); with NAT each gateway host has its own source NAT address, two active by default' },
   ],
   qa: [
     {
@@ -30,22 +30,19 @@ export const content: ModuleContent = {
     },
     {
       q: 'Will turning on microsegmentation break our applications?',
-      a: 'It can if you enforce rules you have not validated. That is why policies start in Monitoring: traffic keeps flowing while the log shows what would be blocked. Fix the rules, then enforce.',
+      a: 'It can if you enforce rules you have not validated. That is why policies start in Monitor: traffic keeps flowing while the log shows what would be blocked. Fix the rules, then enforce.',
     },
     {
       q: 'Do overlay networks replace VLANs?',
       a: 'Not necessarily. Both can run on the same cluster. VPCs suit self-service projects, overlapping ranges and multi-tenant setups; VLAN-backed subnets still fit workloads that must sit on an existing physical segment. VPCs need Prism Central with the Network Controller and an external VLAN for traffic in and out.',
     },
-    {
-      q: 'Is this the older Flow or Flow Network Security Next-Gen?',
-      a: 'The ideas shown here are the same in both: rules on categories, Monitoring before Enforced, and quarantine. Next-Gen is the current generation. It runs through the Network Controller in Prism Central, lets a VM belong to several policies with any category, and from 7.6 adds rule-centric and FQDN-based policies. Clusters still on the legacy generation (Flow Microsegmentation) need a planned upgrade, and moving existing policies is a separate step.',
-    },
   ],
   next: [
-    'Network Security with Policy Off: app traffic flows and every unwanted try gets through. Switch to Monitor: the same tries are flagged in the log but still get through. Then Enforce: each one is stopped at the VM.',
-    'Turn on Quarantine Web-2: nothing gets in or out of Web-2, even with the policy Off, while Web-1 keeps the app running.',
-    'Virtual Networking, Inside a VPC: two VPCs use the very same addresses, and each packet crosses between hosts in an envelope tagged with its VPC.',
-    'Out to the internet, then In from the internet: source NAT gives a whole VPC one public address, and a floating IP lets outsiders reach one VM.',
-    'Open Data Security to see where Flow fits with encryption and hardening.',
+    'On the Network Security tab, “Policy” opens on “Enforce”: each unwanted try is stopped at the VM. Switch to “Monitor” and the same tries are flagged in the log but still get through, then “Off” and nothing stops them.',
+    'Set “Quarantine Web-2” to “On”: nothing gets in or out of Web-2, even with “Policy” on “Off”, while Web-1 keeps the app running.',
+    'Open the Virtual Networking tab and keep “Inside a VPC” under “Follow a packet”: two VPCs use the very same addresses, and each packet crosses between hosts in an envelope tagged with its VPC.',
+    'Pick “Out to the internet”, then “In from the internet”: source NAT lets a whole VPC share a public address, and a floating IP lets outsiders reach one VM.',
+    'Then open Data Security to see where Flow fits with encryption and hardening.',
   ],
+  then: ['nci/security'],
 };

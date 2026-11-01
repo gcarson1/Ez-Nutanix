@@ -9,6 +9,8 @@ import {
   CircleX,
   Cloud,
   CodeXml,
+  Combine,
+  Container,
   Compass,
   Copy,
   Cpu,
@@ -19,6 +21,7 @@ import {
   Globe,
   HardDrive,
   Info,
+  KeyRound,
   Keyboard,
   Layers,
   Lock,
@@ -30,6 +33,7 @@ import {
   Play,
   Plus,
   Power,
+  Puzzle,
   Radio,
   RefreshCw,
   Server,
@@ -87,6 +91,10 @@ const I: Record<string, LucideIcon> = {
   gauge: Gauge,
   file: File,
   api: CodeXml,
+  combine: Combine,
+  container: Container,
+  key: KeyRound,
+  puzzle: Puzzle,
 };
 
 export function Icon({ name, title, class: cls }: { name: string; title?: string; class?: string }) {

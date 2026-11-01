@@ -2,14 +2,14 @@ import type { ModuleContent } from '../../../content/types';
 
 export const content: ModuleContent = {
   path: 'nci/scale',
-  title: 'Scale-out vs 3-tier',
+  title: 'Scale-Out vs 3-Tier',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'Watch nodes join one at a time: each adds compute, drives and its own storage controller (the CVM). Underneath, a 3-tier design adds hosts that all share one array’s controller pair.',
+  summary: 'Each node adds compute, drives and its own storage controller, the Controller VM (CVM), so capacity and controllers grow together. In a 3-tier design, added hosts share one array’s two controllers.',
   priority: 'P1',
   talk: [
-    'Start small and add a node when you need it: rack it, add it from Prism with Expand Cluster, and the VMs keep running.',
-    'Every node runs a Controller VM, so controllers grow with the cluster: 4 nodes, 4 controllers; 16 nodes, 16.',
-    'In a 3-tier design every host’s storage I/O goes through the array’s controllers; growing past them means a bigger controller pair or another array to manage. Neither is wrong, it is a different scaling unit.',
+    'Start small and add a node when you need it: rack it, then add it to the running cluster from Prism with Expand Cluster.',
+    'Every node runs a CVM, so controllers grow with the cluster: 4 nodes, 4 controllers; 16 nodes, 16.',
+    'In a 3-tier design every host’s storage I/O goes through the array’s controllers; growing past them means a bigger controller pair or another array to manage. Neither is wrong; it is a different scaling unit.',
     'After a node joins, disk balancing spreads data onto it in the background, so the new drives are used without a migration project.',
     'Be upfront about the cost: each node reserves CPU and memory for its CVM. How much depends on features and node size, so take it from sizing.',
   ],
@@ -36,6 +36,7 @@ export const content: ModuleContent = {
     'Let it play: the scale-out controller count rises with every node while the 3-tier side stays at 2.',
     'Pause on “Disk balancing” to show data spreading onto the new drives without a migration project.',
     'Be upfront about the CVM: each node reserves CPU and memory for it; take the figure from sizing.',
-    'Then Protection & Capacity for usable capacity, or Data Path for why locality matters.',
+    'Then open Protection & Capacity for usable capacity, Data Path for why locality matters or Legacy vs Nutanix HCI for why the tiers fold into a node.',
   ],
+  then: ['nci/capacity', 'nci/datapath', 'nci/hci', 'partial'],
 };

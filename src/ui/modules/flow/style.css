@@ -1,6 +1,4 @@
 /* Flow module (prefix fl-) */
-.fl-lede { margin-bottom: var(--sp-5); }
-
 /* Network Security */
 .diagram .fl-env { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1; }
 .diagram .fl-env.dev { stroke-dasharray: 6 4; }

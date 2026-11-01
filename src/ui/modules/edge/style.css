@@ -2,7 +2,7 @@
 .edge-matrix { min-width: 40rem; }
 .edge-matrix th.on, .edge-matrix td.on { background: var(--ink-soft); }
 .edge-matrix tr.on td:first-child { font-weight: 600; box-shadow: inset 2px 0 0 var(--ink); padding-left: var(--sp-2); }
-.edge-matrix td { padding-left: var(--sp-2); }
+.edge-matrix th, .edge-matrix td { padding-left: var(--sp-2); }
 .edge-cell { margin-top: var(--sp-1); color: var(--text-2); }
 .edge-dia .edge-cap { font-size: 12px; letter-spacing: 0.08em; }
 .edge-dia .edge-t { font-size: 15px; font-weight: 600; }

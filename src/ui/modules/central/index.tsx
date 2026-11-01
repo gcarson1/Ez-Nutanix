@@ -7,7 +7,7 @@ import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { CLUSTERS, DOMAINS, consolesToSeeAll, inView, totals, type Console } from '../../../engine/fleet';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
@@ -120,13 +120,12 @@ function timeline(v: View): Timeline {
 const upArrive = (tl: Timeline, i: number) => (tl.up === null ? Infinity : tl.up + i * UP_GAP + UP_DUR);
 const fedArrive = (tl: Timeline, d: number) => (tl.fed === null ? Infinity : tl.fed + d * FED_GAP + FED_DUR);
 
-type Line = { tone: Tone | 'ink'; k: string; word: string; text: string };
+type Line = { tone: Tone | 'ink'; k: string; text: string };
 
 const OWN: Line = {
   tone: 'ink',
   k: 'Each cluster runs itself',
-  word: 'Own cluster',
-  text: 'Every cluster has Prism Element built in. It manages that one cluster: its nodes, storage and VMs. The dots are nodes reporting in.',
+  text: 'Every cluster has Prism Element built in, which manages that one cluster’s nodes, storage and VMs. The dots are nodes reporting in.',
 };
 
 function lines(v: View): Line[] {
@@ -134,28 +133,27 @@ function lines(v: View): Line[] {
   if (v === 'pe')
     return [
       OWN,
-      { tone: 'warn', k: 'A warning somewhere else', word: 'Warning', text: `${store} is filling up. Its own Prism Element shows the warning, but from ${FOCUS.name} you cannot see it.` },
-      { tone: 'ink', k: 'One cluster at a time', word: 'One at a time', text: `To check all ${CLUSTERS.length} clusters, someone logs in to ${CLUSTERS.length} consoles, one per cluster.` },
+      { tone: 'warn', k: 'A warning appears elsewhere', text: `${store} is filling up. Its own Prism Element shows the warning, but from ${FOCUS.name} you cannot see it.` },
+      { tone: 'ink', k: 'Logins pile up', text: `To check all ${CLUSTERS.length} clusters, someone logs in to ${CLUSTERS.length} consoles, one per cluster.` },
     ];
   const up: Line = {
     tone: 'flow',
-    k: 'Reporting up',
-    word: 'Reporting',
+    k: 'Clusters report up',
     text: 'Each cluster is registered to one Prism Central, here one per region, and sends it health, capacity and alerts.',
   };
   if (v === 'pc')
     return [
       OWN,
       up,
-      { tone: 'warn', k: 'A warning, seen centrally', word: 'Warning', text: `${store} is filling up. The warning reaches the Americas Prism Central, next to the other clusters in that region.` },
-      { tone: 'ink', k: 'One region at a time', word: 'One region', text: `EMEA has its own Prism Central. To see every cluster you still open ${consolesToSeeAll('pc')} consoles.` },
+      { tone: 'warn', k: 'Warning reaches Prism Central', text: `${store} is filling up. The warning reaches the Americas Prism Central, next to the other clusters in that region.` },
+      { tone: 'ink', k: 'EMEA stays separate', text: `EMEA has its own Prism Central. To see every cluster you still open ${consolesToSeeAll('pc')} consoles.` },
     ];
   return [
     OWN,
     up,
-    { tone: 'flow', k: 'Federated', word: 'Federated', text: 'Nutanix Central federates both Prism Centrals, so every region reports to one place.' },
-    { tone: 'warn', k: 'A warning, seen from the top', word: 'Warning', text: `${store} is filling up. The warning reaches Nutanix Central, next to every other cluster in every region.` },
-    { tone: 'ok', k: 'One place', word: 'One place', text: 'One view, one sign-in and one set of roles across every cluster and region. Clusters keep running on their own if it is unreachable.' },
+    { tone: 'flow', k: 'Regions federate', text: 'Nutanix Central federates both Prism Centrals, so every region reports to one place.' },
+    { tone: 'warn', k: 'Warning reaches Nutanix Central', text: `${store} is filling up. The warning reaches Nutanix Central, next to every other cluster in every region.` },
+    { tone: 'ok', k: 'One console sees all', text: 'One view, one sign-in and one set of roles across every cluster and region. Clusters keep running on their own if it is unreachable.' },
   ];
 }
 
@@ -326,12 +324,17 @@ export default function Central() {
   const tot = totals(inView(level, FOCUS.id));
   const consoles = consolesToSeeAll(level);
   const sawWarning = inView(level, FOCUS.id).some((c) => c.id === WARNED.id);
+  const legend = [
+    { color: 'var(--ink-fg)', label: 'Health report' },
+    { color: 'var(--warn)', label: 'Warning' },
+    ...(view === 'fed' ? [] : [{ color: 'var(--line-2)', label: 'Out of view from this console' }]),
+  ];
 
   return (
     <Show
       top={
         <Choice<View>
-          label="Look through"
+          label="View from"
           value={view}
           onChange={setView}
           options={[
@@ -359,10 +362,10 @@ export default function Central() {
       <div class="diagram-scroll">
         <Fleet view={view} t={t} tl={tl} />
       </div>
+      <Legend items={legend} />
       <PlayBar
         clock={clock}
         label="Fleet reporting animation"
-        fmt={() => L[phase].word}
         extra={<Illus why="Five example clusters in two regions. Reports are drawn as dots in one pass; real clusters report continuously. At its December 2025 GA, Nutanix Central on-premises supported up to 25 Prism Central domains." />}
       />
     </Show>

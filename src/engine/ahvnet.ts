@@ -20,8 +20,8 @@ export interface BondDef {
 }
 
 export const BONDS: Record<BondMode, BondDef> = {
-  ab: { short: 'Active-backup', prism: 'Active-Backup (default, recommended)', switchSetup: 'None' },
-  slb: { short: 'Balance-SLB', prism: 'Active-Active with MAC pinning (balance-slb)', switchSetup: 'None' },
+  ab: { short: 'Active-Backup', prism: 'Active-Backup (default, recommended)', switchSetup: 'None' },
+  slb: { short: 'Balance-SLB', prism: 'Active-Active with MAC pinning (Balance-SLB)', switchSetup: 'None' },
   lacp: { short: 'LACP', prism: 'Active-Active (balance-tcp with LACP)', switchSetup: 'LACP + LAG' },
 };
 
@@ -33,7 +33,7 @@ export function linkUp(nic: Uplink, fail: LinkFail): boolean {
 
 /**
  * The link a packet leaves on. `source` is the VM or CVM, `flow` which of its connections.
- * Active-backup: the active link (NIC A here; chosen when the host boots in reality). MAC pinning:
+ * Active-Backup: the active link (NIC A here; chosen when the host boots in reality). MAC pinning:
  * by source (its MAC address). LACP: by connection. A down link never carries traffic.
  */
 export function uplinkFor(mode: BondMode, source: number, flow: number, fail: LinkFail): Uplink {

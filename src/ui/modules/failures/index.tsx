@@ -8,6 +8,7 @@ import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Illus, PlayBar, Seg } from '../../components/controls';
 import { Icon } from '../../components/Icon';
+import { StepTracker } from '../cluster-lab/StepTracker';
 import { GauntletDiagram, GauntletLegend } from './GauntletDiagram';
 import { IDS, defFor, frameAt, stepIndex, G_NODES, VMS_PER_NODE, type Copies, type GId } from './scenarios';
 
@@ -56,40 +57,21 @@ export default function Failures() {
           </div>
           {sc === 'double' && (
             <div class="gx-pick">
-              <span class="choice-l">Copies kept</span>
+              <span class="choice-l">Copies</span>
               <Seg<'2' | '3'>
-                label="Copies kept"
+                label="Copies"
                 value={cp}
                 onChange={setCp}
                 options={[
-                  { value: '2', label: '2 (RF2)' },
-                  { value: '3', label: '3 (RF3)' },
+                  { value: '2', label: 'RF2 · 2 copies' },
+                  { value: '3', label: 'RF3 · 3 copies' },
                 ]}
               />
             </div>
           )}
         </div>
 
-        <ol class="gx-steps" aria-label="Steps">
-          {def.steps.map((s, k) => (
-            <li key={s.label} class={k < step ? 'done' : k === step ? 'now' : ''}>
-              <button
-                type="button"
-                aria-current={k === step ? 'step' : undefined}
-                title="Jump to this step"
-                onClick={() => {
-                  clock.pause();
-                  clock.seek(s.at + 0.01);
-                }}
-              >
-                <span class="n" aria-hidden="true">
-                  {k < step ? <Icon name="check" /> : k + 1}
-                </span>
-                {s.label}
-              </button>
-            </li>
-          ))}
-        </ol>
+        <StepTracker steps={def.steps} step={step} clock={clock} />
         <p class="gx-cap">{def.steps[step].text}</p>
 
         <div class="diagram-scroll">
@@ -99,7 +81,6 @@ export default function Failures() {
         <PlayBar
           clock={clock}
           label="Failure animation"
-          fmt={(t) => `Step ${stepIndex(def, t) + 1} of ${n}`}
           extra={<Illus why="Time is compressed so each failure plays in seconds, and timings are illustrative. In a real cluster HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left. Each tile is a tenth of a drive." />}
         />
       </div>

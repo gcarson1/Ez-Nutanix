@@ -116,7 +116,7 @@
   --measure: 46rem;
   --gutter: 2rem;
   --frame: calc(var(--main-max) + var(--rail-w) + var(--gutter) * 2 + var(--sp-10));
-  --wide: 112rem;
+  --wide: 92rem; /* one frame for the top bar, pages, the home slide and the footer */
 
   /* motion */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);

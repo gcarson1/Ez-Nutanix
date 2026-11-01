@@ -17,8 +17,6 @@
 .diagram .ai-model.off { opacity: 0.35; }
 .diagram .ai-req { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .ai-ans { fill: var(--ok); stroke: var(--bg); stroke-width: 1.5; }
-.ai-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
-.ai-legend .legend { margin-top: 0; }
 @media (max-width: 600px) {
   .diagram-scroll > .ai-svg { min-width: 44rem; }
 }

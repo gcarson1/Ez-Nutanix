@@ -53,8 +53,9 @@ body { min-height: 100vh; }
 /* ── landing: the slide ───────────────────────────────────────────── */
 .slide-wrap { background: var(--slide-bg); flex: 1; display: flex; flex-direction: column; }
 .slide {
+  --slide-gap: var(--sp-5);
   width: 100%; max-width: 92rem; margin: 0 auto; padding: var(--sp-10) var(--gutter) var(--sp-8);
-  display: flex; flex-direction: column; gap: var(--sp-5); flex: 1;
+  display: flex; flex-direction: column; justify-content: center; gap: var(--slide-gap); flex: 1;
 }
 .slide-title {
   text-align: center; color: var(--text); font-weight: 700; letter-spacing: -0.028em; line-height: 1.12;
@@ -127,7 +128,7 @@ body { min-height: 100vh; }
 .bare svg { width: 2.75rem; height: 2rem; color: #3f3f46; }
 
 /* idle data-flow shimmer between bands */
-.flowline { position: relative; height: var(--sp-5); margin: calc(var(--sp-5) * -1) 0; pointer-events: none; z-index: 0; }
+.flowline { position: relative; height: var(--slide-gap); margin: calc(var(--slide-gap) * -1) 0; pointer-events: none; z-index: 0; }
 .flowline::before, .flowline::after {
   content: ''; position: absolute; top: 0; bottom: 0; width: 2px;
   background: linear-gradient(to bottom, transparent, rgba(150, 125, 255, 0.85), transparent);
@@ -153,6 +154,17 @@ body { min-height: 100vh; }
 .partial .pane:hover, .partial .pane:focus-visible { background: var(--slide-card-hover); }
 @media (max-width: 900px) { .partial { grid-template-columns: minmax(0, 1fr); } }
 .slide-hint { text-align: center; color: var(--faint); font-size: var(--fs-13); margin-top: var(--sp-2); }
+/* Laptop screens (1440x900, then 1536x864): a tighter vertical rhythm so the footer still fits without scrolling. */
+@media (min-width: 901px) and (max-height: 920px) {
+  .slide { padding-top: var(--sp-6); padding-bottom: var(--sp-4); }
+  .slide-title { margin-bottom: var(--sp-2); }
+}
+@media (min-width: 901px) and (max-height: 880px) {
+  .slide { --slide-gap: var(--sp-4); }
+  .pane { min-height: 4.75rem; }
+  .infra-row .nci { min-height: 6.75rem; }
+  .slide-hint { margin-top: 0; }
+}
 
 /* liquid glass on the home slide (glass.ts adds .glass-on once the GPU effect starts). The glass
    refracts .glass-bg; tiles turn transparent so the glass shows through, and their text sits above it.
@@ -161,13 +173,14 @@ body { min-height: 100vh; }
 .glass-bg { display: none; }
 .glass-on .glass-bg {
   display: block; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  /* Dark: near-black with low, cool glows, enough for the glass edges to bend without a bright haze. */
   background:
-    radial-gradient(ellipse 50% 45% at 16% 20%, rgba(130, 92, 255, 0.75), transparent 70%),
-    radial-gradient(ellipse 45% 50% at 88% 24%, rgba(60, 128, 255, 0.6), transparent 70%),
-    radial-gradient(ellipse 55% 45% at 50% 62%, rgba(110, 70, 230, 0.55), transparent 72%),
-    radial-gradient(ellipse 50% 40% at 56% 96%, rgba(190, 96, 255, 0.55), transparent 70%),
-    radial-gradient(ellipse 38% 38% at 6% 82%, rgba(40, 196, 255, 0.35), transparent 70%),
-    linear-gradient(160deg, #150f33, #0b0920 55%, #1a1140);
+    radial-gradient(ellipse 46% 40% at 18% 16%, rgba(120, 85, 250, 0.34), transparent 70%),
+    radial-gradient(ellipse 40% 44% at 86% 22%, rgba(70, 110, 255, 0.22), transparent 70%),
+    radial-gradient(ellipse 54% 38% at 50% 66%, rgba(98, 62, 220, 0.2), transparent 72%),
+    radial-gradient(ellipse 44% 34% at 58% 100%, rgba(160, 90, 255, 0.2), transparent 70%),
+    radial-gradient(ellipse 32% 32% at 4% 88%, rgba(40, 170, 255, 0.12), transparent 70%),
+    linear-gradient(160deg, #0a0817, #05040c 55%, #0b0919);
 }
 :root[data-theme='light'].glass-on .glass-bg {
   background:
@@ -180,11 +193,13 @@ body { min-height: 100vh; }
 }
 .glass-on .slide { position: relative; }
 /* Brand color over clear glass (liquidGL sets the tiles transparent inline, hence !important). */
-.glass-on .lg-band { --lg-fill: rgba(51, 34, 127, 0.24); }
-.glass-on .lg-card { --lg-fill: rgba(24, 15, 74, 0.4); }
-.glass-on .lg-svc { --lg-fill: rgba(82, 53, 207, 0.4); }
-.glass-on .lg-nci { --lg-fill: rgba(120, 85, 250, 0.46); }
-.glass-on .lg-light { --lg-fill: rgba(240, 240, 248, 0.62); }
+/* Dark keeps light mode's hierarchy (deep band, darker cards, mid services, brand NCI) as colored glass;
+   where the platform runs (clouds, bare metal) is smoky neutral glass rather than a pale slab. */
+.glass-on .lg-band { --lg-fill: rgba(46, 30, 120, 0.42); }
+.glass-on .lg-card { --lg-fill: rgba(30, 20, 92, 0.66); }
+.glass-on .lg-svc { --lg-fill: rgba(86, 58, 214, 0.64); }
+.glass-on .lg-nci { --lg-fill: rgba(120, 85, 250, 0.76); }
+.glass-on .lg-light { --lg-fill: rgba(255, 255, 255, 0.075); }
 :root[data-theme='light'].glass-on .lg-band { --lg-fill: rgba(50, 34, 128, 0.8); }
 :root[data-theme='light'].glass-on .lg-card { --lg-fill: rgba(30, 20, 88, 0.72); }
 :root[data-theme='light'].glass-on .lg-svc { --lg-fill: rgba(78, 50, 200, 0.84); }
@@ -207,6 +222,19 @@ body { min-height: 100vh; }
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 .glass-on .lg-band::after { z-index: 3; }
+/* Dark: a finer rim and a deeper, tighter shadow, so tiles read as cut glass rather than glowing outlines. */
+:root[data-theme='dark'].glass-on .lg-card, :root[data-theme='dark'].glass-on .lg-svc, :root[data-theme='dark'].glass-on .lg-nci, :root[data-theme='dark'].glass-on .lg-light {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.035), inset 0 0 1.5rem rgba(255, 255, 255, 0.025), 0 1rem 2.25rem -1rem rgba(0, 0, 0, 0.8) !important;
+}
+:root[data-theme='dark'].glass-on .pane::after, :root[data-theme='dark'].glass-on .lg-light::after, :root[data-theme='dark'].glass-on .lg-band::after {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08) 30%, rgba(255, 255, 255, 0.02) 62%, rgba(255, 255, 255, 0.16));
+}
+:root[data-theme='dark'].glass-on .lg-light, :root[data-theme='dark'].glass-on .lg-light .pt, :root[data-theme='dark'].glass-on .clouds .pane { color: #f4f4f8; }
+:root[data-theme='dark'].glass-on .bare svg { color: rgba(255, 255, 255, 0.82); }
+:root[data-theme='dark'].glass-on .partial { border-color: rgba(255, 255, 255, 0.14); }
+.cloud-logo.aws-rev { display: none; }
+:root[data-theme='dark'].glass-on .cloud-logo.aws { display: none; }
+:root[data-theme='dark'].glass-on .cloud-logo.aws-rev { display: block; }
 /* Small text over glass and the brighter backdrop needs a little more weight to stay above 4.5:1. */
 .glass-on .lg-card .ps, .glass-on .lg-svc .ps, .glass-on .lg-nci .ps { color: rgba(255, 255, 255, 0.88); }
 .glass-on .partial-head .ps, .glass-on .slide-hint, .glass-on .slide-hint kbd { color: var(--text-2); }
@@ -218,6 +246,8 @@ body { min-height: 100vh; }
 .glass-on .lg-band, .glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { opacity: 1 !important; pointer-events: auto !important; }
 .glass-on .pane:hover, .glass-on .pane:focus-visible { background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), var(--lg-fill) !important; }
 .glass-on .clouds .pane:hover, .glass-on .clouds .pane:focus-visible { background: rgba(0, 0, 0, 0.06) !important; }
+:root[data-theme='dark'].glass-on .clouds .pane:hover, :root[data-theme='dark'].glass-on .clouds .pane:focus-visible { background: rgba(255, 255, 255, 0.08) !important; }
+:root[data-theme='dark'].glass-on .clouds .pane:focus-visible, :root[data-theme='dark'].glass-on .bare.pane:focus-visible { outline-color: #fff; }
 
 /* tour spotlight */
 .tour-on .pane, .tour-on .central-head, .tour-on .beacon { transition: none; }
@@ -247,10 +277,10 @@ body { min-height: 100vh; }
 
 /* ── module frame ─────────────────────────────────────────────────── */
 .mod { max-width: var(--wide); margin: 0 auto; padding: var(--sp-6) var(--gutter) var(--sp-12); }
-.mod-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3) var(--sp-6); align-items: end; padding-bottom: var(--sp-5); border-bottom: 1px solid var(--line); margin-bottom: var(--sp-6); }
+.mod-head { padding-bottom: var(--sp-5); border-bottom: 1px solid var(--line); margin-bottom: var(--sp-6); }
+.mod-head h1:focus { outline: none; }
 .mod-head h1 { font-size: clamp(1.5rem, 1.2rem + 0.9vw, 2.125rem); margin-top: var(--sp-1); }
 .mod-head p { margin-top: var(--sp-2); color: var(--muted); max-width: var(--measure); font-size: var(--fs-15); }
-.mod-head .acts { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
 .mod-tag { display: inline-flex; align-items: center; gap: var(--sp-1h); font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-fg); }
 .mod-tag i { width: 0.5rem; height: 0.5rem; background: var(--ink); display: inline-block; }
 
@@ -334,8 +364,14 @@ body { min-height: 100vh; }
 .playbar .btn { height: var(--h-sm); padding: 0 var(--sp-3); }
 .playbar .btn svg { width: 0.875rem; height: 0.875rem; }
 .playbar .pbtn { width: var(--h-sm); padding: 0; justify-content: center; flex: none; }
-.playbar .clock { font: 600 var(--fs-13) / 1.2 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.playbar .clock { flex: none; min-width: 8rem; text-align: right; font: 600 var(--fs-13) / 1.2 var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
 .playbar .scrub { flex: 1; min-width: 6rem; }
+/* Phones: the scrub bar takes its own full-width row under the buttons, readout and Illustrative tag. */
+@media (max-width: 600px) {
+  .playbar { flex-wrap: wrap; row-gap: var(--sp-2); }
+  .playbar .scrub { order: 5; flex-basis: 100%; }
+  .playbar .clock { min-width: 0; margin-left: auto; }
+}
 .speed { position: relative; flex: none; }
 .playbar .speed-btn { min-width: 3.25rem; justify-content: center; font: 600 var(--fs-13) / 1 var(--mono); font-variant-numeric: tabular-nums; }
 .playbar .speed-btn.on { color: var(--ink-fg); border-color: var(--ink); }
@@ -450,6 +486,15 @@ body { min-height: 100vh; }
 .drawer-body h3:first-child { margin-top: 0; }
 .drawer-body ul { font-size: var(--fs-15); }
 .drawer-body .qa { padding: var(--sp-3) 0; border-top: 1px solid var(--line); }
+.drawer-links { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); margin-top: var(--sp-4); }
+.drawer-links .btn svg { width: 0.9375rem; height: 0.9375rem; color: var(--ink-fg); }
+/* jump to a module */
+.jump .input { width: 100%; }
+.jump-group { margin-top: var(--sp-4); }
+.jump-group .eyebrow { margin-bottom: var(--sp-1); }
+.jump .rowbtn { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2); }
+.jump .rowbtn svg { width: 1rem; height: 1rem; flex: none; color: var(--muted); }
+.jump .rowbtn:focus-visible { outline: none; background: var(--sel); box-shadow: inset 2px 0 0 var(--ink); }
 .drawer-body .qa .q { font-weight: 600; font-size: var(--fs-15); }
 .drawer-body .qa .a { color: var(--text-2); font-size: var(--fs-14); margin-top: var(--sp-1); }
 .gloss-item { padding: var(--sp-3) 0; border-top: 1px solid var(--line); }
@@ -511,8 +556,6 @@ body { min-height: 100vh; }
   body { padding-bottom: 0; }
   .bar-r .tbtn .lbl { display: none; }
   .mod { padding-top: var(--sp-4); }
-  .mod-head { grid-template-columns: minmax(0, 1fr); }
-  .mod-head .acts { justify-content: flex-start; }
   .lab, .lab.ctl-only, .lab.two { grid-template-columns: minmax(0, 1fr); }
   .lab > .ctl { border-right: 0; border-bottom: 1px solid var(--line); padding-right: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--sp-5); }
   .lab > .ctl .field:first-child { border-top: 1px solid var(--line); }
@@ -566,7 +609,8 @@ body { min-height: 100vh; }
 .crumbs { flex: 0 1 auto; overflow: hidden; }
 .bar-r { flex: none; flex-wrap: nowrap; }
 @media (max-width: 1440px) { .bar-r .tbtn .lbl.wide-only { display: none; } }
-@media (max-width: 1280px) { .crumbs .mid { display: none; } .brandmark .hide-sm { display: none; } }
+/* At projector widths the brandmark already goes home, so the Platform crumb goes and the parent stays. */
+@media (max-width: 1280px) { .crumbs .plat { display: none; } .brandmark .hide-sm { display: none; } }
 .drawer-head > svg { width: 1.125rem; height: 1.125rem; flex: none; color: var(--ink-fg); }
 .drawer-head h2 { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bar-r .tbtn.on { font-weight: inherit; box-shadow: inset 0 -2px 0 var(--ink); }

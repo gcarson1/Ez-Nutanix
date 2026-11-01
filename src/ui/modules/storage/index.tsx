@@ -4,8 +4,8 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { paced, stepsFrom, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, flowDots, pathLength, phaseAt, prog } from '../../components/show';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Choice, Kpis, Show, ease, flowDots, pathLength, phaseAt, prog, Tabs } from '../../components/show';
 import { iscsiTargets, loadPerFsvm, makeFiles, ownership, tierSplit } from '../../../engine/unistore';
 import './style.css';
 
@@ -67,23 +67,22 @@ function Files() {
       ? [
           { tone: 'ink' as const, k: 'One namespace', text: 'Three file server VMs (FSVMs) share the work. Users connect to one path and never need to know which FSVM serves a folder.' },
           { tone: 'bad' as const, k: 'An FSVM fails', text: `FSVM-${failed + 1} goes down. Its folders are out of reach for a moment.` },
-          { tone: 'warn' as const, k: 'Takeover', text: `FSVM-${(survivor ?? 0) + 1} takes over FSVM-${failed + 1}’s volume group and IP address, so its folders come back at the same path.` },
-          { tone: 'ok' as const, k: 'Still serving', text: 'Every folder is reachable. Users may have seen a short pause or reconnect, but the path never changed.' },
+          { tone: 'warn' as const, k: 'A survivor takes over', text: `FSVM-${(survivor ?? 0) + 1} takes over FSVM-${failed + 1}’s volume group and IP address, so its folders come back at the same path.` },
+          { tone: 'ok' as const, k: 'Folders still reachable', text: 'Every folder is reachable. Users may have seen a short pause or reconnect, but the path never changed.' },
           { tone: 'flow' as const, k: `FSVM-${failed + 1} is back`, text: `FSVM-${failed + 1} is running again and ready to take its work back.` },
-          { tone: 'flow' as const, k: 'Handing back', text: `FSVM-${failed + 1} takes its volume group and IP address back, and the work is spread evenly again.` },
+          { tone: 'flow' as const, k: 'Folders handed back', text: `FSVM-${failed + 1} takes its volume group and IP address back, and the work is spread evenly again.` },
           { tone: 'ok' as const, k: 'Back to normal', text: 'All three FSVMs serve their own folders again. Nobody had to change a path or a drive mapping.' },
         ][phaseAt(F_STARTS, t)]
       : t < F.fail
-        ? { tone: 'ink', k: 'One FSVM', text: 'A single file server VM serves every folder. It works, but nothing can take over if it fails.' }
+        ? { tone: 'ink', k: 'A single FSVM', text: 'A single file server VM serves every folder. It works, but nothing can take over if it fails.' }
         : down
-          ? { tone: 'bad', k: 'No high availability', text: 'The only FSVM is down, so every folder is out of reach until it comes back. Three FSVMs is the minimum for high availability.' }
-          : { tone: 'ok', k: 'Back', text: 'The FSVM is back and serves every folder again.' };
+          ? { tone: 'bad', k: 'The only FSVM fails', text: 'The only FSVM is down, so every folder is out of reach until it comes back. Three FSVMs is the minimum for high availability.' }
+          : { tone: 'ok', k: 'The FSVM is back', text: 'The FSVM is back and serves every folder again.' };
   };
   const steps = useMemo(() => stepsFrom(F.end, capAt), [n, survivor]);
   const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1, steps });
   useRestartOn(clock, [n]);
   const t = clock.t;
-  const ph = phaseAt(F_STARTS, t);
   const down = t >= F.fail && t < F.back;
   const k = !ha ? 0 : t < F.take ? 0 : t < F.taken ? ease(prog(t, F.take, F.taken)) : t < F.give ? 1 : t < F.given ? 1 - ease(prog(t, F.give, F.given)) : 0;
   const load = loadPerFsvm({ ...base, down: down ? [failed] : [] });
@@ -101,7 +100,6 @@ function Files() {
   const ownCount = (fs: number) => home.filter((o) => o.home === fs).length;
   const takenSlot = taken.map((o, i) => (o.moved ? slot(o.servedBy!, ownCount(o.servedBy!) + taken.slice(0, i).filter((q) => q.moved && q.servedBy === o.servedBy).length) : homeSlot[i]));
   const cap = capAt(t);
-  const word = ha ? ['Normal', 'Failure', 'Takeover', 'Serving', 'Return', 'Hand back', 'Normal'][ph] : t < F.fail ? 'Normal' : down ? 'Down' : 'Back';
 
   const H = FS_Y + FS_H + 94;
   const DSF_Y = FS_Y + FS_H + 26;
@@ -213,7 +211,15 @@ function Files() {
           })}
         </svg>
       </div>
-      <PlayBar clock={clock} label="File server failover animation" fmt={() => word} />
+      <Legend
+        items={[
+          { color: 'var(--line-2)', label: 'Folder' },
+          ...(ha ? [{ color: 'var(--warn)', label: 'Served by another FSVM' }] : []),
+          { color: 'var(--bad)', dashed: true, label: 'Out of reach' },
+          { color: 'var(--flow)', label: 'A user opening a file' },
+        ]}
+      />
+      <PlayBar clock={clock} label="File server failover animation" extra={<Illus why="Simplified: timings are compressed, and a real file server has many more folders and users. How long a takeover or hand-back takes depends on the load, and SMB clients may see a short pause." />} />
     </Show>
   );
 }
@@ -250,10 +256,10 @@ function Volumes() {
   const newCvm = after[lostHost]!;
   const caps: Cap[] = [
     { tone: 'ink' as const, k: 'One address', text: 'Hosts outside the cluster log in to one Data Services IP. The cluster points each host to a CVM that will serve it.' },
-    { tone: 'ok' as const, k: 'Connected', text: 'Each host’s disk reads and writes go to its CVM. Every CVM can reach every disk in the volume group, because the data is spread across all nodes.' },
+    { tone: 'ok' as const, k: 'Hosts connected', text: 'Each host’s disk reads and writes go to its CVM. Every CVM can reach every disk in the volume group, because the data is spread across all nodes.' },
     { tone: 'bad' as const, k: 'A CVM fails', text: `CVM-1 goes down and Host ${lostHost + 1} loses its session.` },
-    { tone: 'warn' as const, k: 'Redirected', text: `Host ${lostHost + 1} logs in again to the same address and is sent to a healthy CVM. No multipath setup is needed on the host.` },
-    { tone: 'ok' as const, k: 'Back to work', text: `Host ${lostHost + 1} carries on through CVM-${newCvm + 1}. The data never moved: CVM-${newCvm + 1} reads and writes the same disks.` },
+    { tone: 'warn' as const, k: 'Host redirected', text: `Host ${lostHost + 1} logs in again to the same address and is sent to a healthy CVM. No multipath setup is needed on the host.` },
+    { tone: 'ok' as const, k: 'Work carries on', text: `Host ${lostHost + 1} carries on through CVM-${newCvm + 1}. The data never moved: CVM-${newCvm + 1} reads and writes the same disks.` },
   ];
   const clock = useClock({ rate: 1, duration: V.end, keys: true, poster: V.back + 1.5, steps: paced(V_STARTS, caps.map((c) => [c.k, c.text])) });
   const t = clock.t;
@@ -362,7 +368,14 @@ function Volumes() {
           })}
         </svg>
       </div>
-      <PlayBar clock={clock} label="iSCSI redirection animation" fmt={() => ['Log in', 'Working', 'CVM fails', 'Log in again', 'Working'][ph]} />
+      <Legend
+        items={[
+          { color: 'var(--flow)', label: 'Live session' },
+          { color: 'var(--warn)', label: 'Redirected session (dashed while logging in)' },
+          { color: 'var(--bad)', dashed: true, label: 'Session lost' },
+        ]}
+      />
+      <PlayBar clock={clock} label="iSCSI redirection animation" extra={<Illus why="Simplified: timings are compressed, and two hosts, four CVMs and four disks are an example. How quickly a host logs in again depends on its iSCSI initiator settings." />} />
     </Show>
   );
 }
@@ -391,8 +404,8 @@ function objectsCap(d: number): Cap {
   return d >= YEAR
     ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob and other S3 clouds also work as targets; reading a tiered object back is slower, and from a public cloud it may cost egress.` }
     : today < DAYS
-      ? { tone: 'ink', k: 'Filling the bucket', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
-      : { tone: 'flow', k: 'Tiering', text: `A lifecycle rule on the bucket has Objects move anything older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. The bucket keeps the metadata and the recent data, which is read most.` };
+      ? { tone: 'ink', k: 'The bucket fills', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
+      : { tone: 'flow', k: 'Old objects move', text: `A lifecycle rule on the bucket has Objects move anything older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. The bucket keeps the metadata and the recent data, which is read most.` };
 }
 const OBJECT_STEPS = stepsFrom(YEAR + 30, objectsCap);
 
@@ -503,11 +516,11 @@ function Objects() {
       </div>
       <Legend
         items={[
-          { color: 'var(--ink)', label: 'Two weeks of objects, on the cluster' },
+          { color: 'var(--ink)', label: 'About two weeks of objects, on the cluster' },
           { color: 'var(--flow)', label: 'Moved to cheaper storage' },
         ]}
       />
-      <PlayBar clock={clock} label="Object tiering over one year" fmt={() => (d >= YEAR ? 'One year' : `Month ${month}`)} />
+      <PlayBar clock={clock} label="Object tiering over one year" fmt={() => (d >= YEAR ? 'One year' : `Month ${month}`)} extra={<Illus why="A year of writes plays in seconds. The 30-day rule and the data volumes are examples; you set your own lifecycle rules and targets." />} />
     </Show>
   );
 }
@@ -521,17 +534,10 @@ const TABS: [Svc, string][] = [
 export default function Storage() {
   const [tab, setTab] = useEnum<Svc>('tab', 'files', ['files', 'vol', 'obj']);
   return (
-    <>
-      <div class="tabs" role="tablist" aria-label="Storage services">
-        {TABS.map(([id, l]) => (
-          <button type="button" role="tab" key={id} aria-selected={tab === id} onClick={() => setTab(id)}>
-            {l}
-          </button>
-        ))}
-      </div>
+    <Tabs label="Storage services" value={tab} tabs={TABS.map(([id, label]) => ({ id, label }))} onChange={setTab}>
       {tab === 'files' && <Files />}
       {tab === 'vol' && <Volumes />}
       {tab === 'obj' && <Objects />}
-    </>
+    </Tabs>
   );
 }

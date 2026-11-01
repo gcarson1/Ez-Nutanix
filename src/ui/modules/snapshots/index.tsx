@@ -3,7 +3,7 @@
 // the walkthrough in src/engine/snapshots.ts; this file only animates between them.
 import { exclusiveBlocks, fullCopyBlocks, refCounts, usedBlocks, walkthrough, type SnapState } from '../../../engine/snapshots';
 import { paced, useClock } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
@@ -15,7 +15,6 @@ const END = 15.6;
 const SLIDE = 0.8;
 const FLY = 0.8;
 const TONE: Tone[] = ['neutral', 'ok', 'flow', 'ok', 'flow'];
-const WORD = ['A disk', 'Snapshot', 'New writes', 'Clones', 'Clones change'];
 
 // ── geometry ──
 const W = 960;
@@ -209,25 +208,17 @@ export default function Snapshots() {
       <div class="diagram-scroll">
         <Maps k={k} t={t} />
       </div>
-      <div class="legend">
-        <span>
-          <i class="sw" style={{ background: 'var(--s3)' }} />
-          Block shared with another disk
-        </span>
-        <span>
-          <i class="sw" style={{ background: 'var(--ink)' }} />
-          Block only this disk uses
-        </span>
-        <span>
-          <i class="sw" style={{ border: '2px solid var(--ok)' }} />
-          Just written
-        </span>
-        <span>Dots in a stored block: how many disks point at it</span>
-      </div>
+      <Legend
+        items={[
+          { color: 'var(--s3)', label: 'Block shared with another disk' },
+          { color: 'var(--ink)', label: 'Block only this disk uses' },
+          { color: 'var(--ok)', label: 'Just written' },
+          { color: 'var(--ink-fg)', label: 'Dot in a stored block: one disk pointing at it' },
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Snapshot and clone animation"
-        fmt={() => WORD[k]}
         extra={<Illus why="Blocks here are large and few so they can be drawn. AOS tracks changes at a much finer granularity, manages snapshot chains in the background, and stores every block with the container’s replication factor, which multiplies both sides of the comparison equally." />}
       />
     </Show>

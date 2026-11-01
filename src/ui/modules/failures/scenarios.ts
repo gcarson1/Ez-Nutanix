@@ -394,18 +394,18 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         id,
         copies: 2,
         steps: [
-          { at: 0, label: 'Running', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
+          { at: 0, label: 'Cluster healthy', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
           { at: 2, label: `${v} fails`, text: `${v} loses power. Its ${vmCount} VMs stop and the copies on its drives go offline.` },
           { at: 5.5, label: 'VMs restart', text: 'High availability (HA) restarts those VMs on other nodes with free memory, typically within about two minutes.' },
           { at: 9.6, label: 'Copies re-created', text: 'Every surviving node re-creates some of the missing copies, all at the same time.' },
-          { at: 15, label: 'Protected', text: 'Every piece of data has two copies again. Nobody had to step in.' },
+          { at: 15, label: 'Fully protected', text: 'Every piece of data has two copies again. Nobody had to step in.' },
         ],
         outcome: [
           { tone: 'ok', text: 'VMs restarted on other nodes, typically in about two minutes' },
           { tone: 'ok', text: 'No data lost or unavailable' },
           { tone: 'ok', text: 'Back to two copies on its own' },
         ],
-        why: 'Recovery doesn’t wait for a person or a spare part. And because every node helps rebuild, bigger clusters heal faster.',
+        why: 'Recovery does not wait for a person or a spare part. And because every node helps rebuild, bigger clusters heal faster.',
         legend: [L_COPY, L_SHORT, L_OFF, L_NEW],
         duration: 18,
         poster: 12,
@@ -415,10 +415,10 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         id,
         copies: 2,
         steps: [
-          { at: 0, label: 'Running', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
+          { at: 0, label: 'Cluster healthy', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
           { at: 2, label: 'A drive fails', text: `A drive in ${v} fails. The copies on it are gone, but each of those pieces still has a copy on another node.` },
           { at: 5.5, label: 'Copies re-created', text: 'Every node helps re-create the missing copies from the surviving ones. VMs keep running throughout.' },
-          { at: 10.5, label: 'Protected', text: 'Two copies of everything again. The drive can be replaced whenever it suits you.' },
+          { at: 10.5, label: 'Fully protected', text: 'Two copies of everything again. The drive can be replaced whenever it suits you.' },
         ],
         outcome: [
           { tone: 'ok', text: 'VMs kept running' },
@@ -435,11 +435,11 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         id,
         copies: 2,
         steps: [
-          { at: 0, label: 'Running', text: 'Each node’s VMs read and write through the Controller VM (CVM) on their own node.' },
+          { at: 0, label: 'Cluster healthy', text: 'Each node’s VMs read and write through the Controller VM (CVM) on their own node.' },
           { at: 2, label: 'CVM stops', text: `${v}’s CVM stops. The node and its VMs keep running: nothing restarts.` },
           { at: 4.5, label: 'I/O redirected', text: 'Their storage I/O goes over the network to CVMs on other nodes, with a little extra latency. Copies on its drives are offline meanwhile.' },
-          { at: 10, label: 'CVM back', text: 'The CVM comes back and I/O returns to it. Its copies count again.' },
-          { at: 13, label: 'Done', text: 'No VM restarted and no data was lost.' },
+          { at: 10, label: 'CVM returns', text: 'The CVM comes back and I/O returns to it. Its copies count again.' },
+          { at: 13, label: 'Nothing lost', text: 'No VM restarted and no data was lost.' },
         ],
         outcome: [
           { tone: 'ok', text: 'VMs kept running: no restart' },
@@ -456,11 +456,11 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         id,
         copies: 2,
         steps: [
-          { at: 0, label: 'Running', text: 'Block awareness keeps the two copies of every piece in different blocks (chassis).' },
+          { at: 0, label: 'Cluster healthy', text: 'Block awareness keeps the two copies of every piece in different blocks (chassis).' },
           { at: 2, label: 'A block fails', text: `A whole block loses power: ${p.downNodes.map(name).join(' and ')} go down together, with their ${vmCount} VMs.` },
           { at: 5.5, label: 'VMs restart', text: `HA restarts the ${vmCount} VMs on the other nodes.` },
           { at: 10, label: 'Copies re-created', text: 'Every piece still had a copy in another block, so the other blocks re-create the missing copies.' },
-          { at: 15.4, label: 'Protected', text: 'Nothing was unavailable at any point, and two copies are back, still in different blocks.' },
+          { at: 15.4, label: 'Fully protected', text: 'Nothing was unavailable at any point, and two copies are back, still in different blocks.' },
         ],
         outcome: [
           { tone: 'ok', text: 'VMs restarted on other nodes' },
@@ -480,11 +480,11 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
           id,
           copies,
           steps: [
-            { at: 0, label: 'Running', text: 'Two copies of every piece of data (RF2), on different nodes.' },
+            { at: 0, label: 'Cluster healthy', text: 'Two copies of every piece of data (RF2), on different nodes.' },
             { at: 2, label: 'Two nodes fail', text: `${pair} fail at the same moment.` },
             { at: 5, label: 'Some data unavailable', text: 'Pieces that had both copies on those two nodes have no copy online. They stay unavailable until one of the nodes comes back.' },
-            { at: 8.5, label: 'Recovery', text: 'HA restarts the VMs on other nodes. Pieces that still have a copy are re-created; the unavailable ones have nothing to copy from.' },
-            { at: 16.6, label: 'Result', text: 'Two copies protect against one failure at a time. Switch to three copies (RF3) to see the same failure survived.' },
+            { at: 8.5, label: 'Recovery begins', text: 'HA restarts the VMs on other nodes. Pieces that still have a copy are re-created; the unavailable ones have nothing to copy from.' },
+            { at: 16.6, label: 'RF2 falls short', text: 'Two copies protect against one failure at a time. Switch to three copies (RF3) to see the same failure survived.' },
           ],
           outcome: [
             { tone: 'ok', text: 'VMs restarted on other nodes' },
@@ -500,11 +500,11 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         id,
         copies,
         steps: [
-          { at: 0, label: 'Running', text: 'Three copies of every piece of data (RF3), on different nodes.' },
+          { at: 0, label: 'Cluster healthy', text: 'Three copies of every piece of data (RF3), on different nodes.' },
           { at: 2, label: 'Two nodes fail', text: `${pair} fail at the same moment.` },
-          { at: 5, label: 'Still available', text: 'Every piece still has at least one copy online, so nothing is unavailable.' },
-          { at: 8.5, label: 'Recovery', text: 'HA restarts the VMs on other nodes, and every surviving node re-creates the missing copies.' },
-          { at: 16.6, label: 'Protected', text: 'Three copies of everything again.' },
+          { at: 5, label: 'Data stays available', text: 'Every piece still has at least one copy online, so nothing is unavailable.' },
+          { at: 8.5, label: 'Recovery begins', text: 'HA restarts the VMs on other nodes, and every surviving node re-creates the missing copies.' },
+          { at: 16.6, label: 'Fully protected', text: 'Three copies of everything again.' },
         ],
         outcome: [
           { tone: 'ok', text: 'VMs restarted on other nodes' },
@@ -522,11 +522,11 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         id,
         copies: 2,
         steps: [
-          { at: 0, label: 'Running', text: 'The same cluster, but its drives are about 85% full.' },
+          { at: 0, label: 'Cluster healthy', text: 'The same cluster, but its drives are about 85% full.' },
           { at: 2, label: `${v} fails`, text: `${v} loses power. Its ${vmCount} VMs stop and the copies on its drives go offline.` },
           { at: 5.5, label: 'VMs restart', text: 'HA restarts those VMs on other nodes.' },
           { at: 9.6, label: 'Out of space', text: 'The other nodes start re-creating copies, but their drives fill up before every copy is back.' },
-          { at: 14.6, label: 'Result', text: 'Data stays available, but some pieces have only one copy until capacity is added.' },
+          { at: 14.6, label: 'Not fully protected', text: 'Data stays available, but some pieces have only one copy until capacity is added.' },
         ],
         outcome: [
           { tone: 'ok', text: 'VMs restarted on other nodes' },

@@ -1,4 +1,4 @@
-// Nutanix Cloud Manager (NCM): one tab per component (AIOps, Self-Service, Cost, SecOps).
+// Nutanix Cloud Manager (NCM): one tab per component (AIOps, Self-Service, Cost, Security).
 // Each tab is one looping picture with at most one preset choice. The models live in
 // src/engine/ncm.ts; this file only animates them.
 import { useMemo } from 'preact/hooks';
@@ -28,7 +28,7 @@ import {
 } from '../../../engine/ncm';
 import { paced, stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point, Tabs } from '../../components/show';
 import './style.css';
 
 type Line = { tone: Tone | 'ink'; k: string; text: string };
@@ -56,6 +56,9 @@ const SPIKES = [
   { at: 1 * 24 + 2, when: 'at 3 a.m.' },
   { at: 3 * 24 + 13, when: 'at 2 p.m.' },
 ];
+
+/** 12-hour clock for the readout: 0 is 12 a.m., 13 is 1 p.m. */
+const hour12 = (h: number) => `${h % 12 || 12} ${h < 12 ? 'a.m.' : 'p.m.'}`;
 
 function useWeek() {
   return useMemo(() => {
@@ -144,10 +147,10 @@ function AiOps() {
   const wk = useWeek();
   const [night, day] = wk.peaks.map((v) => Math.round(v));
   const lines: Line[] = [
-    { tone: 'ink', k: 'Normal, learned', text: 'The shaded band is what normal CPU looks like for each hour of the week, learned from the two weeks before.' },
+    { tone: 'ink', k: 'Normal range learned', text: 'The shaded band is what normal CPU looks like for each hour of the week, learned from the two weeks before.' },
     { tone: 'ink', k: 'Busy afternoons are normal', text: 'Weekday afternoons run hot every day, so they stay inside the band and raise nothing.' },
-    { tone: 'bad', k: `Flagged ${SPIKES[0].when}`, text: `CPU jumps to ${night}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` },
-    { tone: 'bad', k: `Flagged ${SPIKES[1].when}`, text: `CPU jumps to ${day}% on a busy afternoon, above normal even for that hour, so it is flagged too. This one crosses ${FIXED}%, so the fixed alarm fires as well. Only the learned band caught both.` },
+    { tone: 'bad', k: `Spike flagged ${SPIKES[0].when}`, text: `CPU jumps to ${night}% at 3 a.m., far above normal for that hour, so it is raised as an anomaly. A fixed ${FIXED}% alarm, set high enough to stay quiet on busy afternoons, misses it.` },
+    { tone: 'bad', k: `Spike flagged ${SPIKES[1].when}`, text: `CPU jumps to ${day}% on a busy afternoon, above normal even for that hour, so it is flagged. It crosses ${FIXED}%, so the fixed alarm fires too, but only the learned band caught both.` },
   ];
   const starts = [0, DRAW_FROM, ...wk.flagAt];
   const clock = useClock({ rate: 1, duration: AI_END, keys: true, poster: AI_END, steps: paced(starts, lines.map((l) => [l.k, l.text])) });
@@ -181,14 +184,15 @@ function AiOps() {
         items={[
           { color: 'var(--ink-line)', label: 'Normal for each hour (learned)' },
           { color: 'var(--text)', label: 'CPU this week' },
+          { color: 'var(--s2)', dashed: true, label: `Fixed ${FIXED}% alarm` },
           { color: 'var(--bad)', label: 'Flagged as unusual' },
         ]}
       />
       <PlayBar
         clock={clock}
         label="Anomaly detection animation"
-        fmt={() => (t < DRAW_FROM ? 'Learning' : hc >= wk.pts.length - 1 ? 'Week done' : `${WEEKDAYS[Math.min(6, Math.floor(hc / 24))]} ${String(Math.floor(hc) % 24).padStart(2, '0')}:00`)}
-        extra={<Illus why="Mock data. The band here is learned per hour of day (weekday or weekend) from the previous two weeks. Intelligent Operations uses its own machine-learned baselines, and also forecasts capacity runway and suggests right-sizing." />}
+        fmt={() => (t < DRAW_FROM ? 'Learning' : hc >= wk.pts.length - 1 ? 'Week done' : `${WEEKDAYS[Math.min(6, Math.floor(hc / 24))]} ${hour12(Math.floor(hc) % 24)}`)}
+        extra={<Illus why="Example data. The band here is learned per hour of day (weekday or weekend) from the previous two weeks. Intelligent Operations uses its own machine-learned baselines, and also forecasts capacity runway and suggests right-sizing." />}
       />
     </Show>
   );
@@ -207,7 +211,6 @@ const REQS: Record<Req, { item: CatalogItem; project: Project; label: string }> 
   app: { item: APP, project: WEB, label: '3-tier web app' },
   over: { item: APP, project: DATA, label: 'App over quota' },
 };
-const STEP_WORD: Record<ProvStep['id'], string> = { policy: 'Check', approve: 'Approval', create: 'Create', config: 'Configure', ready: 'Ready', refused: 'Sent back' };
 
 const BOX = { req: { x: 12, w: 176 }, chk: { x: 258, w: 176 }, apr: { x: 504, w: 156 } } as const;
 const BY = 40;
@@ -373,12 +376,12 @@ function SelfService() {
   const total = steps.reduce((s, x) => s + x.dur, 0);
   const left = p.quota.vcpu - p.used.vcpu;
   const LINES: Record<ProvStep['id'], Line> = {
-    policy: { tone: 'ink', k: 'Checking quota and policy', text: `The ${p.label} team orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
-    approve: { tone: 'warn', k: 'Waiting for approval', text: `The app asks for ${d.vcpu} vCPU, over the project’s ${p.approvalAbove} vCPU approval limit, so a project admin approves it first.` },
-    create: { tone: 'flow', k: 'Creating from the blueprint', text: `The blueprint creates ${item.vms > 1 ? `${item.vms} VMs` : 'the VM'} on the cluster, already inside the project.` },
-    config: { tone: 'flow', k: 'Configuring', text: 'Install and configuration tasks from the blueprint run inside the VMs.' },
-    ready: { tone: 'ok', k: 'Ready, no ticket', text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
-    refused: { tone: 'bad', k: 'Sent back', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. The request is refused before anything is created, and the reason goes back to the team.` },
+    policy: { tone: 'ink', k: 'Quota and policy checked', text: `Someone in project ${p.label} orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
+    approve: { tone: 'warn', k: 'Approval requested', text: `The app asks for ${d.vcpu} vCPU, over the project’s ${p.approvalAbove} vCPU approval limit, so a project admin approves it first.` },
+    create: { tone: 'flow', k: 'Blueprint creates the VMs', text: `The blueprint creates ${item.vms > 1 ? `${item.vms} VMs` : 'the VM'} on the cluster, already inside the project.` },
+    config: { tone: 'flow', k: 'Install tasks run', text: 'Install and configuration tasks from the blueprint run inside the VMs.' },
+    ready: { tone: 'ok', k: `${item.multiVm ? 'App' : 'VM'} is ready`, text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
+    refused: { tone: 'bad', k: 'Request sent back', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. The request is refused before anything is created, and the reason goes back to the team.` },
   };
   const paceSteps = paced(
     steps.map((_, i) => steps.slice(0, i).reduce((s, x) => s + x.dur, 0)),
@@ -412,11 +415,17 @@ function SelfService() {
       <div class="diagram-scroll">
         <Provision req={req} t={clock.t} steps={steps} v={v} />
       </div>
+      <Legend
+        items={[
+          { color: 'var(--s2)', label: 'vCPU already used' },
+          { color: v.ok ? 'var(--flow)' : 'var(--bad)', label: v.ok ? 'This request' : 'This request, over the quota' },
+          { color: 'var(--text)', label: 'Quota limit' },
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Self-service request animation"
-        fmt={() => STEP_WORD[id]}
-        extra={<Illus why="Durations are compressed. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
+        extra={<Illus why="Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
       />
     </Show>
   );
@@ -488,6 +497,7 @@ function SpendChart({ t }: { t: number }) {
           Day {d}
         </text>
       ))}
+      {t < MONTH && <line x1={sx(day)} x2={sx(day)} y1={top} y2={H - b} class="ncm-cursor" />}
       <line x1={l} x2={sx(MONTH)} y1={sy(DEV.budget)} y2={sy(DEV.budget)} class="ss-limit" />
       <text x={l + 8} y={sy(DEV.budget) - 7} class="halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
         Budget {usd(DEV.budget)}
@@ -514,7 +524,6 @@ function SpendChart({ t }: { t: number }) {
       )}
 
       <path d={path(WITH_NCM, 0, day)} class="ncm-spend" />
-      {t < MONTH && <line x1={sx(day)} x2={sx(day)} y1={top} y2={H - b} class="ncm-cursor" />}
       <circle cx={sx(day)} cy={sy(spent)} r={4} class="ncm-spend-dot" />
       {t >= MONTH && (
         <>
@@ -541,12 +550,12 @@ function SpendChart({ t }: { t: number }) {
 function Cost() {
   const overPct = Math.round((ALONE_END / DEV.budget - 1) * 100);
   const lines: Line[] = [
-    { tone: 'ink', k: 'Metered every day', text: `Cost Governance meters dev-test’s CPU, memory and storage every day at the rates you set, and tracks the total against its ${usd(DEV.budget)} budget for the month.` },
-    { tone: 'bad', k: 'Running hot', text: `On day ${HOT.from} a load test leaves extra VMs running, and dev-test starts spending ${HOT.factor} times its normal daily rate. Left alone, it would pass its budget on day ${Math.ceil(OVER_DAY ?? MONTH)} and end the month at ${usd(ALONE_END)}, ${overPct}% over.` },
-    { tone: 'warn', k: '1 · Budget alert', text: `Spend passes ${ALERT_AT * 100}% of the budget on day ${Math.ceil(ALERT_DAY)}, with ${MONTH - Math.ceil(ALERT_DAY)} days still to go. Cost Governance sends the owner an overspend alert now, not after the invoice.` },
-    { tone: 'flow', k: '2 · Savings recommendations', text: 'Cost Governance lists the idle and oversized VMs. The owner stops the idle load-test VMs and right-sizes the oversized ones, and spend drops back to the planned rate.' },
-    { tone: 'ok', k: '3 · Quotas and policies', text: 'Self-Service keeps it from happening again: the project quota caps the CPU, memory and storage dev-test can deploy, an approval policy holds large requests for sign-off, and a scheduler policy stops dev-test apps at night and on weekends.' },
-    { tone: 'ok', k: 'Under budget', text: `dev-test closes the month at ${usd(NCM_END)} of its ${usd(DEV.budget)} budget instead of ${usd(ALONE_END)}. The alert caught it early, the recommendations cut the waste, and the quota and policies stop it coming back.` },
+    { tone: 'ink', k: 'Spend metered daily', text: `Cost Governance meters dev-test’s CPU, memory and storage every day at the rates you set, and tracks the total against its ${usd(DEV.budget)} budget for the month.` },
+    { tone: 'bad', k: 'Spend runs hot', text: `On day ${HOT.from} a load test leaves extra VMs running, and dev-test starts spending at ${HOT.factor}× its normal daily rate. Left alone, it would pass its budget on day ${Math.ceil(OVER_DAY ?? MONTH)} and end the month at ${usd(ALONE_END)}, ${overPct}% over.` },
+    { tone: 'warn', k: 'Budget alert sent', text: `Spend passes ${ALERT_AT * 100}% of the budget on day ${Math.ceil(ALERT_DAY)}, with ${MONTH - Math.ceil(ALERT_DAY)} days still to go. Cost Governance sends the owner an overspend alert now, not after the invoice.` },
+    { tone: 'flow', k: 'Waste identified', text: 'Cost Governance lists the idle and oversized VMs. The owner stops the idle load-test VMs and right-sizes the oversized ones, and spend drops back to the planned rate.' },
+    { tone: 'ok', k: 'Guardrails put in place', text: 'Self-Service keeps it from happening again: the project quota caps the CPU, memory and storage dev-test can deploy, an approval policy holds large requests for sign-off, and a scheduler policy stops dev-test apps at night and on weekends.' },
+    { tone: 'ok', k: 'Month closes under budget', text: `dev-test closes the month at ${usd(NCM_END)} of its ${usd(DEV.budget)} budget instead of ${usd(ALONE_END)}. The alert caught it early, the recommendations cut the waste, and the quota and policies stop it coming back.` },
   ];
   const clock = useClock({ rate: 2, duration: MONTH + 1, keys: true, poster: MONTH + 1, steps: paced(COST_STARTS, lines.map((l) => [l.k, l.text])) });
   const t = clock.t;
@@ -587,14 +596,14 @@ function Cost() {
         label="dev-test spend animation"
         fmt={(x) => (x > MONTH ? 'Month closed' : `Day ${Math.max(1, Math.ceil(x))} of ${MONTH}`)}
         extra={
-          <Illus why={`Rates (${usd(RATES.vcpuMonth)} per vCPU, ${usd(RATES.memGBMonth)} per GB of memory, ${usd(RATES.tbMonth)} per TB a month), usage, the budget, the ${ALERT_AT * 100}% alert threshold and the savings are made-up examples. Cost Governance (formerly Beam) meters actual consumption at the rates you configure.`} />
+          <Illus why={`Rates (${usd(RATES.vcpuMonth)} per vCPU, ${usd(RATES.memGBMonth)} per GB of memory, ${usd(RATES.tbMonth)} per TB a month), usage, the budget, the ${ALERT_AT * 100}% alert threshold and the savings are example figures. Cost Governance (formerly Beam) meters actual consumption at the rates you configure.`} />
         }
       />
     </Show>
   );
 }
 
-// ───────────────────────── SecOps ─────────────────────────
+// ───────────────────────── Security ─────────────────────────
 type Base = 'hard' | 'reg';
 type BaseCheck = Omit<Check, 'pass'> & { short: string; failsAtFirst: boolean };
 const BASELINES: Record<Base, { label: string; name: string; checks: BaseCheck[]; drift: { id: string; text: string } }> = {
@@ -761,27 +770,31 @@ function secView(base: Base, tl: ReturnType<typeof secTimeline>, t: number) {
   const open = states.filter((s) => s === 'fail' || s === 'caught' || s === 'fixing').length;
   const passing = (s: TileState) => s === 'pass' || s === 'fixed' || s === 'changed';
   const sc = score(B.checks.map((c, i) => ({ ...c, pass: passing(states[i]) })));
-  const fixing = tl.fails.find((c) => states[B.checks.indexOf(c)] === 'fixing') ?? tl.fails.find((c) => states[B.checks.indexOf(c)] === 'fail');
+  // Each fix is its own step (its own heading), so every fix text gets its full reading time; after
+  // the last fix lands, the last one stays on screen until the phase ends.
+  const at = tl.fails.findIndex((c) => states[B.checks.indexOf(c)] === 'fixing' || states[B.checks.indexOf(c)] === 'fail');
+  const fi = at < 0 ? tl.fails.length - 1 : at;
+  const fixing = tl.fails[fi];
   const drifted = B.checks.find((c) => c.id === B.drift.id)!;
   const lines: Line[] = [
-    { tone: 'ink', k: 'Scanning', text: `Security Compliance compares the cluster’s settings with the ${B.name} baseline, one check at a time.` },
-    { tone: 'warn', k: `${tl.fails.length} findings`, text: 'Each finding comes with a suggested fix and a severity. High-severity findings weigh most in the score.' },
-    { tone: 'flow', k: `Fixing: ${fixing?.label ?? ''}`, text: `${fixing?.fix ?? ''} Some fixes are applied automatically, others need a change window or a decision.` },
-    { tone: 'ok', k: 'Compliant', text: 'Every check in the baseline passes.' },
-    { tone: 'warn', k: 'Changed by hand', text: `${B.drift.text} Nothing has looked yet.` },
-    { tone: drifted.sev === 'high' ? 'bad' : 'warn', k: 'Drift caught', text: `The next scan catches “${drifted.label}” failing again, so compliance does not quietly decay between audits.` },
+    { tone: 'ink', k: 'Settings are scanned', text: `Security Compliance compares the cluster’s settings with the ${B.name} baseline, one check at a time.` },
+    { tone: 'warn', k: `${tl.fails.length} findings reported`, text: 'Each finding comes with a suggested fix and a severity. High-severity findings weigh most in the score.' },
+    { tone: 'flow', k: `Finding ${fi + 1} of ${tl.fails.length} gets fixed`, text: `The suggested fix for “${fixing?.label}”: ${fixing?.fix} Some fixes are applied automatically, others need a change window or a decision.` },
+    { tone: 'ok', k: 'Every check passes', text: 'The cluster is compliant: every check in the baseline passes.' },
+    { tone: 'warn', k: 'A setting is changed', text: `${B.drift.text} Nothing has looked yet.` },
+    { tone: drifted.sev === 'high' ? 'bad' : 'warn', k: 'Next scan catches drift', text: `The next scan catches “${drifted.label}” failing again, so compliance does not quietly decay between audits.` },
   ];
   return { phase, open, sc, line: lines[phase] };
 }
 
-function SecOps() {
+function Security() {
   const [base, setBase] = useEnum<Base>('bl', 'hard', ['hard', 'reg']);
   const tl = useMemo(() => secTimeline(base), [base]);
   const steps = useMemo(() => stepsFrom(tl.end, (t) => secView(base, tl, t).line), [base, tl]);
   const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.scanEnd + 0.8, steps });
   useRestartOn(clock, [base]);
   const t = clock.t;
-  const { phase, open, sc, line } = secView(base, tl, t);
+  const { open, sc, line } = secView(base, tl, t);
   return (
     <Show
       top={
@@ -810,11 +823,19 @@ function SecOps() {
       <div class="diagram-scroll">
         <Compliance base={base} t={t} tl={tl} />
       </div>
+      <Legend
+        items={[
+          { color: 'var(--ok)', label: 'Passing' },
+          { color: 'var(--bad)', label: 'Failing, high severity' },
+          { color: 'var(--warn)', label: 'Failing, medium or low severity' },
+          { color: 'var(--flow)', label: 'Being fixed' },
+          { color: 'var(--warn)', dashed: true, label: 'Changed by hand' },
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Compliance scan animation"
-        fmt={() => ['Scanning', 'Findings', 'Fixing', 'Compliant', 'Drift', 'Caught'][phase]}
-        extra={<Illus why="Example checks written for this demo. Security Compliance (formerly Security Central) ships its own checks and regulatory reports." />}
+        extra={<Illus why="Example checks. Security Compliance (formerly Security Central) ships its own checks and regulatory reports." />}
       />
     </Show>
   );
@@ -826,24 +847,17 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'ai', label: 'AIOps' },
   { id: 'ss', label: 'Self-Service' },
   { id: 'cost', label: 'Cost' },
-  { id: 'sec', label: 'SecOps' },
+  { id: 'sec', label: 'Security' },
 ];
 
 export default function Ncm() {
   const [tab, setTab] = useEnum<TabId>('tab', 'ai', ['ai', 'ss', 'cost', 'sec']);
   return (
-    <>
-      <div class="tabs" role="tablist" aria-label="Cloud Manager areas">
-        {TABS.map((t) => (
-          <button type="button" role="tab" key={t.id} aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <Tabs label="Cloud Manager areas" value={tab} tabs={TABS} onChange={setTab}>
       {tab === 'ai' && <AiOps />}
       {tab === 'ss' && <SelfService />}
       {tab === 'cost' && <Cost />}
-      {tab === 'sec' && <SecOps />}
-    </>
+      {tab === 'sec' && <Security />}
+    </Tabs>
   );
 }

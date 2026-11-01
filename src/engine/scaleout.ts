@@ -34,8 +34,8 @@ export interface JoinStep {
 
 /** Adding a node, in the order it happens (simplified). */
 export const JOIN_STEPS: JoinStep[] = [
-  { id: 'add', text: 'A new node is racked, cabled and added from Prism with Expand Cluster. VMs keep running.', joined: false, balancing: false },
+  { id: 'add', text: 'A new node is racked, cabled and added to the running cluster from Prism with Expand Cluster.', joined: false, balancing: false },
   { id: 'join', text: 'Its CVM joins the cluster: one more storage controller, and the storage pool grows by its drives.', joined: true, balancing: false },
   { id: 'balance', text: 'Disk balancing moves some existing data onto the new drives in the background.', joined: true, balancing: true },
-  { id: 'done', text: 'More capacity and more controllers, one node at a time, and no VM was stopped.', joined: true, balancing: false },
+  { id: 'done', text: 'More capacity and more controllers, one node at a time.', joined: true, balancing: false },
 ];

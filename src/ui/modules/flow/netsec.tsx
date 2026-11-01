@@ -75,7 +75,7 @@ const TRIES: (Lane & { what: string; word: string; lblStart: Pt; lblEnd: Pt; lbl
     src: 'web2',
     dst: 'db',
     port: 5432,
-    word: 'Web → database',
+    word: 'Web-2 to database',
     what: 'Web-2 tries to reach the database directly, skipping the app tier.',
     c: [right('web2', 14), { x: 620, y: 300 }, { x: 822, y: 186 }],
     lblStart: { x: 420, y: 230 },
@@ -86,7 +86,7 @@ const TRIES: (Lane & { what: string; word: string; lblStart: Pt; lblEnd: Pt; lbl
     src: 'web2',
     dst: 'web1',
     port: 22,
-    word: 'Web → web',
+    word: 'Web-2 to Web-1',
     what: 'Web-2 tries to open a remote shell on Web-1, though web servers never need to talk to each other.',
     c: straight({ x: 330, y: 194 }, { x: 330, y: 122 }),
     lblStart: { x: 314, y: 186 },
@@ -98,7 +98,7 @@ const TRIES: (Lane & { what: string; word: string; lblStart: Pt; lblEnd: Pt; lbl
     src: 'dev',
     dst: 'db',
     port: 5432,
-    word: 'Dev → production',
+    word: 'Dev to database',
     what: 'A Dev VM tries to reach the production database.',
     c: [right('dev'), { x: 800, y: 340 }, { x: 822, y: 186 }],
     lblStart: { x: 674, y: 380 },
@@ -150,12 +150,12 @@ function outcome(v: Verdict, dst: string): { tone: Tone; k: string; text: string
         ? `${nameOf(v.atVm)} is quarantined, so it is stopped right there.`
         : hit?.kind === 'isolation'
           ? 'Production and Dev are walled off, so it is stopped as it leaves the Dev VM.'
-          : `No rule allows it, so it is stopped at the ${nameOf(dst).toLowerCase()}'s network connection.`;
-    return { tone: 'ok', k: 'Stopped', text, lbl: 'Stopped' };
+          : `No rule allows it, so it is stopped at the network connection of ${nameOf(dst)}.`;
+    return { tone: 'ok', k: 'is stopped', text, lbl: 'Stopped' };
   }
   if (v.wouldDrop)
-    return { tone: 'warn', k: 'Logged, not stopped', text: `${hit?.kind === 'isolation' ? 'The Production and Dev wall' : 'No rule allows it, so the policy'} flags it in the log, but Monitor lets it through.`, lbl: 'Logged only' };
-  return { tone: 'bad', k: 'Got through', text: 'No policy is applied, so nothing stops it.', lbl: 'Got through' };
+    return { tone: 'warn', k: 'is logged', text: `${hit?.kind === 'isolation' ? 'The Production and Dev wall' : 'No rule allows it, so the policy'} flags it in the log, but Monitor lets it through.`, lbl: 'Logged only' };
+  return { tone: 'bad', k: 'gets through', text: 'No policy is applied, so nothing stops it.', lbl: 'Got through' };
 }
 
 interface Shot {
@@ -250,11 +250,11 @@ export function NetSec() {
   const captionAt = (p: number) => {
     const res = p > 0 ? outcome(verdicts[p - 1], TRIES[p - 1].dst) : null;
     return res
-      ? { tone: res.tone, k: `${TRIES[p - 1].word} · ${res.k}`, text: `${TRIES[p - 1].what} ${res.text}` }
+      ? { tone: res.tone, k: `${TRIES[p - 1].word} ${res.k}`, text: `${TRIES[p - 1].what} ${res.text}` }
       : {
           tone: 'flow' as const,
-          k: 'App traffic',
-          text: `Users reach the web servers, web talks to app, and app talks to the database. ${
+          k: 'App traffic flows',
+          text: `Users reach the web servers, web talks to app and app talks to the database. ${
             quar
               ? 'Web-2 is quarantined, so nothing gets in or out of it; Web-1 keeps the app running.'
               : mode === 'off'
@@ -375,16 +375,16 @@ export function NetSec() {
         items={[
           { color: 'var(--flow)', label: 'App traffic' },
           { color: 'var(--bad)', label: 'Unwanted traffic' },
-          { color: 'var(--ok)', label: 'Stopped by the policy' },
-          { color: 'var(--warn)', label: 'Logged, but let through (Monitor)', dashed: true },
+          ...(shots.some((s) => !s.v.allowed) ? [{ color: 'var(--ok)', label: 'Stopped by a policy' }] : []),
+          ...(verdicts.some((v) => v.allowed && v.wouldDrop) ? [{ color: 'var(--warn)', label: 'Logged, but let through (Monitor)', dashed: true }] : []),
           ...(mode === 'off' ? [] : [{ color: mode === 'monitor' ? 'var(--warn)' : 'var(--ink)', label: 'Outline: the policy, checked at each VM', dashed: true }]),
+          ...(quar ? [{ color: 'var(--bad)', label: 'Outline: quarantined VM', dashed: true }] : []),
         ]}
       />
       <PlayBar
         clock={clock}
         label="Network security animation"
-        fmt={() => (tryNow ? tryNow.word : 'App traffic')}
-        extra={<Illus why="A small sample app. Flow checks traffic in the AHV virtual switch at each VM's network connection; the packets, ports and timings shown are simplified." />}
+        extra={<Illus why="A small sample app. Flow checks traffic in the AHV virtual switch at each VM’s network connection; the packets, ports and timings shown are simplified." />}
       />
     </Show>
   );

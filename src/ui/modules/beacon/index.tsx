@@ -2,7 +2,7 @@
 // product you buy; a marker walks 2023 to 2026 on a loop and each year's delivered piece appears
 // with its status in words.
 import { paced, useClock } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
@@ -11,31 +11,31 @@ type Status = 'ok' | 'warn';
 const YEARS: { year: string; title: string; tone: Tone | 'ink'; text: string; piece: { name: string; short: string; status: string; tone: Status; sub: string } }[] = [
   {
     year: '2023',
-    title: 'The idea',
+    title: 'Beacon is announced',
     tone: 'ink',
-    text: 'At .NEXT in May 2023, Nutanix described Project Beacon as a multi-year vision: build an app once, run it anywhere, and let its data services come along. Databases as a service were named first; NDB ships today, though the run-anywhere service in the vision is broader.',
+    text: 'At .NEXT in May 2023, Nutanix described Project Beacon as a multi-year vision: build an app once, run it anywhere, and let its data services come along. Databases as a service were named first; Nutanix Database Service (NDB) ships today, though the run-anywhere service in the vision is broader.',
     piece: { name: 'Database Service (NDB)', short: 'NDB', status: 'Shipping', tone: 'ok', sub: 'Databases as a service, the first step named in 2023' },
   },
   {
     year: '2024',
-    title: 'Kubernetes storage',
+    title: 'Kubernetes storage joins',
     tone: 'ink',
     text: 'In May 2024 the vision widened to cloud-native block and file storage for Kubernetes apps. NDK, which gives those apps snapshots, replication and DR, had gone GA that March.',
-    piece: { name: 'Data Services for Kubernetes (NDK)', short: 'NDK', status: 'Shipping', tone: 'ok', sub: 'Snapshots, replication and DR for Kubernetes apps · GA March 2024' },
+    piece: { name: 'Nutanix Data Services for Kubernetes (NDK)', short: 'NDK', status: 'Shipping', tone: 'ok', sub: 'Snapshots, replication and DR for Kubernetes apps · GA March 2024' },
   },
   {
     year: '2025',
-    title: 'First real product',
+    title: 'First product ships',
     tone: 'ok',
     text: 'Cloud Native AOS was announced in May 2025: AOS running as pods inside Kubernetes, with no hypervisor. Release 1.0 followed in July 2025 on Amazon EKS; with NDK, it is what the direction has delivered so far.',
     piece: { name: 'Cloud Native AOS', short: 'Cloud Native AOS', status: 'GA on EKS', tone: 'ok', sub: 'AOS as pods, no hypervisor · 1.0 on Amazon EKS, July 2025' },
   },
   {
     year: '2026',
-    title: 'Where it stands',
+    title: 'NKP Metal enters early access',
     tone: 'warn',
-    text: 'Nutanix no longer markets Beacon as a product; its page has not changed since 2024. The direction carries on in NKP Metal, Kubernetes and Cloud Native AOS on bare metal, in early access with GA targeted for the second half of 2026.',
-    piece: { name: 'NKP Metal', short: 'NKP Metal', status: 'Early access', tone: 'warn', sub: 'Kubernetes and Cloud Native AOS on bare metal · GA targeted 2H 2026' },
+    text: 'Nutanix still presents Beacon as a vision, and the newest Beacon item on its page is dated May 2024. The direction carries on in NKP Metal, Kubernetes and Cloud Native AOS on bare metal, in early access with GA targeted for the second half of 2026.',
+    piece: { name: 'NKP Metal', short: 'NKP Metal', status: 'Early access', tone: 'warn', sub: 'Kubernetes and Cloud Native AOS on bare metal · GA targeted for the second half of 2026' },
   },
 ];
 
@@ -155,7 +155,13 @@ export default function Beacon() {
       <div class="diagram-scroll">
         <Timeline t={t} now={now} />
       </div>
-      <PlayBar clock={clock} label="Beacon timeline animation" fmt={() => `${y.year} · ${y.title}`} extra={<Illus why="The dates are history and announced plans, not product commitments. Each product’s own release notes say what ships today." />} />
+      <Legend
+        items={[
+          { color: 'var(--ok)', label: 'Shipping' },
+          ...(YEARS.slice(0, now + 1).some((v) => v.piece.tone === 'warn') ? [{ color: 'var(--warn)', label: 'Early access', dashed: true }] : []),
+        ]}
+      />
+      <PlayBar clock={clock} label="Beacon timeline animation" extra={<Illus why="Four years are compressed into seconds, with one delivered piece shown per year. The dates are history and announced plans, not product commitments. Each product’s own release notes say what ships today." />} />
     </Show>
   );
 }

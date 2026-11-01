@@ -4,7 +4,7 @@
 // path has Cloud Native AOS.
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, flowDots, phaseAt, prog } from '../../components/show';
 import './style.css';
 
@@ -25,10 +25,10 @@ const USES: Record<Use, { label: string; link: string; end: number; phases: Phas
     link: 'replication',
     end: 12.5,
     phases: [
-      { k: 'Protected', at: 0, tone: 'flow', text: (c) => `Protection policies replicate the VMs to an NC2 cluster in ${c}, the same way they would to a second data center. While it only holds copies, the cloud cluster can stay small.` },
-      { k: 'Site lost', at: 4.2, tone: 'bad', text: () => 'The data center goes down and its VMs stop. Recent copies of them are already in the cloud.' },
-      { k: 'Failover', at: 5.8, tone: 'warn', text: (c) => `The recovery plan powers the VMs on in ${c}. The NC2 cluster can be expanded now, depending on cloud and configuration.` },
-      { k: 'Running in the cloud', at: 9.2, tone: 'ok', text: (c) => `The VMs run in ${c} on the same AHV, with the same Prism Central tools and policies, until you fail back.` },
+      { k: 'VMs replicate to the cloud', at: 0, tone: 'flow', text: (c) => `Protection policies replicate the VMs to an NC2 cluster in ${c}, the same way they would to a second data center. While it only holds copies, the cloud cluster can stay small.` },
+      { k: 'The data center goes down', at: 4.2, tone: 'bad', text: () => 'Everything running there stops. Recent copies of the VMs are already in the cloud.' },
+      { k: 'VMs fail over', at: 5.8, tone: 'warn', text: (c) => `The recovery plan powers the VMs on in ${c}. The NC2 cluster can be expanded now, depending on cloud and configuration.` },
+      { k: 'VMs run in the cloud', at: 9.2, tone: 'ok', text: (c) => `The VMs run in ${c} on the same AHV, with the same Prism Central tools and policies, until you fail back.` },
     ],
   },
   burst: {
@@ -36,10 +36,10 @@ const USES: Record<Use, { label: string; link: string; end: number; phases: Phas
     link: 'extended network',
     end: 11.5,
     phases: [
-      { k: 'Running short', at: 0, tone: 'warn', text: () => 'A seasonal peak, a hardware delay or a new project: the data center is nearly full.' },
-      { k: 'Add cloud nodes', at: 2.8, tone: 'flow', text: (c) => `Instead of buying hardware, add nodes to the NC2 cluster in ${c}: bare-metal instances running the same AOS and AHV.` },
-      { k: 'Burst', at: 4.6, tone: 'flow', text: () => 'The extra VMs run there, with the same Prism Central and the same policies as the VMs at home.' },
-      { k: 'Shrink back', at: 8.2, tone: 'ok', text: () => 'When the peak is over, the extra VMs go and the cluster shrinks again, so you stop paying for those nodes.' },
+      { k: 'Capacity runs short', at: 0, tone: 'warn', text: () => 'A seasonal peak, a hardware delay or a new project: the data center is nearly full.' },
+      { k: 'Cloud nodes are added', at: 2.8, tone: 'flow', text: (c) => `Instead of buying hardware, add nodes to the NC2 cluster in ${c}: bare-metal instances running the same AOS and AHV.` },
+      { k: 'VMs burst into the cloud', at: 4.6, tone: 'flow', text: () => 'The extra VMs run there, with the same Prism Central and the same policies as the VMs at home.' },
+      { k: 'The cluster shrinks back', at: 8.2, tone: 'ok', text: () => 'When the peak is over, the extra VMs go and the cluster shrinks again, so you stop paying for those nodes.' },
     ],
   },
   exit: {
@@ -47,14 +47,32 @@ const USES: Record<Use, { label: string; link: string; end: number; phases: Phas
     link: 'Move or replication',
     end: 12.5,
     phases: [
-      { k: 'Before', at: 0, tone: 'ink', text: () => 'Every workload runs in your own data center today.' },
-      { k: 'Moving in waves', at: 1.6, tone: 'flow', text: (c) => `Workloads move to NC2 in ${c} in waves, as they are: the same AHV means no refactoring, and with the right network design they keep their IP addresses.` },
-      { k: 'Retire the building', at: 8, tone: 'warn', text: () => 'With nothing left on-premises, the data center is retired on your timeline.' },
-      { k: 'Running in the cloud', at: 9.6, tone: 'ok', text: () => 'Teams keep the tools and runbooks they know. Later, apps can be modernized to native cloud services one at a time.' },
+      { k: 'Workloads run on-premises', at: 0, tone: 'ink', text: () => 'Every workload runs in your own data center today.' },
+      { k: 'Workloads move in waves', at: 1.6, tone: 'flow', text: (c) => `Workloads move to NC2 in ${c} in waves, as they are: the same AHV means no refactoring, and with the right network design they keep their IP addresses.` },
+      { k: 'The building is retired', at: 8, tone: 'warn', text: () => 'With nothing left on-premises, the data center is retired on your timeline.' },
+      { k: 'Workloads run in the cloud', at: 9.6, tone: 'ok', text: () => 'Teams keep the tools and runbooks they know. Later, apps can be modernized to native cloud services one at a time.' },
     ],
   },
 };
 const USE_IDS = Object.keys(USES) as Use[];
+
+/** The marks each use case draws. */
+const LEGEND: Record<Use, { color: string; label: string; dashed?: boolean }[]> = {
+  dr: [
+    { color: 'var(--ink)', label: 'Running VM' },
+    { color: 'var(--flow)', label: 'Replica waiting in the cloud', dashed: true },
+    { color: 'var(--flow)', label: 'Replication' },
+    { color: 'var(--bad)', label: 'Stopped VM' },
+  ],
+  burst: [
+    { color: 'var(--ink)', label: 'Running VM' },
+    { color: 'var(--warn)', label: 'Capacity nearly full' },
+  ],
+  exit: [
+    { color: 'var(--ink)', label: 'Running VM' },
+    { color: 'var(--line-2)', label: 'Space left by a moved VM', dashed: true },
+  ],
+};
 
 const VMS = 8;
 const BASE_NODES = 3;
@@ -142,7 +160,8 @@ export default function Cloud() {
       <div class="diagram-scroll">
         <Scene prov={prov} use={use} t={t} sc={sc} />
       </div>
-      <PlayBar clock={clock} label="Use case animation" fmt={() => ph.k} extra={<Illus why="A simplified picture: VM and node counts, timing and network paths are examples, not sizing. Regions, instance types and features vary by cloud and release." />} />
+      <Legend items={LEGEND[use]} />
+      <PlayBar clock={clock} label="Use case animation" extra={<Illus why="A simplified picture: VM and node counts, network paths and timing are examples, not sizing, and minutes to hours are compressed into seconds. Regions, instance types and features vary by cloud and release." />} />
     </Show>
   );
 }
@@ -193,7 +212,7 @@ function Nodes({ x0, n, down }: { x0: number; n: number; down: boolean }) {
         <g key={i} style={{ opacity: i === whole - 1 && n < whole ? n - i : 1 }}>
           <rect x={x0 + 20 + i * 72} y={206} width={64} height={46} class={`node-box${down ? ' down' : ''}`} />
           <text x={x0 + 26 + i * 72} y={224} class="cld-xs">
-            node {i + 1}
+            Node {i + 1}
           </text>
           <rect x={x0 + 26 + i * 72} y={230} width={52} height={14} class={`cvm${down ? ' down' : ''}`} />
         </g>
@@ -281,7 +300,7 @@ function Scene({ prov, use, t, sc }: { prov: Prov; use: Use; t: number; sc: Retu
         })}
       <Nodes x0={CL_X} n={sc.nodes} down={false} />
       <text x={CL_X + 20} y={278} class="cld-xs muted">
-        NC2 cluster: bare-metal nodes, each with its own CVM
+        Bare-metal nodes, each with a Controller VM (CVM)
       </text>
       {moving.map((v) => {
         const p = along(route(v.s), ease(v.f));

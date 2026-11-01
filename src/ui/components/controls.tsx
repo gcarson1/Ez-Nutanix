@@ -237,7 +237,12 @@ export function Legend({ items }: { items: { cls?: string; color?: string; label
 }
 
 // ── play bar: pause/play and a scrubber; animations autoplay and loop ──
-export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: { clock: Clock; label?: string; scrub?: boolean; fmt?: (t: number) => string; extra?: ComponentChildren }) {
+/**
+ * Without `fmt` the readout says which step is playing ("Step 2 of 5"), or the time when the clock
+ * has no steps. Pass `fmt` only where time itself is the subject (an hour of the day, Day 12 of 30).
+ */
+export function PlayBar({ clock, label, scrub = true, fmt, extra }: { clock: Clock; label?: string; scrub?: boolean; fmt?: (t: number) => string; extra?: ComponentChildren }) {
+  const readout = fmt ? fmt(clock.t) : clock.step ? `Step ${clock.step.index} of ${clock.step.count}` : fmtClock(clock.t);
   return (
     <div class="playbar" aria-label={label ?? 'Animation controls'}>
       <button type="button" class="btn pbtn" onClick={clock.toggle} aria-label={clock.playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
@@ -260,7 +265,9 @@ export function PlayBar({ clock, label, scrub = true, fmt = fmtClock, extra }: {
           }}
         />
       )}
-      <span class="clock" aria-live="off">{fmt(clock.t)}</span>
+      <span class="clock" aria-live="off">
+        {readout}
+      </span>
       {extra}
     </div>
   );

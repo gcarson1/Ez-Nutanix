@@ -34,13 +34,13 @@ const VOL_AT = (k: number) => (k < 9 ? 6.8 + k * 0.25 : 12.0 + (k - 9) * 0.25);
 const SNAP_IN = 9.2;
 const PC_IN = P[4];
 
-const PHASES = ['Keep your array', 'Connect over Ethernet', 'One volume per disk', 'Add compute only', 'Run it from Prism'];
+const PHASES = ['Your array stays', 'Nodes connect over Ethernet', 'Each disk gets its own volume', 'A compute node is added', 'Prism manages the cluster'];
 const CAPTIONS = [
   'Keep the storage array you already run. Nutanix adds compute-only nodes running AHV: each has a boot drive but no data drives.',
   'The nodes reach the array over standard Ethernet, so there is no Fibre Channel fabric to run: NVMe/TCP for FlashArray and PowerStore, Dell’s own client (SDC) for PowerFlex, and NFS for NetApp ONTAP.',
   'On the generally available arrays each VM disk is its own volume, with no shared datastore in between. Nutanix takes snapshots and clones through the array’s own APIs, per disk, and drives the replication for DR.',
-  'Need more CPU and memory? Add a compute node, and the array doesn’t change. When you need capacity, grow the array on its own schedule.',
-  'Prism Central runs it like any AHV cluster: VMs, networks, Flow security and DR orchestration, including failover to a full Nutanix cluster. From NCI 7.6 the array’s storage is managed in Prism Central too.',
+  'Add a compute node when you need more CPU and memory, and the array does not change. When you need capacity, grow the array on its own schedule.',
+  'Prism Central runs it like any AHV cluster: VMs, networks, Flow Network Security and DR orchestration, including failover to a full Nutanix cluster. From AOS 7.6 the array’s storage is managed in Prism Central too.',
 ];
 
 const POINTS: Point[] = [
@@ -69,7 +69,6 @@ const TW = 98;
 const TH = 30;
 const TGAP = (ARR_W - 40 - 6 * TW) / 5;
 const nx = (i: number) => i * (NW + GAP);
-const vmx = (i: number, j: number) => nx(i) + 12 + j * (VMW + 10);
 const tileX = (k: number) => ARR_X + 20 + (k % 6) * (TW + TGAP);
 const tileY = (k: number) => ARR_Y + 52 + Math.floor(k / 6) * (TH + 12);
 const LINK_X = [ARR_X + ARR_W * 0.3, ARR_X + ARR_W * 0.7];
@@ -98,7 +97,7 @@ function ExtDiagram({ t }: { t: number }) {
             Prism Central
           </text>
           <text x={W - 14} y={22} text-anchor="end" class="xs-on-ink soft" style={{ fontSize: '12.5px' }}>
-            VMs · networks · Flow security · DR orchestration · the array’s storage
+            VMs · networks · Flow Network Security · DR orchestration · the array’s storage
           </text>
           {Array.from({ length: nodes }, (_, i) => (
             <line key={i} x1={nx(i) + NW / 2} x2={nx(i) + NW / 2} y1={PC_H} y2={NODE_Y} class="ink-stroke" stroke-dasharray="3 3" />
@@ -145,7 +144,7 @@ function ExtDiagram({ t }: { t: number }) {
             ))}
             <rect x={x + 12} y={NODE_Y + 64} width={NW - 24} height={20} class="cvm" />
             <text x={x + 20} y={NODE_Y + 78} class="xs-on-ink" style={{ fontSize: '11.5px' }}>
-              CVM · storage client
+              Controller VM (CVM)
             </text>
             <rect x={x + 12} y={NODE_Y + 92} width={30} height={12} class="disk" />
             <text x={x + 50} y={NODE_Y + 102} class="faint" style={{ fontSize: '11px' }}>
@@ -216,13 +215,18 @@ function ExtDiagram({ t }: { t: number }) {
           {snap > 0 ? 'One volume per VM disk, with the array’s own snapshots per disk' : 'One volume per VM disk · no datastore'}
         </text>
       </g>
+      {/* the disk being mapped: its node's link into Ethernet, and the way out to its volume, kept clear of the labels */}
       {latest >= 0 &&
         (() => {
-          const i = Math.floor(latest / 3);
-          const j = latest % 3;
-          const x0 = vmx(i, j) + VMW / 2;
+          const cx = nx(Math.floor(latest / 3)) + NW / 2;
           const tx = tileX(latest) + TW / 2;
-          return <polyline points={`${x0},${NODE_Y + 54} ${x0},${NET_Y + NET_H / 2} ${tx},${NET_Y + NET_H / 2} ${tx},${tileY(latest)}`} class="xs-map" />;
+          return (
+            <g>
+              <line x1={cx} x2={cx} y1={NODE_Y + NODE_H} y2={NET_Y} class="xs-map" />
+              <line x1={tx} x2={tx} y1={NET_Y + NET_H} y2={ARR_Y} class="xs-map" />
+              <circle cx={tx} cy={ARR_Y} r={3.5} class="xs-io" />
+            </g>
+          );
         })()}
     </svg>
   );
@@ -262,17 +266,19 @@ export default function ExtStorage() {
       <div class="diagram-scroll">
         <ExtDiagram t={t} />
       </div>
-      <PlayBar clock={clock} label="External storage animation" fmt={() => PHASES[phase]} />
-      <div class="xs-legend">
-        <Legend
-          items={[
-            { color: 'var(--ink)', label: 'Controller VM (CVM)' },
-            { color: 'var(--flow)', label: 'Storage traffic' },
-            { color: 'var(--line-2)', label: 'Array snapshot', dashed: true },
-          ]}
-        />
-        <Illus why="Node, VM and volume counts are an example. Supported servers, array models, versions and limits differ by array and release; check the Compatibility Matrix." />
-      </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Controller VM (CVM), the storage client' },
+          { color: 'var(--flow)', label: 'Storage traffic' },
+          { color: 'var(--flow)', label: 'Disk-to-volume mapping', dashed: true },
+          { color: 'var(--line-2)', label: 'Array snapshot', dashed: true },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="External storage animation"
+        extra={<Illus why="Simplified and compressed: node, VM and volume counts are an example, and the build-up plays in seconds. Supported servers, array models, versions and limits differ by array and release; check the Compatibility Matrix." />}
+      />
     </Show>
   );
 }

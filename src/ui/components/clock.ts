@@ -225,6 +225,10 @@ export interface Clock {
   seek: (t: number) => void;
   /** Back to the start; keeps playing if it was playing. */
   restart: () => void;
+  /** Start over as on mount: from 0 and playing, or paused on the poster under reduced motion. */
+  reset: () => void;
+  /** Which step the clock is in (1-based) and how many there are, when it has steps. */
+  step?: { index: number; count: number };
   /** Pause and move a fortieth of the loop, or to the previous or next step's start. */
   nudge: (dir: -1 | 1, toStep?: boolean) => void;
 }
@@ -273,10 +277,12 @@ export function useClock(opts: ClockOptions): Clock {
     return () => cancelAnimationFrame(raf);
   }, [playing]);
 
+  const ats = (opts.steps ?? []).map((x) => x.at).filter((a) => opts.duration === undefined || a < opts.duration);
   const api: Clock = {
     t,
     playing,
     duration: opts.duration,
+    step: ats.length ? { index: Math.max(1, ats.filter((a) => a <= t + 1e-9).length), count: ats.length } : undefined,
     play: () => {
       const d = ref.current.opts.duration;
       if (d !== undefined && ref.current.t >= d) set(0);
@@ -296,6 +302,17 @@ export function useClock(opts: ClockOptions): Clock {
     restart: () => {
       ref.current.held = 0;
       set(0);
+    },
+    reset: () => {
+      ref.current.held = 0;
+      const o = ref.current.opts;
+      if (o.autoplay !== false && !prefersReducedMotion()) {
+        set(0);
+        api.play();
+      } else {
+        api.pause();
+        set(o.poster ?? 0);
+      }
     },
     nudge: (dir, toStep = false) => {
       const o = ref.current.opts;
@@ -329,7 +346,7 @@ export function useClock(opts: ClockOptions): Clock {
   return api;
 }
 
-/** Restart the clock whenever one of `deps` changes (a new preset starts from the top). */
+/** Start the clock over whenever one of `deps` changes: a new preset plays from the top, as a new tab does. */
 export function useRestartOn(clock: Clock, deps: unknown[]) {
   const first = useRef(true);
   useEffect(() => {
@@ -337,7 +354,7 @@ export function useRestartOn(clock: Clock, deps: unknown[]) {
       first.current = false;
       return;
     }
-    clock.restart();
+    clock.reset();
   }, deps);
 }
 

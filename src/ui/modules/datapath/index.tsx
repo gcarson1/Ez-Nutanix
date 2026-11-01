@@ -4,7 +4,7 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { brisk, paced, readSecs, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, Tip } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, Tip } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
 import {
   DP_NODES,
@@ -273,7 +273,7 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
         </g>
       ))}
       <rect x={10} y={198} width={500} height={14} class="bg3" />
-      <text x={505} y={209} text-anchor="end" class="muted" style={{ fontSize: '10px', letterSpacing: '0.06em' }}>
+      <text x={505} y={224} text-anchor="end" class="muted" style={{ fontSize: '10px', letterSpacing: '0.06em' }}>
         NETWORK
       </text>
       {readPts && <polyline points={readPts.map((p) => p.join(',')).join(' ')} class={`dp-hop ${f.readRemote ? 'rep' : 'io'}`} marker-end={`url(#dp-lar-${f.readRemote ? 'rep' : 'io'})`} />}
@@ -290,10 +290,43 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
 }
 
 function locWord(f: LocalityFrame): string {
-  return f.phase === 'before' ? 'Before the move' : f.phase === 'migrate' ? 'Live migration' : f.readRemote ? 'Remote read, then copied here' : 'Local again';
+  return f.phase === 'before' ? 'Reads stay local' : f.phase === 'migrate' ? 'VM live-migrates' : f.readRemote ? 'Remote read, then copied' : 'Reads local again';
 }
 
-const SRC_WORD: Record<ReadSource, string> = { cache: 'Memory cache', oplog: 'OpLog', local: 'Local drive', remote: 'Another node' };
+const SRC_WORD: Record<ReadSource, string> = { cache: 'Content cache', oplog: 'OpLog', local: 'Local drive', remote: 'Another node' };
+
+/** The marks the chosen view draws, and no others. */
+function legendFor(mode: Mode) {
+  if (mode === 'loc')
+    return [
+      { color: 'var(--ink)', label: 'Copy on the VM’s node' },
+      { color: 'var(--s2)', label: 'Copy on another node' },
+      { color: 'var(--line-2)', dashed: true, label: 'Not on this node yet' },
+      { color: 'var(--ink-fg)', label: 'Local read' },
+      { color: 'var(--flow)', dashed: true, label: 'Remote read over the network' },
+      { color: 'var(--ok)', label: 'VM live-migrates' },
+    ];
+  if (mode === 'rd')
+    return [
+      { color: 'var(--ink-fg)', label: 'Read request' },
+      { color: 'var(--ok)', label: 'Data found and returned' },
+      { color: 'var(--faint)', dashed: true, label: 'Checked, not there' },
+    ];
+  return [
+    { color: 'var(--ink-fg)', label: 'Write on its way' },
+    { color: 'var(--flow)', dashed: true, label: 'Copy sent to another CVM' },
+    { color: 'var(--ok)', label: 'Acknowledgement' },
+    { color: 'var(--s2)', dashed: true, label: mode === 'ws' ? 'Data tiered in the background (ILM)' : 'Background move (OpLog drain, ILM tiering)' },
+    { color: 'var(--ink)', label: 'Stored copy (#1, #2…)' },
+  ];
+}
+
+const WHY: Record<Mode, string> = {
+  wr: 'One VM and five nodes are drawn, and the peer CVMs are fixed here; AOS picks peers dynamically across the cluster. Each step is slowed down so it can be followed.',
+  ws: 'One VM and five nodes are drawn, and the peer CVMs are fixed here; AOS picks peers dynamically across the cluster. Each step is slowed down so it can be followed.',
+  rd: 'Shows a read answered by the VM’s own node. Which place answers depends on what is cached and how recently the data was written, and the order the places are checked in is simplified. Each step is slowed down so it can be followed.',
+  loc: 'Eight extents stand in for the VM’s hot data and latency is in relative units. AOS moves data only when it is read, and after repeated reads (documented as 3 touches for random or 10 for sequential reads within 10 minutes); here each extent moves after one read.',
+};
 
 export default function Datapath() {
   const [mode, setMode] = useEnum<Mode>('m', 'wr', MODES);
@@ -333,7 +366,7 @@ export default function Datapath() {
       top={
         <>
           <Choice<Mode>
-            label="What to follow"
+            label="What happens"
             value={mode}
             onChange={setMode}
             options={[
@@ -349,8 +382,8 @@ export default function Datapath() {
             onChange={setRf}
             why={isWrite ? null : 'Reads use one copy, so RF does not change this view.'}
             options={[
-              { value: '2', label: 'RF2', disabled: !isWrite },
-              { value: '3', label: 'RF3', disabled: !isWrite },
+              { value: '2', label: 'RF2 · 2 copies', disabled: !isWrite },
+              { value: '3', label: 'RF3 · 3 copies', disabled: !isWrite },
             ]}
           />
         </>
@@ -387,28 +420,9 @@ export default function Datapath() {
         </>
       }
     >
-      <div class="diagram-scroll">{mode === 'loc' ? <LocalityDiagram f={f} /> : <PathDiagram step={step} frac={clock.playing ? frac : 1} rf={rf} mode={mode} cache={cache} />}</div>
-      {mode === 'loc' && (
-        <div class="legend">
-          <span>
-            <i class="sw" style={{ background: 'var(--ink)' }} />
-            Copy on the VM’s node (local read)
-          </span>
-          <span>
-            <i class="sw" style={{ background: 'var(--s2)' }} />
-            Copy on another node
-          </span>
-          <span>
-            <i class="sw" style={{ border: '1.5px dashed var(--line-2)' }} />
-            Not on this node yet
-          </span>
-          <span>
-            <i class="sw" style={{ background: 'var(--flow)' }} />
-            Remote read over the network
-          </span>
-        </div>
-      )}
-      <PlayBar clock={clock} label="Data path animation" fmt={() => (mode === 'loc' ? k : step.title)} />
+      <div class="diagram-scroll">{mode === 'loc' ? <LocalityDiagram f={f} /> : <PathDiagram step={step} frac={frac} rf={rf} mode={mode} cache={cache} />}</div>
+      <Legend items={legendFor(mode)} />
+      <PlayBar clock={clock} label="Data path animation" extra={<Illus why={WHY[mode]} />} />
     </Show>
   );
 }

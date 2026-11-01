@@ -1,6 +1,7 @@
 // Showcase layout for modules that should read at a glance: one or two preset choices on
 // top, one big picture, the play bar, then a caption and a few key numbers.
 import type { ComponentChildren } from 'preact';
+import { useId } from 'preact/hooks';
 import { Seg, Tip, type SegOption, type Tone } from './controls';
 
 export function Show({ top, children, foot }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren }) {
@@ -10,6 +11,37 @@ export function Show({ top, children, foot }: { top?: ComponentChildren; childre
       <div class="show-stage">{children}</div>
       {foot && <div class="show-foot">{foot}</div>}
     </div>
+  );
+}
+
+/**
+ * Separate topics in one module, as underline tabs. Left and Right (and Home, End) move between
+ * them, so the arrows scrub the animation only once focus leaves the tabs.
+ */
+export function Tabs<T extends string>({ label, value, tabs, onChange, children }: { label: string; value: T; tabs: readonly { id: T; label: ComponentChildren }[]; onChange: (v: T) => void; children: ComponentChildren }) {
+  const id = useId();
+  const onKey = (e: KeyboardEvent) => {
+    const n = tabs.length;
+    const i = tabs.findIndex((x) => x.id === value);
+    const to = { ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    onChange(tabs[to].id);
+    (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role="tab"]')[to]?.focus();
+  };
+  return (
+    <>
+      <div class="tabs" role="tablist" aria-label={label} onKeyDown={onKey}>
+        {tabs.map((x) => (
+          <button type="button" role="tab" key={x.id} id={`${id}-${x.id}`} aria-selected={x.id === value} aria-controls={`${id}-panel`} tabIndex={x.id === value ? 0 : -1} onClick={() => onChange(x.id)}>
+            {x.label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${value}`}>
+        {children}
+      </div>
+    </>
   );
 }
 

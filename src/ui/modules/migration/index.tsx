@@ -58,10 +58,10 @@ const WORD: Record<PhaseKind, string> = { seed: 'Seed copy', idle: 'In sync', sy
 const fmtMin = (m: number) => fmtDur(m / 60);
 
 function caption(kind: PhaseKind, src: string): { tone: Tone | 'ink'; k: string; text: string } {
-  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy', text: `Move copies the whole VM to AHV while it keeps running on ${src}. Users notice nothing.` };
+  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy running', text: `Move copies the whole VM to AHV while it keeps running on ${src}. Users notice nothing.` };
   if (kind === 'idle' || kind === 'sync') return { tone: 'flow', k: 'Keeping in sync', text: `Each sync sends only the blocks that changed since the last one, about ${Math.round((BASE.changeGBPerHour * BASE.syncEveryMin) / 60)} GB here. The target stays close behind until you pick a window.` };
-  if (kind === 'final') return { tone: 'warn', k: 'Cutover', text: 'In the window you chose, the source VM shuts down so nothing changes, and the last few changes are copied.' };
-  if (kind === 'boot') return { tone: 'warn', k: 'Power on at the target', text: 'The VM powers on in AHV. Downtime is only this final sync plus the power-on.' };
+  if (kind === 'final') return { tone: 'warn', k: 'Cutover starts', text: 'In the window you chose, the source VM shuts down so nothing changes, and the last few changes are copied.' };
+  if (kind === 'boot') return { tone: 'warn', k: 'VM powering on', text: 'The VM powers on in AHV. Downtime is only this final sync plus the power-on.' };
   return { tone: 'ok', k: 'Running on AHV', text: 'Users now work on the AHV copy. The source VM stays powered off until the app owner signs off.' };
 }
 
@@ -110,7 +110,6 @@ export default function Migration() {
       <PlayBar
         clock={clock}
         label="Migration animation"
-        fmt={() => WORD[seg.kind]}
         extra={<Illus why="Example figures: an 800 GB VM, 250 MB/s effective transfer, 6 GB of changes an hour, a sync every hour and 5 minutes to power on and check. Move’s real throughput and sync scheduling depend on version, source platform and environment." />}
       />
     </Show>

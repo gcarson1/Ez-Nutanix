@@ -4,7 +4,7 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, phaseAt } from '../../components/show';
 import { BONDS, BOND_ORDER, limits, uplinkFor, uplinkRole, type BondMode, type LinkFail, type Uplink, type UplinkRole } from '../../../engine/ahvnet';
 import './style.css';
@@ -222,9 +222,9 @@ function HostDiagram({ bond, fail, t, pkts }: { bond: BondMode; fail: LinkFail; 
 }
 
 const STEADY: Record<BondMode, { k: string; text: string }> = {
-  ab: { k: 'Active-backup', text: 'Everything from the VMs and the CVM leaves on NIC A. NIC B stays connected as the backup, and the switches need no special setup.' },
-  slb: { k: 'Balance-SLB (MAC pinning)', text: 'Each VM and the CVM is pinned to one link by its MAC address. Both links carry traffic, but any one VM uses only one link at a time.' },
-  lacp: { k: 'LACP', text: 'Each connection is spread over both links by its addresses and ports, so even one VM can use both. The two switches must be set up as one link group.' },
+  ab: { k: 'Active-Backup uses one link', text: 'Everything from the VMs and the CVM leaves on NIC A. NIC B stays connected as the backup, and the switches need no special setup.' },
+  slb: { k: 'Balance-SLB pins each VM', text: 'Each VM and the CVM is pinned to one link by its MAC address. Both links carry traffic, but any one VM uses only one link at a time.' },
+  lacp: { k: 'LACP spreads connections', text: 'Each connection is spread over both links by its addresses and ports, so even one VM can use both. The two switches must be set up as one link group.' },
 };
 
 const MOVED: Record<BondMode, string> = {
@@ -239,8 +239,8 @@ export default function Network() {
   const pkts = useMemo(() => plan(bond, fail), [bond, fail]);
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, ...STEADY[bond] },
-    { tone: 'bad' as const, k: 'Link A fails', text: 'NIC A loses its link to switch A. The few packets on it are lost and sent again, and the bond stops using NIC A at once.' },
-    { tone: 'ok' as const, k: 'Still connected, on one link', text: MOVED[bond] },
+    { tone: 'bad' as const, k: 'NIC A loses its link', text: 'NIC A loses its link to switch A. The few packets on it are lost and sent again, and the bond stops using NIC A at once.' },
+    { tone: 'ok' as const, k: 'Traffic moves to NIC B', text: MOVED[bond] },
   ];
   // With both links up the loop is seamless, so its one caption needs no slowing down.
   const starts = [0, FAIL_AT, MOVED_AT];
@@ -296,11 +296,19 @@ export default function Network() {
       <div class="diagram-scroll">
         <HostDiagram bond={bond} fail={fail} t={t} pkts={pkts} />
       </div>
+      <Legend
+        items={[
+          { color: 'var(--flow)', label: 'Packet (shape matches its VM or the CVM)' },
+          { color: 'var(--s2)', label: 'Link in use' },
+          ...(bond === 'ab' ? [{ color: 'var(--line-2)', dashed: true, label: 'Link waiting as the backup' }] : []),
+          ...(bond === 'lacp' ? [{ color: 'var(--ink)', dashed: true, label: 'Link group (LAG) on the switches' }] : []),
+          ...(fail === 'one' ? [{ color: 'var(--bad)', dashed: true, label: 'Failed link and the packets lost on it' }] : []),
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Network traffic animation"
-        fmt={() => ['Both links up', 'Link fails', 'On one link'][phase]}
-        extra={<Illus why="One host shown; every host in the cluster is cabled the same way. Which link a VM or connection gets is a simplified hash: real Open vSwitch hashes by MAC address or by connection and rebalances by load. Bond behavior follows AHV 11.2 guidance and can differ by release and switch setup." />}
+        extra={<Illus why="One host shown; every host in the cluster is cabled the same way. Packets are few and slow so you can follow them. Which link a VM or connection gets is a simplified hash: real Open vSwitch hashes by MAC address or by connection and rebalances by load. Bond behavior follows AHV 11.2 guidance and can differ by release and switch setup." />}
       />
     </Show>
   );

@@ -54,7 +54,7 @@ export function haReserveAllowed(s: Pick<ClusterState, 'cfg' | 'nodes' | 'vms'>)
     return {
       ok: false,
       hosts,
-      reason: `VMs need ${demand} GB but only ${capacityAfterLoss} GB would remain after reserving ${hosts === 1 ? "one host's" : "two hosts'"} worth of memory. Lower the VM memory load or add a node.`,
+      reason: `VMs need ${demand} GB but only ${capacityAfterLoss} GB would remain after reserving ${hosts === 1 ? 'one host’s' : 'two hosts’'} worth of memory. Lower the VM memory load or add a node.`,
     };
   }
   return { ok: true, hosts };

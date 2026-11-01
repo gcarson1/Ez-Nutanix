@@ -11,8 +11,6 @@
 .diagram text.cn-on-ink.soft { opacity: 0.82; }
 .diagram text.cn-bad { fill: var(--bad); }
 .diagram text.cn-warn { fill: var(--warn); }
-.cn-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); }
-.cn-legend .legend { margin-top: 0; }
 @media (max-width: 600px) {
   .diagram-scroll > .cn-svg { min-width: 44rem; }
 }

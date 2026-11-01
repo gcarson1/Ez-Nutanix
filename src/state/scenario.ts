@@ -79,15 +79,20 @@ export function useScenario(): { cfg: ClusterConfig; set: (patch: Partial<Cluste
   return { cfg, set: setScenario };
 }
 
-/** Write cluster settings to the URL (defaults are removed so links stay short). */
-export function setScenario(patch: Partial<ClusterConfig>) {
-  const out: Record<string, string | number | boolean | null> = {};
+/** Cluster settings as URL params: a default becomes null so links stay short. */
+export function scenarioParams(patch: Partial<ClusterConfig>): Record<string, string | null> {
+  const out: Record<string, string | null> = {};
   for (const [k, v] of Object.entries(patch) as [keyof ClusterConfig, unknown][]) {
     const key = (KEYS as Record<string, string>)[k];
     if (!key) continue;
-    out[key] = v === (DEFAULT_CONFIG as unknown as Record<string, unknown>)[k] ? null : (v as string | number | boolean);
+    out[key] = v === (DEFAULT_CONFIG as unknown as Record<string, unknown>)[k] ? null : typeof v === 'boolean' ? (v ? '1' : '0') : String(v);
   }
-  setParams(out);
+  return out;
+}
+
+/** Write cluster settings to the URL (defaults are removed so links stay short). */
+export function setScenario(patch: Partial<ClusterConfig>) {
+  setParams(scenarioParams(patch));
 }
 
 export interface Preset {

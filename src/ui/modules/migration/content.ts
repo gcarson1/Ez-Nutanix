@@ -5,7 +5,7 @@ export const content: ModuleContent = {
   title: 'Migration with Nutanix Move',
   tag: 'Nutanix Cloud Infrastructure',
   summary:
-    'Nutanix Move brings VMs from VMware, Hyper-V, AWS and Azure onto Nutanix, on-premises or in NC2. It copies while the VM keeps running, keeps the copy in sync, and cuts over in a short window you choose.',
+    'Nutanix Move brings VMs from VMware, Hyper-V, AWS and Azure to Nutanix, on-premises or in Nutanix Cloud Clusters (NC2), copying while the VM runs so downtime is only a short cutover.',
   priority: 'P1',
   talk: [
     'Move is included at no extra cost for Nutanix customers and has been around for about ten years, so it is a well-trodden path.',
@@ -13,12 +13,12 @@ export const content: ModuleContent = {
     'Downtime is only the cutover: a final small sync plus the power-on, so its length depends on change rate, bandwidth and boot time. Compare it with shutting down and copying everything.',
     'Before the cutover, Move can prepare the guest OS for AHV, for example by installing drivers, automatically or manually depending on the OS and the access you give it.',
     'The honest limit: if a VM changes data faster than the link can copy it, syncs never catch up. The fix is more bandwidth or a quieter time.',
-    'Sources: vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud (VMC, AVS), AHV and file shares. Targets: AHV on-premises and NC2 on AWS, Azure, Google Cloud and OVHcloud. Supported versions and pairs change by Move release, so check the support matrix.',
+    'Sources include vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud on AWS, Azure VMware Solution, AHV and file shares; targets are AHV on-premises and NC2. Supported pairs change by Move release, so check the support matrix.',
   ],
   numbers: [
     { k: 'Cost', v: 'No extra cost for Nutanix customers' },
-    { k: 'Current release', v: 'Move 6.3.3 (Oct 2026, new deployments only)' },
-    { k: 'Targets', v: 'AHV on-prem; NC2 on AWS, Azure, Google Cloud, OVHcloud' },
+    { k: 'Current release', v: 'Move 6.3.3 (Oct 2026; for new Move deployments, not upgrades)' },
+    { k: 'Targets', v: 'AHV on-premises; NC2 on AWS, Azure, Google Cloud, OVHcloud' },
     { k: 'File shares', v: 'SMB v2+, NFS v3 sources' },
   ],
   qa: [
@@ -36,10 +36,11 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Start with VMware ESXi: point at the seed copy while users keep working on the source.',
+    'Start with Source platform set to “VMware ESXi”: point at the seed copy while users keep working on the source.',
     'Pause while it is in sync to show that only changed blocks travel.',
-    'Let it reach the cutover and compare the downtime with shutting down and copying everything.',
-    'Switch the source to Hyper-V, AWS EC2 or Azure: the pattern is the same.',
-    'Then Hybrid & Public Cloud for NC2 targets, or AHV Networking for keeping IP addresses.',
+    'Let it reach the cutover and compare the downtime with “Shut down, then copy all”.',
+    'Switch Source platform to “Hyper-V”, “AWS EC2” or “Azure”: the pattern is the same.',
+    'Then open Hybrid & Public Cloud for NC2 targets and keeping IP addresses.',
   ],
+  then: ['cloud'],
 };

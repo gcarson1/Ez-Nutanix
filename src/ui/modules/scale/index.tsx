@@ -1,4 +1,4 @@
-// Scale-out vs 3-tier: nodes join the cluster one at a time, on a loop. Each new node adds
+// Scale-Out vs 3-Tier: nodes join the cluster one at a time, on a loop. Each new node adds
 // compute, drives and its own storage controller (CVM); the 3-tier design underneath gains a
 // host each time but keeps one array's two controllers. Math in src/engine/scaleout.ts.
 import './style.css';
@@ -71,10 +71,7 @@ export default function Scale() {
   const lp = prog(t, ph.t, PHASES[i + 1]?.t ?? END);
   const { present, joined } = countsAt(i);
   const m = scaleModel({ nodes: joined, drivesPerNode: cfg.drivesPerNode, driveTB: cfg.driveTB });
-  const name = `N${ph.node + 1}`;
-
   const caption = captionAt(i);
-  const word = ph.id === 'start' ? `${FROM} nodes` : ph.id === 'done' ? `${TO} nodes` : ph.id === 'add' ? `Adding ${name}` : ph.id === 'join' ? `${name} joins` : 'Balancing';
 
   return (
     <Show
@@ -88,7 +85,7 @@ export default function Scale() {
             items={[
               { k: 'Controllers, scale-out', v: m.hci.controllers, tone: 'ok', sub: 'one per node' },
               { k: 'Controllers, 3-tier', v: m.tier3.controllers, sub: `${perCtl(joined)} hosts each` },
-              { k: 'Raw capacity, scale-out', v: fmtTB(m.hci.rawTB), sub: `+${fmtTB(cfg.drivesPerNode * cfg.driveTB)} per node`, tip: 'Drives per node and drive size come from the shared scenario. Usable capacity depends on RF and data reduction.' },
+              { k: 'Raw capacity, scale-out', v: fmtTB(m.hci.rawTB), sub: `+${fmtTB(cfg.drivesPerNode * cfg.driveTB)} per node`, tip: `Counts ${cfg.drivesPerNode} drives of ${fmtTB(cfg.driveTB)} per node. Usable capacity depends on RF and data reduction.` },
             ]}
           />
         </>
@@ -103,7 +100,7 @@ export default function Scale() {
           { color: 'var(--flow)', label: 'Storage traffic' },
         ]}
       />
-      <PlayBar clock={clock} label="Growth animation" fmt={() => word} extra={<Illus why="The 3-tier side is a generic, simplified model: one array with a controller pair. Many arrays scale in other ways, for example by adding controllers or arrays." />} />
+      <PlayBar clock={clock} label="Growth animation" extra={<Illus why="Each node joins in seconds here; racking, cabling and the background disk balancing take longer. The 3-tier side is a generic, simplified model: one array with a controller pair. Many arrays scale in other ways, for example by adding controllers or arrays." />} />
     </Show>
   );
 }

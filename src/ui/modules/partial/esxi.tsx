@@ -12,14 +12,14 @@ type Go = 'stay' | 'conv';
 // ── timelines ──
 const STAY = [0, 3.0, 6.0, 9.4, 13.4];
 const STAY_END = 15.8;
-const STAY_PH = ['vSphere stays', 'A CVM on every host', 'One shared datastore', 'Upgrade a host', 'Back in service'];
+const STAY_PH = ['vSphere stays in place', 'Each host gets a Controller VM', 'Drives pool into one datastore', 'Prism upgrades one host', 'The host returns to service'];
 const UP = { out: 9.4, down: 10.2, up: 12.4, back: STAY[4] };
 const MOVE_TO = [0, 2, 3]; // where host 2's three VMs go during its upgrade
 
 const CONV_STEP = 2.0;
 const CONV = [0, 2.8, 2.8 + CONV_STEP, 2.8 + 2 * CONV_STEP, 2.8 + 3 * CONV_STEP, 2.8 + 4 * CONV_STEP];
 const CONV_END = CONV[5] + 3.4;
-const CONV_PH = ['Start from ESXi', 'Host 1 converts', 'Host 2 converts', 'Host 3 converts', 'Host 4 converts', 'One AHV cluster'];
+const CONV_PH = ['The cluster starts on ESXi', 'Host 1 converts', 'Host 2 converts', 'Host 3 converts', 'Host 4 converts', 'The cluster runs AHV'];
 
 const STAY_CAP = [
   'Each node runs VMware ESXi, and vCenter manages the VMs as before: vMotion, HA and DRS keep working.',
@@ -33,7 +33,7 @@ const CONV_CAP = (i: number) =>
     ? 'This cluster runs ESXi on Nutanix today: vCenter manages the VMs and the CVMs serve the storage. For an in-place conversion, vCenter has to run outside the cluster.'
     : i < 5
       ? 'Prism converts the hosts one at a time, in a rolling fashion. The storage layer runs independently of the hypervisor, so the CVMs and the data on the drives stay where they are.'
-      : 'The cluster now runs AHV, which comes with Nutanix at no extra cost, and features that need AHV become available, such as Flow virtual networking and network security.';
+      : 'The cluster now runs AHV, which comes with Nutanix at no extra cost, and features that need AHV become available, such as Flow Virtual Networking and Flow Network Security.';
 
 const POINTS: Record<Go, Point[]> = {
   stay: [
@@ -159,7 +159,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
               <g style={{ opacity: cvm }}>
                 <rect x={x + 12} y={HOST_Y + 62} width={IN_W} height={22} class={h.maint && !conv ? 'es-cvm-off' : 'cvm'} />
                 <text x={x + 20} y={HOST_Y + 77} class={h.maint && !conv ? 'muted' : 'es-on-ink'} style={{ fontSize: '11.5px' }}>
-                  {h.maint && !conv ? 'CVM · maintenance' : 'CVM · owns the drives'}
+                  {h.maint && !conv ? 'CVM · maintenance' : 'Controller VM (CVM)'}
                 </text>
               </g>
             )}
@@ -273,17 +273,19 @@ export default function EsxiOnNutanix() {
       <div class="diagram-scroll">
         <EsxiDiagram go={go} t={t} />
       </div>
-      <PlayBar clock={clock} label="ESXi on Nutanix animation" fmt={() => name} />
-      <div class="xs-legend">
-        <Legend
-          items={[
-            { color: 'var(--ink)', label: conv ? 'Controller VM (CVM), AHV' : 'Controller VM (CVM)' },
-            { color: 'var(--flow)', label: 'Storage traffic' },
-            { color: 'var(--line-2)', label: 'Drives passed through to the CVM', dashed: true },
-          ]}
-        />
-        <Illus why={conv ? 'Timing is compressed. A real conversion has strict prerequisites, checked against the Compatibility Matrix, and runs for much longer; how VMs move between hypervisors is not shown.' : 'Host and VM counts are an example. Which ESXi versions are qualified depends on the AOS release; check the Compatibility Matrix.'} />
-      </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: conv ? 'Controller VM (CVM) and AHV' : 'Controller VM (CVM), which owns the drives' },
+          { color: 'var(--flow)', label: 'Storage traffic' },
+          { color: 'var(--line-2)', label: 'Drives passed through to the CVM', dashed: true },
+          { color: 'var(--warn)', label: conv ? 'Host converting' : 'Host being upgraded', dashed: true },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="ESXi on Nutanix animation"
+        extra={<Illus why={conv ? 'Timing is compressed. A real conversion has strict prerequisites, checked against the Compatibility Matrix, and runs for much longer; how VMs move between hypervisors is not shown.' : 'Simplified and compressed: host and VM counts are an example, and an upgrade plays in seconds. Which ESXi versions are qualified depends on the AOS release; check the Compatibility Matrix.'} />}
+      />
     </Show>
   );
 }

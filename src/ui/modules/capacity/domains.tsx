@@ -7,7 +7,7 @@ import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { planDomains, type Awareness, type DomainPlan } from '../../../engine/domainspread';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { Shape } from './shapes';
 
@@ -139,21 +139,21 @@ export function DomainsView() {
 
   const captions: Record<Awareness, { tone: Tone | 'ink'; k: string; text: string }[]> = {
     block: [
-      { tone: 'ink', k: 'Copies in different blocks', text: '8 nodes in 4 blocks (chassis of 2 nodes). With block awareness, the two copies of every piece go to different blocks.' },
+      { tone: 'ink', k: 'Copies land in different blocks', text: '8 nodes in 4 blocks (chassis of 2 nodes). With block awareness, the two copies of every piece go to different blocks.' },
       { tone: 'bad', k: 'A block fails', text: `${failedName} loses power and both of its nodes go down at once. Every piece still has a copy in another block.` },
-      { tone: 'flow', k: 'Self-healing', text: 'The other blocks re-create the missing copies, still keeping each piece’s copies in different blocks.' },
+      { tone: 'flow', k: 'Copies re-created', text: 'The other blocks re-create the missing copies, still keeping each piece’s copies in different blocks.' },
       { tone: 'ok', k: 'Protected again', text: 'No piece was unavailable at any point. Block awareness needs at least 3 blocks with RF2, or 5 with RF3.' },
     ],
     node: [
-      { tone: 'ink', k: 'Copies on different nodes only', text: 'Without block awareness, copies only have to be on different nodes, so a piece can end up with both copies in one block. Here 1 piece of 8 does.' },
+      { tone: 'ink', k: 'Copies land on nodes only', text: 'Without block awareness, copies only have to be on different nodes, so a piece can end up with both copies in one block. Here 1 piece of 8 does.' },
       { tone: 'bad', k: 'A block fails', text: `${failedName} loses power. The piece with both copies in that block has no copy online until the block comes back.` },
-      { tone: 'flow', k: 'Self-healing', text: 'Pieces that still have a copy are re-created on other nodes. The unavailable piece has nothing to copy from.' },
+      { tone: 'flow', k: 'Copies re-created', text: 'Pieces that still have a copy are re-created on other nodes. The unavailable piece has nothing to copy from.' },
       { tone: 'warn', k: 'Some data unavailable', text: 'That piece is back only when the block is. Block awareness prevents this once the cluster has at least 3 blocks.' },
     ],
     rack: [
-      { tone: 'ink', k: 'Copies in different racks', text: '12 nodes in 3 racks. With rack awareness, the two copies of every piece go to different racks. An administrator tells the cluster which rack each block is in.' },
+      { tone: 'ink', k: 'Copies land in different racks', text: '12 nodes in 3 racks, which an administrator defines. With rack awareness, the two copies of every piece go to different racks.' },
       { tone: 'bad', k: 'A rack fails', text: `${failedName} goes down, for example its power or top-of-rack switches. Every piece still has a copy in another rack.` },
-      { tone: 'flow', k: 'Self-healing', text: 'The other racks re-create the missing copies, still keeping each piece’s copies in different racks.' },
+      { tone: 'flow', k: 'Copies re-created', text: 'The other racks re-create the missing copies, still keeping each piece’s copies in different racks.' },
       { tone: 'ok', k: 'Protected again', text: 'No piece was unavailable at any point. Rack awareness needs at least 3 racks with RF2, or 5 with RF3.' },
     ],
   };
@@ -191,10 +191,16 @@ export function DomainsView() {
       <div class="diagram-scroll">
         <Picture plan={plan} tl={tl} t={t} />
       </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Copy of a piece of data' },
+          { color: 'var(--flow)', label: 'Copy being re-created' },
+          { color: 'var(--bad)', dashed: true, label: `Copy lost with the failed ${kind}` },
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Block and rack awareness animation"
-        fmt={() => ['Placement', 'Failure', 'Self-healing', lost ? 'Result' : 'Protected'][phase]}
         extra={
           <Illus
             why={

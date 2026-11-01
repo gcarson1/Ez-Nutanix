@@ -8,7 +8,7 @@ import { useScenario } from '../../../state/scenario';
 import { planStrip, blendedOverhead, type StripPlan } from '../../../engine/stripspread';
 import type { RF } from '../../../engine/rules';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { Shape } from './shapes';
 
@@ -165,7 +165,7 @@ function Picture({ plan, tl, t }: { plan: StripPlan; tl: ReturnType<typeof useEc
       {Array.from({ length: nodes }, (_, n) => (
         <g key={n}>
           <rect class={`node-box${isDown(n) ? ' down' : ''}`} x={nodeX(n)} y={TOP} width={nW} height={nH} />
-          <text x={nodeX(n) + 10} y={TOP + 21} style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text x={nodeX(n) + 10} y={TOP + 21} class="cp-nl" style={{ fontWeight: 600, fontSize: '14px' }}>
             N{n + 1}
           </text>
           {isDown(n) && (
@@ -196,11 +196,11 @@ export function EcView() {
   const lostPieces = plan.recompute.length;
 
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
-    { tone: 'ink' as const, k: 'Writing', text: `New data is written as ${rf} copies on different nodes, like any other data.` },
-    { tone: 'flow' as const, k: 'Encoding cold data', text: `Data that hasn’t been overwritten for a while is encoded in the background into a strip: ${data} data pieces and ${parity} parity piece${parity === 1 ? '' : 's'}, each on a different node.` },
-    { tone: 'ok' as const, k: 'Extra copies deleted', text: `The encoded data’s extra copies are deleted. Cold data now uses ${x2(ec)} its size instead of ${rf}×. Hot data keeps its copies.` },
+    { tone: 'ink' as const, k: 'Copies written', text: `New data is written as ${rf} copies on different nodes, like any other data.` },
+    { tone: 'flow' as const, k: 'Cold data encoded', text: `Data that has not been overwritten for a while is encoded in the background into a strip: ${data} data pieces (ringed) and ${parity} parity piece${parity === 1 ? '' : 's'} (P), each on a different node.` },
+    { tone: 'ok' as const, k: 'Extra copies deleted', text: `The encoded data’s extra copies are deleted, so cold data uses ${x2(ec)} its size instead of ${rf}×. Hot data keeps its copies.` },
     { tone: 'bad' as const, k: rf === 2 ? 'A node fails' : 'Two nodes fail at once', text: `${names} ${rf === 2 ? 'goes' : 'go'} down. The strip loses ${lostPieces === 1 ? 'a piece' : `${lostPieces} pieces`} and some hot copies are gone, but nothing is lost.` },
-    { tone: 'flow' as const, k: 'Rebuilding', text: `A lost strip piece is recomputed by reading the rest of its strip, which takes more work than copying. Lost hot copies are simply copied again.` },
+    { tone: 'flow' as const, k: 'Lost pieces rebuilt', text: `A lost strip piece is recomputed by reading the rest of its strip, which takes more work than copying. Lost hot copies are simply copied again.` },
     { tone: 'ok' as const, k: 'Protected again', text: `Full protection again, with less capacity spent on cold data than ${rf} copies would use.` },
   ];
   const starts = [0, tl.encode, tl.free, tl.fail, tl.rebuild, tl.done];
@@ -220,12 +220,12 @@ export function EcView() {
     <Show
       top={
         <Choice<RF>
-          label="Protection"
+          label="Copies"
           value={rf}
           onChange={(v) => set({ rf: v, ft: v, ecx: false })}
           options={[
-            { value: 2, label: 'RF2 · 4/1 strips' },
-            { value: 3, label: 'RF3 · 4/2 strips' },
+            { value: 2, label: 'RF2 · 4/1 strip' },
+            { value: 3, label: 'RF3 · 4/2 strip' },
           ]}
         />
       }
@@ -241,32 +241,38 @@ export function EcView() {
               { k: 'Half the data cold', v: x2(blend), sub: 'illustrative blend', tip: 'Assumes half the data is write-cold. Real savings depend on how much of your data stays cold, so size on copies and treat erasure coding as a bonus until measured.' },
             ]}
           />
+          <div class="cp-ec" role="img" aria-label={`Usable share of raw capacity before the rebuild reserve: ${bars.map((b) => `${b.k} ${Math.round(b.v * 100)}%`).join(', ')}`}>
+            <div class="cp-ec-h">Usable share of raw, before the rebuild reserve</div>
+            {bars.map((b) => (
+              <div class="cp-ec-row" key={b.k}>
+                <span class="k">{b.k}</span>
+                <span class="bar">
+                  <i style={{ width: `${Math.round(b.v * 100)}%` }} />
+                </span>
+                <span class="v">
+                  {Math.round(b.v * 100)}%{b.note && <small> {b.note}</small>}
+                </span>
+              </div>
+            ))}
+          </div>
         </>
       }
     >
       <div class="diagram-scroll">
         <Picture plan={plan} tl={tl} t={t} />
       </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Copy of a piece of data' },
+          { color: 'var(--flow)', label: 'Encoded strip (ring, P) or re-created piece' },
+          { color: 'var(--bad)', dashed: true, label: 'Piece lost with the failed node' },
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Erasure coding animation"
-        fmt={() => ['Writing', 'Encoding', 'Space freed', 'Failure', 'Rebuild', 'Protected'][phase]}
         extra={<Illus why={`Shown on 8 nodes with one strip of ${data} cold pieces and three hot pieces. Encoding happens in the background long after data is written; it is compressed here.`} />}
       />
-      <div class="cp-ec" role="img" aria-label={`Usable share of raw capacity before the rebuild reserve: ${bars.map((b) => `${b.k} ${Math.round(b.v * 100)}%`).join(', ')}`}>
-        <div class="cp-ec-h">Usable share of raw, before the rebuild reserve</div>
-        {bars.map((b) => (
-          <div class="cp-ec-row" key={b.k}>
-            <span class="k">{b.k}</span>
-            <span class="bar">
-              <i style={{ width: `${Math.round(b.v * 100)}%` }} />
-            </span>
-            <span class="v">
-              {Math.round(b.v * 100)}%{b.note && <small> {b.note}</small>}
-            </span>
-          </div>
-        ))}
-      </div>
     </Show>
   );
 }

@@ -1,0 +1,24 @@
+/* Legacy vs Nutanix HCI (prefix hci-). Values copied from partial/style.css, not shared yet. */
+.diagram .hci-con { fill: var(--bg-2); stroke: var(--line-2); rx: 3px; }
+.diagram .hci-con.on, .diagram .hci-prism.on { stroke: var(--text); stroke-width: 1.5; }
+.diagram .hci-badge { fill: var(--text); }
+.diagram text.hci-badge-t { fill: var(--bg); font-family: var(--mono); font-weight: 700; font-size: 11px; }
+.diagram .hci-focus { fill: none; stroke: var(--text-2); stroke-dasharray: 4 4; }
+.diagram .hci-fc { stroke: var(--s2); stroke-width: 1.25; }
+.diagram .hci-zone { fill: none; stroke: var(--flow); stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram .hci-sw, .diagram .hci-shelf, .diagram .hci-net { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .hci-hba { fill: var(--bg-3); stroke: var(--s2); }
+.diagram .hci-array { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .hci-lun { fill: var(--bg); stroke: var(--line-2); }
+.diagram .hci-lun.hl { stroke: var(--flow); stroke-width: 2; fill: var(--flow-bg); }
+.diagram .hci-link { stroke: var(--line-2); stroke-width: 2; }
+.diagram .hci-lead { stroke: var(--line-2); }
+.diagram .hci-pass { fill: none; stroke: var(--line-2); stroke-width: 1.25; stroke-dasharray: 3 3; }
+.diagram .hci-io { fill: var(--flow); stroke: var(--bg); stroke-width: 2; }
+.diagram text.hci-on-ink { fill: var(--ink-text); }
+.diagram text.hci-on-ink.soft { opacity: 0.82; }
+.diagram text.hci-ink { fill: var(--ink-fg); font-weight: 600; }
+.show-stage .diagram.hci-dia { max-width: 54rem; }
+@media (max-width: 600px) {
+  .diagram-scroll > .hci-dia { min-width: 40rem; }
+}

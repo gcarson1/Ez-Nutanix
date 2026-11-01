@@ -5,21 +5,21 @@ export const content: ModuleContent = {
   title: 'Disaster Recovery',
   tag: 'Nutanix Cloud Infrastructure',
   summary:
-    'Pick how much data you can afford to lose (the RPO), and the protection policy chooses the replication tier. Recovery plans then bring applications up at another site, in order, with one click.',
+    'Protection policies decide how much data a failover can lose, from hours with asynchronous replication to none with Metro Availability, and recovery plans start the apps at another site in order.',
   priority: 'P0',
   talk: [
     'Protection is policy-based: you set a recovery point objective (RPO), assign VMs to the policy with categories, and the platform picks the replication tier.',
-    'Three choices on screen, each with an RPO target: asynchronous at 1 hour or more; NearSync at 1 to 15 minutes, or synchronous at RPO 0 for sites under 5 ms round trip; and Metro Availability.',
+    'Three choices on screen: Async (RPO target of 1 hour or more), NearSync / Sync (1 to 15 minutes, or RPO 0 for sites under 5 ms round trip) and Metro Availability (RPO 0 with automatic failover).',
     'The honest picture: between copies, recent writes exist only at the primary site. An unplanned failover loses whatever had not reached the other site yet.',
     'Recovery plans are the runbook: boot order in stages, delays, network mapping and scripts. Test failover runs the same plan on clones in an isolated network, so you can prove it works without touching production.',
-    'Metro Availability is for zero data loss with automatic failover: synchronous replication between sites under 5 ms round trip, plus a Witness in a third location. If a site is lost, the Witness gives the other site the lock and the VMs restart there on their own. It is a restart, not live continuity; for a planned move, the VMs can live-migrate and never stop.',
+    'Metro Availability is zero data loss with automatic failover: synchronous replication between sites under 5 ms round trip, plus a Witness in a third location that gives the surviving site the lock so its VMs restart on their own.',
     'Sites can be combined: a nearby synchronous partner plus a distant NearSync or async copy, or a cloud site on Nutanix Cloud Clusters (NC2).',
   ],
   numbers: [
     { k: 'Asynchronous', v: 'RPO target of 1 hour or more (up to 24 hours)' },
     { k: 'NearSync', v: 'RPO target of 1 to 15 minutes' },
     { k: 'Synchronous', v: 'RPO 0, needs under 5 ms round-trip time; failover is started by a person' },
-    { k: 'Metro Availability', v: 'Synchronous + a Witness in a third location: automatic failover, VMs restart at the surviving site (minutes)' },
+    { k: 'Metro Availability', v: 'Synchronous + a Witness in a third location: automatic failover restarts the VMs at the surviving site (minutes); a planned move can live-migrate them instead' },
     { k: 'NC2 clouds', v: 'AWS, Microsoft Azure, Google Cloud, OVHcloud' },
   ],
   qa: [
@@ -35,19 +35,12 @@ export const content: ModuleContent = {
       q: 'What if only the link between the sites breaks?',
       a: 'With Metro Availability the Witness settles it: the site that gets its lock keeps running the VMs, and replication pauses instead of failing over, so the VMs never run in both places. On AHV an administrator resumes replication once the link is back. If a site loses both the other site and the Witness, it stops its VMs so the other site can take over safely.',
     },
-    {
-      q: 'Is Metro Availability the same on AHV and ESXi?',
-      a: 'The result is the same, RPO 0 with automatic failover, but it is built differently. On AHV it is a synchronous protection policy in Prism Central with automatic failure detection, the Witness and a recovery plan, across two clusters. On ESXi it stretches a storage container across the sites inside one vSphere cluster, and vSphere HA restarts the VMs.',
-    },
-    {
-      q: 'How do we know failover will work when we need it?',
-      a: 'Run test failovers regularly. They start the recovery plan on clones in an isolated network, so production keeps running. That is also where you catch missing network mappings or boot-order mistakes.',
-    },
   ],
   next: [
-    'Async, unplanned: pause just before Site A is lost and point at the writes that exist only at Site A.',
-    'Switch to NearSync / Sync, then Metro Availability: the data that could be lost shrinks from hours to minutes to none, and with Metro the Witness starts the failover on its own.',
-    'Planned failover: nothing is lost with any choice, because the last changes are copied first; with Metro the apps live-migrate and never stop.',
+    'Start on “Async” and “Unplanned (site lost)”: pause just before Site A is lost and point at the writes that exist only at Site A.',
+    'Switch Replication to “NearSync / Sync”, then “Metro Availability”: the data that could be lost shrinks from hours to minutes to none, and with Metro the Witness starts the failover on its own.',
+    'Choose “Planned failover”: nothing is lost with any choice, because the last changes are copied first; with Metro Availability the apps live-migrate and never stop.',
     'Then open Hybrid & Public Cloud to use a cloud as the recovery site.',
   ],
+  then: ['cloud'],
 };

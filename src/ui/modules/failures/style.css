@@ -6,18 +6,6 @@
 .gx-pick .seg button { height: calc(var(--h-lg) - 2px); padding: 0 var(--sp-4); font-size: var(--fs-15); gap: var(--sp-2); }
 .gx-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
 
-/* step tracker: the timeline, above the picture */
-.gx-steps { list-style: none; margin: var(--sp-6) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.gx-steps li { margin: 0; flex: 1 1 0; min-width: 8rem; }
-.gx-steps li + li { border-left: 1px solid var(--line); }
-.gx-steps button { width: 100%; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border: 0; background: none; color: var(--faint); font-size: var(--fs-13); font-weight: 500; text-align: left; transition: color var(--t-fast), background var(--t-fast); }
-.gx-steps button:hover { color: var(--text); background: var(--bg-3); }
-.gx-steps .n { flex: none; display: inline-grid; place-items: center; width: 1.375rem; height: 1.375rem; border: 1px solid var(--line-2); font: 600 var(--fs-12) / 1 var(--mono); }
-.gx-steps .n svg { width: 0.75rem; height: 0.75rem; }
-.gx-steps li.done button { color: var(--muted); }
-.gx-steps li.done .n { border-color: var(--ok); color: var(--ok); }
-.gx-steps li.now button { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
-.gx-steps li.now .n { background: var(--ink); border-color: var(--ink); color: var(--ink-text); }
 .gx-cap { margin: var(--sp-4) 0 var(--sp-2); min-height: 3.25rem; font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
 
 /* outcome pane */
@@ -89,6 +77,4 @@
 @media (max-width: 900px) {
   .gx-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
   .gx-cap { font-size: var(--fs-16); }
-  .gx-steps li { min-width: 50%; }
-  .gx-steps li + li { border-left: 0; }
 }

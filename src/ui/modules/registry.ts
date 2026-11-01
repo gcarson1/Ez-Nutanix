@@ -1,9 +1,12 @@
-// Every module: its content (talk track, key numbers, ...) and its component.
+// Every module: its content (talk track, key numbers, ...) and its component. The order of the
+// NCI children is the hub's order, basics first; each module has its own icon.
 // The shell renders the header and presenter panel from `content`.
 import type { FunctionComponent } from 'preact';
 import type { ModuleContent } from '../../content/types';
 import NciHub from './nci-hub';
 import { content as NciHubC } from './nci-hub/content';
+import Hci from './hci';
+import { content as HciC } from './hci/content';
 import ClusterLab from './cluster-lab';
 import { content as ClusterLabC } from './cluster-lab/content';
 import Datapath from './datapath';
@@ -63,30 +66,31 @@ export interface ModuleDef {
 
 export const MODULES: ModuleDef[] = [
   { content: NciHubC, Component: NciHub, icon: 'layers', parent: '' },
+  { content: HciC, Component: Hci, icon: 'combine', parent: 'nci' },
+  { content: ScaleC, Component: Scale, icon: 'plus', parent: 'nci' },
   { content: ClusterLabC, Component: ClusterLab, icon: 'server', parent: 'nci' },
   { content: DatapathC, Component: Datapath, icon: 'zap', parent: 'nci' },
   { content: CapacityC, Component: Capacity, icon: 'shield', parent: 'nci' },
+  { content: SnapshotsC, Component: Snapshots, icon: 'clone', parent: 'nci' },
   { content: FailuresC, Component: Failures, icon: 'power', parent: 'nci' },
   { content: LcmC, Component: Lcm, icon: 'upgrade', parent: 'nci' },
   { content: NetworkC, Component: Network, icon: 'net', parent: 'nci' },
   { content: FlowC, Component: Flow, icon: 'lock', parent: 'nci' },
+  { content: SecurityC, Component: Security, icon: 'key', parent: 'nci' },
   { content: DrC, Component: Dr, icon: 'globe', parent: 'nci' },
-  { content: SnapshotsC, Component: Snapshots, icon: 'clone', parent: 'nci' },
-  { content: SecurityC, Component: Security, icon: 'shield', parent: 'nci' },
   { content: MigrationC, Component: Migration, icon: 'move', parent: 'nci' },
   { content: EdgeC, Component: Edge, icon: 'edge', parent: 'nci' },
-  { content: ScaleC, Component: Scale, icon: 'plus', parent: 'nci' },
   { content: CentralC, Component: Central, icon: 'api', parent: '' },
   { content: NcmC, Component: Ncm, icon: 'gauge', parent: '' },
   { content: NkpC, Component: Nkp, icon: 'k8s', parent: '' },
   { content: DatalensC, Component: Datalens, icon: 'eye', parent: '' },
   { content: StorageC, Component: Storage, icon: 'file', parent: '' },
-  { content: CnaosC, Component: Cnaos, icon: 'k8s', parent: '' },
+  { content: CnaosC, Component: Cnaos, icon: 'container', parent: '' },
   { content: NdbC, Component: Ndb, icon: 'db', parent: '' },
   { content: AiC, Component: Ai, icon: 'ai', parent: '' },
   { content: BeaconC, Component: Beacon, icon: 'beacon', parent: '' },
   { content: CloudC, Component: Cloud, icon: 'cloud', parent: '' },
-  { content: PartialC, Component: Partial, icon: 'layers', parent: '' },
+  { content: PartialC, Component: Partial, icon: 'puzzle', parent: '' },
 ];
 
 export function findModule(path: string): ModuleDef | undefined {

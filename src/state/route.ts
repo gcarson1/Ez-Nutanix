@@ -39,6 +39,10 @@ export function buildHash(path: string, params: Record<string, string> = {}): st
 
 let current: Route = typeof location !== 'undefined' ? parseHash(location.hash) : { path: '', params: {} };
 
+// Hashes this tab has pushed, oldest first, so going up a level can step back through history
+// instead of piling on entries. It never grows where the host refuses URL updates.
+const trail: string[] = typeof location !== 'undefined' ? [location.hash] : [];
+
 function emit() {
   listeners.forEach((l) => l());
 }
@@ -46,6 +50,9 @@ function emit() {
 if (typeof window !== 'undefined') {
   window.addEventListener('hashchange', () => {
     current = parseHash(location.hash);
+    // Our own push is already on the trail; Back pops it; anything else (Forward, an edited URL) starts over.
+    if (location.hash === trail[trail.length - 2]) trail.pop();
+    else if (location.hash !== trail[trail.length - 1]) trail.splice(0, trail.length, location.hash);
     emit();
   });
 }
@@ -78,7 +85,25 @@ export function navigate(path: string, params: Record<string, string> = {}) {
   if (buildHash(current.path, current.params) === next && location.hash === next) return;
   current = { path, params };
   writeHash(next, true); // triggers hashchange -> emit (idempotent)
+  if (location.hash === next) trail.push(next);
   emit();
+}
+
+/** Step back through history if the previous entry is `path`; false when there is none to step back to. */
+export function backTo(path: string): boolean {
+  const prev = trail[trail.length - 2];
+  if (prev === undefined || parseHash(prev).path !== path) return false;
+  history.back();
+  return true;
+}
+
+/** Run `fn` once, after the next route change has rendered. */
+export function afterNextRoute(fn: () => void) {
+  const l = () => {
+    listeners.delete(l);
+    requestAnimationFrame(() => requestAnimationFrame(fn));
+  };
+  listeners.add(l);
 }
 
 /** Patch scenario params on the current route without adding history. null/undefined removes a key. */
@@ -90,12 +115,14 @@ export function setParams(patch: Record<string, string | number | boolean | null
   }
   current = { path: current.path, params };
   writeHash(buildHash(current.path, params), false);
+  if (trail.length) trail[trail.length - 1] = location.hash;
   emit();
 }
 
 export function replaceParams(params: Record<string, string>) {
   current = { path: current.path, params: { ...params } };
   writeHash(buildHash(current.path, current.params), false);
+  if (trail.length) trail[trail.length - 1] = location.hash;
   emit();
 }
 

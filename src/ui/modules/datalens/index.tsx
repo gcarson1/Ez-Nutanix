@@ -188,8 +188,6 @@ function ShareDiagram({ tl, t }: { tl: Timeline; t: number }) {
   );
 }
 
-const PHASE_WORD: Record<Phase, string> = { quiet: 'Normal day', attack: 'Attack', detected: 'Spotted', stopped: 'Stopped', recovering: 'Restoring', recovered: 'Recovered' };
-
 function caption(tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; text: string } {
   const pct = Math.round((tl.hit / FILES) * 100);
   switch (phase) {
@@ -198,13 +196,13 @@ function caption(tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; t
     case 'attack':
       return { tone: 'bad', k: 'Attack starts', text: 'A user’s PC is infected. It starts encrypting every file it can reach on the shares, one after another.' };
     case 'detected':
-      return { tone: 'warn', k: 'Spotted', text: 'Data Lens sees one user rewriting files far faster than normal, a ransomware pattern. It raises an alert and blocks that PC.' };
+      return { tone: 'warn', k: 'Attack spotted', text: 'Data Lens sees one user rewriting files far faster than normal, a ransomware pattern. It raises an alert and blocks that PC.' };
     case 'stopped':
-      return { tone: 'ok', k: 'Stopped', text: `The PC was cut off from the shares seconds after the attack began. Only ${tl.hit} of ${FILES} files (${pct}%) were hit.` };
+      return { tone: 'ok', k: 'PC blocked', text: `The PC was cut off from the shares seconds after the attack began. Only ${tl.hit} of ${FILES} files (${pct}%) were hit.` };
     case 'recovering':
-      return { tone: 'flow', k: 'Restoring', text: 'One action restores the hit files from the last clean snapshot. The PC could never touch it: snapshots are read-only.' };
+      return { tone: 'flow', k: 'Restore starts', text: 'One action restores the hit files from the last clean snapshot. The PC could never touch it: snapshots are read-only.' };
     case 'recovered':
-      return { tone: 'ok', k: 'Recovered', text: 'Every hit file is back as it was at that snapshot. Changes made to those files since then are lost, so how often you take snapshots sets how much you can lose.' };
+      return { tone: 'ok', k: 'Files recovered', text: 'Every hit file is back as it was at that snapshot. Changes made to those files since then are lost, so how often you take snapshots sets how much you can lose.' };
   }
 }
 
@@ -253,8 +251,7 @@ export default function Datalens() {
       <PlayBar
         clock={clock}
         label="Ransomware attack animation"
-        fmt={() => PHASE_WORD[s.phase]}
-        extra={<Illus why="Detection, response and restore times are invented for the demo; real times depend on the attack, the shares and the deployment. Behavior-based detection, which catches strains with no known signature, is a Pro feature." />}
+        extra={<Illus why="Detection, response and restore times are examples; real times depend on the attack, the shares and the deployment. Behavior-based detection, which catches strains with no known signature, is a Pro feature." />}
       />
     </Show>
   );

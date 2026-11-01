@@ -2,8 +2,8 @@
 // panel, glossary, shortcuts and about dialogs, toasts and global keyboard shortcuts.
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { useRoute, getRoute, setParams } from '../../state/route';
-import { KEYS, PRESETS, clearedScenario, setScenario } from '../../state/scenario';
+import { useRoute, getRoute, replaceParams } from '../../state/route';
+import { KEYS, PRESETS, clearedScenario, scenarioParams } from '../../state/scenario';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
@@ -12,7 +12,7 @@ import liquidglLicense from '../../assets/licenses/liquidgl.txt?raw';
 import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG, VERSION } from './config';
-import { go } from './nav';
+import { go, goUp } from './nav';
 
 // ── toast ──
 let pushToast: (msg: string) => void = () => undefined;
@@ -40,14 +40,15 @@ function Toasts() {
 // ── dialogs and drawers ──
 function Modal({ title, onClose, wide, children }: { title: string; onClose: () => void; wide?: boolean; children: ComponentChildren }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Captured on first render, before a child (the jump dialog's filter box) takes focus.
+  const prev = useRef(document.activeElement as HTMLElement | null);
   useEffect(() => {
-    const prev = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     const body = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = body;
-      prev?.focus?.();
+      prev.current?.focus?.();
     };
   }, []);
   return (
@@ -106,14 +107,15 @@ const LANDING_NOTES = {
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
     'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
-    'On Protection & Capacity and Scale-out vs 3-tier, the Presets menu in the top bar loads a cluster size that matches the customer into Protection & Capacity.',
+    'On Protection & Capacity, the Presets menu in the top bar loads a cluster size that matches the customer.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
     { q: 'Do we have to run AHV?', a: 'No. Nutanix clusters also support VMware ESXi, but some features covered here (for example Flow and some DR options) are AHV-only or work differently on ESXi.' },
     { q: 'Can we start small?', a: 'Yes. Clusters start at one to three nodes for edge sites and grow a node at a time.' },
   ],
-  next: ['Open Nutanix Cloud Infrastructure', 'Open the Cluster Lab and show VM failover', 'Show Disaster Recovery'],
+  next: ['Open Nutanix Cloud Infrastructure and start with Legacy vs Nutanix HCI.', 'Open Cluster & DSF Lab and pick VM failover.', 'Then open Disaster Recovery.'],
+  then: ['nci', 'nci/hci', 'nci/cluster', 'nci/dr'],
 };
 
 function Presenter({ def, onClose }: { def: ModuleDef | undefined; onClose: () => void }) {
@@ -121,6 +123,7 @@ function Presenter({ def, onClose }: { def: ModuleDef | undefined; onClose: () =
   const talk = c?.talk.length ? c.talk : LANDING_NOTES.talk;
   const qa = c?.qa.length ? c.qa : LANDING_NOTES.qa;
   const next = c?.next.length ? c.next : LANDING_NOTES.next;
+  const then = (c ? c.then ?? [] : LANDING_NOTES.then).map(findModule).filter((m): m is ModuleDef => !!m);
   return (
     <Drawer title={`Presenter · ${c?.title ?? LANDING_NOTES.title}`} onClose={onClose} icon="podium">
       <h3>Talk track</h3>
@@ -153,6 +156,16 @@ function Presenter({ def, onClose }: { def: ModuleDef | undefined; onClose: () =
           <li key={t}>{t}</li>
         ))}
       </ol>
+      {then.length > 0 && (
+        <div class="drawer-links">
+          {then.map((m) => (
+            <button type="button" class="btn" key={m.content.path} onClick={() => go(m.content.path)}>
+              <Icon name={m.icon} />
+              Open {m.content.title}
+            </button>
+          ))}
+        </div>
+      )}
     </Drawer>
   );
 }
@@ -190,13 +203,14 @@ const SHORTCUTS: [string, string][] = [
   ['← →', 'Scrub the animation back / forward'],
   ['Shift ← →', 'Jump to the previous / next step'],
   ['< >', 'Slower / faster animation'],
+  ['J', 'Jump to a module'],
   ['T', 'Light / dark theme'],
-  ['Esc', 'Close panel, or go back'],
+  ['Esc', 'Close panel, or go up a level'],
 ];
 
 function About({ onClose }: { onClose: () => void }) {
   return (
-    <Modal title="About this simulation" onClose={onClose} wide>
+    <Modal title="About this explorer" onClose={onClose} wide>
       <div class="modal-sec">
         <p>
           This explorer is an educational visualization of how the Nutanix platform behaves. It runs entirely in this one file, works offline and sends nothing anywhere.
@@ -206,17 +220,17 @@ function About({ onClose }: { onClose: () => void }) {
         <h3 class="eyebrow">Modeled</h3>
         <ul>
           <li>Replica and erasure-coding placement across nodes, blocks and racks, with the platform’s minimum-size rules.</li>
-          <li>Failure detection, HA restarts, many-to-many re-protection, and the cases where data becomes unavailable or cannot self-heal.</li>
+          <li>Failure detection, HA restarts, many-to-many re-protection and the cases where data becomes unavailable or cannot self-heal.</li>
           <li>Metadata and configuration quorum (3 copies at redundancy factor 2, 5 at redundancy factor 3).</li>
           <li>Capacity math from raw to usable, including the rebuild reserve and EC-X on write-cold data only.</li>
-          <li>One-node-at-a-time rolling upgrades with resiliency gating, replication RPO tiers, and category-based security policy.</li>
+          <li>One-node-at-a-time rolling upgrades with resiliency gating, replication RPO tiers and category-based security policy.</li>
         </ul>
       </div>
       <div class="modal-sec">
         <h3 class="eyebrow">Simplified</h3>
         <ul>
-          <li>Data is a representative sample of a few hundred items, not real extents.</li>
-          <li>Timings (detection, restart, rebuild, upgrade) are illustrative defaults you can adjust; they are not measurements.</li>
+          <li>Data is drawn as a small sample of pieces, a few dozen at most, not real extents.</li>
+          <li>Timings (detection, restart, rebuild, upgrade) are compressed and illustrative, not measurements; the speed button changes playback speed only.</li>
           <li>Performance and latency figures are relative and labeled “Illustrative.”</li>
           <li>Behavior, limits and requirements vary by software version, hypervisor, hardware and license.</li>
         </ul>
@@ -247,15 +261,20 @@ function About({ onClose }: { onClose: () => void }) {
 function ModuleView({ def }: { def: ModuleDef }) {
   const c = def.content;
   const { Component } = def;
+  const h1 = useRef<HTMLHeadingElement>(null);
+  // Screen readers announce the new page; preventScroll keeps the view where navigation put it.
+  useEffect(() => h1.current?.focus({ preventScroll: true }), []);
   return (
     <div class="mod">
       <header class="mod-head" style={{ viewTransitionName: 'hero' }}>
         <div>
           <div class="mod-tag">
             <i />
-            {c.tag}
+            {def.parent ? findModule(def.parent)?.content.title ?? c.tag : c.tag}
           </div>
-          <h1>{c.title}</h1>
+          <h1 tabIndex={-1} ref={h1}>
+            {c.title}
+          </h1>
           <p>{c.summary}</p>
         </div>
       </header>
@@ -275,24 +294,23 @@ function crumbsFor(def: ModuleDef | undefined): { label: string; path: string }[
 }
 
 /** Modules that read the shared cluster size, where the top bar shows Presets. */
-const PRESET_PATHS = ['nci/capacity', 'nci/scale'];
+const PRESET_PATHS = ['nci/capacity'];
 const authors = CONFIG.authors ?? [];
 
 function applyPreset(id: string) {
   const p = PRESETS.find((x) => x.id === id);
   if (!p) return;
-  const cur = getRoute().path;
-  // The Cluster & DSF Lab uses one fixed cluster; presets size Protection & Capacity.
-  if (cur !== 'nci/capacity') go('nci/capacity');
-  setParams(clearedScenario());
-  setScenario(p.cfg);
-  // Written even when it equals the default, because Protection & Capacity opens on 3 nodes otherwise.
-  if (p.cfg.nodes !== undefined) setParams({ [KEYS.nodes]: p.cfg.nodes });
+  // Presets show only on Protection & Capacity, so the preset rewrites this page's params in one step,
+  // landing on the Copies tab where a cluster size applies (no history entry, no scroll). The node count
+  // is written even when it equals the default, because Protection & Capacity opens on 3 nodes otherwise.
+  const params: Record<string, string | null | undefined> = { ...getRoute().params, ...clearedScenario(), ...scenarioParams(p.cfg), tab: undefined, aw: undefined };
+  if (p.cfg.nodes !== undefined) params[KEYS.nodes] = String(p.cfg.nodes);
+  replaceParams(Object.fromEntries(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === 'string' && e[1] !== '')));
   toast(`Preset: ${p.label}`);
 }
 
 type Panel = 'presenter' | 'glossary' | null;
-type Dialog = 'keys' | 'about' | null;
+type Dialog = 'keys' | 'about' | 'jump' | null;
 
 export function App() {
   const route = useRoute();
@@ -332,7 +350,8 @@ export function App() {
       if (e.key === 'Escape') {
         if (s.dialog) setDialog(null);
         else if (s.panel) setPanel(null);
-        else if (s.def) go(s.def.parent);
+        else if (s.def) goUp(s.def.parent);
+        else if (getRoute().path) go('');
         else return;
         e.preventDefault();
         return;
@@ -343,8 +362,11 @@ export function App() {
       else if (k === 'g' || k === 'G') setPanel((p) => (p === 'glossary' ? null : 'glossary'));
       else if (k === '?') setDialog((d) => (d === 'keys' ? null : 'keys'));
       else if (k === 't' || k === 'T') setTheme((x) => (x === 'dark' ? 'light' : 'dark'));
+      else if (k === 'j' || k === 'J') setDialog((d) => (d === 'jump' ? null : 'jump'));
       else if (s.dialog) return;
-      else if (k === ' ' && t.tagName !== 'BUTTON' && simKey('toggle')) e.preventDefault();
+      // Space pauses unless it would press a button, but a preset, tab or step that is already selected
+      // has nothing left to press, so presenters can click one and hold or resume a frame with Space.
+      else if (k === ' ' && (t.tagName !== 'BUTTON' || t.closest('.seg [aria-pressed="true"], [role="tab"][aria-selected="true"], [aria-current="step"]')) && simKey('toggle')) e.preventDefault();
       else if (k === '<' || k === '>') stepSpeed(k === '>' ? 1 : -1);
       // On the scrub bar itself the arrows keep their own finer steps.
       else if ((k === 'ArrowLeft' || k === 'ArrowRight') && !(t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'range') && simKey(k === 'ArrowRight' ? 'forward' : 'back', e.shiftKey)) e.preventDefault();
@@ -367,15 +389,15 @@ export function App() {
           </button>
           {def && (
             <nav class="crumbs" aria-label="Breadcrumb">
-              <span class="sep">/</span>
-              <button type="button" onClick={() => go('')}>
+              <span class="sep plat">/</span>
+              <button type="button" class="plat" onClick={() => goUp('')}>
                 Platform
               </button>
               {crumbs.map((c, i) => (
                 <span key={c.path} class={i < crumbs.length - 1 ? 'mid' : ''} style={{ display: 'contents' }}>
                   <span class={`sep${i < crumbs.length - 1 ? ' mid' : ''}`}>/</span>
                   {i < crumbs.length - 1 ? (
-                    <button type="button" class="mid" onClick={() => go(c.path)}>
+                    <button type="button" class="mid" onClick={() => goUp(c.path)}>
                       {c.label}
                     </button>
                   ) : (
@@ -390,7 +412,7 @@ export function App() {
           <span class="spacer" />
           <div class="bar-r hstack">
             {def && (
-              <button type="button" class="tbtn" onClick={() => go(def.parent)}>
+              <button type="button" class="tbtn" onClick={() => goUp(def.parent)} title={`Back to ${def.parent ? findModule(def.parent)?.content.title : 'platform'}`} aria-label={`Back to ${def.parent ? findModule(def.parent)?.content.title : 'platform'}`}>
                 <Icon name="back" />
                 <span class="lbl">{def.parent ? 'Back' : 'Back to platform'}</span>
               </button>
@@ -476,7 +498,7 @@ export function App() {
             )}
             <span class="ver">{VERSION}</span>
             <button type="button" class="tbtn" onClick={() => setDialog('about')}>
-              About this simulation
+              About this explorer
             </button>
           </div>
           <p class="foot-col disclaimer">{CONFIG.disclaimer}</p>
@@ -498,8 +520,59 @@ export function App() {
         </Modal>
       )}
       {dialog === 'about' && <About onClose={() => setDialog(null)} />}
+      {dialog === 'jump' && <Jump onClose={() => setDialog(null)} />}
       <Toasts />
     </>
+  );
+}
+
+/**
+ * Every module, grouped by where it sits, with type-to-filter. Enter in the filter box opens the first
+ * match; the arrows move focus through the box and the rows in the order they are shown.
+ */
+function Jump({ onClose }: { onClose: () => void }) {
+  const [q, setQ] = useState('');
+  const box = useRef<HTMLDivElement>(null);
+  const s = q.trim().toLowerCase();
+  // Titles first: a word inside a summary ("acknowledged" holds "edge") only counts when no title matches.
+  const byTitle = MODULES.filter((m) => m.content.title.toLowerCase().includes(s));
+  const list = !s ? MODULES : byTitle.length ? byTitle : MODULES.filter((m) => `${m.content.tag} ${m.content.summary}`.toLowerCase().includes(s));
+  const open = (m: ModuleDef) => {
+    onClose();
+    go(m.content.path);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const els = [...(box.current?.querySelectorAll<HTMLElement>('input, .rowbtn') ?? [])];
+      const i = els.indexOf(document.activeElement as HTMLElement);
+      els[(i + (e.key === 'ArrowDown' ? 1 : els.length - 1)) % els.length]?.focus();
+      e.preventDefault();
+    } else if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+      box.current?.querySelector<HTMLElement>('.rowbtn')?.click();
+      e.preventDefault();
+    }
+  };
+  const groups = [...new Set(list.map((m) => m.parent))];
+  return (
+    <Modal title="Jump to a module" onClose={onClose}>
+      <div class="modal-sec jump" ref={box} onKeyDown={onKey}>
+        <input class="input" type="search" placeholder="Type to filter" aria-label="Filter modules" value={q} ref={(el) => el?.focus()} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
+        {groups.map((g) => (
+          <div key={g} class="jump-group">
+            <h3 class="eyebrow">{g ? findModule(g)?.content.title : 'Platform'}</h3>
+            {list
+              .filter((m) => m.parent === g)
+              .map((m) => (
+                <button type="button" key={m.content.path} class="rowbtn" onClick={() => open(m)}>
+                  <Icon name={m.icon} />
+                  <span class="t">{m.content.title}</span>
+                </button>
+              ))}
+          </div>
+        ))}
+        {!list.length && <p class="muted">No module matches.</p>}
+      </div>
+    </Modal>
   );
 }
 

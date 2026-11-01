@@ -26,6 +26,7 @@ const PROTECTION: Record<Resil, { v: string; tone: Tone }> = {
   offline: { v: 'Offline', tone: 'bad' },
 };
 const BATCH_SHORT: Record<BatchId, string> = { foundation: 'Foundation', aos: 'AOS', ahv: 'AHV', fw: 'Firmware', ncc: 'NCC' };
+const BATCH_WORD: Record<BatchId, string> = { foundation: 'Foundation', aos: 'AOS', ahv: 'AHV', fw: 'firmware', ncc: 'NCC' };
 
 /** `sim` is what happens; `plan` is what LCM expects before anything goes wrong. */
 interface Run {
@@ -47,9 +48,9 @@ function simFor(sc: Scenario): Run {
 }
 
 const PHASE_TEXT: Record<string, string> = {
-  'cvm-down': 'Only its controller VM restarts. VMs stay where they are; their storage traffic goes to the other controllers for a moment.',
-  'cvm-reboot': 'The controller VM reboots into the new AOS version while the other controllers serve this host’s VMs.',
-  'cvm-up': 'The controller VM is back and takes over its host’s storage traffic again.',
+  'cvm-down': 'Only its CVM restarts. VMs stay where they are; their storage traffic goes to the other CVMs for a moment.',
+  'cvm-reboot': 'The CVM reboots into the new AOS version while the other CVMs serve this host’s VMs.',
+  'cvm-up': 'The CVM is back and takes over its host’s storage traffic again.',
   resync: 'Data written while it was out catches up. LCM moves on only when every piece of data has both copies again.',
   evacuate: 'Its VMs move live to the other nodes. Nothing stops.',
   'enter-mm': 'The node is out of service and empty, so it can be updated safely.',
@@ -63,30 +64,23 @@ function caption(sim: LcmSim, v: LcmView): { tone: Tone | 'ink'; k: string; text
   const failed = `N${(sim.failNode ?? 0) + 1}`;
   if (v.done)
     return sim.unhealthy
-      ? { tone: 'ok', k: 'Upgrade complete', text: 'Every node is updated. The only VM downtime came from the failure, when its VMs restarted on other nodes, not from the upgrade.' }
-      : { tone: 'ok', k: 'Upgrade complete', text: `All ${NODES} nodes are updated, one at a time, and every VM kept running the whole way.` };
+      ? { tone: 'ok', k: 'Upgrade completes', text: 'Every node is updated. The only VM downtime came from the failure, when its VMs restarted on other nodes, not from the upgrade.' }
+      : { tone: 'ok', k: 'Upgrade completes', text: `All ${NODES} nodes are updated, one at a time, and every VM kept running the whole way.` };
   if (v.t >= failAt && v.t < failAt + HA_RESTART_SEC)
-    return { tone: 'bad', k: `${failed} failed`, text: `No warning: ${failed} just went down. HA restarts its VMs on the other nodes, and the cluster starts rebuilding the missing data copies right away.` };
+    return { tone: 'bad', k: `${failed} fails`, text: `No warning: ${failed} just went down. HA restarts its VMs on the other nodes, and the cluster starts rebuilding the missing data copies right away.` };
   if (v.paused)
     return sim.repairAt !== null && v.t >= sim.repairAt
-      ? { tone: 'warn', k: `${failed} is back`, text: `${failed} is repaired and rejoins. Its data catches up, and LCM still holds until every piece of data has both copies again.` }
+      ? { tone: 'warn', k: `${failed} rejoins`, text: `${failed} is repaired and rejoins. Its data catches up, and LCM still holds until every piece of data has both copies again.` }
       : { tone: 'warn', k: 'LCM holds', text: `The upgrade pauses, the cluster does not. LCM takes no other node down while ${failed} is out, so every VM keeps running on the healthy nodes until ${failed} is repaired.` };
   if (v.current) {
     const name = v.nodes[v.current.node].name;
     const what = PHASE_TEXT[v.current.phase] ?? v.current.label;
     if (v.t >= failAt && v.t < healthyAt) return { tone: 'warn', k: `LCM finishes ${name}`, text: `LCM completes the node it was already on, then goes no further while ${failed} is out.` };
-    if (v.current === sim.segs.find((s) => s.start >= healthyAt)) return { tone: 'flow', k: `LCM resumes · ${name}`, text: `Data is fully protected again, so LCM picks up where it stopped. ${what}` };
-    return { tone: 'flow', k: `${name} · ${BATCH_SHORT[v.current.batch]}`, text: what };
+    if (v.current === sim.segs.find((s) => s.start >= healthyAt)) return { tone: 'flow', k: `LCM resumes on ${name}`, text: what };
+    return { tone: 'flow', k: `${name} updates ${BATCH_WORD[v.current.batch]}`, text: what };
   }
-  if (v.cluster?.kind === 'precheck') return { tone: 'ink', k: 'Pre-checks', text: 'Before touching anything, LCM checks health, data protection, free room for VMs and connectivity.' };
-  return { tone: 'ink', k: 'Next node', text: 'One node at a time: LCM moves on only when the last node is fully back.' };
-}
-
-function phaseLabel(v: LcmView): string {
-  if (v.done) return 'Done';
-  if (v.paused) return 'Holding';
-  if (v.current) return `${v.nodes[v.current.node].name} · ${BATCH_SHORT[v.current.batch]}`;
-  return 'Pre-checks';
+  if (v.cluster?.kind === 'precheck') return { tone: 'ink', k: 'Pre-checks run', text: 'Before touching anything, LCM checks health, data protection, free room for VMs and connectivity.' };
+  return { tone: 'ink', k: 'Next node starts', text: 'One node at a time: LCM moves on only when the last node is fully back.' };
 }
 
 export default function Lcm() {
@@ -108,7 +102,7 @@ export default function Lcm() {
 
   return (
     <Show
-      top={<Choice<Scenario> label="Scenario" value={sc} onChange={setSc} options={SCENARIOS} />}
+      top={<Choice<Scenario> label="What happens" value={sc} onChange={setSc} options={SCENARIOS} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -130,18 +124,21 @@ export default function Lcm() {
       </div>
       <Legend
         items={[
-          { color: 'var(--ink)', label: 'Controller VM running' },
+          { color: 'var(--ink)', label: 'Controller VM (CVM) running' },
           { color: 'var(--warn)', label: 'Out of service for the update' },
-          { color: 'var(--bad)', label: 'Failed' },
           { color: 'var(--flow)', label: 'Node being updated · VM moving' },
-          { color: 'var(--warn)', dashed: true, label: 'LCM holding' },
+          ...(sc === 'fail'
+            ? [
+                { color: 'var(--bad)', label: 'Failed' },
+                { color: 'var(--warn)', dashed: true, label: 'LCM holding' },
+              ]
+            : []),
         ]}
       />
       <PlayBar
         clock={clock}
         label="Upgrade animation"
-        fmt={() => phaseLabel(view)}
-        extra={<Illus why="The times on the timeline use older, unofficial per-node estimates (about 15 minutes for AOS and 25 for AHV). Real times depend on the cluster, its load and the release." />}
+        extra={<Illus why="A four-node cluster with 16 VMs, played back far faster than real time. The timeline uses older, unofficial per-node estimates (about 15 minutes for AOS and 25 for AHV); real times depend on the cluster, its load and the release." />}
       />
     </Show>
   );

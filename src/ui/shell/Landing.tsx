@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from '../components/Icon';
 import awsLogo from '../../assets/logos/aws.svg';
+import awsLogoWhite from '../../assets/logos/aws-white.svg';
 import azureLogo from '../../assets/logos/azure.svg';
 import googleCloudLogo from '../../assets/logos/google-cloud-icon.svg';
 import { startGlass } from './glass';
@@ -52,15 +53,16 @@ interface TourStep {
 // Bottom-up talk order: infrastructure, then services, then the management layer.
 const TOUR: TourStep[] = [
   { sel: 'nci', title: 'Start with the foundation', text: 'Nutanix Cloud Infrastructure turns ordinary servers into one cluster: the AHV hypervisor, a storage controller on every node, networking and security (Flow) and disaster recovery.' },
+  { sel: 'partial', title: 'Or start with the part you need', text: 'Customers can keep an external storage array under AHV and Prism, or keep vSphere and vCenter and run ESXi on Nutanix nodes, then grow into the rest of the platform.' },
   { sel: 'clouds', title: 'The same stack in public cloud', text: 'The platform also runs in public clouds, so the same operating model covers data center and cloud. Which offering applies differs by provider.' },
-  { sel: 'bare', title: 'Or on any bare-metal Linux', text: 'Container-native Nutanix services can also run directly on Kubernetes on bare-metal Linux, without a hypervisor.' },
+  { sel: 'bare', title: 'Or on any bare-metal Linux', text: 'Container-native Nutanix services can also run directly on Kubernetes on bare-metal Linux, without a hypervisor. Bare metal (NKP Metal) is in early access.' },
   { sel: 'services', title: 'Data and AI services on top', text: 'File, object and block storage, databases as a service and AI inference all run on the same platform, so they share its resilience, protection and management.' },
   { sel: 'central', title: 'One control plane across everything', text: 'Nutanix Central sits above many clusters and sites: fleet management, operations, Kubernetes and data security from one place.' },
 ];
 
 function Pane({ p, cls, tour, children }: { p: PaneDef; cls?: string; tour?: string; children?: preact.ComponentChildren }) {
   return (
-    <button type="button" class={`pane${cls ? ` ${cls}` : ''}`} data-tour={tour} data-pane={p.id} onClick={(e) => go(p.path, p.params, e.currentTarget as HTMLElement)}>
+    <button type="button" class={`pane${cls ? ` ${cls}` : ''}`} data-tour={tour} data-pane={p.id} data-path={p.path} onClick={(e) => go(p.path, p.params, e.currentTarget as HTMLElement)}>
       {children ?? (
         <>
           <span class="pt">{p.title}</span>
@@ -76,7 +78,14 @@ function Pane({ p, cls, tour, children }: { p: PaneDef; cls?: string; tour?: str
 
 /** The providers' own marks, as on the original slide: logos only, no names (alt text names them). */
 function CloudLogo({ id }: { id: string }) {
-  if (id === 'aws') return <img class="cloud-logo aws" src={awsLogo} alt="AWS" />;
+  // AWS's wordmark is dark; the dark glass tiles show its white reverse version instead (app.css).
+  if (id === 'aws')
+    return (
+      <>
+        <img class="cloud-logo aws" src={awsLogo} alt="AWS" />
+        <img class="cloud-logo aws aws-rev" src={awsLogoWhite} alt="AWS" />
+      </>
+    );
   if (id === 'gcp') return <img class="cloud-logo gcp" src={googleCloudLogo} alt="Google Cloud" />;
   return <img class="cloud-logo azure" src={azureLogo} alt="Azure" />;
 }
@@ -121,7 +130,7 @@ export function Landing() {
         <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
 
         <section class="band central lg-band" data-tour="central" aria-label="Nutanix Central">
-          <button type="button" class="central-head" data-pane="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
+          <button type="button" class="central-head" data-pane="central" data-path="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
             Nutanix Central
           </button>
           <div class="central-grid">
@@ -137,7 +146,7 @@ export function Landing() {
           {SERVICES.map((p) => (
             <Pane key={p.id} p={p} cls="lg-svc" />
           ))}
-          <button type="button" class="beacon" data-pane="beacon" onClick={(e) => go('beacon', undefined, e.currentTarget as HTMLElement)}>
+          <button type="button" class="beacon" data-pane="beacon" data-path="beacon" onClick={(e) => go('beacon', undefined, e.currentTarget as HTMLElement)}>
             <Icon name="beacon" />
             Project Beacon
           </button>
@@ -160,8 +169,8 @@ export function Landing() {
           </Pane>
         </section>
 
-        <section class="band partial" aria-label="Don’t want the full stack?">
-          <button type="button" class="partial-head" data-pane="partial" onClick={(e) => go('partial', undefined, e.currentTarget as HTMLElement)}>
+        <section class="band partial" data-tour="partial" aria-label="Don’t want the full stack?">
+          <button type="button" class="partial-head" data-pane="partial" data-path="partial" onClick={(e) => go('partial', undefined, e.currentTarget as HTMLElement)}>
             <span class="pt">Don’t want the full stack?</span>
             <span class="ps">Start with the part you need</span>
           </button>
@@ -209,7 +218,7 @@ export function Landing() {
                   go('nci');
                 }}
               >
-                Open NCI
+                Open Nutanix Cloud Infrastructure
               </button>
             )}
           </div>

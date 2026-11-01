@@ -8,24 +8,24 @@ import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Illus, PlayBar, Seg } from '../../components/controls';
 import { Icon } from '../../components/Icon';
 import { LabDiagram, LabLegend } from './LabDiagram';
+import { StepTracker } from './StepTracker';
 import { DRIVES, NODES, ORDER, SCENARIOS, VMS_PER_NODE, frameAt, stepAt, type ScenarioId } from './scenarios';
 
 export default function ClusterLab() {
   const [sc, setSc] = useEnum<ScenarioId>('sc', 'place', ORDER);
   const def = SCENARIOS[sc];
-  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, steps: paced(def.steps.map((s) => s.at), def.steps.map((s) => s.text)) });
+  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, steps: paced(def.steps.map((s) => s.at), def.steps.map((s) => [s.label, s.text])) });
   useRestartOn(clock, [sc]);
   const frame = useMemo(() => frameAt(sc, clock.t), [sc, clock.t]);
   const step = stepAt(def, clock.t);
-  const n = def.steps.length;
 
   return (
     <div class="lab two dl">
       <div class="stage">
         <div class="dl-pick">
-          <span class="choice-l">Choose what to show</span>
+          <span class="choice-l">What happens</span>
           <Seg<ScenarioId>
-            label="Choose what to show"
+            label="What happens"
             value={sc}
             onChange={setSc}
             options={ORDER.map((id) => ({
@@ -40,12 +40,8 @@ export default function ClusterLab() {
           />
         </div>
 
-        <div class="dl-cap">
-          <span class="dl-n" aria-hidden="true">
-            {step + 1}/{n}
-          </span>
-          <p>{def.steps[step].text}</p>
-        </div>
+        <StepTracker steps={def.steps} step={step} clock={clock} />
+        <p class="dl-cap">{def.steps[step].text}</p>
 
         <div class="diagram-scroll">
           <LabDiagram frame={frame} label={`Four-node cluster. ${def.title}: ${def.lede}`} />
@@ -54,7 +50,6 @@ export default function ClusterLab() {
         <PlayBar
           clock={clock}
           label={`${def.title} animation`}
-          fmt={(t) => `Step ${stepAt(def, t) + 1} of ${n}`}
           extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
         />
       </div>

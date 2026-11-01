@@ -31,7 +31,7 @@ test('works inside an about:srcdoc preview frame', async ({ page }) => {
   await expect(stolen).toHaveAttribute('aria-pressed', 'true');
 
   // Back still works through the in-memory route.
-  await app.getByRole('button', { name: 'Back', exact: true }).click();
+  await app.getByRole('button', { name: 'Back to Nutanix Cloud Infrastructure' }).click();
   await expect(app.locator('.mod-head h1')).toHaveText('Nutanix Cloud Infrastructure');
 
   expect(errors).toEqual([]);

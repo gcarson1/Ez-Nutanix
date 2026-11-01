@@ -46,26 +46,26 @@ function caption(s: DrScene, ph: DrPhase): { tone: Tone | 'ink'; k: string; text
     case 'replicate':
       return {
         tone: 'ink',
-        k: 'Replicating',
+        k: 'Data replicating',
         text:
           s.tier === 'async'
-            ? 'The apps write at Site A. On a schedule (async policies run every 1 to 24 hours) a recovery point is taken and copied to Site B. Anything written since the last copy exists only at Site A.'
+            ? 'The apps write at Site A. On a schedule (async policies run every 1 to 24 hours) a recovery point is copied to Site B, so anything written since then exists only at Site A.'
             : s.tier === 'nearsync'
-              ? 'The apps write at Site A. With NearSync a small recovery point is copied to Site B every 1 to 15 minutes, so only the last few minutes exist only at Site A. Sync replication, for sites under 5 ms apart, copies every write instead.'
+              ? 'With NearSync a small recovery point reaches Site B every 1 to 15 minutes, so only the last few minutes exist only at Site A. Sync replication, for sites under 5 ms apart, copies every write instead.'
               : 'Metro Availability: every write is stored at both sites before the app is told it is done, so Site B is never behind. The sites must be under 5 ms round trip apart, and each write waits about one round trip.',
       };
     case 'shutdown':
-      return { tone: 'warn', k: 'Planned move', text: 'The apps at Site A shut down cleanly, so nothing new is written while they move.' };
+      return { tone: 'warn', k: 'Apps shut down', text: 'The apps at Site A shut down cleanly, so nothing new is written while they move.' };
     case 'final':
-      return { tone: 'flow', k: 'Final copy', text: 'The changes made since the last recovery point are copied to Site B, so nothing is left behind.' };
+      return { tone: 'flow', k: 'Final changes copied', text: 'The changes made since the last recovery point are copied to Site B, so nothing is left behind.' };
     case 'migrate':
-      return { tone: 'flow', k: 'Live migration', text: 'For a planned move the apps live-migrate to Site B one at a time and never stop. Every write is already there, so nothing waits for a final copy.' };
+      return { tone: 'flow', k: 'Apps live-migrate', text: 'For a planned move the apps live-migrate to Site B one at a time and never stop. Every write is already there, so nothing waits for a final copy.' };
     case 'lost':
       return {
         tone: 'bad',
         k: 'Site A is lost',
         text: s.lost
-          ? `Power, network or the whole building is gone. ${plural(s.lost, 'recent write', 'recent writes')} had not reached Site B yet and ${s.lost === 1 ? 'is' : 'are'} lost with it.${s.tier === 'nearsync' ? ' With sync replication they would already be there.' : ''}`
+          ? `Power, network or the whole building is gone. ${plural(s.lost, 'recent write', 'recent writes')} had not reached Site B yet and ${s.lost === 1 ? 'is' : 'are'} lost with it${s.tier === 'nearsync' ? '; with sync replication they would already be there' : ''}.`
           : 'Power, network or the whole building is gone. Every write the apps were told was done is already at Site B, so nothing is lost.',
       };
     case 'decide':
@@ -287,7 +287,7 @@ export default function Dr() {
 
   const none = event === 'planned' || tier === 'metro';
   const rpo = none
-    ? { v: 'None', sub: event === 'planned' && tier !== 'metro' ? 'the last changes are copied first' : 'RPO zero' }
+    ? { v: 'None', sub: event === 'planned' && tier !== 'metro' ? 'the last changes are copied first' : 'RPO 0' }
     : tier === 'async'
       ? { v: 'Hours', sub: 'RPO target 1 to 24 hours' }
       : { v: 'Minutes', sub: 'NearSync 1 to 15 min · Sync none' };
@@ -341,14 +341,13 @@ export default function Dr() {
       <Legend
         items={[
           { color: 'var(--ink)', label: 'At both sites' },
-          { color: 'var(--warn)', label: 'Only at Site A so far' },
-          { color: 'var(--bad)', label: 'Lost with Site A', dashed: true },
+          ...(tier === 'metro' ? [] : [{ color: 'var(--warn)', label: 'Only at Site A so far' }, { color: 'var(--flow)', label: 'Recovery point on its way' }]),
+          ...(s.lost ? [{ color: 'var(--bad)', label: 'Lost with Site A', dashed: true }] : []),
         ]}
       />
       <PlayBar
         clock={clock}
         label="Disaster recovery animation"
-        fmt={() => cap.k}
         extra={<Illus why="Time is compressed: an hour between async copies is drawn as a few seconds. The RPO ranges, the 5 ms round-trip limit for synchronous replication and the Witness for automatic failover follow Nutanix sources. RPOs are targets, not guarantees. Metro Availability is shown as on AHV, set up in Prism Central: unplanned failover restarts the VMs, and a planned move can live-migrate them. On ESXi, Metro stretches a storage container and vSphere HA restarts the VMs. Site layout and boot timing are simplified." />}
       />
     </Show>

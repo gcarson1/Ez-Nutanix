@@ -3,7 +3,7 @@
 // through a floating IP. One choice, one looping picture.
 import { useEnum } from '../../../state/route';
 import { brisk, paced, readSecs, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
 import { Choice, Kpis, Show, ease, prog, type KpiItem } from '../../components/show';
 
 type Preset = 'vpc' | 'nat' | 'fip';
@@ -62,22 +62,22 @@ const PRESETS: Record<Preset, { label: string; poster: number; hops: Hop[] }> = 
     label: 'Inside a VPC',
     poster: 1,
     hops: [
-      { k: 'Leaves A-1', text: 'A-1 in VPC A sends a packet to 10.1.1.20, an address in its own private network.', pts: out('a1'), addr: '10.1.1.10 → 10.1.1.20' },
-      { k: 'Wrapped, host to host', text: 'Host 1 wraps it in an envelope addressed to Host 2 and tagged VPC A. The physical network only sees Host 1 talking to Host 2.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Host 1 → Host 2 · VPC A' },
-      { k: 'Delivered to A-2', text: 'Host 2 unwraps it and hands the original packet to A-2. No switch or router was changed to build this network.', pts: into('a2'), addr: '10.1.1.10 → 10.1.1.20', to: 'a2' },
-      { k: 'Same addresses in VPC B', text: 'B-1 in VPC B has the very same address, 10.1.1.10, and also sends to 10.1.1.20.', pts: out('b1'), addr: '10.1.1.10 → 10.1.1.20' },
-      { k: 'Tagged VPC B', text: 'This envelope says VPC B, so the two networks never mix even though their addresses match.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Host 1 → Host 2 · VPC B' },
-      { k: 'Delivered to B-2 only', text: 'B-2 gets it and A-2 never sees it. Two teams can reuse the same range, such as a cloned copy of production.', pts: into('b2'), addr: '10.1.1.10 → 10.1.1.20', to: 'b2' },
+      { k: 'Packet leaves A-1', text: 'A-1 in VPC A sends a packet to 10.1.1.20, an address in its own private network.', pts: out('a1'), addr: '10.1.1.10 → 10.1.1.20' },
+      { k: 'Host 1 wraps the packet', text: 'Host 1 wraps it in an envelope addressed to Host 2 and tagged VPC A. The physical network only sees Host 1 talking to Host 2.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Host 1 → Host 2 · VPC A' },
+      { k: 'Packet reaches A-2', text: 'Host 2 unwraps it and hands the original packet to A-2. No switch or router was changed to build this network.', pts: into('a2'), addr: '10.1.1.10 → 10.1.1.20', to: 'a2' },
+      { k: 'B-1 uses the same address', text: 'B-1 in VPC B has the very same address, 10.1.1.10, and also sends to 10.1.1.20.', pts: out('b1'), addr: '10.1.1.10 → 10.1.1.20' },
+      { k: 'Envelope says VPC B', text: 'This envelope says VPC B, so the two networks never mix even though their addresses match.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Host 1 → Host 2 · VPC B' },
+      { k: 'Only B-2 receives it', text: 'B-2 gets it and A-2 never sees it. Two teams can reuse the same range, such as a cloned copy of production.', pts: into('b2'), addr: '10.1.1.10 → 10.1.1.20', to: 'b2' },
     ],
   },
   nat: {
     label: 'Out to the internet',
     poster: 2,
     hops: [
-      { k: 'Leaves A-1', text: 'A-1 sends a packet to a server on the internet. Its private address, 10.1.1.10, means nothing out there.', pts: out('a1'), addr: '10.1.1.10 → 198.51.100.7' },
-      { k: 'Wrapped, to the NAT host', text: 'The packet is wrapped and sent to Host 2, which handles internet traffic for VPC A.', pts: tunnel(0, 1), addr: '10.1.1.10 → 198.51.100.7', wrap: 'Host 1 → Host 2 · VPC A' },
-      { k: 'Address swapped', text: "Host 2 swaps the private source address for VPC A's one public address, 203.0.113.10. This is source NAT.", pts: [hostC(1)], was: '10.1.1.10 → 198.51.100.7', addr: '203.0.113.10 → 198.51.100.7' },
-      { k: 'Out to the internet', text: 'It leaves on the external network as an ordinary packet. Replies come back the same way, but outsiders cannot start a connection to A-1.', pts: toNet, addr: '203.0.113.10 → 198.51.100.7', to: 'net' },
+      { k: 'Packet leaves A-1', text: 'A-1 sends a packet to a server on the internet. Its private address, 10.1.1.10, means nothing out there.', pts: out('a1'), addr: '10.1.1.10 → 198.51.100.7' },
+      { k: 'Packet crosses to Host 2', text: 'Host 1 wraps the packet and sends it to Host 2, a gateway host that handles internet traffic for VPC A.', pts: tunnel(0, 1), addr: '10.1.1.10 → 198.51.100.7', wrap: 'Host 1 → Host 2 · VPC A' },
+      { k: 'Host 2 swaps the address', text: 'Host 2 swaps the private source address for a public one from the external network, 203.0.113.10. This is source network address translation (NAT), and every VM in the VPC can share it.', pts: [hostC(1)], was: '10.1.1.10 → 198.51.100.7', addr: '203.0.113.10 → 198.51.100.7' },
+      { k: 'Packet exits to the internet', text: 'It leaves on the external network as an ordinary packet. Replies come back the same way, but outsiders cannot start a connection to A-1.', pts: toNet, addr: '203.0.113.10 → 198.51.100.7', to: 'net' },
     ],
   },
   fip: {
@@ -85,9 +85,9 @@ const PRESETS: Record<Preset, { label: string; poster: number; hops: Hop[] }> = 
     poster: 1,
     hops: [
       { k: 'A client connects', text: 'A client on the internet connects to 203.0.113.50, a floating IP: a public address reserved for one VM.', pts: [...toNet].reverse(), addr: '198.51.100.7 → 203.0.113.50' },
-      { k: 'Address swapped', text: "Host 2 swaps the floating IP for A-1's private address, 10.1.1.10. A-1 never needs to know its public address.", pts: [hostC(1)], was: '198.51.100.7 → 203.0.113.50', addr: '198.51.100.7 → 10.1.1.10' },
-      { k: 'Wrapped, host to host', text: 'The packet is wrapped, tagged VPC A and sent to Host 1, where A-1 runs.', pts: tunnel(1, 0), addr: '198.51.100.7 → 10.1.1.10', wrap: 'Host 2 → Host 1 · VPC A' },
-      { k: 'Delivered to A-1', text: 'Host 1 unwraps it and A-1 sees an ordinary packet. Outsiders can reach A-1, and only A-1, this way.', pts: into('a1'), addr: '198.51.100.7 → 10.1.1.10', to: 'a1' },
+      { k: 'Host 2 swaps the address', text: 'Host 2 swaps the floating IP for A-1’s private address, 10.1.1.10. A-1 never needs to know its public address.', pts: [hostC(1)], was: '198.51.100.7 → 203.0.113.50', addr: '198.51.100.7 → 10.1.1.10' },
+      { k: 'Host 2 wraps the packet', text: 'The packet is wrapped, tagged VPC A and sent to Host 1, where A-1 runs.', pts: tunnel(1, 0), addr: '198.51.100.7 → 10.1.1.10', wrap: 'Host 2 → Host 1 · VPC A' },
+      { k: 'A-1 receives the packet', text: 'Host 1 unwraps it and A-1 sees an ordinary packet. Outsiders can reach A-1, and only A-1, this way.', pts: into('a1'), addr: '198.51.100.7 → 10.1.1.10', to: 'a1' },
     ],
   },
 };
@@ -102,10 +102,10 @@ const KPIS: Record<Preset, KpiItem[]> = {
   vpc: [
     { k: 'VPCs using the same addresses', v: 2 },
     { k: 'Physical network changes', v: 0, tone: 'ok', tip: NO_CHANGES_TIP },
-    { k: 'Envelope size', v: '58 bytes', sub: 'added between hosts', tip: 'The envelope (Geneve) adds 58 bytes to each packet between hosts. With jumbo frames on the physical network, VMs keep a normal 1500-byte MTU; without them, VMs in a VPC use 1442.' },
+    { k: 'Envelope size', v: '58 bytes', sub: 'added between hosts', tip: 'The envelope (Geneve) adds 58 bytes to each packet between hosts, so VMs in a VPC get a maximum transmission unit (MTU) of 1442 (1500 less 58) from DHCP, the Dynamic Host Configuration Protocol. The physical network needs an MTU of at least 1558, ideally 9000.' },
   ],
   nat: [
-    { k: 'Public addresses for VPC A', v: 1, sub: 'shared by all its VMs' },
+    { k: 'Public address per VM', v: 'None', sub: 'VMs share a source NAT address' },
     { k: 'Outsiders can start a connection', v: 'No' },
     { k: 'Physical network changes', v: 0, tone: 'ok', tip: NO_CHANGES_TIP },
   ],
@@ -239,8 +239,8 @@ export function VNet() {
               <text x={x + HOST_W - 14} y={40} text-anchor="end" class="mono muted" style={{ fontSize: '11.5px' }}>
                 172.16.0.1{h + 1}
               </text>
-              <rect class="fl-sw" x={x + 14} y={SW_Y} width={HOST_W - 28} height={40} />
-              <text x={x + HOST_W / 2} y={SW_Y + 14} text-anchor="middle" style={{ fontSize: '12px' }}>
+              <rect class="fl-sw" x={x + 14} y={SW_Y - 8} width={HOST_W - 28} height={48} />
+              <text x={x + HOST_W / 2} y={SW_Y + 6} text-anchor="middle" style={{ fontSize: '12px' }}>
                 {h === 1 ? sw2 : 'Virtual switch'}
               </text>
             </g>
@@ -271,11 +271,18 @@ export function VNet() {
           <Packet p={pos} addr={addr} wrap={hop.wrap} swapped={swapped} />
         </svg>
       </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'VPC A' },
+          { color: 'var(--flow)', dashed: true, label: 'VPC B' },
+          { color: 'var(--flow)', label: 'Path of the packet' },
+          ...(preset !== 'vpc' ? [{ color: 'var(--warn)', label: 'Address swapped' }] : []),
+        ]}
+      />
       <PlayBar
         clock={clock}
         label="Virtual networking animation"
-        fmt={() => hop.k}
-        extra={<Illus why="Two hosts and two VPCs. Between AHV hosts the envelope is Geneve. Which host handles NAT and floating IPs depends on configuration, and the addresses are examples." />}
+        extra={<Illus why="Two hosts and two VPCs. Between AHV hosts the envelope is Geneve. One gateway host does the NAT; by default a VPC has two active gateway hosts per external network, each with its own source NAT address. The addresses are examples." />}
       />
     </Show>
   );

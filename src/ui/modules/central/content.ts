@@ -5,7 +5,7 @@ export const content: ModuleContent = {
   title: 'Nutanix Central & Prism Federation',
   tag: 'Nutanix Central',
   summary:
-    'One console above every cluster and site. Prism Element runs each cluster, Prism Central manages a group of clusters, and Nutanix Central federates many Prism Centrals so health and alerts from every region land in one place.',
+    'One console shows the health and alerts of every cluster in every region. Prism Element runs each cluster, Prism Central manages a group of clusters, and Nutanix Central federates many Prism Centrals.',
   priority: 'P1',
   talk: [
     'Three levels: Prism Element is built into every cluster, Prism Central manages the clusters registered to it, and Nutanix Central sits above many Prism Central domains.',
@@ -13,19 +13,19 @@ export const content: ModuleContent = {
     'Register clusters to a Prism Central and their health, capacity and alerts flow up to it. A cluster registers to one Prism Central, often one per region.',
     '“Prism Federation” on the slide is our label for federating many Prism Centrals under Nutanix Central: one view, one API surface, alerts rolled up, lifecycle management and identity across domains.',
     'Role-based access decides who sees what: a regional team sees only its region, an app team only its project, an auditor can look but not act. The same rules apply to the API.',
-    'Nutanix Central is available as SaaS or on-premises. From NCM 2.0 (April 2026), Cloud Manager runs inside Nutanix Central on-premises. Rolling upgrades themselves are shown in the LCM module.',
+    'Nutanix Central is available as SaaS or on-premises. NCM 2.x (from 2.0 in April 2026) runs inside the on-premises version; see Cloud Manager. Each cluster’s rolling upgrades are in LCM Rolling Upgrade.',
   ],
   numbers: [
-    { k: 'Prism Central domains (Nutanix Central on-prem)', v: 'Up to 25 at the Dec 2025 GA' },
+    { k: 'Prism Central domains (Nutanix Central on-premises)', v: 'Up to 25 at the Dec 2025 GA' },
     { k: 'Prism Central deployment', v: '1 VM or 3-VM scale-out' },
     { k: 'Prism Central per cluster', v: 'A cluster registers to one Prism Central' },
     { k: 'Nutanix Central SaaS GA', v: 'May 2024' },
-    { k: 'Nutanix Central on-prem GA', v: 'Dec 2025' },
+    { k: 'Nutanix Central on-premises GA', v: 'Dec 2025' },
   ],
   qa: [
     {
       q: 'Do we need Nutanix Central, or is Prism Central enough?',
-      a: 'If all your clusters fit under one Prism Central, Prism Central already gives you multi-cluster management. Nutanix Central adds value when you run several Prism Central domains (regions, business units, sovereignty boundaries) and want one view and shared identity across them. It is also required for Cloud Manager 2.x, which runs inside Nutanix Central on-premises.',
+      a: 'If all your clusters fit under one Prism Central, Prism Central already gives you multi-cluster management. Nutanix Central adds value when you run several Prism Central domains (regions, business units, sovereignty boundaries) and want one view and shared identity across them. It is also required for NCM 2.x, which runs inside Nutanix Central on-premises.',
     },
     {
       q: 'Is Nutanix Central only a SaaS service? We have air-gapped sites.',
@@ -37,9 +37,10 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Start on Prism Element: each cluster runs itself, and the Toronto store’s warning is missed from New York.',
-    'Switch to Prism Central: the Americas clusters report up and the warning is seen, but EMEA is a second console.',
-    'Switch to Nutanix Central: both regions report to one place, one console instead of five.',
-    'Then open Cloud Manager, which runs on Nutanix Central from version 2.0, or LCM Rolling Upgrade for upgrades across clusters.',
+    'View from opens on Nutanix Central · every region: both regions report to one place, so the Toronto store’s warning is seen from the top.',
+    'Pick Prism Element · one cluster: each cluster runs itself, and the Toronto store’s warning is missed from New York.',
+    'Pick Prism Central · one region: the Americas clusters report up and the warning is seen, but EMEA is a second console.',
+    'Then open Cloud Manager to see the operations that run inside Nutanix Central.',
   ],
+  then: ['ncm', 'nci/lcm'],
 };

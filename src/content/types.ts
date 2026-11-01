@@ -15,6 +15,8 @@ export interface ModuleContent {
   numbers: { k: string; v: string }[];
   /** Three likely customer questions with honest answers. */
   qa: { q: string; a: string }[];
-  /** What to click next, in order. */
+  /** What to click next, in order: steps inside this module, ending with where to go. */
   next: string[];
+  /** Modules to open next (route paths), shown as links in the presenter drawer. */
+  then?: string[];
 }

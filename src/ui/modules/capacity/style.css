@@ -4,7 +4,7 @@
 .diagram .cp-copy { fill: var(--ink); }
 .diagram .cp-new { fill: var(--flow); }
 .diagram .cp-lost { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 3 2; opacity: 0.75; }
-.cp-share { max-width: 44rem; margin-top: var(--sp-2); }
+.cp-share { grid-column: 1 / -1; max-width: 44rem; margin-top: var(--sp-2); }
 .cp-share-bar { display: flex; height: 0.875rem; border: 1px solid var(--line-2); }
 .cp-share-bar i { display: block; height: 100%; }
 .cp-d { background: var(--ink); }
@@ -24,9 +24,10 @@
 .diagram .cp-par.lost text { fill: var(--bad); }
 .diagram .cp-arc { fill: none; stroke: var(--flow); stroke-width: 1.25; opacity: 0.55; }
 .diagram .cp-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1; }
-.cp-ec { max-width: 44rem; margin-top: var(--sp-3); }
+.cp-ec { grid-column: 1 / -1; max-width: 54rem; margin-top: var(--sp-3); }
+.diagram .cp-nl { paint-order: stroke; stroke: var(--bg-2); stroke-width: 5px; stroke-linejoin: round; }
 .cp-ec-h { font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--sp-2); }
-.cp-ec-row { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 13rem; gap: var(--sp-3); align-items: center; padding: var(--sp-1) 0; font-size: var(--fs-13); color: var(--text-2); }
+.cp-ec-row { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 19rem; gap: var(--sp-3); align-items: center; padding: var(--sp-1) 0; font-size: var(--fs-13); color: var(--text-2); }
 .cp-ec-row .bar { height: 0.75rem; border: 1px solid var(--line-2); position: relative; }
 .cp-ec-row .bar i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
 .cp-ec-row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
@@ -40,6 +41,16 @@
 .diagram .cp-warn-t { font-size: 13px; font-weight: 600; }
 
 @media (max-width: 900px) {
-  .cp-ec-row { grid-template-columns: minmax(0, 1fr) 4rem; }
+  .cp-ec-row { grid-template-columns: minmax(0, 1fr) minmax(0, 11rem); }
+  .cp-ec-row .v { text-align: right; }
   .cp-ec-row .bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+@media (max-width: 600px) {
+  .diagram-scroll > .diagram.cp-spread { min-width: 48rem; }
+}
+
+/* The top bar's Presets menu shows only on this module; narrow it so the bar fits a 375 px phone. */
+@media (max-width: 420px) {
+  .bar-r .input.preset { max-width: 6.25rem; }
 }

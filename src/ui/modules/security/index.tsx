@@ -58,7 +58,7 @@ function verdict(enc: Enc, th: Threat): Verdict {
     return {
       tone: 'bad',
       word: 'Readable',
-      k: 'Readable',
+      k: 'Data is readable',
       mark: '✕ Readable: data is stored as written',
       text: th === 'drive' ? 'The drive holds data exactly as it was written. Anyone who has it can read it.' : 'Every drive in the node holds data exactly as it was written. Anyone who has the node can read it.',
     };
@@ -66,7 +66,7 @@ function verdict(enc: Enc, th: Threat): Verdict {
     return {
       tone: 'ok',
       word: 'Unreadable',
-      k: 'Unreadable',
+      k: 'Data is unreadable',
       mark: '✓ Unreadable: scrambled, no key on it',
       text: 'The drive holds only scrambled data and the keys are not on it, so it is useless to whoever has it. The same goes for a drive sent back for repair or thrown away.',
     };
@@ -74,14 +74,14 @@ function verdict(enc: Enc, th: Threat): Verdict {
     return {
       tone: 'ok',
       word: 'Unreadable',
-      k: 'Unreadable',
+      k: 'Data is unreadable',
       mark: '✓ Unreadable: key server out of reach',
       text: 'The keys live on your own key server, which a stolen node cannot reach from somewhere else. Keys and data are never in the same place.',
     };
   return {
     tone: 'warn',
     word: 'Depends',
-    k: 'Depends on the setup',
+    k: 'Result depends on setup',
     mark: '! Depends on the setup',
     text: 'With the built-in key manager the cluster itself holds the keys, so how well a whole stolen node is protected depends on the configuration and release. If this is in your threat model, use an external key manager.',
   };
@@ -216,10 +216,14 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
       <text x={CL.x + 30} y={CL.y + CL.h + 29} class="sc-s">
         Plain data: anyone with the drive can read it
       </text>
-      <Cipher x={CL.x + 14} y={CL.y + CL.h + 52} />
-      <text x={CL.x + 30} y={CL.y + CL.h + 57} class="sc-s">
-        Encrypted data: scrambled without the key
-      </text>
+      {on && (
+        <>
+          <Cipher x={CL.x + 14} y={CL.y + CL.h + 52} />
+          <text x={CL.x + 30} y={CL.y + CL.h + 57} class="sc-s">
+            Encrypted data: scrambled without the key
+          </text>
+        </>
+      )}
 
       {/* outside */}
       <rect x={OUT.x} y={OUT.y} width={OUT.w} height={OUT.h} class="sc-out" />
@@ -278,8 +282,8 @@ export default function Security() {
   const [th, setTh] = useEnum<Threat>('th', 'drive', ['drive', 'node']);
   const v = verdict(enc, th);
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
-    { tone: 'ink' as const, k: enc === 'off' ? 'Writing, not encrypted' : 'Writing, encrypted', text: writeCaption(enc) },
-    { tone: 'warn' as const, k: THREAT_LABEL[th], text: th === 'drive' ? 'Someone pulls a drive out of node 3 and walks out of the data center with it.' : 'Someone takes node 3, with all of its drives, out of the data center.' },
+    { tone: 'ink' as const, k: enc === 'off' ? 'Apps write plain data' : 'Apps write encrypted data', text: writeCaption(enc) },
+    { tone: 'warn' as const, k: THREAT_LABEL[th], text: th === 'drive' ? 'Someone pulls a drive out of Node 3 and walks out of the data center with it.' : 'Someone takes Node 3, with all of its drives, out of the data center.' },
     { tone: v.tone, k: v.k, text: v.text },
   ];
   const starts = [0, STEAL, RESULT];
@@ -294,7 +298,7 @@ export default function Security() {
       top={
         <>
           <Choice<Enc> label="Encryption" value={enc} onChange={setEnc} options={(['off', 'native', 'ext'] as Enc[]).map((e) => ({ value: e, label: ENC_LABEL[e] }))} />
-          <Choice<Threat> label="Threat" value={th} onChange={setTh} options={(['drive', 'node'] as Threat[]).map((x) => ({ value: x, label: THREAT_LABEL[x] }))} />
+          <Choice<Threat> label="What happens" value={th} onChange={setTh} options={(['drive', 'node'] as Threat[]).map((x) => ({ value: x, label: THREAT_LABEL[x] }))} />
         </>
       }
       foot={
@@ -319,7 +323,6 @@ export default function Security() {
       <PlayBar
         clock={clock}
         label="Theft animation"
-        fmt={() => ['Writing', 'Stolen', 'Result'][phase]}
         extra={<Illus why="Three nodes and one copy of each piece shown; real clusters keep two or three copies on different nodes. Key handling (key types, rotation, caching) is simplified." />}
       />
     </Show>

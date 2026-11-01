@@ -8,8 +8,8 @@ import { KEYS, useScenario } from '../../../state/scenario';
 import { capacityShares, planSpread } from '../../../engine/spread';
 import type { RF } from '../../../engine/rules';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Follow, PlayBar } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
+import { Choice, Kpis, Show, ease, phaseAt, prog, Tabs } from '../../components/show';
 import { Shape } from './shapes';
 import { EcView } from './ec';
 import { DomainsView } from './domains';
@@ -118,9 +118,9 @@ function CopiesView() {
   const tl = useTimeline(nodes, rf);
   const failedNames = tl.plan.failed.map((n) => `N${n + 1}`).join(' and ');
   const captions = [
-    { tone: 'ink' as const, k: 'Writing', text: `Every piece of data is stored as ${rf} copies, each on a different node. No node holds two copies of the same piece.` },
+    { tone: 'ink' as const, k: 'Copies written', text: `Every piece of data is stored as ${rf} copies, each on a different node. No node holds two copies of the same piece.` },
     { tone: 'bad' as const, k: rf === 2 ? 'A node fails' : 'Two nodes fail at once', text: `${failedNames} ${rf === 2 ? 'goes' : 'go'} down. Every piece still has a copy on a healthy node, so nothing is lost and VMs keep running.` },
-    { tone: 'flow' as const, k: 'Self-healing', text: 'Each missing copy is copied from a surviving copy to another healthy node. Different nodes copy at the same time, so the cluster heals quickly.' },
+    { tone: 'flow' as const, k: 'Copies re-created', text: 'Each missing copy is copied from a surviving copy to another healthy node. Different nodes copy at the same time, so the cluster heals quickly.' },
     { tone: 'ok' as const, k: 'Protected again', text: `Back to ${rf} copies of everything, on the nodes that are left. The cluster can take another failure.` },
   ];
   const starts = [0, tl.fail, tl.detect, tl.done];
@@ -137,7 +137,7 @@ function CopiesView() {
       top={
         <>
           <Choice<RF>
-            label="Protection"
+            label="Copies"
             value={rf}
             onChange={(v) => {
               set(v === 3 ? { rf: 3, ft: 3, ecx: false } : { rf: 2, ft: 2, ecx: false });
@@ -169,31 +169,42 @@ function CopiesView() {
               { k: 'Usable', v: pct(share.data), sub: 'of raw after the reserve (estimate)', tip: `Raw divided by ${rf} copies, after keeping ${share.reserveNodes === 1 ? 'one node' : 'two nodes'} of free space so data can fully re-protect after a failure. With nodes of different sizes, keep the largest ${share.reserveNodes === 1 ? 'node' : 'two'} free. This is sizing guidance; the real figure depends on the design and data reduction.` },
             ]}
           />
+          <div class="cp-share" role="img" aria-label={`Raw capacity: ${pct(share.data)} your data, ${pct(share.copies)} extra copies, ${pct(share.reserve)} kept free for a rebuild`}>
+            <div class="cp-share-bar">
+              <i class="cp-d" style={{ width: pct(share.data) }} />
+              <i class="cp-c" style={{ width: pct(share.copies) }} />
+              <i class="cp-r" style={{ width: pct(share.reserve) }} />
+            </div>
+            <div class="cp-share-l">
+              <span>
+                <b class="cp-d" /> Your data {pct(share.data)}
+              </span>
+              <span>
+                <b class="cp-c" /> Extra copies {pct(share.copies)}
+              </span>
+              <span>
+                <b class="cp-r" /> Kept free for a rebuild {pct(share.reserve)}
+              </span>
+            </div>
+          </div>
         </>
       }
     >
       <div class="diagram-scroll">
         <Spread nodes={nodes} rf={rf} t={t} tl={tl} />
       </div>
-      <PlayBar clock={clock} label="Data placement animation" fmt={() => ['Writing', 'Failure', 'Self-healing', 'Protected'][phase]} />
-      <div class="cp-share" role="img" aria-label={`Raw capacity: ${pct(share.data)} your data, ${pct(share.copies)} extra copies, ${pct(share.reserve)} kept free for a rebuild`}>
-        <div class="cp-share-bar">
-          <i class="cp-d" style={{ width: pct(share.data) }} />
-          <i class="cp-c" style={{ width: pct(share.copies) }} />
-          <i class="cp-r" style={{ width: pct(share.reserve) }} />
-        </div>
-        <div class="cp-share-l">
-          <span>
-            <b class="cp-d" /> Your data {pct(share.data)}
-          </span>
-          <span>
-            <b class="cp-c" /> Extra copies {pct(share.copies)}
-          </span>
-          <span>
-            <b class="cp-r" /> Kept free for a rebuild {pct(share.reserve)}
-          </span>
-        </div>
-      </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'Copy of a piece of data' },
+          { color: 'var(--flow)', label: 'Copy being re-created' },
+          { color: 'var(--bad)', dashed: true, label: 'Copy lost with the failed node' },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="Data placement animation"
+        extra={<Illus why="A few pieces of data stand in for the whole data set, and the failure and rebuild are compressed into seconds. A real rebuild takes as long as the data to re-protect and the cluster’s load require." />}
+      />
     </Show>
   );
 }
@@ -208,17 +219,10 @@ const TABS: { id: TabId; label: string }[] = [
 export default function Capacity() {
   const [tab, setTab] = useEnum<TabId>('tab', 'copies', ['copies', 'ec', 'domains']);
   return (
-    <>
-      <div class="tabs" role="tablist" aria-label="Protection topics">
-        {TABS.map((t) => (
-          <button type="button" role="tab" key={t.id} aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <Tabs label="Protection topics" value={tab} tabs={TABS} onChange={setTab}>
       {tab === 'copies' && <CopiesView />}
       {tab === 'ec' && <EcView />}
       {tab === 'domains' && <DomainsView />}
-    </>
+    </Tabs>
   );
 }

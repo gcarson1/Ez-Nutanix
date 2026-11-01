@@ -56,22 +56,23 @@ const SITE: Record<On, { cluster: string; worker: string; kind: string; vol: str
 };
 
 function phases(on: On): string[] {
-  return ['AOS runs as pods', 'Two copies of every write', on === 'eks' ? 'A worker fails' : 'A server fails', 'Protect the whole app', on === 'eks' ? 'Replicate for DR' : 'Move between sites (planned)'];
+  const box = on === 'eks' ? 'worker' : 'server';
+  return ['AOS runs as pods', `Writes land on two ${box}s`, `A ${box} fails`, 'NDK protects the whole app', on === 'eks' ? 'App replicates to another region' : 'Moving between sites is planned'];
 }
 
 function caption(on: On, i: number): string {
   if (on === 'metal')
     return [
-      'NKP Metal runs Kubernetes straight on the servers. Cloud Native AOS runs as a pod on each one and pools the local drives into one storage system, with no hypervisor and no Controller VM (CVM).',
+      'NKP Metal runs Kubernetes straight on the servers. Cloud Native AOS runs as a pod on each one and pools the local drives into one storage system, with no hypervisor and no CVM.',
       'A database pod claims a persistent volume like any Kubernetes app. AOS keeps each block on two servers, as release 1.0 does on Amazon EKS.',
-      'Server 1 fails. The second copies on the other servers keep the volume available, so Kubernetes restarts the database pod on server 3 with all its data.',
+      'Server 1 fails. The second copies on the other servers keep the volume available, so Kubernetes restarts the database pod on Server 3 with all its data.',
       'NDK, Nutanix Data Services for Kubernetes, snapshots the app as one unit: its Kubernetes resources and its volume data, consistent with each other.',
       'Nutanix lists moving apps between bare-metal servers, on-premises clusters and public clouds as future development, so treat this step as planned, not available.',
     ][i];
   return [
-    'Amazon EKS workers on EC2, each with EBS gp3 volumes. Cloud Native AOS runs as a pod on every worker and pools those volumes into one storage system, with no hypervisor and no Controller VM (CVM).',
+    'Amazon EKS workers on EC2, each with EBS gp3 volumes. Cloud Native AOS runs as a pod on every worker and pools those volumes into one storage system, with no hypervisor and no CVM.',
     'A database pod claims a persistent volume like any Kubernetes app. AOS keeps every block it writes on two different workers (RF2).',
-    'Worker 1 fails. The second copies on the other workers keep the volume available, so Kubernetes restarts the database pod on worker 3 with all its data.',
+    'Worker 1 fails. The second copies on the other workers keep the volume available, so Kubernetes restarts the database pod on Worker 3 with all its data.',
     'NDK, Nutanix Data Services for Kubernetes, snapshots the app as one unit: its Kubernetes resources and its volume data, consistent with each other.',
     'NDK replicates the snapshot to another AWS region or zone, on a schedule, with a target RPO of 1 hour or more in release 1.0. It also pairs EKS with NKP on Nutanix in your data center, so apps there can fail over to AWS.',
   ][i];
@@ -82,14 +83,14 @@ function points(on: On): Point[] {
   return [
     {
       k: 'Nutanix storage inside Kubernetes',
-      by: 'No hypervisor, no CVM',
+      by: 'No hypervisor, no Controller VM (CVM)',
       text: on === 'eks' ? 'AOS runs as pods on the EKS workers, so stateful apps get Nutanix volumes, snapshots and compression in AWS.' : 'AOS runs as pods on the servers, so stateful apps get Nutanix volumes and snapshots on bare metal.',
       tone: 'ink',
       at: AOS_IN[0],
     },
     { k: `Survives a ${box} failure`, by: 'Two copies of every write (RF2)', text: `Each write is kept on two ${box}s, so when one fails the data is still there and the app restarts on another.`, tone: 'ok', at: P[2] },
     on === 'eks'
-      ? { k: 'App-level DR, cloud and on premises', by: 'Nutanix Data Services for Kubernetes (NDK)', text: 'Whole apps, Kubernetes resources and data together, replicate to another AWS region, and apps on NKP in your data center can fail over to EKS.', tone: 'flow', at: P[4] }
+      ? { k: 'App-level DR, cloud and on-premises', by: 'Nutanix Data Services for Kubernetes (NDK)', text: 'Whole apps, Kubernetes resources and data together, replicate to another AWS region, and apps on NKP in your data center can fail over to EKS.', tone: 'flow', at: P[4] }
       : { k: 'Move apps between sites', by: 'Planned', text: 'Nutanix lists moving apps between bare metal, on-premises clusters and public clouds as future development.', tone: 'warn', at: P[4] },
   ];
 }
@@ -375,6 +376,7 @@ export default function Cnaos() {
   useRestartOn(clock, [on]);
   const t = clock.t;
   const phase = phaseAt(P, t);
+  const metal = on === 'metal';
   const tone: Tone | 'ink' = phase === 0 || phase === 3 ? 'ink' : phase === 2 ? 'ok' : phase === 4 && on === 'metal' ? 'warn' : 'flow';
 
   return (
@@ -402,8 +404,8 @@ export default function Cnaos() {
           <Kpis
             items={[
               { k: 'Hypervisor', v: 'None', sub: 'AOS runs as pods' },
-              on === 'eks' ? { k: 'Disaster recovery', v: 'RPO ≥ 1 h', sub: 'target, through NDK, in release 1.0' } : { k: 'Moving between sites', v: 'Planned', tone: 'warn', sub: 'listed as future development' },
-              on === 'eks' ? { k: 'Status', v: 'GA · 1.0', tone: 'ok', sub: 'since July 2025; 1.0 allows up to 15 workers' } : { k: 'Status', v: 'Early access', tone: 'warn', sub: 'GA targeted 2H 2026' },
+              on === 'eks' ? { k: 'Disaster recovery', v: 'RPO 1 hour or more', sub: 'target, through NDK, in release 1.0' } : { k: 'Moving between sites', v: 'Planned', tone: 'warn', sub: 'listed as future development' },
+              on === 'eks' ? { k: 'Status', v: 'GA · 1.0', tone: 'ok', sub: 'since July 2025; 1.0 allows up to 15 workers' } : { k: 'Status', v: 'Early access', tone: 'warn', sub: 'GA targeted for the second half of 2026' },
             ]}
           />
         </>
@@ -412,17 +414,19 @@ export default function Cnaos() {
       <div class="diagram-scroll">
         <CnDiagram on={on} t={t} />
       </div>
-      <PlayBar clock={clock} label="Cloud Native AOS animation" fmt={() => names[phase]} />
-      <div class="cn-legend">
-        <Legend
-          items={[
-            { color: 'var(--ink)', label: 'AOS pod and first copy' },
-            { color: 'var(--s2)', label: 'Second copy (RF2)' },
-            { color: 'var(--flow)', label: 'Writes, reads and replication' },
-          ]}
-        />
-        <Illus why={on === 'eks' ? 'Worker, pod and block counts are an example. Where AOS places each copy depends on the cluster.' : 'NKP Metal is early access; the two copies follow release 1.0 on Amazon EKS.'} />
-      </div>
+      <Legend
+        items={[
+          { color: 'var(--ink)', label: 'AOS pod and first copy' },
+          { color: 'var(--s2)', label: 'Second copy (RF2)' },
+          { color: 'var(--flow)', label: 'Writes, reads and replication' },
+          ...(metal ? [{ color: 'var(--warn)', label: 'Planned, not available', dashed: true }] : []),
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="Cloud Native AOS animation"
+        extra={<Illus why={metal ? 'Simplified and compressed: three servers, one database and three blocks stand in for a real cluster. NKP Metal is early access, so the two copies follow release 1.0 on Amazon EKS, and moving between sites is planned.' : 'Simplified and compressed: three workers, one database and three blocks stand in for a real cluster. Where AOS places each copy depends on the cluster.'} />}
+      />
     </Show>
   );
 }

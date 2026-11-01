@@ -209,8 +209,6 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
   );
 }
 
-const PHASES = ['Loading', 'Serving', 'One stops', 'Back'];
-
 export default function Ai() {
   const [where, setWhere] = useEnum<Where>('w', 'dc', WHERES);
   const [repS, setRep] = useEnum<'1' | '2' | '4'>('r', '2', ['1', '2', '4']);
@@ -219,9 +217,9 @@ export default function Ai() {
   const site = SITE[where];
   const load =
     (n === 1 ? 'The replica loads the model' : `Each of the ${n} replicas loads its own copy of the model`) +
-    (site.online ? ', downloaded from NVIDIA NIM or Hugging Face, or uploaded by you.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later.');
+    (site.online ? ', downloaded from NVIDIA Inference Microservices (NIM) or Hugging Face, or uploaded by you.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later.');
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
-    { tone: 'ink' as const, k: 'Loading the model', text: load },
+    { tone: 'ink' as const, k: 'The model loads', text: load },
     n === 1
       ? { tone: 'warn' as const, k: 'Requests queue', text: 'Apps call one endpoint address with an API token. With one replica, every request waits its turn at the same model server, so a queue builds in busy moments.' }
       : { tone: 'flow' as const, k: 'Requests spread', text: `Apps call one endpoint address with an API token. The endpoint spreads the requests over the ${n} replicas, so they are answered side by side${plan.maxWait.busy > 0.05 ? ', with a short wait in busy moments' : ' and none has to wait'}.` },
@@ -229,8 +227,8 @@ export default function Ai() {
       ? { tone: 'bad' as const, k: 'The only replica stops', text: 'It stops for an update or a node fault. Nothing can answer, so requests wait, or fail, until it is back.' }
       : { tone: 'warn' as const, k: 'One replica stops', text: `Replica 1 stops for an update or a node fault. The endpoint sends requests only to the other ${n - 1}, ${plan.maxWait.stop > 0.05 ? 'so answers come a little slower' : 'and apps do not notice'}.` },
     n === 1
-      ? { tone: 'ok' as const, k: 'Back', text: 'The replica is back and works through the waiting requests. With one replica, every stop means a pause for the apps.' }
-      : { tone: 'ok' as const, k: 'Back to full strength', text: 'Replica 1 is back and takes its share again. The endpoint kept answering the whole time.' },
+      ? { tone: 'ok' as const, k: 'The replica returns', text: 'The replica is back and works through the waiting requests. With one replica, every stop means a pause for the apps.' }
+      : { tone: 'ok' as const, k: 'Replica 1 returns', text: 'Replica 1 is back and takes its share again. The endpoint kept answering the whole time.' },
   ];
   const starts = [0, T.start, plan.stop.from, plan.stop.to];
   const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
@@ -272,18 +270,19 @@ export default function Ai() {
       <div class="diagram-scroll">
         <Picture where={where} plan={plan} t={t} />
       </div>
-      <PlayBar clock={clock} label="Model endpoint animation" fmt={() => (n === 1 && phase === 2 ? 'Stopped' : PHASES[phase])} />
-      <div class="ai-legend">
-        <Legend
-          items={[
-            { color: 'var(--flow)', label: 'Request' },
-            { color: 'var(--ok)', label: 'Answer' },
-            { color: 'var(--ink)', label: 'Copy of the model on a GPU' },
-            { color: 'var(--bad)', label: 'Stopped replica', dashed: true },
-          ]}
-        />
-        <Illus why="Simplified. Real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. The point is how one endpoint spreads requests over replicas." />
-      </div>
+      <Legend
+        items={[
+          { color: 'var(--flow)', label: 'Request' },
+          { color: 'var(--ok)', label: 'Answer' },
+          { color: 'var(--ink)', label: 'Copy of the model on a GPU' },
+          { color: 'var(--bad)', label: 'Stopped replica', dashed: true },
+        ]}
+      />
+      <PlayBar
+        clock={clock}
+        label="Model endpoint animation"
+        extra={<Illus why="Simplified and compressed: real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. The point is how one endpoint spreads requests over replicas." />}
+      />
     </Show>
   );
 }

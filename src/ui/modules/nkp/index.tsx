@@ -4,15 +4,15 @@
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { stepsFrom, useClock, useRestartOn } from '../../components/clock';
-import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
+import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt } from '../../components/show';
 import { FLEET, TIMING, clusterState, planRollout, waveGroups, type ClusterState, type ClusterStatus, type FleetCluster, type Plan } from '../../../engine/nkp-upgrade';
 import './style.css';
 
 type Run = 'ok' | 'fail';
 
-const FROM = '1.34';
-const TO = '1.35';
+const FROM = '1.35';
+const TO = '1.36';
 const GROUPS = waveGroups();
 const WAVE_LABEL = ['Canary', 'Other edge sites', 'Data center', 'Public cloud'];
 const WHERE: Record<FleetCluster['infra'], string> = { ahv: 'on AHV', vsphere: 'on vSphere', aws: 'on AWS' };
@@ -43,7 +43,6 @@ const LEG_Y = BOX_Y + 2 * BOX_H + BOX_GAP + 30;
 const H = LEG_Y + 14;
 const colX = (w: number) => w * (COL_W + GAP);
 
-/** Sim seconds per real second: slow through the canary so the node swap can be read, faster after. */
 /** Sim seconds per real second at full speed. */
 const RATE: Record<Run, number> = { ok: 400, fail: 80 };
 
@@ -134,18 +133,17 @@ function ClusterBox({ c, s, x, y }: { c: FleetCluster; s: ClusterState; x: numbe
   );
 }
 
-const LEGEND: { cls: string; label: string; w: number }[] = [
-  { cls: 'old', label: `Node on ${FROM}`, w: 130 },
-  { cls: 'new', label: `Node on ${TO}`, w: 130 },
-  { cls: 'joining', label: 'New node joining', w: 150 },
-  { cls: 'old drain', label: 'Old node draining', w: 150 },
-  { cls: 'failed', label: 'Failed its health check', w: 190 },
+const LEGEND: { cls: string; color: string; dashed?: boolean; label: string }[] = [
+  { cls: 'old', color: 'var(--line-2)', label: `Node on ${FROM}` },
+  { cls: 'new', color: 'var(--ink)', label: `Node on ${TO}` },
+  { cls: 'joining', color: 'var(--flow)', dashed: true, label: 'New node joining' },
+  { cls: 'old drain', color: 'var(--warn)', label: 'Old node draining' },
+  { cls: 'failed', color: 'var(--bad)', label: 'Failed its health check' },
 ];
 
 function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: Map<string, ClusterState>; t: number }) {
   const wave = phaseAt(plan.waves, t);
   const cyc = (t / (RATE[run] * 1.8)) % 1;
-  const legend = LEGEND.filter((l) => (run === 'fail' ? l.cls !== 'new' && l.cls !== 'old drain' : l.cls !== 'failed'));
   return (
     <svg class="diagram nkp-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A fleet of ${FLEET.length} Kubernetes clusters upgraded from ${FROM} to ${TO} in waves: one canary edge cluster, the other edge sites, the data center, then the cloud. Inside each cluster a new node joins before an old one drains and leaves.${run === 'fail' ? ' Here the canary’s new node fails its health check, so the rollout stops and the canary stays on the old version.' : ''}`}>
       <defs>
@@ -178,19 +176,8 @@ function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: 
           </g>
         );
       })}
-      {legend.map((l, i) => {
-        const lx = legend.slice(0, i).reduce((n, it) => n + it.w, 0);
-        return (
-          <g key={l.label}>
-            <rect class={`nkp-node ${l.cls}`} x={lx} y={LEG_Y - 11} width={14} height={14} />
-            <text x={lx + 20} y={LEG_Y} class="muted" style={{ fontSize: '12px' }}>
-              {l.label}
-            </text>
-          </g>
-        );
-      })}
-      <text x={W} y={LEG_Y} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
-        C = control plane · W = worker
+      <text x={0} y={LEG_Y} class="muted" style={{ fontSize: '12px' }}>
+        C = control plane node · W = worker node
       </text>
     </svg>
   );
@@ -198,16 +185,16 @@ function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: 
 
 function caption(run: Run, plan: Plan, t: number, wave: number): { tone: Tone | 'ink'; k: string; text: string } {
   const canary = FLEET.find((c) => c.id === GROUPS[0][0].id)!.name;
-  const canaryText = `One small edge cluster, ${canary}, goes first. A new node on ${TO} joins and is checked, then one old node drains so its apps move over, and leaves. Control plane first, then workers.`;
+  const canaryText = `One small edge cluster, ${canary}, goes first. A new node on ${TO} joins, then one old node drains so its apps move over and leaves, control plane first.`;
   if (run === 'fail') {
-    if (t < plan.haltAt!) return { tone: 'flow', k: 'Canary first', text: canaryText };
-    if (t < plan.end) return { tone: 'bad', k: 'Health check failed', text: `The new ${TO} node in ${canary} fails its health check. The rollout stops here, before any old node is drained.` };
-    return { tone: 'warn', k: 'Stopped and rolled back', text: `The failed node is removed. The old nodes never left, so ${canary} is still on ${FROM} and serving. The other ${FLEET.length - 1} clusters were never touched.` };
+    if (t < plan.haltAt!) return { tone: 'flow', k: 'Canary goes first', text: canaryText };
+    if (t < plan.end) return { tone: 'bad', k: 'Health check fails', text: `The new ${TO} node in ${canary} fails its health check. The rollout stops here, before any old node is drained.` };
+    return { tone: 'warn', k: 'Canary rolls back', text: `The failed node is removed and the old nodes never left, so ${canary} is still on ${FROM} and serving. The other ${FLEET.length - 1} clusters were never touched.` };
   }
-  if (t >= plan.end) return { tone: 'ok', k: 'Fleet upgraded', text: `All ${FLEET.length} clusters are on ${TO}, rolled out from one place. No cluster ever had more than one node out of service, so apps kept running.` };
+  if (t >= plan.end) return { tone: 'ok', k: 'Fleet is upgraded', text: `All ${FLEET.length} clusters are on ${TO}, rolled out from one place. No cluster ever had more than one node out of service, so apps kept running.` };
   if (wave === 0) {
     const checking = t >= plan.clusters.find((p) => p.wave === 0)!.nodesEnd;
-    return checking ? { tone: 'warn', k: 'Health check', text: `${canary} is fully on ${TO}. Its health check has to pass before any other cluster is touched.` } : { tone: 'flow', k: 'Canary first', text: canaryText };
+    return checking ? { tone: 'warn', k: 'Canary is checked', text: `${canary} is fully on ${TO}. Its health check has to pass before any other cluster is touched.` } : { tone: 'flow', k: 'Canary goes first', text: canaryText };
   }
   const text = [
     '',
@@ -215,7 +202,7 @@ function caption(run: Run, plan: Plan, t: number, wave: number): { tone: Tone | 
     'Bigger clusters take longer, but it is still one node at a time, so each cluster keeps all but one node serving.',
     'Clusters in the public cloud are upgraded the same way, from the same place.',
   ][wave];
-  return { tone: 'flow', k: `Wave ${wave + 1}: ${WAVE_LABEL[wave].toLowerCase()}`, text };
+  return { tone: 'flow', k: ['', 'Other edge sites upgrade', 'Data center upgrades', 'Public cloud upgrades'][wave], text };
 }
 
 export default function Nkp() {
@@ -236,13 +223,12 @@ export default function Nkp() {
   const wave = phaseAt(plan.waves, t);
   const cap = caption(run, plan, t, wave);
   const stopped = plan.haltAt !== null && t >= plan.haltAt;
-  const word = run === 'fail' ? (t < plan.haltAt! ? 'Canary' : t < plan.end ? 'Check failed' : 'Rolled back') : t >= plan.end ? 'Done' : WAVE_LABEL[wave];
 
   return (
     <Show
       top={
         <Choice<Run>
-          label="Rollout"
+          label="What happens"
           value={run}
           onChange={setRun}
           options={[
@@ -270,10 +256,10 @@ export default function Nkp() {
       <div class="diagram-scroll">
         <FleetDiagram run={run} plan={plan} states={states} t={t} />
       </div>
+      <Legend items={LEGEND.filter((l) => (run === 'fail' ? l.cls !== 'new' && l.cls !== 'old drain' : l.cls !== 'failed'))} />
       <PlayBar
         clock={clock}
         label="Fleet upgrade animation"
-        fmt={() => word}
         extra={<Illus why="Example versions and timings. Fleet management is in NKP Ultimate. Upgrading a canary first, then waves, is a common practice shown as an example. Inside a cluster, a new node joins before an old one leaves, as in a Cluster API rolling update." />}
       />
     </Show>

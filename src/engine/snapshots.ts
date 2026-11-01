@@ -128,11 +128,11 @@ export function walkthrough(o: { blocks?: number; clones?: number; changePct?: n
   let s = initial(blocks);
   steps.push({ id: 'base', title: 'A VM disk with data', text: `The virtual disk is a map of ${blocks} blocks. Each entry points at where that block physically lives.`, state: s });
   s = snapshot(s, 'vm');
-  steps.push({ id: 'snap', title: 'Take a snapshot', text: 'Taking a snapshot copies the map, not the data. It completes almost immediately and uses no new data space.', state: s });
+  steps.push({ id: 'snap', title: 'Snapshot taken', text: 'Taking a snapshot copies the map, not the data. It completes almost immediately and uses no new data space.', state: s });
   s = write(s, 'vm', [1, 4].filter((b) => b < blocks));
   steps.push({ id: 'write', title: 'The VM keeps writing', text: 'New writes go to new blocks, and only the live disk’s map is updated (redirect-on-write). The old blocks are untouched, so the snapshot still sees the data as it was.', state: s });
   for (let c = 1; c <= clones; c++) s = cloneFrom(s, 'snap1');
-  steps.push({ id: 'clone', title: `Create ${clones} clone${clones === 1 ? '' : 's'}`, text: `Each clone is a new writable disk whose map points at the snapshot’s blocks. ${clones === 1 ? 'It is' : 'They are'} ready at once and add no data space.`, state: s });
+  steps.push({ id: 'clone', title: `${['One', 'Two', 'Three', 'Four'][clones - 1]} clone${clones === 1 ? '' : 's'} created`, text: `Each clone is a new writable disk whose map points at the snapshot’s blocks. ${clones === 1 ? 'It is' : 'They are'} ready at once and add no data space.`, state: s });
   for (let c = 1; c <= clones; c++) {
     const targets = Array.from({ length: per }, (_, i) => (i * 2 + c) % blocks);
     s = write(s, `clone${c}`, [...new Set(targets)]);
