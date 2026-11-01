@@ -42,14 +42,22 @@ function hardwareGpu(): boolean {
   }
 }
 
-function wanted(): boolean {
-  if (typeof matchMedia === 'undefined' || window.self !== window.top) return false;
+let gpu: boolean | undefined;
+
+/**
+ * Why the glass cannot run here, or null when it can. The theme menu shows the reason next to its
+ * disabled Liquid glass switch; the viewer's own on/off choice is separate (data-glass on <html>).
+ */
+export function glassBlocker(): string | null {
+  if (typeof matchMedia === 'undefined') return 'Not available here';
+  if (window.self !== window.top) return 'Off inside another page';
   // Automated browsers (test runners, CI) skip it before the probe below: their GPU-less sandboxes
   // hand out a software renderer that takes seconds just to create a context. ?glass forces it on.
-  if (navigator.webdriver && !/[?&]glass\b/.test(location.search)) return false;
+  if (navigator.webdriver && !/[?&]glass\b/.test(location.search)) return 'Off in automated browsers';
   // Safari's Increase Contrast reports prefers-contrast, not reduced transparency.
   const off = ['(prefers-reduced-transparency: reduce)', '(prefers-contrast: more)', '(forced-colors: active)'];
-  return !off.some((q) => matchMedia(q).matches) && hardwareGpu();
+  if (off.some((q) => matchMedia(q).matches)) return 'Off with your display settings';
+  return (gpu ??= hardwareGpu()) ? null : 'Needs a hardware GPU';
 }
 
 /**
@@ -60,7 +68,7 @@ function wanted(): boolean {
 export function startGlass(): () => void {
   const root = document.documentElement;
   const make = liquidGL;
-  if (!wanted() || !make) return () => {};
+  if (glassBlocker() || !make) return () => {};
   let lenses: Lens[] = [];
   let raf = 0;
   const motion = !matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -73,6 +81,7 @@ export function startGlass(): () => void {
   };
   const start = () => {
     stop();
+    if (root.dataset.glass === 'off') return; // turned off in the theme menu
     root.classList.add('glass-on');
     // Wait a frame so the transparent tile styles apply before the backdrop is captured.
     raf = requestAnimationFrame(() => {
@@ -84,9 +93,10 @@ export function startGlass(): () => void {
   };
 
   start();
-  // The backdrop changes with the theme, so rebuild the glass when it switches.
+  // The backdrop changes with the theme, and the theme menu turns the glass off and on, so rebuild
+  // (or remove) the glass when either attribute changes.
   const mo = new MutationObserver(start);
-  mo.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  mo.observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-glass'] });
   return () => {
     mo.disconnect();
     stop();

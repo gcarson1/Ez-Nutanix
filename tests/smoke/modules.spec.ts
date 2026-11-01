@@ -47,6 +47,20 @@ test('guided tour walks the panes', async ({ page }) => {
   await expect(card.getByRole('button', { name: 'Open Nutanix Cloud Infrastructure' })).toBeVisible();
 });
 
+test('the theme button opens a menu with the theme and the liquid glass switch', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(FILE);
+  await page.getByRole('button', { name: 'Theme and glass' }).click();
+  const menu = page.getByRole('menu', { name: 'Theme and glass' });
+  // Test browsers are automated, so the glass is unavailable and the switch says why.
+  await expect(menu.getByRole('menuitemcheckbox', { name: /Liquid glass/ })).toBeDisabled();
+  await expect(menu).toContainText('Off in automated browsers');
+  await menu.getByRole('menuitemradio', { name: 'Light' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(menu).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('presenter, glossary and shortcuts open from the keyboard', async ({ page }) => {
   await page.goto(`${FILE}#/nci/cluster`);
   await expect(page.locator('.mod-head h1')).toBeVisible();

@@ -398,7 +398,12 @@ body { min-height: 100vh; }
 .speed-opt { display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: var(--sp-1) var(--sp-3); background: none; border: 0; color: var(--text); font: inherit; font-size: var(--fs-13); text-align: left; cursor: pointer; }
 .speed-opt:hover, .speed-opt:focus-visible { background: var(--bg-3); outline: none; }
 .speed-opt[aria-checked="true"] { color: var(--ink-fg); font-weight: 600; }
-.speed-mark { width: 1em; text-align: center; }
+.speed-mark { width: 1em; text-align: center; flex: none; }
+/* the theme button's menu opens below it, aligned to the right edge of the top bar */
+.theme-menu .speed-menu { left: auto; right: 0; top: calc(100% + var(--sp-1)); bottom: auto; min-width: 13rem; }
+.speed-h.sep { margin-top: var(--sp-1); padding-top: var(--sp-2); border-top: 1px solid var(--line); }
+.speed-opt:disabled { color: var(--faint); cursor: not-allowed; background: none; }
+.speed-note { display: block; font-size: var(--fs-12); color: var(--muted); }
 
 /* showcase layout: presets on top, one big picture, caption + key numbers */
 .show { padding-top: var(--sp-1); }
