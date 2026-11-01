@@ -2,8 +2,9 @@
 // refracts the slide's gradient backdrop (.glass-bg). The "Nutanix Central" band is a lower lens
 // and its tiles stack on it. Tile text stays in the DOM above the glass (content: false), so it
 // stays crisp, selectable and focusable. Without a hardware GPU, with reduced transparency, more
-// contrast or forced colors, or inside another page's frame (a file preview in a chat or mail app,
-// where a constant GPU loop would slow the host), nothing starts and the tiles keep their solid colors.
+// contrast or forced colors, inside another page's frame (a file preview in a chat or mail app,
+// where a constant GPU loop would slow the host) or in an automated browser, nothing starts and the
+// tiles keep their solid colors.
 import liquidGL from 'liquid-gl';
 
 type Lens = { destroy: () => void };
@@ -18,17 +19,24 @@ const GROUPS = [
   { target: '.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light', zIndex: 6 },
 ];
 
+/** Software renderers, by the unmasked WebGL renderer name (Chrome's SwiftShader, Mesa's llvmpipe, Windows' basic driver). */
+const SOFTWARE = /swiftshader|llvmpipe|softpipe|software|basic render/i;
+
 /**
  * Only on a hardware GPU: software WebGL (VMs, remote desktops, blocklisted GPUs, headless
- * browsers) can freeze the page for seconds. The browser refuses a context with this flag when it
- * would have to fall back to software rendering.
+ * browsers) freezes the page. The browser refuses a context with this flag when it would fall
+ * back to software, but not always (headless Chrome on a GPU-less Linux CI runner hands out
+ * SwiftShader anyway), so the renderer's own name is checked too.
  */
 function hardwareGpu(): boolean {
   try {
     const c = document.createElement('canvas');
     const gl = c.getContext('webgl2', { failIfMajorPerformanceCaveat: true }) ?? c.getContext('webgl', { failIfMajorPerformanceCaveat: true });
-    gl?.getExtension('WEBGL_lose_context')?.loseContext();
-    return !!gl;
+    if (!gl) return false;
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return !SOFTWARE.test(renderer);
   } catch {
     return false;
   }
@@ -36,6 +44,9 @@ function hardwareGpu(): boolean {
 
 function wanted(): boolean {
   if (typeof matchMedia === 'undefined' || window.self !== window.top) return false;
+  // Automated browsers (test runners, CI) skip it before the probe below: their GPU-less sandboxes
+  // hand out a software renderer that takes seconds just to create a context. ?glass forces it on.
+  if (navigator.webdriver && !/[?&]glass\b/.test(location.search)) return false;
   // Safari's Increase Contrast reports prefers-contrast, not reduced transparency.
   const off = ['(prefers-reduced-transparency: reduce)', '(prefers-contrast: more)', '(forced-colors: active)'];
   return !off.some((q) => matchMedia(q).matches) && hardwareGpu();

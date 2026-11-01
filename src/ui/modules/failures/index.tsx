@@ -8,7 +8,7 @@ import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Illus, PlayBar, Seg } from '../../components/controls';
 import { Icon } from '../../components/Icon';
-import { StepTracker } from '../cluster-lab/StepTracker';
+import { StepTracker } from '../../components/StepTracker';
 import { GauntletDiagram, GauntletLegend } from './GauntletDiagram';
 import { IDS, defFor, frameAt, stepIndex, G_NODES, VMS_PER_NODE, type Copies, type GId } from './scenarios';
 
@@ -72,7 +72,7 @@ export default function Failures() {
         </div>
 
         <StepTracker steps={def.steps} step={step} clock={clock} />
-        <p class="gx-cap">{def.steps[step].text}</p>
+        <p class="lab-cap">{def.steps[step].text}</p>
 
         <div class="diagram-scroll">
           <GauntletDiagram frame={frame} label={`Eight-node cluster in four blocks. ${PICKS[sc].label} failure: ${def.steps[n - 1].text}`} />

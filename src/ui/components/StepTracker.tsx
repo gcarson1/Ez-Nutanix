@@ -1,8 +1,8 @@
 // The step tracker above the picture in the Cluster & DSF Lab and the Failure Gauntlet: one
 // numbered button per step, the current one underlined; click one to pause and jump there.
-import './StepTracker.css';
-import type { Clock } from '../../components/clock';
-import { Icon } from '../../components/Icon';
+// Its styles (.lab-steps, and .lab-cap for the caption under it) are in app.css.
+import type { Clock } from './clock';
+import { Icon } from './Icon';
 
 export function StepTracker({ steps, step, clock }: { steps: { at: number; label: string }[]; step: number; clock: Clock }) {
   return (

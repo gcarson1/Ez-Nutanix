@@ -6,7 +6,6 @@
 .gx-pick .seg button { height: calc(var(--h-lg) - 2px); padding: 0 var(--sp-4); font-size: var(--fs-15); gap: var(--sp-2); }
 .gx-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
 
-.gx-cap { margin: var(--sp-4) 0 var(--sp-2); min-height: 3.25rem; font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
 
 /* outcome pane */
 .gx-outcome { list-style: none; padding: 0; margin: var(--sp-3) 0 0; display: grid; gap: var(--sp-3); }
@@ -76,5 +75,4 @@
 }
 @media (max-width: 900px) {
   .gx-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
-  .gx-cap { font-size: var(--fs-16); }
 }

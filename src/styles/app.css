@@ -292,6 +292,24 @@ body { min-height: 100vh; }
 .lab > .rail { border-left: 1px solid var(--line); align-self: stretch; }
 .lab > .rail .side-sec { padding: var(--sp-5); }
 .lab.two > .stage { padding-left: 0; }
+/* step tracker above the Lab and Gauntlet pictures (components/StepTracker.tsx), then the step's caption */
+.lab-steps { list-style: none; margin: var(--sp-6) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.lab-steps li { margin: 0; flex: 1 1 0; min-width: 8rem; }
+.lab-steps li + li { border-left: 1px solid var(--line); }
+.lab-steps button { width: 100%; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border: 0; background: none; color: var(--faint); font-size: var(--fs-13); font-weight: 500; text-align: left; transition: color var(--t-fast), background var(--t-fast); }
+.lab-steps button:hover { color: var(--text); background: var(--bg-3); }
+.lab-steps .n { flex: none; display: inline-grid; place-items: center; width: 1.375rem; height: 1.375rem; border: 1px solid var(--line-2); font: 600 var(--fs-12) / 1 var(--mono); }
+.lab-steps .n svg { width: 0.75rem; height: 0.75rem; }
+.lab-steps li.done button { color: var(--muted); }
+.lab-steps li.done .n { border-color: var(--ok); color: var(--ok); }
+.lab-steps li.now button { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+.lab-steps li.now .n { background: var(--ink); border-color: var(--ink); color: var(--ink-text); }
+.lab-cap { margin: var(--sp-4) 0 var(--sp-2); min-height: 3.25rem; font-size: var(--fs-18); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; max-width: var(--measure); }
+@media (max-width: 900px) {
+  .lab-cap { font-size: var(--fs-16); }
+  .lab-steps li { min-width: 50%; }
+  .lab-steps li + li { border-left: 0; }
+}
 
 /* compact fields in the control column */
 .ctl .field { padding: var(--sp-4) 0; gap: var(--sp-2); }

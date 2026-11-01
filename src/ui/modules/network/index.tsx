@@ -244,7 +244,9 @@ export default function Network() {
   ];
   // With both links up the loop is seamless, so its one caption needs no slowing down.
   const starts = [0, FAIL_AT, MOVED_AT];
-  const steps = fail === 'none' ? undefined : paced(starts, captions.map((c) => [c.k, c.text]));
+  // With no failure there is one steady step: the readout says "Step 1 of 1" like every module, and
+  // read 0 keeps the loop at its own pace.
+  const steps = fail === 'none' ? [{ at: 0, read: 0 }] : paced(starts, captions.map((c) => [c.k, c.text]));
   const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3, steps });
   useRestartOn(clock, [bond, fail]);
   const t = clock.t;

@@ -8,7 +8,7 @@ import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Illus, PlayBar, Seg } from '../../components/controls';
 import { Icon } from '../../components/Icon';
 import { LabDiagram, LabLegend } from './LabDiagram';
-import { StepTracker } from './StepTracker';
+import { StepTracker } from '../../components/StepTracker';
 import { DRIVES, NODES, ORDER, SCENARIOS, VMS_PER_NODE, frameAt, stepAt, type ScenarioId } from './scenarios';
 
 export default function ClusterLab() {
@@ -41,7 +41,7 @@ export default function ClusterLab() {
         </div>
 
         <StepTracker steps={def.steps} step={step} clock={clock} />
-        <p class="dl-cap">{def.steps[step].text}</p>
+        <p class="lab-cap">{def.steps[step].text}</p>
 
         <div class="diagram-scroll">
           <LabDiagram frame={frame} label={`Four-node cluster. ${def.title}: ${def.lede}`} />
