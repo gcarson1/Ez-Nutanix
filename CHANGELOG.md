@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Legacy vs Nutanix HCI tier labels:** COMPUTE, NETWORKING and STORAGE in large type beside the three legacy tiers, until they fold into one node.
 - **Legacy vs Nutanix HCI absorbs Scale-Out vs 3-Tier:** top-of-rack Ethernet switches are drawn from the first frame (the 3-tier hosts use them for VM and management traffic, and after the fold they carry the cluster's storage traffic too), data rebalances onto each new node, and a storage-controller count grows with the nodes while the array stays at two. Scale-Out's CVM cost, performance and node-type points moved into its presenter notes, and old Scale-Out links open it.
 - **Enterprise AI, Agent Gateway tab:** one address for every model (NAI endpoint, remote NAI cluster, external provider), a fallback when one fails, a rate limit catching a runaway agent, and the MCP Gateway adding API keys, blocking a tool write and logging every call. Sources are in `docs/facts.md` section 16.
 - **New module, Legacy vs Nutanix HCI:** the first tile under Nutanix Cloud Infrastructure. A three-tier design (hosts, two Fibre Channel switches, a dual-controller array, a console per tier, and adding a host touching all three) folds into one node, where the array controllers become the CVM and the drives move inside. Three nodes then form one cluster with one storage pool and one Prism, and it grows a node at a time. Sources are in `docs/facts.md` section 14.

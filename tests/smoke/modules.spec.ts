@@ -286,10 +286,13 @@ test('legacy vs HCI: three tiers fold into one node, then nodes form a cluster',
   // the 3-tier hosts sit on the same top-of-rack switches the cluster keeps
   await expect(dia).toContainText('VM and management traffic');
   await expect(kpi('Consoles')).toHaveText('3');
+  // the three tiers are named on the left
+  await expect(dia.locator('text.hci-tier-l')).toHaveText(['COMPUTE', 'NETWORKING', 'STORAGE']);
   await seek(0.48);
   await expect(dia).toContainText('Array controllers');
   // faded-out 3-tier parts are unmounted, not left at opacity 0
   await expect(dia).not.toContainText('SAN switch');
+  await expect(dia.locator('text.hci-tier-l')).toHaveCount(0);
   await seek(1);
   await expect(kpi('Nodes')).toHaveText('5');
   await expect(kpi('Consoles')).toHaveText('1');
