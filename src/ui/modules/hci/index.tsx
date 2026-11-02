@@ -72,6 +72,8 @@ function fillAt(i: number, t: number): number {
 // ── geometry ──
 const W = 720;
 const H = 364;
+/** Room left of the drawing for the 3-tier labels (COMPUTE, NETWORKING, STORAGE). */
+const GUT = 170;
 type R = { x: number; y: number; w: number; h: number };
 type Pt = [number, number];
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
@@ -87,7 +89,8 @@ const CON = [
   { t: 'SAN console', s: 'switches · zoning' },
   { t: 'Array console', s: 'LUNs · masking' },
 ];
-/** The tier each console runs, outlined as the console arrives. */
+/** The tier each console runs, outlined as the console arrives and labeled on the left. */
+const TIER_L = ['COMPUTE', 'NETWORKING', 'STORAGE'];
 const TIER: R[] = [
   { x: 1, y: 78, w: W - 2, h: 96 },
   { x: 34, y: 192, w: 652, h: 36 },
@@ -438,7 +441,7 @@ function HciDiagram({ t }: { t: number }) {
   return (
     <svg
       class="diagram hci-dia"
-      viewBox={`0 0 ${W} ${H}`}
+      viewBox={`${-GUT} 0 ${W + GUT} ${H}`}
       role="img"
       aria-label={
         phase < 3
@@ -448,6 +451,18 @@ function HciDiagram({ t }: { t: number }) {
             : `A ${Math.max(3, present)}-node Nutanix cluster on top-of-rack Ethernet switches, managed by one Prism: the CVMs pool every node’s drives into one storage pool, each write is kept on two nodes, and there are ${Math.max(3, linked)} storage controllers against a 3-tier array’s 2.${phase === 7 ? ' Data moves onto the new node’s drives.' : ''}`
       }
     >
+      {/* each tier labeled on the left as it appears, until the tiers fold into one node */}
+      {TIER.map((r, j) => {
+        const o = prog(t, [0, 1.0, 1.3][j], [0, 1.0, 1.3][j] + 0.5) * out(FOLD, 0.6);
+        return (
+          o > 0 && (
+            <text key={j} x={-20} y={r.y + r.h / 2 + 7} text-anchor="end" class="hci-tier-l" style={{ opacity: o }}>
+              {TIER_L[j]}
+            </text>
+          )
+        );
+      })}
+
       {/* each tier outlined as its console arrives */}
       {TIER.map((r, j) => {
         const o = prog(t, CON_IN[j], CON_IN[j] + 0.3) * out(CON_IN[j] + 1.0, 0.3);
