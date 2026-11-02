@@ -1,8 +1,8 @@
-// Legacy vs Nutanix HCI: a three-tier design (servers, a Fibre Channel SAN and a dual-controller
-// array, each run from its own console) and all that adding a host touches; then the tiers fold into
-// one node, nodes join into a cluster on top-of-rack switches with one storage pool and one Prism,
-// data rebalances onto each new node, and storage controllers grow with the node count while the
-// array keeps two. Every claim is checked in docs/facts.md section 14.
+// Legacy vs Nutanix HCI: a three-tier design (servers on top-of-rack Ethernet switches, a Fibre
+// Channel SAN and a dual-controller array, each tier run from its own console) and all that adding a
+// host touches; then the tiers fold into one node on top-of-rack switches (one bar, drawn throughout),
+// nodes join into a cluster with one storage pool and one Prism, data rebalances onto each new node,
+// and storage controllers grow with the node count while the array keeps two. Every claim is checked in docs/facts.md section 14.
 import './style.css';
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
@@ -13,12 +13,12 @@ const END = 32.8;
 
 const PHASES = ['Three tiers', 'A console per tier', 'Adding a host', 'Three tiers, one node', 'Inside a node', 'Three nodes, one cluster', 'Adding a node', 'Data rebalances', 'Growing node by node', 'Controllers grow with it'];
 const CAPTIONS = [
-  'A traditional design runs three tiers: servers for compute, a storage network of two Fibre Channel switches, and a storage array with two controllers, LUNs and shelves of drives.',
+  'A traditional design runs three tiers: servers for compute on top-of-rack Ethernet switches, a separate storage network of two Fibre Channel switches, and a storage array with two controllers, LUNs and shelves of drives.',
   'Each tier is run on its own: a server console for hosts and VMs, a SAN console for the switches, and an array console for LUNs. Fibre Channel takes specialist skills.',
   'Adding a host touches every tier: cable its HBAs to both switches, zone it on each fabric, mask the array’s LUNs to it, then rescan its storage.',
   'Hyperconverged infrastructure folds the tiers into each server: the array’s controllers become software, the Controller VM (CVM), the drives move inside and three consoles become one, Prism.',
   'A node is a standard x86 server with local NVMe or SSD drives. It runs the AHV hypervisor, your VMs and its CVM, which owns the drives and serves the VMs’ storage.',
-  'Three nodes on standard top-of-rack switches make the smallest standard cluster. Their CVMs work as one Distributed Storage Fabric: a single storage pool across every node’s drives, with each write kept on two nodes.',
+  'Three nodes on top-of-rack Ethernet switches make the smallest standard cluster. Their CVMs work as one Distributed Storage Fabric: a single storage pool across every node’s drives, with each write kept on two nodes.',
   'Need more? Add a node to the running cluster from Prism. It brings compute, drives and its own CVM, and the storage pool grows. No LUNs to mask, no fabric to zone.',
   'Once nodes are unevenly full, disk balancing evens them out in the background: Curator moves data onto the new node’s drives, with no migration project.',
   'Keep adding nodes, one or several at a time, as you grow. Each can lean toward drives or toward CPU and memory, and it stays one cluster with one storage pool and one Prism.',
@@ -71,7 +71,7 @@ function fillAt(i: number, t: number): number {
 
 // ── geometry ──
 const W = 720;
-const H = 340;
+const H = 364;
 type R = { x: number; y: number; w: number; h: number };
 type Pt = [number, number];
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
@@ -89,15 +89,15 @@ const CON = [
 ];
 /** The tier each console runs, outlined as the console arrives. */
 const TIER: R[] = [
-  { x: 1, y: 40, w: W - 2, h: 96 },
-  { x: 34, y: 162, w: 652, h: 36 },
-  { x: 34, y: 220, w: 652, h: 119 },
+  { x: 1, y: 78, w: W - 2, h: 96 },
+  { x: 34, y: 192, w: 652, h: 36 },
+  { x: 34, y: 244, w: 652, h: 119 },
 ];
 
-// 3-tier: hosts, two SAN switches, one array
+// 3-tier: hosts under the top-of-rack switches, two SAN switches, one array
 const CW = 171;
 const CH = 84;
-const HOST_Y = 46;
+const HOST_Y = 84;
 function hostGeom(i: number, dx = 0, dy = 0) {
   const x = 183 * i + dx;
   const y = HOST_Y + dy;
@@ -109,7 +109,7 @@ type HostGeom = ReturnType<typeof hostGeom>;
 const port = (g: HostGeom, f: number): Pt => [g.hba[f].x + 12, g.hba[f].y + 8];
 const SW_X = [40, 388];
 const SW_W = 292;
-const SW_Y = 168;
+const SW_Y = 198;
 const SW_H = 24;
 /** Where host i's cable lands on switch f. */
 const swTop = (f: number, i: number): Pt => [(f ? 418 : 70) + 72 * i, SW_Y];
@@ -118,15 +118,15 @@ const UPLINK = [
   [[110, 150], [262, 440]],
   [[458, 280], [610, 570]],
 ];
-const ARR: R = { x: 40, y: 226, w: 640, h: 112 };
+const ARR: R = { x: 40, y: 250, w: 640, h: 112 };
 const CTL: R[] = [
-  { x: 54, y: 236, w: 300, h: 24 },
-  { x: 366, y: 236, w: 300, h: 24 },
+  { x: 54, y: 260, w: 300, h: 24 },
+  { x: 366, y: 260, w: 300, h: 24 },
 ];
-const lun = (k: number): R => ({ x: 54 + 64 * k, y: 268, w: 56, h: 18 });
+const lun = (k: number): R => ({ x: 54 + 64 * k, y: 292, w: 56, h: 18 });
 const SHELF: R[] = [
-  { x: 54, y: 294, w: 300, h: 18 },
-  { x: 366, y: 294, w: 300, h: 18 },
+  { x: 54, y: 318, w: 300, h: 18 },
+  { x: 366, y: 318, w: 300, h: 18 },
 ];
 const shelfDrive = (s: number, k: number): R => ({ x: SHELF[s].x + 8 + 29 * k, y: SHELF[s].y + 4, w: 22, h: 10 });
 /** The drives that move into the node: the first two of each shelf. */
@@ -137,7 +137,7 @@ function sanPath(g: HostGeom, i: number, f = i % 2, c = i % 2): Pt[] {
   return [port(g, f), swTop(f, i), [sx, SW_Y + SW_H], [cx, CTL[c].y]];
 }
 
-// the node, then the cluster on its top-of-rack switches (drawn as one bar for the redundant pair)
+// the top-of-rack switches (one bar for the redundant pair), which both designs use, then the node and the cluster
 const NW = 134.4;
 const NH = 150;
 const TOR: R = { x: 0, y: 38, w: W, h: 30 };
@@ -147,7 +147,9 @@ const NODE_Y = 84;
 const nx = (i: number) => i * (NW + 12);
 /** A node's uplink runs up its right edge, clear of the VMs. */
 const UP = NW - 5;
-const BIG = { x: 96, y: 46, s: 1.6 }; // the one node, before the cluster
+/** Where a host's or node's uplink to the top-of-rack switches leaves its frame. */
+const upX = (r: R) => r.x + r.w * (UP / NW);
+const BIG = { x: 96, y: NODE_Y, s: 1.6 }; // the one node, before the cluster
 
 /** Every part of a node at (ox, oy), scaled by s; the morph, the big node and the cluster all use it. */
 function nodeGeom(ox: number, oy: number, s: number) {
@@ -174,10 +176,10 @@ function copyPath(i: number, j: number): Pt[] {
 }
 
 const NOTES = [
-  { y: 152, was: 'Array controllers', now: 'the CVM, in software', at: 14.2, lead: true },
-  { y: 192, was: 'Server tier', now: 'the same x86 server, with AHV', at: 14.8, lead: true },
-  { y: 234, was: 'Drive shelves', now: 'NVMe or SSD drives inside', at: 15.4, lead: true },
-  { y: 276, was: 'SAN and HBAs', now: 'none; nodes use top-of-rack Ethernet', at: 16.0, lead: false },
+  { y: 190, was: 'Array controllers', now: 'the CVM, in software', at: 14.2, lead: true },
+  { y: 230, was: 'Server tier', now: 'the same x86 server, with AHV', at: 14.8, lead: true },
+  { y: 272, was: 'Drive shelves', now: 'NVMe or SSD drives inside', at: 15.4, lead: true },
+  { y: 314, was: 'SAN and HBAs', now: 'none; nodes use top-of-rack Ethernet', at: 16.0, lead: false },
 ];
 
 // shortcut: Enterprise AI has its own along(); move both into show.tsx.
@@ -360,7 +362,7 @@ function Drives({ g, fold, label = 1, used }: { g: NodeGeom; fold?: number; labe
 
 /** Storage controllers side by side: one CVM per node in the cluster, against the array's fixed pair. */
 function Controllers({ n, o, hl }: { n: number; o: number; hl: boolean }) {
-  const y = 302;
+  const y = 318;
   const row = (dy: number, label: string, count: number, note: string) => (
     <g>
       <text x={2} y={y + dy + 11} class={hl ? undefined : 'muted'} style={{ fontSize: '12px', fontWeight: hl ? 600 : undefined }}>
@@ -421,6 +423,10 @@ function HciDiagram({ t }: { t: number }) {
   const slots = prog(t, 18.6, 19.0);
   const firstEmpty = nodes.findIndex((n, i) => i >= 3 && n.k <= 0);
   const net = ease(prog(t, 19.4, 20.0));
+  const tor = ease(prog(t, 0, 0.5));
+  // host 1's uplink stays with it as it folds into the node; hosts 2-4 fade with their tier
+  const upK = HOST_IN.map((a) => ease(prog(t, a + 0.5, a + 0.9)));
+  const frame1 = tiers ? hosts[0].frame : fold ? lerpR(fold.src.frame, nodes[0].g.frame, ease(fold.host)) : nodes[0].g.frame;
   // the pool stretches over to each node as it joins: 3 nodes first, then 4 and 5
   let pool = 0;
   for (const [i, nd] of [[2, NODES[0]], [3, NODES[3]], [4, NODES[4]]] as const) pool += (nx(i) + NW - pool) * ease(prog(t, nd.pool, nd.pool + 0.8));
@@ -436,9 +442,9 @@ function HciDiagram({ t }: { t: number }) {
       role="img"
       aria-label={
         phase < 3
-          ? `Three-tier design: ${hostK[3] > 0 ? 4 : 3} hosts, each cabled to two Fibre Channel SAN switches, which connect to a storage array with two controllers, LUNs and drive shelves. Three separate consoles manage them.`
+          ? `Three-tier design: ${hostK[3] > 0 ? 4 : 3} hosts on top-of-rack Ethernet switches, each also cabled to two Fibre Channel SAN switches, which connect to a storage array with two controllers, LUNs and drive shelves. Three separate consoles manage them.`
           : phase < 5
-            ? 'One Nutanix node: an x86 server running AHV, VMs and a Controller VM that owns the local NVMe or SSD drives and serves the VMs’ storage. One console, Prism, replaces the three.'
+            ? 'One Nutanix node on top-of-rack Ethernet switches: an x86 server running AHV, VMs and a Controller VM that owns the local NVMe or SSD drives and serves the VMs’ storage. One console, Prism, replaces the three.'
             : `A ${Math.max(3, present)}-node Nutanix cluster on top-of-rack Ethernet switches, managed by one Prism: the CVMs pool every node’s drives into one storage pool, each write is kept on two nodes, and there are ${Math.max(3, linked)} storage controllers against a 3-tier array’s 2.${phase === 7 ? ' Data moves onto the new node’s drives.' : ''}`
       }
     >
@@ -524,7 +530,7 @@ function HciDiagram({ t }: { t: number }) {
             <rect key={j} {...box(s)} rx={2} class="hci-shelf" />
           ))}
           {SHELF.map((_, s) => Array.from({ length: 10 }, (_, k) => (tiers || k > 1) && <rect key={`${s}-${k}`} {...box(shelfDrive(s, k))} class="disk" />))}
-          <text x={54} y={330} class="muted" style={{ fontSize: '12px' }}>
+          <text x={54} y={354} class="muted" style={{ fontSize: '12px' }}>
             Storage array · 2 controllers · LUNs · drive shelves
           </text>
         </g>
@@ -545,7 +551,7 @@ function HciDiagram({ t }: { t: number }) {
         );
       })}
       {prog(t, 2.9, 3.2) * hostOut > 0 && (
-        <text x={446} y={281} class="muted" style={{ fontSize: '11px', opacity: prog(t, 2.9, 3.2) * hostOut }}>
+        <text x={446} y={305} class="muted" style={{ fontSize: '11px', opacity: prog(t, 2.9, 3.2) * hostOut }}>
           masked to hosts 1–{t >= TASK[2].at ? 4 : 3}
         </text>
       )}
@@ -606,7 +612,15 @@ function HciDiagram({ t }: { t: number }) {
         </g>
       )}
 
-      {/* Prism reaches each node over the network, and each node uplinks to the top-of-rack switches */}
+      {/* both designs uplink to the top-of-rack switches: the 3-tier hosts, then host 1 as it becomes node 1 */}
+      {hostOut > 0 &&
+        hosts.map(
+          (g, i) =>
+            i > 0 &&
+            upK[i] > 0 && <line key={i} x1={upX(g.frame)} x2={upX(g.frame)} y1={g.frame.y} y2={lerp(g.frame.y, TOR.y + TOR.h, upK[i])} class="hci-link" style={{ opacity: hostK[i] * hostOut }} />,
+        )}
+      {upK[0] > 0 && <line x1={upX(frame1)} x2={upX(frame1)} y1={frame1.y} y2={lerp(frame1.y, TOR.y + TOR.h, upK[0])} class="hci-link" style={{ opacity: hostK[0] }} />}
+      {/* Prism reaches each node over the network, and nodes 2-5 uplink as they join */}
       {NODES.map((nd, i) => {
         const k = ease(prog(t, nd.link, nd.link + 0.4));
         const cx = nx(i) + NW / 2;
@@ -614,20 +628,28 @@ function HciDiagram({ t }: { t: number }) {
           k > 0 && (
             <g key={i}>
               <line x1={cx} x2={cx} y1={PRISM.h} y2={lerp(PRISM.h, TOR.y, k)} class="ink-stroke" stroke-dasharray="3 3" />
-              <line x1={nx(i) + UP} x2={nx(i) + UP} y1={NODE_Y} y2={lerp(NODE_Y, TOR.y + TOR.h, k)} class="hci-link" />
+              {i > 0 && <line x1={nx(i) + UP} x2={nx(i) + UP} y1={NODE_Y} y2={lerp(NODE_Y, TOR.y + TOR.h, k)} class="hci-link" />}
             </g>
           )
         );
       })}
-      {net > 0 && (
-        <g style={{ opacity: net }}>
-          <rect x={TOR.x} y={TOR.y} width={TOR.w * net} height={TOR.h} rx={3} class="hci-net" />
-          <text x={12} y={TOR.y + 13} style={{ fontSize: '12px', fontWeight: 600 }}>
+      {tor > 0 && (
+        <g>
+          <rect x={TOR.x} y={TOR.y} width={TOR.w * tor} height={TOR.h} rx={3} class="hci-net" />
+          <text x={12} y={TOR.y + 13} style={{ fontSize: '12px', fontWeight: 600, opacity: tor }}>
             Top-of-rack switches <tspan class="muted" style={{ fontWeight: 400 }}>· standard Ethernet</tspan>
           </text>
-          <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted" style={{ fontSize: '11.5px' }}>
-            redundant pair · no SAN, no HBAs
-          </text>
+          {/* in 3-tier the switches carry VM and management traffic beside a SAN; in HCI, storage too */}
+          {out(FOLD, 0.4) > 0 && (
+            <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted" style={{ fontSize: '11.5px', opacity: tor * out(FOLD, 0.4) }}>
+              redundant pair · VM and management traffic
+            </text>
+          )}
+          {t >= FOLD + 0.4 && (
+            <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted" style={{ fontSize: '11.5px', opacity: prog(t, FOLD + 0.4, FOLD + 0.8) }}>
+              redundant pair · no SAN, no HBAs
+            </text>
+          )}
         </g>
       )}
 
@@ -764,7 +786,7 @@ export default function Hci() {
       <PlayBar
         clock={clock}
         label="Legacy vs HCI animation"
-        extra={<Illus why="The 3-tier side is a generic Fibre Channel design: two switches and one dual-controller array. Arrays and fabrics vary by vendor, and iSCSI SANs run on Ethernet. The cluster’s redundant top-of-rack switches are drawn as one bar, and the 3-tier side’s own Ethernet is not drawn. Counts and how full the drives look are examples; disk balancing runs once nodes are unevenly full, on Curator’s schedule." />}
+        extra={<Illus why="The 3-tier side is a generic Fibre Channel design: two switches and one dual-controller array. Arrays and fabrics vary by vendor, and iSCSI SANs run on Ethernet. Both designs’ redundant top-of-rack Ethernet switches are drawn as one bar, and the 3-tier side’s switches carry VM and management traffic beside the SAN. Counts and how full the drives look are examples; disk balancing runs once nodes are unevenly full, on Curator’s schedule." />}
       />
     </Show>
   );

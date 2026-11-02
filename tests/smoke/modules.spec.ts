@@ -283,6 +283,8 @@ test('legacy vs HCI: three tiers fold into one node, then nodes form a cluster',
   const kpi = (k: string) => page.locator('.kpi').filter({ has: page.locator('.k', { hasText: new RegExp(`^${k}$`) }) }).locator('.v');
   await seek(0.1);
   await expect(dia).toContainText('SAN switch');
+  // the 3-tier hosts sit on the same top-of-rack switches the cluster keeps
+  await expect(dia).toContainText('VM and management traffic');
   await expect(kpi('Consoles')).toHaveText('3');
   await seek(0.48);
   await expect(dia).toContainText('Array controllers');

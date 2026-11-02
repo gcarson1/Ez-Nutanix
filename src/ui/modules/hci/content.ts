@@ -7,8 +7,8 @@ export const content: ModuleContent = {
   summary: 'Nutanix folds a three-tier design of servers, a storage area network (SAN) and a storage array into one node, then grows a cluster node by node: each adds compute, drives and its own storage controller, with one storage pool and one Prism.',
   priority: 'P0',
   talk: [
-    'Start with the design most customers run today: servers, a Fibre Channel SAN with two switches and a dual-controller array, each with its own console and skills. Adding a host touches all three tiers.',
-    'Then the fold: the array’s controllers become the CVM, software on every node, the drive shelves become local NVMe or SSD drives and three consoles become Prism. Nodes connect to standard top-of-rack Ethernet switches, with no SAN.',
+    'Start with the design most customers run today: servers on top-of-rack Ethernet switches for VM and management traffic, plus a Fibre Channel SAN with two switches and a dual-controller array, each with its own console and skills. Adding a host touches all three tiers.',
+    'Then the fold: the array’s controllers become the CVM, software on every node, the drive shelves become local NVMe or SSD drives and three consoles become Prism. Nodes use top-of-rack Ethernet switches, 10 Gbps or faster, which now carry storage traffic too, with no SAN.', // HCI-7, HCI-16
     'Three nodes make the smallest standard cluster; their CVMs pool every node’s drives and keep each write on two nodes. Grow by adding a node from Prism, and disk balancing spreads data onto it in the background, with no migration project.',
     'Controllers grow with the cluster: 5 nodes, 5 CVMs. A 3-tier array keeps its pair however many hosts it serves; growing past it means a bigger pair or another array to manage.',
     'Nodes come in different configurations, so each addition can lean toward drives or toward CPU and memory; storage-only nodes add capacity without running VMs.', // HCI-14
