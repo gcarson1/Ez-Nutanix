@@ -8,11 +8,9 @@ import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
 import lucideLicense from '../../assets/licenses/lucide.txt?raw';
-import liquidglLicense from '../../assets/licenses/liquidgl.txt?raw';
 import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG, VERSION } from './config';
-import { glassBlocker } from './glass';
 import { go, goUp } from './nav';
 
 // ── toast ──
@@ -171,12 +169,10 @@ function Presenter({ def, onClose }: { def: ModuleDef | undefined; onClose: () =
   );
 }
 
-/** The theme button: a menu with dark or light, and the home page's liquid glass on or off. */
-function ThemeMenu({ theme, onTheme, glass, onGlass }: { theme: 'dark' | 'light'; onTheme: (t: 'dark' | 'light') => void; glass: boolean; onGlass: (on: boolean) => void }) {
+/** The theme button: a menu with dark or light. */
+function ThemeMenu({ theme, onTheme }: { theme: 'dark' | 'light'; onTheme: (t: 'dark' | 'light') => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  // Asked only when the menu opens: the first call probes the GPU.
-  const blocked = useMemo(() => (open ? glassBlocker() : null), [open]);
   const close = () => {
     setOpen(false);
     (ref.current?.querySelector('.theme-btn') as HTMLElement | null)?.focus();
@@ -202,19 +198,18 @@ function ThemeMenu({ theme, onTheme, glass, onGlass }: { theme: 'dark' | 'light'
   }, [open]);
   const move = (e: KeyboardEvent) => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-    const items = [...(ref.current?.querySelectorAll<HTMLElement>('.speed-opt:not([disabled])') ?? [])];
+    const items = [...(ref.current?.querySelectorAll<HTMLElement>('.speed-opt') ?? [])];
     const i = items.indexOf(document.activeElement as HTMLElement);
     items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
     e.preventDefault();
   };
-  const on = glass && !blocked;
   return (
     <div class="speed theme-menu" ref={ref}>
-      <button type="button" class="icon-btn theme-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Theme and glass" title="Theme and glass (T switches the theme)">
+      <button type="button" class="icon-btn theme-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Theme" title="Theme (T switches it)">
         <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
       </button>
       {open && (
-        <div class="speed-menu" role="menu" aria-label="Theme and glass" onKeyDown={move}>
+        <div class="speed-menu" role="menu" aria-label="Theme" onKeyDown={move}>
           <div class="speed-h">Theme</div>
           {(['dark', 'light'] as const).map((v) => (
             <button
@@ -232,24 +227,6 @@ function ThemeMenu({ theme, onTheme, glass, onGlass }: { theme: 'dark' | 'light'
               {v === 'dark' ? 'Dark' : 'Light'}
             </button>
           ))}
-          <div class="speed-h sep">Home page</div>
-          <button
-            type="button"
-            class="speed-opt"
-            role="menuitemcheckbox"
-            aria-checked={on}
-            disabled={!!blocked}
-            onClick={() => {
-              onGlass(!glass);
-              close();
-            }}
-          >
-            <span class="speed-mark">{on ? '✓' : ''}</span>
-            <span>
-              Liquid glass
-              {blocked && <span class="speed-note">{blocked}</span>}
-            </span>
-          </button>
         </div>
       )}
     </div>
@@ -329,10 +306,6 @@ function About({ onClose }: { onClose: () => void }) {
           <summary class="muted small">Icons: Lucide, ISC license</summary>
           <pre>{lucideLicense}</pre>
         </details>
-        <details class="credits">
-          <summary class="muted small">Home page glass: liquidGL, MIT license</summary>
-          <pre>{liquidglLicense}</pre>
-        </details>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn primary" onClick={onClose}>
@@ -410,23 +383,6 @@ export function App() {
       return 'dark';
     }
   });
-
-  // The home page's liquid glass, on unless the viewer turned it off (index.html applies it before first paint).
-  const [glass, setGlass] = useState(() => {
-    try {
-      return localStorage.getItem('nax-glass') !== 'off';
-    } catch {
-      return true;
-    }
-  });
-  useEffect(() => {
-    document.documentElement.dataset.glass = glass ? 'on' : 'off';
-    try {
-      localStorage.setItem('nax-glass', glass ? 'on' : 'off');
-    } catch {
-      /* storage unavailable */
-    }
-  }, [glass]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -563,7 +519,7 @@ export function App() {
             <button type="button" class="icon-btn" onClick={() => setDialog('keys')} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
               <Icon name="keyboard" />
             </button>
-            <ThemeMenu theme={theme} onTheme={setTheme} glass={glass} onGlass={setGlass} />
+            <ThemeMenu theme={theme} onTheme={setTheme} />
           </div>
         </div>
       </header>

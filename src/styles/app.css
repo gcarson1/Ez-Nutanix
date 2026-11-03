@@ -166,93 +166,9 @@ body { min-height: 100vh; }
   .slide-hint { margin-top: 0; }
 }
 
-/* liquid glass on the home slide (glass.ts adds .glass-on once the GPU effect starts). The glass
-   refracts .glass-bg; tiles turn transparent so the glass shows through, and their text sits above it.
-   Stacking: band glass 2, band heading 3, tile glass 5, tile text 6. */
-.slide-wrap { position: relative; }
-.glass-bg { display: none; }
-.glass-on .glass-bg {
-  display: block; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  /* Dark: near-black with low, cool glows, enough for the glass edges to bend without a bright haze. */
-  background:
-    radial-gradient(ellipse 46% 40% at 18% 16%, rgba(120, 85, 250, 0.34), transparent 70%),
-    radial-gradient(ellipse 40% 44% at 86% 22%, rgba(70, 110, 255, 0.22), transparent 70%),
-    radial-gradient(ellipse 54% 38% at 50% 66%, rgba(98, 62, 220, 0.2), transparent 72%),
-    radial-gradient(ellipse 44% 34% at 58% 100%, rgba(160, 90, 255, 0.2), transparent 70%),
-    radial-gradient(ellipse 32% 32% at 4% 88%, rgba(40, 170, 255, 0.12), transparent 70%),
-    linear-gradient(160deg, #0a0817, #05040c 55%, #0b0919);
-}
-:root[data-theme='light'].glass-on .glass-bg {
-  background:
-    radial-gradient(ellipse 50% 45% at 16% 20%, rgba(140, 110, 255, 0.5), transparent 70%),
-    radial-gradient(ellipse 45% 50% at 88% 24%, rgba(90, 150, 255, 0.42), transparent 70%),
-    radial-gradient(ellipse 55% 45% at 50% 62%, rgba(160, 120, 255, 0.35), transparent 72%),
-    radial-gradient(ellipse 50% 40% at 56% 96%, rgba(200, 130, 255, 0.42), transparent 70%),
-    radial-gradient(ellipse 38% 38% at 6% 82%, rgba(80, 200, 255, 0.3), transparent 70%),
-    linear-gradient(160deg, #e9e6fb, #f4f3fc 55%, #e3dffa);
-}
-.glass-on .slide { position: relative; }
-/* Brand color over clear glass (liquidGL sets the tiles transparent inline, hence !important). */
-/* Dark keeps light mode's hierarchy (deep band, darker cards, mid services, brand NCI) as colored glass;
-   where the platform runs (clouds, bare metal) is smoky neutral glass rather than a pale slab. */
-.glass-on .lg-band { --lg-fill: rgba(46, 30, 120, 0.42); }
-.glass-on .lg-card { --lg-fill: rgba(30, 20, 92, 0.66); }
-.glass-on .lg-svc { --lg-fill: rgba(86, 58, 214, 0.64); }
-.glass-on .lg-nci { --lg-fill: rgba(120, 85, 250, 0.76); }
-.glass-on .lg-light { --lg-fill: rgba(255, 255, 255, 0.075); }
-:root[data-theme='light'].glass-on .lg-band { --lg-fill: rgba(50, 34, 128, 0.8); }
-:root[data-theme='light'].glass-on .lg-card { --lg-fill: rgba(30, 20, 88, 0.72); }
-:root[data-theme='light'].glass-on .lg-svc { --lg-fill: rgba(78, 50, 200, 0.84); }
-:root[data-theme='light'].glass-on .lg-nci { --lg-fill: rgba(98, 66, 228, 0.9); }
-:root[data-theme='light'].glass-on .lg-light { --lg-fill: rgba(255, 255, 255, 0.55); }
-.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { background: var(--lg-fill) !important; }
-/* The band can't take a z-index (its tiles must stack above the tile glass), so its fill is a layer at 3, over its own glass. */
-.glass-on .lg-band { background: transparent !important; }
-.glass-on .lg-band::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: var(--lg-fill); pointer-events: none; }
-.glass-on .central-head { position: relative; z-index: 3; }
-.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { position: relative; z-index: 6; }
-/* Light catching the glass: a bright rim fading round the edge, an inner top highlight and a soft drop shadow. */
-.glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light {
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -1px 1px rgba(255, 255, 255, 0.08), inset 0 0 1.5rem rgba(255, 255, 255, 0.05), 0 0.75rem 2rem -0.75rem rgba(8, 4, 30, 0.55) !important;
-}
-.glass-on .pane::after, .glass-on .lg-light::after, .glass-on .lg-band::after {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.12) 32%, rgba(255, 255, 255, 0.03) 60%, rgba(255, 255, 255, 0.3));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
-.glass-on .lg-band::after { z-index: 3; }
-/* Dark: a finer rim and a deeper, tighter shadow, so tiles read as cut glass rather than glowing outlines. */
-:root[data-theme='dark'].glass-on .lg-card, :root[data-theme='dark'].glass-on .lg-svc, :root[data-theme='dark'].glass-on .lg-nci, :root[data-theme='dark'].glass-on .lg-light {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.035), inset 0 0 1.5rem rgba(255, 255, 255, 0.025), 0 1rem 2.25rem -1rem rgba(0, 0, 0, 0.8) !important;
-}
-:root[data-theme='dark'].glass-on .pane::after, :root[data-theme='dark'].glass-on .lg-light::after, :root[data-theme='dark'].glass-on .lg-band::after {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08) 30%, rgba(255, 255, 255, 0.02) 62%, rgba(255, 255, 255, 0.16));
-}
-:root[data-theme='dark'].glass-on .lg-light, :root[data-theme='dark'].glass-on .lg-light .pt, :root[data-theme='dark'].glass-on .clouds .pane { color: #f4f4f8; }
-:root[data-theme='dark'].glass-on .bare svg { color: rgba(255, 255, 255, 0.82); }
-:root[data-theme='dark'].glass-on .partial { border-color: rgba(255, 255, 255, 0.14); }
-.cloud-logo.aws-rev { display: none; }
-:root[data-theme='dark'].glass-on .cloud-logo.aws { display: none; }
-:root[data-theme='dark'].glass-on .cloud-logo.aws-rev { display: block; }
-/* Small text over glass and the brighter backdrop needs a little more weight to stay above 4.5:1. */
-.glass-on .lg-card .ps, .glass-on .lg-svc .ps, .glass-on .lg-nci .ps { color: rgba(255, 255, 255, 0.88); }
-.glass-on .partial-head .ps, .glass-on .slide-hint, .glass-on .slide-hint kbd { color: var(--text-2); }
-.glass-on .partial-head:focus-visible { outline-color: var(--text); }
-:root[data-theme='light'].glass-on .lg-nci .ps { color: #fff; }
-.glass-on .clouds .pane::after { content: none; }
-/* liquidGL hides its targets until the glass is ready and turns off their pointer events. The tiles are
-   buttons, so keep them visible (no blink on a theme switch, no blank slide if the glass never loads) and clickable. */
-.glass-on .lg-band, .glass-on .lg-card, .glass-on .lg-svc, .glass-on .lg-nci, .glass-on .lg-light { opacity: 1 !important; pointer-events: auto !important; }
-.glass-on .pane:hover, .glass-on .pane:focus-visible { background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), var(--lg-fill) !important; }
-.glass-on .clouds .pane:hover, .glass-on .clouds .pane:focus-visible { background: rgba(0, 0, 0, 0.06) !important; }
-:root[data-theme='dark'].glass-on .clouds .pane:hover, :root[data-theme='dark'].glass-on .clouds .pane:focus-visible { background: rgba(255, 255, 255, 0.08) !important; }
-:root[data-theme='dark'].glass-on .clouds .pane:focus-visible, :root[data-theme='dark'].glass-on .bare.pane:focus-visible { outline-color: #fff; }
-
 /* tour spotlight */
 .tour-on .pane, .tour-on .central-head, .tour-on .beacon { transition: none; }
-/* .tour-on lifts it over the glass rules, which also set the tiles' z-index and shadow. */
-.tour-on .spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
+.spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
 /* Guided tour: a round button fixed to the bottom right of the home page */
 .tour-fab {
   position: fixed; right: var(--sp-6); bottom: var(--sp-6); z-index: 50;
@@ -401,9 +317,6 @@ body { min-height: 100vh; }
 .speed-mark { width: 1em; text-align: center; flex: none; }
 /* the theme button's menu opens below it, aligned to the right edge of the top bar */
 .theme-menu .speed-menu { left: auto; right: 0; top: calc(100% + var(--sp-1)); bottom: auto; min-width: 13rem; }
-.speed-h.sep { margin-top: var(--sp-1); padding-top: var(--sp-2); border-top: 1px solid var(--line); }
-.speed-opt:disabled { color: var(--faint); cursor: not-allowed; background: none; }
-.speed-note { display: block; font-size: var(--fs-12); color: var(--muted); }
 
 /* showcase layout: presets on top, one big picture, caption + key numbers */
 .show { padding-top: var(--sp-1); }

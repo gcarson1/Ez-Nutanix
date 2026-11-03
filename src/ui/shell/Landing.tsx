@@ -4,10 +4,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from '../components/Icon';
 import awsLogo from '../../assets/logos/aws.svg';
-import awsLogoWhite from '../../assets/logos/aws-white.svg';
 import azureLogo from '../../assets/logos/azure.svg';
 import googleCloudLogo from '../../assets/logos/google-cloud-icon.svg';
-import { startGlass } from './glass';
 import { go } from './nav';
 
 interface PaneDef {
@@ -78,14 +76,7 @@ function Pane({ p, cls, tour, children }: { p: PaneDef; cls?: string; tour?: str
 
 /** The providers' own marks, as on the original slide: logos only, no names (alt text names them). */
 function CloudLogo({ id }: { id: string }) {
-  // AWS's wordmark is dark; the dark glass tiles show its white reverse version instead (app.css).
-  if (id === 'aws')
-    return (
-      <>
-        <img class="cloud-logo aws" src={awsLogo} alt="AWS" />
-        <img class="cloud-logo aws aws-rev" src={awsLogoWhite} alt="AWS" />
-      </>
-    );
+  if (id === 'aws') return <img class="cloud-logo aws" src={awsLogo} alt="AWS" />;
   if (id === 'gcp') return <img class="cloud-logo gcp" src={googleCloudLogo} alt="Google Cloud" />;
   return <img class="cloud-logo azure" src={azureLogo} alt="Azure" />;
 }
@@ -120,22 +111,19 @@ export function Landing() {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [tour]);
 
-  useEffect(startGlass, []);
-
   const step = tour !== null ? TOUR[tour] : null;
   return (
     <div class={`slide-wrap${tour !== null ? ' tour-on' : ''}`} ref={wrap}>
-      <div class="glass-bg" aria-hidden="true" />
       <div class="slide">
         <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
 
-        <section class="band central lg-band" data-tour="central" aria-label="Nutanix Central">
+        <section class="band central" data-tour="central" aria-label="Nutanix Central">
           <button type="button" class="central-head" data-pane="central" data-path="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
             Nutanix Central
           </button>
           <div class="central-grid">
             {CENTRAL.map((p) => (
-              <Pane key={p.id} p={p} cls="lg-card" />
+              <Pane key={p.id} p={p} />
             ))}
           </div>
         </section>
@@ -144,7 +132,7 @@ export function Landing() {
 
         <section class="band svc-row" data-tour="services" aria-label="Platform services">
           {SERVICES.map((p) => (
-            <Pane key={p.id} p={p} cls="lg-svc" />
+            <Pane key={p.id} p={p} />
           ))}
           <button type="button" class="beacon" data-pane="beacon" data-path="beacon" onClick={(e) => go('beacon', undefined, e.currentTarget as HTMLElement)}>
             <Icon name="beacon" />
@@ -155,15 +143,15 @@ export function Landing() {
         <div class="flowline" aria-hidden="true" />
 
         <section class="band infra-row" aria-label="Infrastructure">
-          <Pane p={{ id: 'nci', title: 'Nutanix Cloud Infrastructure', sub: '(AOS, AHV, Flow, DR)', path: 'nci' }} cls="nci lg-nci" tour="nci" />
-          <div class="gray clouds lg-light" data-tour="clouds">
+          <Pane p={{ id: 'nci', title: 'Nutanix Cloud Infrastructure', sub: '(AOS, AHV, Flow, DR)', path: 'nci' }} cls="nci" tour="nci" />
+          <div class="gray clouds" data-tour="clouds">
             {CLOUDS.map((p) => (
               <Pane key={p.id} p={p}>
                 <CloudLogo id={p.id} />
               </Pane>
             ))}
           </div>
-          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'cnaos', params: { on: 'metal' } }} cls="bare lg-light" tour="bare">
+          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'cnaos', params: { on: 'metal' } }} cls="bare" tour="bare">
             <Icon name="server" />
             <span class="pt">Any Bare Metal Linux</span>
           </Pane>
@@ -175,7 +163,7 @@ export function Landing() {
             <span class="ps">Start with the part you need</span>
           </button>
           {PARTIAL.map((p) => (
-            <Pane key={p.id} p={p} cls="lg-card" />
+            <Pane key={p.id} p={p} />
           ))}
         </section>
 
