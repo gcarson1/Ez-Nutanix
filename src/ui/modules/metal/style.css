@@ -1,0 +1,18 @@
+/* Kubernetes on Bare Metal module (prefix mt-) */
+.diagram .mt-srv { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .mt-srv.on { stroke: var(--ink); stroke-width: 2; }
+.diagram .mt-ru { stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .mt-led { fill: var(--line-2); }
+.diagram .mt-led.on { fill: var(--ok); }
+.diagram .mt-name { font-size: 17px; font-weight: 650; }
+.diagram .mt-layer { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .mt-layer.os { fill: var(--ink-soft); stroke: var(--ink-line); }
+.diagram .mt-layer.k8s { fill: var(--ink); stroke: var(--ink); }
+.diagram .mt-tool { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .mt-tool.on { stroke: var(--flow); stroke-width: 2; fill: var(--flow-bg); }
+.diagram .mt-arrow { stroke: var(--flow); stroke-width: 2; fill: none; }
+.diagram .mt-pod { fill: var(--bg); stroke: var(--line-2); }
+.diagram .mt-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
+@media (max-width: 600px) {
+  .diagram-scroll > .mt-svg { min-width: 44rem; }
+}

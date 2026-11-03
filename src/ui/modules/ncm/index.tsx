@@ -23,6 +23,7 @@ import {
   type Check,
   type Project,
   type ProvStep,
+  type Size,
   type Surge,
   type Usage,
 } from '../../../engine/ncm';
@@ -199,157 +200,213 @@ function AiOps() {
 }
 
 // ───────────────────────── Self-Service ─────────────────────────
+// One project, four requests in a row: one goes straight through, one is held by the optional
+// approval policy, one is over the quota and sent back, and the same app re-ordered smaller fits.
 const LINUX: CatalogItem = { id: 'linux', label: 'Linux VM', vms: 1, vcpu: 4, memGB: 8, diskGB: 100, multiVm: false };
 const APP: CatalogItem = { id: 'app', label: '3-tier web app', vms: 4, vcpu: 4, memGB: 16, diskGB: 200, multiVm: true };
-const WEB: Project = { id: 'web', label: 'web-shop', quota: { vcpu: 48, memGB: 192, diskGB: 3000 }, used: { vcpu: 28, memGB: 96, diskGB: 1400 }, approvalAbove: 8 };
-const DATA: Project = { id: 'data', label: 'data-team', quota: { vcpu: 32, memGB: 128, diskGB: 2000 }, used: { vcpu: 26, memGB: 100, diskGB: 1700 }, approvalAbove: 8 };
-const APP_ROLES = ['Load balancer', 'Web', 'App', 'Database'];
+const WEB: Project = { id: 'web', label: 'web-shop', quota: { vcpu: 48, memGB: 192, diskGB: 3000 }, used: { vcpu: 16, memGB: 64, diskGB: 800 }, approvalAbove: 8 };
+const APP_ROLES = ['Balancer', 'Web', 'App', 'Database'];
 
-type Req = 'vm' | 'app' | 'over';
-const REQS: Record<Req, { item: CatalogItem; project: Project; label: string }> = {
-  vm: { item: LINUX, project: WEB, label: 'Linux VM' },
-  app: { item: APP, project: WEB, label: '3-tier web app' },
-  over: { item: APP, project: DATA, label: 'App over quota' },
-};
+interface Req {
+  item: CatalogItem;
+  size: Size;
+  /** How the card above the picture names it. */
+  card: Omit<Point, 'at'>;
+  order: string;
+}
+const REQS: Req[] = [
+  { item: LINUX, size: 'M', order: 'orders: Linux VM', card: { tone: 'ok', k: 'Linux VM', by: 'Fits · no approval', text: 'Under the approval limit, so it goes straight to the cluster.' } },
+  { item: APP, size: 'M', order: 'orders: 3-tier web app', card: { tone: 'warn', k: '3-tier web app', by: 'Approval policy', text: 'Over the approval limit, so an admin approves it first.' } },
+  { item: APP, size: 'M', order: 'orders: a second app', card: { tone: 'bad', k: 'A second app', by: 'Over the quota', text: 'Sent back with the reason before anything is created.' } },
+  { item: APP, size: 'S', order: 're-orders it at size S', card: { tone: 'ok', k: 'Same app, size S', by: 'The fix', text: 'Half the vCPU per VM fits the quota, so it is created.' } },
+];
 
-const BOX = { req: { x: 12, w: 176 }, chk: { x: 258, w: 176 }, apr: { x: 504, w: 156 } } as const;
-const BY = 40;
-const BH = 88;
-const CL = { x: 696, y: 12, w: 252, h: 262 };
-const QY = 190;
+/** Each request with the project as it stands when that request arrives, and its steps on the shared timeline. */
+const RUN = (() => {
+  let used = WEB.used;
+  let at = 0;
+  return REQS.map((r) => {
+    const p: Project = { ...WEB, used };
+    const d = demand(r.item, r.size);
+    const v = evaluate(p, d, true);
+    const steps = requestSteps(r.item, v);
+    const run = { ...r, p, d, v, steps, at, end: at + steps.reduce((s, x) => s + x.dur, 0) };
+    if (v.ok) used = v.after;
+    at = run.end;
+    return run;
+  });
+})();
+type Run = (typeof RUN)[number];
+const SS_END = RUN[RUN.length - 1].end;
+const SS_CARDS: Point[] = RUN.map((r) => ({ ...r.card, at: r.at }));
+
+const BOX = { req: { x: 12, w: 176 }, chk: { x: 258, w: 176 } } as const;
+const BY = 112;
+const BH = 80;
+const LANE = BY + BH / 2;
+const APR = { x: 470, y: 12, w: 190, h: 64 };
+const DET = { a: 452, b: 678, y: APR.y + APR.h / 2 };
+const CL = { x: 696, y: 12, w: 252, h: 286 };
+const QY = 236;
 const QW = 648;
+const TILE = { w: 74, h: 60, dx: 80, dy: 68 };
 
-function Provision({ req, t, steps, v }: { req: Req; t: number; steps: ProvStep[]; v: ReturnType<typeof evaluate> }) {
-  const { item, project: p } = REQS[req];
-  const at = stepAt(steps, t);
+type XY = [number, number];
+const pt = (pts: XY[], f: number): XY => {
+  const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
+  let d = Math.max(0, Math.min(1, f)) * seg.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < seg.length; i++) {
+    if (d <= seg[i] || i === seg.length - 1) {
+      const r = seg[i] ? d / seg[i] : 0;
+      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * r, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * r];
+    }
+    d -= seg[i];
+  }
+  return pts[pts.length - 1];
+};
+const reqR = BOX.req.x + BOX.req.w;
+const chkR = BOX.chk.x + BOX.chk.w;
+const TO_CHECK: XY[] = [[reqR, LANE], [BOX.chk.x, LANE]];
+const TO_APPROVAL: XY[] = [[chkR, LANE], [DET.a, LANE], [DET.a, DET.y], [APR.x, DET.y]];
+const FROM_APPROVAL: XY[] = [[APR.x + APR.w, DET.y], [DET.b, DET.y], [DET.b, LANE], [CL.x, LANE]];
+const STRAIGHT: XY[] = [[chkR, LANE], [CL.x, LANE]];
+const poly = (pts: XY[]) => pts.map(([x, y]) => `${x},${y}`).join(' ');
+
+function Provision({ i, t }: { i: number; t: number }) {
+  const r = RUN[i];
+  const { p, d, v, steps, item } = r;
+  const at = stepAt(steps, t - r.at);
   const id = steps[at.idx].id;
-  const idx = (s: ProvStep['id']) => steps.findIndex((x) => x.id === s);
-  const past = (s: ProvStep['id']) => idx(s) >= 0 && (at.idx > idx(s) || at.done);
+  const past = (s: ProvStep['id']) => {
+    const k = steps.findIndex((x) => x.id === s);
+    return k >= 0 && (at.idx > k || at.done);
+  };
   const now = (s: ProvStep['id']) => !at.done && id === s;
-  const d = demand(item, 'M');
-  const tokenY = BY + BH / 2;
 
-  // the request token, drawn only while it travels along an arrow
-  let token: { x: number; bad?: boolean } | null = null;
-  const right = (k: keyof typeof BOX) => BOX[k].x + BOX[k].w;
-  const move = (a: number, b: number, f: number, bad = false) => (f > 0 && f < 1 ? { x: a + (b - a) * ease(f), bad } : null);
-  if (now('policy')) token = move(right('req'), BOX.chk.x, prog(at.frac, 0, 0.55));
-  else if (now('refused')) token = move(BOX.chk.x, right('req'), prog(at.frac, 0, 0.5), true);
-  else if (now('approve')) token = move(right('chk'), BOX.apr.x, prog(at.frac, 0, 0.35));
-  else if (now('create')) token = move(v.needsApproval ? right('apr') : right('chk'), CL.x, prog(at.frac, 0, 0.3));
+  // the request token, drawn only while it travels
+  let token: { at: XY; bad?: boolean } | null = null;
+  const move = (pts: XY[], f: number, bad = false) => (f > 0 && f < 1 ? { at: pt(pts, ease(f)), bad } : null);
+  if (now('policy')) token = move(TO_CHECK, prog(at.frac, 0, 0.55));
+  else if (now('refused')) token = move([...TO_CHECK].reverse(), prog(at.frac, 0, 0.5), true);
+  else if (now('approve')) token = move(TO_APPROVAL, prog(at.frac, 0, 0.35));
+  else if (now('create')) token = move(v.needsApproval ? FROM_APPROVAL : STRAIGHT, prog(at.frac, 0, 0.3));
 
   const checked = past('policy');
   const refused = checked && !v.ok;
+  const sentBack = refused && (past('refused') || (now('refused') && at.frac > 0.5));
   const checking = now('policy') && at.frac >= 0.55;
+  const detour = v.ok && v.needsApproval && checked;
   const vmsShown = past('create') ? item.vms : now('create') ? Math.floor(prog(at.frac, 0.3, 1) * item.vms + 1e-9) : 0;
   const configFrac = past('config') ? 1 : now('config') ? at.frac : 0;
   const ready = past('ready') || (now('ready') && at.frac > 0.2);
 
+  // every VM created so far, earlier requests' already running
+  const tiles = RUN.slice(0, i + 1).flatMap((q, j) =>
+    q.v.ok ? Array.from({ length: q.item.vms }, (_, k) => ({ role: q.item.multiVm ? APP_ROLES[k] : q.item.label, vcpu: q.d.vcpu / q.item.vms, mine: j === i, k })) : [],
+  );
+
   const usedW = (p.used.vcpu / p.quota.vcpu) * QW;
   const addW = Math.min(QW - usedW, (d.vcpu / p.quota.vcpu) * QW);
   const overW = refused ? Math.min(28, ((p.used.vcpu + d.vcpu - p.quota.vcpu) / p.quota.vcpu) * QW) : 0;
+  const aprStatus = !v.ok ? (checked ? 'Not reached' : 'Waiting') : !v.needsApproval ? 'Skipped: under the limit' : past('approve') ? '✓ Approved' : now('approve') && at.frac > 0.35 ? 'Waiting for an admin' : 'Waiting';
+  const aprCls = past('approve') ? 'ok-fill' : now('approve') && at.frac > 0.35 ? 'warn-fill' : 'muted';
 
-  const box = (k: keyof typeof BOX, title: string, sub: string, status: string, cls: string, statusCls: string, dashed = false) => (
-    <g class={cls}>
-      <rect class={`ss-box${dashed ? ' dashed' : ''}`} x={BOX[k].x} y={BY} width={BOX[k].w} height={BH} />
-      <text x={BOX[k].x + 14} y={BY + 26} class="ss-h">
+  const box = (k: keyof typeof BOX, title: string, sub: string, status: string, statusCls: string) => (
+    <g>
+      <rect class="ss-box" x={BOX[k].x} y={BY} width={BOX[k].w} height={BH} />
+      <text x={BOX[k].x + 14} y={BY + 24} class="ss-h">
         {title}
       </text>
-      <text x={BOX[k].x + 14} y={BY + 46} class="muted" style={{ fontSize: '12px' }}>
+      <text x={BOX[k].x + 14} y={BY + 43} class="muted" style={{ fontSize: '12px' }}>
         {sub}
       </text>
-      <text x={BOX[k].x + 14} y={BY + 72} class={statusCls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+      <text x={BOX[k].x + 14} y={BY + 66} class={statusCls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
         {status}
       </text>
     </g>
   );
 
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} 290`} role="img" aria-label={`${item.label} requested by project ${p.label}: ${v.ok ? `checked against quota${v.needsApproval ? ', approved' : ''}, created and configured` : 'refused at the quota check'}.`}>
+    <svg class="diagram" viewBox={`0 0 ${W} 310`} role="img" aria-label={`Request ${i + 1} of ${RUN.length} from project ${p.label}: ${item.label} at size ${r.size}. ${v.ok ? `It fits the quota${v.needsApproval ? ', the optional approval policy holds it for an admin,' : ' and skips the optional approval,'} and it is created.` : 'It is over the quota and sent back with the reason.'}`}>
       <defs>
         <marker id="ss-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M0 0 L10 5 L0 10 z" class="ss-mk" />
         </marker>
       </defs>
-      {[
-        [BOX.req.x + BOX.req.w, BOX.chk.x],
-        [BOX.chk.x + BOX.chk.w, BOX.apr.x],
-        [BOX.apr.x + BOX.apr.w, CL.x],
-      ].map(([a, b], i) => (
-        <line key={i} x1={a + 4} x2={b - 6} y1={tokenY} y2={tokenY} class={`ss-arrow${refused && i > 0 ? ' off' : ''}`} marker-end="url(#ss-ar)" />
-      ))}
+      <line x1={reqR + 4} x2={BOX.chk.x - 6} y1={LANE} y2={LANE} class="ss-arrow" marker-end="url(#ss-ar)" />
+      <line x1={chkR + 4} x2={CL.x - 6} y1={LANE} y2={LANE} class={`ss-arrow${refused || detour ? ' off' : ''}`} marker-end="url(#ss-ar)" />
+      <text x={(chkR + CL.x) / 2} y={LANE + 20} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+        no approval needed
+      </text>
 
-      {box('req', 'App team', `project ${p.label}`, refused && (now('refused') ? at.frac > 0.5 : true) ? '✕ Sent back' : `orders: ${item.label}`, '', refused && (at.done || at.frac > 0.5) ? 'bad-fill' : 'muted')}
-      {box(
-        'chk',
-        'Quota and policy',
-        'checked first',
-        checked ? (v.ok ? '✓ Fits the quota' : '✕ Over the quota') : checking ? 'Checking…' : 'Waiting',
-        '',
-        checked ? (v.ok ? 'ok-fill' : 'bad-fill') : checking ? 'ncm-ink' : 'muted',
-      )}
-      {box(
-        'apr',
-        'Approval',
-        `${d.vcpu} vCPU, limit ${p.approvalAbove}`,
-        refused ? 'Not reached' : !v.needsApproval ? 'Not needed' : past('approve') ? '✓ Approved' : now('approve') && at.frac > 0.35 ? 'Waiting for an admin' : 'Waiting',
-        refused ? 'ss-dim' : '',
-        !v.needsApproval ? 'muted' : past('approve') ? 'ok-fill' : now('approve') && at.frac > 0.35 ? 'warn-fill' : 'muted',
-        !v.needsApproval,
-      )}
-
-      {/* the cluster where the VMs land */}
-      <g class={refused ? 'ss-dim' : ''}>
-        <rect class="node-box" x={CL.x} y={CL.y} width={CL.w} height={CL.h} />
-        <text x={CL.x + 14} y={CL.y + 24} class="ss-h">
-          Cluster
+      {/* the optional approval policy: a detour, taken only by requests over its limit */}
+      <polyline points={poly(TO_APPROVAL)} class={`ss-arrow${detour ? '' : ' off'}`} fill="none" />
+      <polyline points={poly(FROM_APPROVAL.slice(0, 3))} class={`ss-arrow${detour ? '' : ' off'}`} fill="none" />
+      <g class={detour ? '' : 'ss-dim'}>
+        <rect class={`ss-box${detour ? '' : ' dashed'}`} x={APR.x} y={APR.y} width={APR.w} height={APR.h} />
+        <text x={APR.x + 14} y={APR.y + 22} class="ss-h">
+          Approval <tspan class="muted" style={{ fontSize: '11.5px', fontWeight: 400 }}>· optional policy</tspan>
         </text>
-        <text x={CL.x + 14} y={CL.y + 42} class="muted" style={{ fontSize: '12px' }}>
-          {refused ? 'nothing created' : `${item.vms} VM${item.vms > 1 ? 's' : ''} from the blueprint`}
+        <text x={APR.x + 14} y={APR.y + 39} class="muted" style={{ fontSize: '12px' }}>
+          only above {p.approvalAbove} vCPU
         </text>
-        {Array.from({ length: item.vms }, (_, k) => {
-          const col = k % 2;
-          const row = Math.floor(k / 2);
-          const x = CL.x + 12 + col * 118;
-          const y = CL.y + 56 + row * 80;
-          const shown = k < vmsShown;
-          const role = item.multiVm ? APP_ROLES[k] : item.label;
-          return (
-            <g key={k} style={{ opacity: shown ? 1 : 0.35 }}>
-              <rect x={x} y={y} width={110} height={70} class={shown && ready ? 'vm hl' : 'vm'} stroke-dasharray={shown ? undefined : '4 3'} />
-              <text x={x + 10} y={y + 22} style={{ fontSize: '12.5px', fontWeight: 600 }}>
-                {role}
-              </text>
-              <text x={x + 10} y={y + 40} class="mono muted" style={{ fontSize: '11px' }}>
-                {item.vcpu} vCPU · {item.memGB} GB
-              </text>
-              {shown && !ready && configFrac > 0 && (
-                <>
-                  <rect x={x + 10} y={y + 52} width={90} height={6} class="bg3" />
-                  <rect x={x + 10} y={y + 52} width={90 * configFrac} height={6} class="flow-fill" />
-                </>
-              )}
-              {shown && ready && (
-                <text x={x + 10} y={y + 60} class="ok-fill" style={{ fontSize: '11.5px', fontWeight: 600 }}>
-                  ✓ Running
-                </text>
-              )}
-              {shown && configFrac === 0 && (
-                <text x={x + 10} y={y + 60} class="muted" style={{ fontSize: '11.5px' }}>
-                  Created
-                </text>
-              )}
-            </g>
-          );
-        })}
-        {ready && (
-          <text x={CL.x + 14} y={CL.y + CL.h - 14} class="ok-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
-            ✓ Owner, project, categories set
-          </text>
-        )}
+        <text x={APR.x + 14} y={APR.y + 56} class={aprCls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          {aprStatus}
+        </text>
       </g>
 
-      {token && <rect x={token.x - 13} y={tokenY - 9} width={26} height={18} rx={3} class={token.bad ? 'bad-fill' : 'ink-fill'} />}
+      {box('req', 'App team', `project ${p.label}`, sentBack ? '✕ Sent back' : r.order, sentBack ? 'bad-fill' : 'muted')}
+      {box('chk', 'Quota and policy', 'checked first', checked ? (v.ok ? '✓ Fits the quota' : '✕ Over the quota') : checking ? 'Checking…' : 'Waiting', checked ? (v.ok ? 'ok-fill' : 'bad-fill') : checking ? 'ncm-ink' : 'muted')}
+
+      {/* the cluster where the project's VMs land */}
+      <rect class="node-box" x={CL.x} y={CL.y} width={CL.w} height={CL.h} />
+      <text x={CL.x + 14} y={CL.y + 24} class="ss-h">
+        Cluster
+      </text>
+      <text x={CL.x + 14} y={CL.y + 42} class={refused ? 'bad-fill' : 'muted'} style={{ fontSize: '12px' }}>
+        {refused ? 'nothing created for this request' : `project ${p.label}`}
+      </text>
+      {tiles.map((v2, n) => {
+        const x = CL.x + 12 + (n % 3) * TILE.dx;
+        const y = CL.y + 52 + Math.floor(n / 3) * TILE.dy;
+        const shown = !v2.mine || v2.k < vmsShown;
+        if (!shown) return null;
+        const live = !v2.mine || ready;
+        return (
+          <g key={n}>
+            <rect x={x} y={y} width={TILE.w} height={TILE.h} class={v2.mine && ready ? 'vm hl' : 'vm'} />
+            <text x={x + 8} y={y + 18} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+              {v2.role}
+            </text>
+            <text x={x + 8} y={y + 33} class="mono muted" style={{ fontSize: '10.5px' }}>
+              {v2.vcpu} vCPU
+            </text>
+            {!live && configFrac > 0 && (
+              <>
+                <rect x={x + 8} y={y + 44} width={TILE.w - 16} height={5} class="bg3" />
+                <rect x={x + 8} y={y + 44} width={(TILE.w - 16) * configFrac} height={5} class="flow-fill" />
+              </>
+            )}
+            {!live && configFrac === 0 && (
+              <text x={x + 8} y={y + 50} class="muted" style={{ fontSize: '10.5px' }}>
+                Created
+              </text>
+            )}
+            {live && (
+              <text x={x + 8} y={y + 50} class="ok-fill" style={{ fontSize: '10.5px', fontWeight: 600 }}>
+                ✓ Running
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {ready && (
+        <text x={CL.x + 14} y={CL.y + CL.h - 12} class="ok-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
+          ✓ Owner, project, categories set
+        </text>
+      )}
+
+      {token && <rect x={token.at[0] - 13} y={token.at[1] - 9} width={26} height={18} rx={3} class={token.bad ? 'bad-fill' : 'ink-fill'} />}
 
       {/* the project's vCPU quota */}
       <text x={12} y={QY - 10} class="muted" style={{ fontSize: '12px' }}>
@@ -367,34 +424,38 @@ function Provision({ req, t, steps, v }: { req: Req; t: number; steps: ProvStep[
   );
 }
 
-function SelfService() {
-  const [req, setReq] = useEnum<Req>('rq', 'app', ['vm', 'app', 'over']);
-  const { item, project: p } = REQS[req];
-  const d = demand(item, 'M');
-  const v = evaluate(p, d, true);
-  const steps = useMemo(() => requestSteps(item, v), [req]);
-  const total = steps.reduce((s, x) => s + x.dur, 0);
+function ssLine(r: Run, id: ProvStep['id']): Line {
+  const { p, d, item } = r;
+  const n = item.vms > 1 ? `${item.vms} VMs` : 'the VM';
   const left = p.quota.vcpu - p.used.vcpu;
-  const LINES: Record<ProvStep['id'], Line> = {
-    policy: { tone: 'ink', k: 'Quota and policy checked', text: `Someone in project ${p.label} orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
-    approve: { tone: 'warn', k: 'Approval requested', text: `The app asks for ${d.vcpu} vCPU, over the project’s ${p.approvalAbove} vCPU approval limit, so a project admin approves it first.` },
-    create: { tone: 'flow', k: 'Blueprint creates the VMs', text: `The blueprint creates ${item.vms > 1 ? `${item.vms} VMs` : 'the VM'} on the cluster, already inside the project.` },
+  const L: Record<ProvStep['id'], Line> = {
+    policy:
+      r.size === 'S'
+        ? { tone: 'ink', k: 'Re-ordered at size S', text: `The team orders the same app at size S: half the vCPU per VM, ${d.vcpu} vCPU in all. It is checked again before anything is created.` }
+        : { tone: 'ink', k: 'Quota and policy checked', text: `Someone in project ${p.label} orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
+    approve: { tone: 'warn', k: 'Approval requested', text: `The app asks for ${d.vcpu} vCPU, over the ${p.approvalAbove} vCPU limit of the project’s approval policy, so an admin approves it first. Approval is optional: requests under the limit, or projects without the policy, skip it.` },
+    create: { tone: 'flow', k: 'Blueprint creates the VMs', text: `The blueprint creates ${n} on the cluster, already inside the project${r.v.needsApproval ? '' : ', with no approval step and no ticket'}.` },
     config: { tone: 'flow', k: 'Install tasks run', text: 'Install and configuration tasks from the blueprint run inside the VMs.' },
     ready: { tone: 'ok', k: `${item.multiVm ? 'App' : 'VM'} is ready`, text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
-    refused: { tone: 'bad', k: 'Request sent back', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. The request is refused before anything is created, and the reason goes back to the team.` },
+    refused: { tone: 'bad', k: 'Sent back with the reason', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. It is refused before anything is created, and the reason goes back to the team: order a smaller size, free up VMs, or ask for a bigger quota.` },
   };
-  const paceSteps = paced(
-    steps.map((_, i) => steps.slice(0, i).reduce((s, x) => s + x.dur, 0)),
-    steps.map((x) => [LINES[x.id].k, LINES[x.id].text]),
-  );
-  const clock = useClock({ rate: 1.5, duration: total, keys: true, poster: total, steps: paceSteps });
-  useRestartOn(clock, [req]);
-  const at = stepAt(steps, clock.t);
-  const id = steps[at.idx].id;
-  const line = LINES[id];
+  return L[id];
+}
+const SS_LINES = RUN.flatMap((r) => r.steps.map((s) => ssLine(r, s.id)));
+const SS_STARTS = RUN.flatMap((r) => r.steps.map((_, k) => r.at + r.steps.slice(0, k).reduce((a, x) => a + x.dur, 0)));
+const SS_STEPS = paced(SS_STARTS, SS_LINES.map((l) => [l.k, l.text]));
+
+function SelfService() {
+  const clock = useClock({ rate: 1.5, duration: SS_END, keys: true, poster: RUN[1].at + 4, steps: SS_STEPS });
+  const t = clock.t;
+  const i = Math.min(RUN.length - 1, phaseAt(RUN.map((r) => r.at), t));
+  const r = RUN[i];
+  const line = SS_LINES[phaseAt(SS_STARTS, t)];
+  const left = r.p.quota.vcpu - r.p.used.vcpu;
+  const checked = t - r.at >= r.steps[0].dur;
   return (
     <Show
-      top={<Choice<Req> label="Request" value={req} onChange={setReq} options={(['vm', 'app', 'over'] as Req[]).map((r) => ({ value: r, label: REQS[r].label }))} />}
+      top={<Points label="Four requests from one project" items={SS_CARDS} t={t} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -402,30 +463,33 @@ function SelfService() {
           </Follow>
           <Kpis
             items={[
-              v.ok
-                ? { k: 'Project vCPU after', v: `${v.after.vcpu} of ${p.quota.vcpu}`, tone: 'ok' }
-                : { k: 'Project vCPU left', v: `${left} of ${p.quota.vcpu}`, tone: 'bad', sub: `needs ${d.vcpu}` },
-              { k: 'Approval', v: !v.ok ? '—' : v.needsApproval ? 'Needed' : 'Not needed', sub: v.ok && v.needsApproval ? `over ${p.approvalAbove} vCPU` : undefined },
-              { k: 'License', v: item.multiVm ? 'NCM Ultimate' : 'NCM Pro', tip: item.multiVm ? TIER_TIP.Ultimate : TIER_TIP.Pro },
+              !checked
+                ? { k: 'Project vCPU used', v: `${r.p.used.vcpu} of ${r.p.quota.vcpu}`, sub: `this request: ${r.d.vcpu}` }
+                : r.v.ok
+                  ? { k: 'Project vCPU after', v: `${r.v.after.vcpu} of ${r.p.quota.vcpu}`, tone: 'ok' }
+                  : { k: 'Project vCPU left', v: `${left} of ${r.p.quota.vcpu}`, tone: 'bad', sub: `needs ${r.d.vcpu}` },
+              { k: 'Approval', v: !checked ? '…' : !r.v.ok ? '—' : r.v.needsApproval ? 'Needed' : 'Not needed', sub: checked && r.v.ok && r.v.needsApproval ? `over ${r.p.approvalAbove} vCPU` : 'optional policy' },
+              { k: 'License', v: r.item.multiVm ? 'NCM Ultimate' : 'NCM Pro', tip: r.item.multiVm ? TIER_TIP.Ultimate : TIER_TIP.Pro },
             ]}
           />
         </>
       }
     >
       <div class="diagram-scroll">
-        <Provision req={req} t={clock.t} steps={steps} v={v} />
+        <Provision i={i} t={t} />
       </div>
       <Legend
         items={[
           { color: 'var(--s2)', label: 'vCPU already used' },
-          { color: v.ok ? 'var(--flow)' : 'var(--bad)', label: v.ok ? 'This request' : 'This request, over the quota' },
+          { color: 'var(--flow)', label: 'This request' },
+          { color: 'var(--bad)', label: 'Over the quota' },
           { color: 'var(--text)', label: 'Quota limit' },
         ]}
       />
       <PlayBar
         clock={clock}
-        label="Self-service request animation"
-        extra={<Illus why="Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
+        label="Self-service requests animation"
+        extra={<Illus why="Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Approval is a policy you choose to add; requests under its limit, or in projects without it, skip it. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
       />
     </Show>
   );

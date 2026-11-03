@@ -1,4 +1,4 @@
-// LCM Rolling Upgrade: pick a scenario and watch a 4-node cluster update one node at a time
+// LCM Rolling Upgrade. Nutanix cluster tab: pick a scenario and watch a 4-node cluster update one node at a time
 // on a loop: VMs move off live, the node updates and comes back, then the next one. In the
 // failure scenario nothing hints at the failure until it happens. All behavior comes from
 // src/engine/lcm.ts.
@@ -7,7 +7,8 @@ import './style.css';
 import { useEnum } from '../../../state/route';
 import { stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show } from '../../components/show';
+import { Choice, Kpis, Show, Tabs } from '../../components/show';
+import { K8sUpgrade } from './k8s';
 import { COMP, DEFAULT_MINUTES, HA_RESTART_SEC, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
 
 type Scenario = 'healthy' | 'fail';
@@ -83,7 +84,7 @@ function caption(sim: LcmSim, v: LcmView): { tone: Tone | 'ink'; k: string; text
   return { tone: 'ink', k: 'Next node starts', text: 'One node at a time: LCM moves on only when the last node is fully back.' };
 }
 
-export default function Lcm() {
+function ClusterUpgrade() {
   const [sc, setSc] = useEnum<Scenario>('sc', 'healthy', SCENARIOS.map((s) => s.value));
   const { sim, plan } = useMemo(() => simFor(sc), [sc]);
   // About 22 seconds per loop at full speed, slower where a caption needs it. The upgrade is
@@ -390,4 +391,19 @@ function phaseWord(p: string): string {
     default:
       return p;
   }
+}
+
+type TabId = 'nci' | 'k8s';
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'nci', label: 'Nutanix cluster' },
+  { id: 'k8s', label: 'Kubernetes (NKP)' },
+];
+
+export default function Lcm() {
+  const [tab, setTab] = useEnum<TabId>('tab', 'nci', ['nci', 'k8s']);
+  return (
+    <Tabs label="What is upgraded" value={tab} tabs={TABS} onChange={setTab}>
+      {tab === 'nci' ? <ClusterUpgrade /> : <K8sUpgrade />}
+    </Tabs>
+  );
 }

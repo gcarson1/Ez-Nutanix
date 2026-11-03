@@ -1,14 +1,11 @@
 /* Snapshots & Clones module (prefix sn-) */
-.diagram .sn-cell.shared { fill: var(--s3); stroke: var(--line-2); }
-.diagram .sn-cell.own { fill: var(--ink); }
-.diagram .sn-cell.new { stroke: var(--ok); stroke-width: 3; }
-.diagram text.sn-cell-t.own { fill: #fff; }
-.diagram .sn-block { fill: var(--bg-2); stroke: var(--line-2); }
-.diagram .sn-block.fresh { stroke: var(--ok); stroke-width: 3; }
-.diagram .sn-slot { fill: none; stroke: var(--ok); stroke-width: 1.5; stroke-dasharray: 3 3; }
-.diagram .sn-ref { fill: var(--ink-fg); }
-.diagram .sn-ptr { fill: none; stroke: var(--ink-fg); stroke-width: 1.25; }
-.diagram .sn-dot { fill: var(--ok); stroke: var(--bg); stroke-width: 2; }
+.diagram .sn-shared { fill: var(--s3); stroke: var(--line-2); }
+.diagram .sn-own { fill: var(--ink); stroke: var(--ink); }
+.diagram text.sn-on-own { fill: #fff; }
+.diagram .sn-full { fill: var(--s2); }
+.diagram .sn-cluster { fill: none; stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 7 5; }
+.diagram .sn-rep { stroke: var(--warn); stroke-width: 2; }
+.diagram .sn-site { fill: var(--bg-2); stroke: var(--line-2); stroke-dasharray: 5 4; }
 
 /* On phones the 960-wide picture scrolls sideways; keep its labels readable. */
 @media (max-width: 600px) {

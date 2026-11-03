@@ -4,6 +4,7 @@
 .diagram .sto-chip { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
 .diagram .sto-chip.moved { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.5; }
 .diagram .sto-chip.lost { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
+.diagram .sto-chip.hit { stroke: var(--flow); stroke-width: 2; }
 .diagram .sto-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .sto-dot.login { fill: var(--warn); }
 .diagram .sto-ip { fill: var(--ink-soft); stroke: var(--ink-line); }

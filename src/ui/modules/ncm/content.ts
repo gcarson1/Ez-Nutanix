@@ -11,7 +11,7 @@ export const content: ModuleContent = {
     'Four parts: Intelligent Operations (AIOps), Self-Service (formerly Calm), Cost Governance (formerly Beam) and Security Compliance (formerly Security Central). From NCM 2.0 they run inside Nutanix Central on-premises instead of Prism Central, and NCM 2.1 added a smaller 3-node form factor.',
     'AIOps learns each VM’s normal range from its history instead of using a fixed threshold. In this picture a 3 a.m. spike is flagged though it stays under a 70% alarm; a busy-afternoon spike trips both.',
     'Intelligent Operations also forecasts capacity runway, so purchases are planned rather than reactive, and suggests right-sizing for over- and under-sized VMs.',
-    'Self-Service: app teams order from a catalog; quota and approval policy are checked before anything is created, and the result arrives with owner, project and categories set. Over quota, the request is sent back with the reason.',
+    'Self-Service: app teams order from a catalog and get VMs or whole apps with no ticket. The quota is checked before anything is created; an approval policy is optional and holds only requests over its limit. Over quota, the request is sent back with the reason, and a smaller size can fit.',
     'Cost: dev-test runs hot. Cost Governance meters it daily at your rates, alerts the owner in time to act, and lists idle and oversized VMs. Self-Service quota, approval and scheduler policies stop it coming back.',
     'Security Compliance scans settings against a baseline, suggests a fix per finding and catches drift. Tiers: Starter covers forecasting and right-sizing, Pro adds Cost Governance and Self-Service, Ultimate adds Security Compliance, multi-VM blueprints and approvals.',
   ],
@@ -40,7 +40,7 @@ export const content: ModuleContent = {
   ],
   next: [
     'On the AIOps tab, pause on the 3 a.m. spike, flagged by the learned band while the fixed 70% alarm stays silent, then on the 2 p.m. spike, which both catch.',
-    'On the Self-Service tab, pick 3-tier web app for the approval step, then App over quota to show a request sent back before anything is created.',
+    'On the Self-Service tab, let the four requests play: the Linux VM skips the optional approval, the 3-tier app waits for an admin, the second app is sent back over the quota, and the same app at size S fits.',
     'On the Cost tab, pause on each numbered step (the alert, the recommendations, the quota and policies) and compare where the month ends with the Left alone line.',
     'On the Security tab, watch findings get fixed, then a setting changed by hand caught by the next scan.',
     'Then open Nutanix Central & Prism Federation to see where NCM 2.x runs.',

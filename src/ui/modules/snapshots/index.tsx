@@ -1,225 +1,194 @@
-// Snapshots & Clones: one loop. A disk is a map of blocks; a snapshot copies the map; new
-// writes go to new blocks; clones share blocks until they change them. The states come from
-// the walkthrough in src/engine/snapshots.ts; this file only animates between them.
-import { exclusiveBlocks, fullCopyBlocks, refCounts, usedBlocks, walkthrough, type SnapState } from '../../../engine/snapshots';
+// Snapshots & Clones: one loop told as an admin lives it. A snapshot before a patch is taken in
+// seconds and adds no space; the VM keeps writing; the patch breaks the app and the VM is restored
+// from the snapshot; three clones go to dev, test and analytics; each grows only by what it writes;
+// and none of it is a backup on its own. Two colors only: data shared with another disk, and data
+// only this disk has. The meter compares what is stored with what full copies would need.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import './style.css';
 
-const BLOCKS = 8;
-const STEPS = walkthrough({ blocks: BLOCKS, clones: 2, changePct: 25 });
-/** When each walkthrough step starts (sim seconds). */
-const T = [0, 2.8, 5.4, 8.6, 11.2];
-const END = 15.6;
-const SLIDE = 0.8;
-const FLY = 0.8;
-const TONE: Tone[] = ['neutral', 'ok', 'flow', 'ok', 'flow'];
+const DISK = 500;
+const CHANGED = 20;
+const CLONES = [
+  { team: 'dev', own: 15 },
+  { team: 'test', own: 30 },
+  { team: 'analytics', own: 5 },
+];
+const S = [0, 3, 7, 11.5, 16.5, 20.5, 25];
+const END = 30;
+const SCENES: { tone: Tone | 'ink'; k: string; text: string }[] = [
+  { tone: 'ink', k: 'A production VM', text: `An admin is about to patch sql-prod, a database VM with a ${DISK} GB disk, and wants a way back if the patch goes wrong.` },
+  { tone: 'ok', k: 'Snapshot taken in seconds', text: `At 9:00 a snapshot copies the disk’s map of where its data lives, not the data, so it is done in seconds and adds no space. Production and the snapshot now share all ${DISK} GB.` },
+  { tone: 'flow', k: 'The VM keeps writing', text: `New writes go to new space and only production’s map changes; the snapshot keeps pointing at the 9:00 data. Space grows only by what changed: ${CHANGED} GB.` },
+  { tone: 'warn', k: 'The patch fails: restore', text: 'The patch breaks the app. The VM is restored from the 9:00 snapshot, quickly, because nothing is copied back: its map points at the 9:00 data again. Anything written after 9:00 is lost, so snapshot right before the change.' },
+  { tone: 'ok', k: 'Clones for three teams', text: `Dev, test and analytics each want a copy of production. Each clone is a full, writable ${DISK} GB disk to its team, ready in seconds, and uses no new space because it starts from the snapshot’s map.` },
+  { tone: 'flow', k: 'Clones grow only with their writes', text: `Each clone stores only what it writes: ${CLONES.map((c) => c.own).join(', ').replace(/, (\d+)$/, ' and $1')} GB here. Three full copies would need ${(3 * DISK).toLocaleString('en-US')} GB more; these need ${CLONES.reduce((a, c) => a + c.own, 0)} GB.` },
+  { tone: 'warn', k: 'Not a backup on its own', text: 'All of these live on the same cluster as production. To survive losing the cluster, replicate snapshots to another site or use a backup product.' },
+];
+const STEPS = paced(S, SCENES.map((s) => [s.k, s.text]));
+
+/** Everything the picture and the numbers need at time t. */
+function stateAt(t: number) {
+  const sc = phaseAt(S, t);
+  const snap = ease(prog(t, S[1] + 0.3, S[1] + 1.1));
+  const restoreAt = S[3] + 2;
+  const changed = t < restoreAt ? CHANGED * ease(prog(t, S[2] + 0.6, S[2] + 3.4)) : 0;
+  const broken = t >= S[3] + 0.3 && t < restoreAt;
+  const restored = t >= restoreAt && t < S[4];
+  const clones = CLONES.map((c, i) => ({ ...c, in: ease(prog(t, S[4] + 0.5 + i * 0.5, S[4] + 1.3 + i * 0.5)), wrote: c.own * ease(prog(t, S[5] + 0.5 + i * 0.4, S[5] + 2.6 + i * 0.4)) }));
+  const disks = 1 + (snap > 0.5 ? 1 : 0) + clones.filter((c) => c.in > 0.5).length;
+  const stored = DISK + changed + clones.reduce((a, c) => a + c.wrote, 0);
+  return { sc, snap, changed, broken, restored, clones, disks, stored, full: disks * DISK };
+}
 
 // ── geometry ──
 const W = 960;
-const LBL = 120;
-const CW = 46;
-const PITCH = 54;
-const POOL_Y = 28;
-const ROW0 = 134;
-const ROW_H = 40;
-const ROW_PITCH = 58;
-const H = ROW0 + 3 * ROW_PITCH + ROW_H + 12;
-const cellX = (i: number) => LBL + i * PITCH;
-const rowY = (r: number) => ROW0 + r * ROW_PITCH;
+const BX = 210;
+const BW = 540;
+const gb = (v: number) => (v / DISK) * BW;
+const ROW_H = 38;
+const rowY = [36, 96, 176, 232, 288];
+const MY = 356;
+const MW = 540;
+const MMAX = 5 * DISK;
+const H = MY + 66;
 
-interface Change {
-  disk: string;
-  idx: number;
-  to: number;
-  /** When its write lands in the stored blocks. */
-  at: number;
-  start: number;
-}
-
-/** The block-map changes between two steps, timed one after another. */
-function changes(k: number): Change[] {
-  if (k !== 2 && k !== 4) return [];
-  const prev = STEPS[k - 1].state;
-  const next = STEPS[k].state;
-  const out: Change[] = [];
-  for (const d of next.disks) {
-    const p = prev.disks.find((x) => x.id === d.id);
-    if (p) d.map.forEach((b, i) => b !== p.map[i] && out.push({ disk: d.id, idx: i, to: b, at: 0, start: 0 }));
-  }
-  const gap = k === 2 ? 0.6 : 0.45;
-  return out.map((c, j) => ({ ...c, start: T[k] + 0.4 + j * gap, at: T[k] + 0.4 + j * gap + FLY }));
-}
-const CHANGES = [0, 1, 2, 3, 4].map(changes);
-
-/** What the disks look like at time t: the step's state, with only the writes that have landed. */
-function stateAt(k: number, t: number): SnapState {
-  const ch = CHANGES[k];
-  if (!ch.length) return STEPS[k].state;
-  const prev = STEPS[k - 1].state;
-  const landed = ch.filter((c) => t >= c.at);
-  return { ...prev, disks: prev.disks.map((d) => ({ ...d, map: d.map.map((b, i) => landed.find((c) => c.disk === d.id && c.idx === i)?.to ?? b) })) };
-}
-
-const blocks = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-function Maps({ k, t }: { k: number; t: number }) {
-  const s = stateAt(k, t);
-  const rc = refCounts(s);
-  const used = [...usedBlocks(s)].sort((a, b) => a - b);
-  const fresh = CHANGES[k].filter((c) => t >= c.at && t < c.at + 1.4);
-  const flying = CHANGES[k].filter((c) => t >= c.start && t < c.at);
-  const rowOf = (id: string) => s.disks.findIndex((d) => d.id === id);
-  const linesIn = prog(t, 0.3, 1.3);
-
-  /** Where a row is drawn while it slides out of the row it was copied from. */
-  const place = (r: number) => {
-    const from = r === 1 ? 0 : r >= 2 ? 1 : r;
-    const t0 = r === 1 ? T[1] : r >= 2 ? T[3] + (r - 2) * 0.25 : -1;
-    const f = t0 < 0 ? 1 : ease(prog(t, t0, t0 + SLIDE));
-    return { y: rowY(from) + (rowY(r) - rowY(from)) * f, o: 0.25 + 0.75 * f };
-  };
-
+function Row({ y, name, sub, own, note, noteCls, dashed, o = 1, alone }: { y: number; name: string; sub: string; own: number; note: string; noteCls?: string; dashed?: boolean; o?: number; alone?: boolean }) {
   return (
-    <svg class="diagram sn-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Block maps: ${s.disks.map((d) => d.label).join(', ')} pointing at ${used.length} stored blocks. Full copies would need ${fullCopyBlocks(s)}.`}>
-      <text x={8} y={POOL_Y + 19} style={{ fontSize: '13.5px', fontWeight: 600 }}>
-        Stored data
+    <g style={{ opacity: o }}>
+      <text x={8} y={y + 16} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+        {name}
       </text>
-      <text x={8} y={POOL_Y + 34} class="muted" style={{ fontSize: '11px' }}>
-        {used.length} blocks
+      <text x={8} y={y + 32} class="muted" style={{ fontSize: '11.5px' }}>
+        {sub}
       </text>
-      {/* the live disk's pointers */}
-      {linesIn > 0 &&
-        s.disks[0].map.map((b, i) => {
-          const x1 = cellX(i) + CW / 2;
-          const x2 = cellX(b) + CW / 2;
-          const y1 = rowY(0);
-          const y2 = POOL_Y + CW;
-          const my = (y1 + y2) / 2;
-          return <path key={i} d={`M${x1} ${y1} C${x1} ${my} ${x2} ${my} ${x2} ${y2}`} class="sn-ptr" style={{ opacity: 0.6 * linesIn }} />;
-        })}
-      {used.map((b) => {
-        const n = rc.get(b) ?? 0;
-        const x = cellX(b);
-        const isFresh = fresh.some((c) => c.to === b);
-        return (
-          <g key={b}>
-            <rect x={x} y={POOL_Y} width={CW} height={CW} class={`sn-block${isFresh ? ' fresh' : ''}`} />
-            <text x={x + CW / 2} y={POOL_Y + 21} text-anchor="middle" class="mono" style={{ fontSize: '13px', fontWeight: 600 }}>
-              {b + 1}
-            </text>
-            {Array.from({ length: n }, (_, j) => (
-              <circle key={j} cx={x + CW / 2 + (j - (n - 1) / 2) * 8} cy={POOL_Y + 35} r={2.6} class="sn-ref" />
-            ))}
-          </g>
-        );
-      })}
-      {s.disks.map((d, r) => {
-        const p = place(r);
-        const sub = d.kind === 'snapshot' ? 'read-only' : d.kind === 'clone' ? 'writable clone' : 'live, writable';
-        const own = exclusiveBlocks(s, d.id);
-        const note =
-          d.kind === 'snapshot'
-            ? own
-              ? `holds on to ${blocks(own, 'old block')} the VM replaced`
-              : 'a copy of the map, no data copied'
-            : own === d.map.length
-              ? 'points at stored blocks'
-              : own
-                ? `${blocks(own, 'block')} of its own, the rest shared`
-                : 'shares every block';
-        return (
-          <g key={d.id} style={{ opacity: p.o }}>
-            <text x={8} y={p.y + 17} style={{ fontSize: '13.5px', fontWeight: 600 }}>
-              {d.label}
-            </text>
-            <text x={8} y={p.y + 32} class="muted" style={{ fontSize: '11px' }}>
-              {sub}
-            </text>
-            {d.map.map((b, i) => {
-              const shared = (rc.get(b) ?? 0) > 1;
-              const isNew = fresh.some((c) => c.disk === d.id && c.idx === i);
-              return (
-                <g key={i}>
-                  <rect x={cellX(i)} y={p.y} width={CW} height={ROW_H} class={`sn-cell ${shared ? 'shared' : 'own'}${isNew ? ' new' : ''}`} />
-                  <text x={cellX(i) + CW / 2} y={p.y + 25} text-anchor="middle" class={`mono sn-cell-t${shared ? '' : ' own'}`} style={{ fontSize: '13px', fontWeight: 600 }}>
-                    {b + 1}
-                  </text>
-                </g>
-              );
-            })}
-            <text x={cellX(BLOCKS) + 8} y={p.y + 25} class="muted" style={{ fontSize: '12px' }}>
-              {note}
-            </text>
-          </g>
-        );
-      })}
-      {/* writes on their way to new stored blocks */}
-      {flying.map((c) => {
-        const r = rowOf(c.disk);
-        const k2 = ease(prog(t, c.start, c.at));
-        const x1 = cellX(c.idx) + CW / 2;
-        const y1 = rowY(r);
-        const x2 = cellX(c.to) + CW / 2;
-        const y2 = POOL_Y + CW;
-        return (
-          <g key={`${c.disk}-${c.idx}`}>
-            <rect x={x2} y={POOL_Y} width={CW} height={CW} class="sn-slot" />
-            <circle cx={x1 + (x2 - x1) * k2} cy={y1 + (y2 - y1) * k2} r={6} class="sn-dot" />
-          </g>
-        );
-      })}
+      <rect x={BX} y={y} width={gb(DISK - own)} height={ROW_H} class={alone ? 'sn-own' : 'sn-shared'} stroke-dasharray={dashed ? '5 4' : undefined} />
+      {own > 0.05 && <rect x={BX + gb(DISK - own)} y={y} width={gb(own)} height={ROW_H} class="sn-own" />}
+      <text x={BX + 12} y={y + 24} class={alone ? 'sn-on-own' : ''} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        {DISK} GB disk
+      </text>
+      <text x={BX + BW + 14} y={y + 24} class={noteCls ?? 'muted'} style={{ fontSize: '12px', fontWeight: noteCls ? 600 : 400 }}>
+        {note}
+      </text>
+    </g>
+  );
+}
+
+/** In the last scene the notes give way to the other site. */
+const quiet = (t: number) => phaseAt(S, t) === 6;
+
+function SnapDiagram({ t }: { t: number }) {
+  const s = stateAt(t);
+  const anyShare = s.snap > 0.5;
+  const prodNote = s.broken ? '✕ the patch broke the app' : s.restored ? '↺ restored from 9:00' : s.changed > 0.5 ? `${Math.round(s.changed)} GB written since 9:00` : anyShare ? 'live, writable' : 'live, writable · all its own';
+  const snapNote = s.changed > 0.5 ? `keeps the 9:00 versions of ${Math.round(s.changed)} GB` : 'read-only restore point';
+  const saved = s.full - s.stored;
+  return (
+    <svg class="diagram sn-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`sql-prod, a ${DISK} GB VM, gets a snapshot before a patch, is restored from it when the patch fails, then three clones go to dev, test and analytics. ${Math.round(s.stored)} GB are stored, against ${s.full.toLocaleString('en-US')} GB for full copies.`}>
+      <defs>
+        <marker id="sn-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--warn)" />
+        </marker>
+      </defs>
+      <Row y={rowY[0]} name="sql-prod" sub="production VM disk" own={s.changed} alone={!anyShare} note={quiet(t) ? '' : prodNote} noteCls={s.broken ? 'bad-fill' : s.restored ? 'ok-fill' : undefined} />
+      {s.snap > 0 && (
+        <g style={{ transform: `translateY(${(1 - s.snap) * (rowY[0] - rowY[1])}px)` }}>
+          <Row y={rowY[1]} name="Snapshot · 9:00" sub="before the patch" own={s.changed} dashed note={quiet(t) ? '' : snapNote} o={0.3 + 0.7 * s.snap} />
+        </g>
+      )}
+      {s.sc >= 4 && (
+        <text x={8} y={rowY[2] - 14} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
+          CLONES OF THE 9:00 SNAPSHOT
+        </text>
+      )}
+      {s.clones.map(
+        (c, i) =>
+          c.in > 0 && (
+            <g key={c.team} style={{ transform: `translateY(${(1 - c.in) * (rowY[1] - rowY[2 + i])}px)` }}>
+              <Row y={rowY[2 + i]} name={`Clone · ${c.team}`} sub="writable, for its team" own={c.wrote} note={quiet(t) ? '' : c.wrote > 0.5 ? `${Math.round(c.wrote)} GB of its own` : 'ready, no new space'} noteCls={c.wrote > 0.5 ? undefined : 'ok-fill'} o={0.3 + 0.7 * c.in} />
+            </g>
+          ),
+      )}
+
+      {/* what is stored against what full copies would need */}
+      <text x={8} y={MY + 14} style={{ fontSize: '13px', fontWeight: 600 }}>
+        Stored on the cluster
+      </text>
+      <rect x={BX} y={MY} width={MW} height={18} class="bg3" />
+      <rect x={BX} y={MY} width={(s.stored / MMAX) * MW} height={18} class="sn-own" />
+      <text x={BX + MW + 14} y={MY + 14} class="mono" style={{ fontSize: '13px', fontWeight: 600 }}>
+        {Math.round(s.stored).toLocaleString('en-US')} GB
+      </text>
+      <text x={8} y={MY + 44} class="muted" style={{ fontSize: '13px' }}>
+        As full copies
+      </text>
+      <rect x={BX} y={MY + 30} width={MW} height={18} class="bg3" />
+      <rect x={BX} y={MY + 30} width={(s.full / MMAX) * MW} height={18} class="sn-full" />
+      <text x={BX + MW + 14} y={MY + 44} class="mono muted" style={{ fontSize: '13px' }}>
+        {s.full.toLocaleString('en-US')} GB{saved > 1 ? ` · ${Math.round(saved).toLocaleString('en-US')} GB saved` : ''}
+      </text>
+
+      {/* the closing point: all of this is on one cluster */}
+      {s.sc === 6 && (
+        <g>
+          <rect x={2} y={rowY[0] - 14} width={BX + BW + 8} height={rowY[4] + ROW_H + 26 - rowY[0]} class="sn-cluster" />
+          <text x={BX + BW + 2} y={rowY[0] - 20} text-anchor="end" class="warn-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
+            all on the same cluster as production
+          </text>
+          <line x1={BX + BW + 10} x2={BX + BW + 34} y1={rowY[2] + 46} y2={rowY[2] + 46} class="sn-rep" marker-end="url(#sn-ar)" />
+          <rect x={BX + BW + 40} y={rowY[2]} width={W - BX - BW - 46} height={92} class="sn-site" />
+          <text x={BX + BW + 54} y={rowY[2] + 26} style={{ fontSize: '13px', fontWeight: 600 }}>
+            Another site
+          </text>
+          <text x={BX + BW + 54} y={rowY[2] + 46} class="muted" style={{ fontSize: '12px' }}>
+            replicated snapshots
+          </text>
+          <text x={BX + BW + 54} y={rowY[2] + 64} class="muted" style={{ fontSize: '12px' }}>
+            or a backup product
+          </text>
+        </g>
+      )}
     </svg>
   );
 }
 
-const PACE = paced(
-  T,
-  STEPS.map((st) => [st.title, st.text]),
-);
-
 export default function Snapshots() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 0.5, steps: PACE });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: S[5] + 3.5, steps: STEPS });
   const t = clock.t;
-  const k = phaseAt(T, t);
-  const st = STEPS[k];
-  const s = stateAt(k, t);
-  const used = usedBlocks(s).size;
-  const full = fullCopyBlocks(s);
-
+  const s = stateAt(t);
+  const scene = SCENES[s.sc];
+  const restorePoint = s.snap > 0.5;
   return (
     <Show
       foot={
         <>
-          <Follow tone={TONE[k] === 'neutral' ? 'ink' : TONE[k]} k={st.title}>
-            <p>{st.text}</p>
+          <Follow tone={scene.tone} k={scene.k}>
+            <p>{scene.text}</p>
           </Follow>
           <Kpis
             items={[
-              { k: 'Disks', v: s.disks.length, sub: 'the VM disk, a snapshot, clones' },
-              { k: 'Blocks stored', v: used, tone: used < full ? 'ok' : undefined, tip: 'Only new writes, by the VM or by a clone, add stored blocks.' },
-              { k: 'As full copies', v: full, sub: 'blocks if every disk were copied' },
+              { k: 'Restore point', v: restorePoint ? '9:00' : 'None', tone: restorePoint ? 'ok' : undefined, sub: restorePoint ? 'taken in seconds' : undefined },
+              { k: 'Stored', v: `${Math.round(s.stored)} GB`, tone: s.stored < s.full ? 'ok' : undefined, tip: 'Only new writes, by the VM or by a clone, add stored data.' },
+              { k: 'As full copies', v: `${s.full.toLocaleString('en-US')} GB`, sub: `${s.disks} disk${s.disks > 1 ? 's' : ''} × ${DISK} GB` },
             ]}
           />
         </>
       }
     >
       <div class="diagram-scroll">
-        <Maps k={k} t={t} />
+        <SnapDiagram t={t} />
       </div>
       <Legend
         items={[
-          { color: 'var(--s3)', label: 'Block shared with another disk' },
-          { color: 'var(--ink)', label: 'Block only this disk uses' },
-          { color: 'var(--ok)', label: 'Just written' },
-          { color: 'var(--ink-fg)', label: 'Dot in a stored block: one disk pointing at it' },
+          { color: 'var(--s3)', label: 'Shared with another disk: stored once' },
+          { color: 'var(--ink)', label: 'Only this disk has it: takes space' },
         ]}
       />
       <PlayBar
         clock={clock}
         label="Snapshot and clone animation"
-        extra={<Illus why="Blocks here are large and few so they can be drawn. AOS tracks changes at a much finer granularity, manages snapshot chains in the background, and stores every block with the container’s replication factor, which multiplies both sides of the comparison equally." />}
+        extra={<Illus why="Example sizes and times. Space is shown before the replication factor, which multiplies stored data and full copies alike. AOS tracks changes at a fine granularity and manages snapshot chains in the background; how fast a restore completes depends on the VM and the release." />}
       />
     </Show>
   );

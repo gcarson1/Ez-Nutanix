@@ -1,0 +1,28 @@
+/* LCM Kubernetes tab: the NKP fleet rollout (prefix nkp-) */
+.diagram .nkp-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .nkp-box.flow { stroke: var(--flow); stroke-width: 1.75; }
+.diagram .nkp-box.warn { stroke: var(--warn); stroke-width: 1.75; }
+.diagram .nkp-box.ok { stroke: var(--ok); }
+.diagram .nkp-box.bad { stroke: var(--bad); stroke-width: 2; fill: var(--bad-bg); }
+.diagram .nkp-off { opacity: 0.45; }
+.diagram .nkp-off .nkp-box { stroke-dasharray: 4 4; }
+.diagram .nkp-node { stroke-width: 1.25; }
+.diagram .nkp-node.old { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .nkp-node.new { fill: var(--ink); stroke: var(--ink); }
+.diagram .nkp-node.joining { fill: var(--bg); stroke: var(--flow); stroke-width: 1.75; stroke-dasharray: 3 2; }
+.diagram .nkp-node.old.drain { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.75; }
+.diagram .nkp-node.failed { fill: var(--bad); stroke: var(--bad); }
+.diagram .nkp-nl { font-size: 10.5px; font-family: var(--mono); fill: var(--muted); }
+.diagram .nkp-nl.on { fill: #fff; }
+.diagram .nkp-pod { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .nkp-head { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; fill: var(--muted); }
+.diagram .nkp-head.flow { fill: var(--flow); }
+.diagram .nkp-head.ok { fill: var(--ok); }
+.diagram .nkp-head.off { fill: var(--faint); }
+.diagram .nkp-arrow { stroke: var(--line-2); stroke-width: 1.5; }
+.diagram .nkp-mk { fill: var(--line-2); }
+.diagram .nkp-st.ok { fill: var(--ok); }
+.diagram .nkp-st.warn { fill: var(--warn); }
+.diagram .nkp-st.bad { fill: var(--bad); }
+.diagram .nkp-st.flow { fill: var(--flow); }
+.diagram .nkp-st.neutral { fill: var(--muted); }

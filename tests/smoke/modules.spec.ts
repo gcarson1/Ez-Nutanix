@@ -133,19 +133,17 @@ test('full-stack band opens the external storage and ESXi tabs', async ({ page }
   await expect.poll(() => page.url()).toContain('go=conv');
   await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
   await tabs.getByRole('tab', { name: 'Nutanix with external storage' }).click();
-  await expect(page.locator('.xs-arrays li', { hasText: 'PowerFlex' })).toHaveText('Dell PowerStore · PowerFlex');
+  await expect(page.locator('.names li', { hasText: 'PowerFlex' })).toHaveText('Dell PowerStore · PowerFlex');
   expect(errors).toEqual([]);
 });
 
-test('Any Bare Metal Linux opens Cloud Native AOS on bare metal', async ({ page }) => {
+test('Any Bare Metal Linux opens the bare-metal page with its hardware partners', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(FILE);
   await page.getByRole('button', { name: /Any Bare Metal Linux/ }).click();
-  await expect(page.locator('.mod-head h1')).toHaveText('Cloud Native AOS');
-  await expect(page.getByRole('button', { name: 'Bare metal (NKP Metal)' })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Amazon EKS' }).click();
-  await expect.poll(() => page.url()).not.toContain('on=metal');
-  await expect(page.locator('.kpi .v', { hasText: 'GA · 1.0' })).toBeVisible();
+  await expect(page.locator('.mod-head h1')).toHaveText('Kubernetes on Bare Metal');
+  await expect(page.getByRole('list', { name: 'Hardware partners for NKP Metal' }).locator('li')).toHaveText(['Cisco', 'Lenovo', 'Supermicro']);
+  await expect(page.getByRole('button', { name: 'Bare metal (NKP Metal)' })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -321,7 +319,7 @@ test('Enterprise AI: the Agent Gateway tab routes, falls back, rate-limits and g
 test('external storage names every array without a picker, NetApp counted as announced, and the footer shows the release', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/partial`);
-  await expect(page.locator('.xs-arrays li')).toHaveText(['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP']);
+  await expect(page.locator('.names li')).toHaveText(['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP']);
   // A plain list, not a picker: nothing above the picture is a toggle.
   await expect(page.locator('.show-top [aria-pressed]')).toHaveCount(0);
   await expect(page.locator('.xs-dia')).toContainText('Your Everpure / Dell / NetApp array');

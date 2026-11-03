@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **New module, Kubernetes on Bare Metal:** the "Any Bare Metal Linux" pane now opens it. It names NKP Metal's hardware partners (Cisco, Lenovo, Supermicro, with Intel Xeon and Ubuntu), shows Foundation deploying the servers, Kubernetes on top with no hypervisor and LCM updating firmware and OS, then pre-provisioned bare metal. Sources are in `docs/facts.md` section 17.
+- **Kubernetes Platform, reworked:** one loop from islands to one operating model: four environments each run their own way, the same work repeated behind each, the NKP layer above them, one policy and one upgrade across the fleet (attached AKS keeps Azure's upgrades), the platform team and a developer on the same road, and the outcome. The landing pane reads "Fleet Management | Security | GitOps".
+- **LCM Rolling Upgrade, Kubernetes (NKP) tab:** the NKP fleet rollout (Healthy rollout, Canary fails) moved here from the Kubernetes Platform module.
+- **Snapshots & Clones, redrawn:** an admin's day instead of block maps: a snapshot before a patch, a restore when the patch fails, three clones for dev, test and analytics, and a meter of what is stored against full copies, in two colors.
+- **Cloud Manager, Self-Service:** one story of four requests (straight through, held by the approval policy, over quota and sent back, re-ordered smaller and created) replaces the Request choice, and the approval box is drawn as an optional side path.
+- **Data Security:** one loop plays the same stolen drive with encryption off, the built-in key manager and an external key manager; the stolen-node case and both choices are gone.
+- **Migration with Nutanix Move:** the source platforms are a plain list above one animation, like the external storage arrays.
+- **Database Service, Provisioning:** high availability only.
+- **Unified Storage, Files:** the request dots travel along the drawn lines to the FSVM serving each folder, at an even pace, and the folder outlines when its request lands.
 - **Search:** a search box at the top of every page. Type a keyword like "balance tcp", "metro" or "erasure coding" and it opens the module, or the exact tab or choice inside it, with that option outlined. Typos are forgiven, and older names (Calm, Beam) and acronyms (DR, NKP, VPC) work. Press / or Ctrl/⌘ K to search from the keyboard; on phones it is an icon in the top bar.
 - **Legacy vs Nutanix HCI tier labels:** COMPUTE, NETWORKING and STORAGE in large type beside the three legacy tiers, until they fold into one node.
 - **Legacy vs Nutanix HCI absorbs Scale-Out vs 3-Tier:** top-of-rack Ethernet switches are drawn from the first frame (the 3-tier hosts use them for VM and management traffic, and after the fold they carry the cluster's storage traffic too), data rebalances onto each new node, and a storage-controller count grows with the nodes while the array stays at two. Scale-Out's CVM cost, performance and node-type points moved into its presenter notes, and old Scale-Out links open it.

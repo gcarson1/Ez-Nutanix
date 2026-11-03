@@ -7,23 +7,10 @@
 // volume and snapshot lines are worded for the generally available arrays.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Kpis, Names, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
 /** The supported arrays, by name only (Dell once for both of its arrays). */
 const ARRAYS = ['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP'];
-
-function Arrays() {
-  return (
-    <div class="xs-arrays">
-      <span class="choice-l">Works with</span>
-      <ul>
-        {ARRAYS.map((a) => (
-          <li key={a}>{a}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 const P = [0, 3.2, 6.6, 10.4, 13.8];
 const END = 17.2;
@@ -244,7 +231,7 @@ export default function ExtStorage() {
     <Show
       top={
         <>
-          <Arrays />
+          <Names label="Works with" items={ARRAYS} />
           <Points label="Why customers choose it" items={POINTS} t={t} />
         </>
       }

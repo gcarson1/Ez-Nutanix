@@ -20,10 +20,6 @@
 .diagram text.es-ink { fill: var(--ink-fg); font-weight: 600; }
 .diagram text.es-warn { fill: var(--warn); }
 /* The supported arrays, by name: a plain list, not a picker. */
-.xs-arrays { display: flex; flex-direction: column; gap: var(--sp-2); flex: 0 1 auto; min-width: 0; }
-.xs-arrays ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.xs-arrays li { margin: 0; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--line-2); border-radius: var(--radius); font-size: var(--fs-14); font-weight: 600; white-space: nowrap; }
-.show-top > .xs-arrays + .points { flex: 1 1 36rem; width: auto; }
 @media (max-width: 600px) {
   .diagram-scroll > .xs-dia, .diagram-scroll > .es-dia { min-width: 44rem; }
 }

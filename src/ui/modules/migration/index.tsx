@@ -1,21 +1,16 @@
-// Migration with Nutanix Move: pick the source platform and watch one VM being copied while it
-// runs, kept in sync with only its changes, then cut over in a short window, on a loop.
+// Migration with Nutanix Move: one VM is copied while it runs, kept in sync with only its changes,
+// then cut over in a short window, on a loop. Every source platform follows the same pattern, so the
+// sources are named above the picture rather than offered as choices.
 // Timeline math lives in engine/move.ts; this file maps its phases onto the animation.
-import { useEnum } from '../../../state/route';
-import { paced, useClock, useRestartOn } from '../../components/clock';
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Kpis, Names, Show, ease, phaseAt, prog } from '../../components/show';
 import { naiveDowntime, planMove, type MoveInput, type PhaseKind } from '../../../engine/move';
 import './style.css';
 
-type Src = 'esxi' | 'hyperv' | 'ec2' | 'azure';
-const SRC: Record<Src, { label: string; box: string; sub: string; cloud: boolean; note: string }> = {
-  esxi: { label: 'VMware ESXi', box: 'VMware vSphere', sub: 'ESXi hosts, through vCenter', cloud: false, note: 'From Move 6.3, ESXi to AHV can skip the copy when the disks already sit on a supported external array, such as Everpure FlashArray, shared with the AHV cluster.' },
-  hyperv: { label: 'Hyper-V', box: 'Microsoft Hyper-V', sub: 'Hyper-V hosts in your data center', cloud: false, note: 'The same seed, sync and cutover pattern applies to every source Move supports.' },
-  ec2: { label: 'AWS EC2', box: 'AWS EC2', sub: 'native instances in your AWS account', cloud: true, note: 'Check the Move support matrix for the exact source, target and versions before each wave.' },
-  azure: { label: 'Azure', box: 'Microsoft Azure', sub: 'native VMs in your Azure subscription', cloud: true, note: 'Check the Move support matrix for the exact source, target and versions before each wave.' },
-};
-const SRC_IDS = Object.keys(SRC) as Src[];
+/** The source platforms shown; the pattern is the same for each. */
+const SOURCES = ['VMware ESXi', 'Hyper-V', 'AWS EC2', 'Azure'];
+const NOTE = 'From Move 6.3, ESXi to AHV can skip the copy when the disks already sit on a supported external array, such as Everpure FlashArray, shared with the AHV cluster. Check the Move support matrix for the exact source, target and versions before each wave.';
 
 /** One example VM. Every figure is an assumption, shown as such. */
 const BASE: Omit<MoveInput, 'cutoverAt'> = { vmGB: 800, mbps: 250, changeGBPerHour: 6, syncEveryMin: 60, bootMin: 5 };
@@ -57,35 +52,34 @@ const flights = CHANGED.flatMap((set, k) =>
 const WORD: Record<PhaseKind, string> = { seed: 'Seed copy', idle: 'In sync', sync: 'In sync', final: 'Cutover', boot: 'Power on', done: 'Migrated' };
 const fmtMin = (m: number) => fmtDur(m / 60);
 
-function caption(kind: PhaseKind, src: string): { tone: Tone | 'ink'; k: string; text: string } {
-  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy running', text: `Move copies the whole VM to AHV while it keeps running on ${src}. Users notice nothing.` };
+function caption(kind: PhaseKind): { tone: Tone | 'ink'; k: string; text: string } {
+  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy running', text: 'Move copies the whole VM to AHV while it keeps running on the source platform. Users notice nothing.' };
   if (kind === 'idle' || kind === 'sync') return { tone: 'flow', k: 'Keeping in sync', text: `Each sync sends only the blocks that changed since the last one, about ${Math.round((BASE.changeGBPerHour * BASE.syncEveryMin) / 60)} GB here. The target stays close behind until you pick a window.` };
   if (kind === 'final') return { tone: 'warn', k: 'Cutover starts', text: 'In the window you chose, the source VM shuts down so nothing changes, and the last few changes are copied.' };
   if (kind === 'boot') return { tone: 'warn', k: 'VM powering on', text: 'The VM powers on in AHV. Downtime is only this final sync plus the power-on.' };
   return { tone: 'ok', k: 'Running on AHV', text: 'Users now work on the AHV copy. The source VM stays powered off until the app owner signs off.' };
 }
 
+const STEPS = paced(
+  STARTS,
+  SEGS.map((sg) => [caption(sg.kind).k, caption(sg.kind).text]),
+);
+const SYNC_SEG = SEGS.filter((s) => s.kind === 'sync')[1];
+
 export default function Migration() {
-  const [src, setSrc] = useEnum<Src>('src', 'esxi', SRC_IDS);
-  const syncSeg = SEGS.filter((s) => s.kind === 'sync')[1];
-  const steps = paced(
-    STARTS,
-    SEGS.map((sg) => [caption(sg.kind, SRC[src].box).k, caption(sg.kind, SRC[src].box).text]),
-  );
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (syncSeg.a + syncSeg.b) / 2, steps });
-  useRestartOn(clock, [src]);
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: (SYNC_SEG.a + SYNC_SEG.b) / 2, steps: STEPS });
   const t = clock.t;
   const seg = SEGS[phaseAt(STARTS, t)];
-  const cap = caption(seg.kind, SRC[src].box);
+  const cap = caption(seg.kind);
 
   return (
     <Show
-      top={<Choice<Src> label="Source platform" value={src} onChange={setSrc} options={SRC_IDS.map((s) => ({ value: s, label: SRC[s].label }))} />}
+      top={<Names label="Source platforms" items={SOURCES} />}
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>
             <p>{cap.text}</p>
-            <p class="rest">{SRC[src].note}</p>
+            <p class="rest">{NOTE}</p>
           </Follow>
           <Kpis
             items={[
@@ -98,7 +92,7 @@ export default function Migration() {
       }
     >
       <div class="diagram-scroll">
-        <MoveDiagram src={src} kind={seg.kind} t={t} />
+        <MoveDiagram kind={seg.kind} t={t} />
       </div>
       <Legend
         items={[
@@ -143,8 +137,7 @@ function along(pts: { x: number; y: number }[], f: number) {
   return pts[pts.length - 1];
 }
 
-function MoveDiagram({ src, kind, t }: { src: Src; kind: PhaseKind; t: number }) {
-  const S = SRC[src];
+function MoveDiagram({ kind, t }: { kind: PhaseKind; t: number }) {
   const sourceOn = kind !== 'final' && kind !== 'boot' && kind !== 'done';
   const targetOn = kind === 'done';
   const booting = kind === 'boot';
@@ -176,12 +169,12 @@ function MoveDiagram({ src, kind, t }: { src: Src; kind: PhaseKind; t: number })
     const statusCls = on ? 'ok-fill' : booting && !isSrc ? 'warn-fill' : 'muted';
     return (
       <g>
-        <rect x={x} y={BOX.y} width={BOX.w} height={BOX.h} class={isSrc && S.cloud ? 'frame-dash' : 'frame'} />
+        <rect x={x} y={BOX.y} width={BOX.w} height={BOX.h} class="frame" />
         <text x={x + 16} y={BOX.y + 24} class="mig-t">
-          {isSrc ? S.box : 'Nutanix AHV'}
+          {isSrc ? 'Source platform' : 'Nutanix AHV'}
         </text>
         <text x={x + 16} y={BOX.y + 42} class="mig-xs muted">
-          {isSrc ? S.sub : 'on-premises, or NC2 in the cloud'}
+          {isSrc ? 'ESXi, Hyper-V, AWS EC2 or Azure' : 'on-premises, or NC2 in the cloud'}
         </text>
         <rect x={x + 14} y={CARD_Y} width={BOX.w - 28} height={150} class={`mig-card${on ? ' on' : booting && !isSrc ? ' boot' : ''}`} stroke-dasharray={!isSrc && !on && !booting ? '5 4' : undefined} />
         <text x={x + 26} y={CARD_Y + 22} class="mig-s">
@@ -202,7 +195,7 @@ function MoveDiagram({ src, kind, t }: { src: Src; kind: PhaseKind; t: number })
   };
 
   return (
-    <svg class="diagram mig-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Moving a VM from ${S.box} to Nutanix AHV with Nutanix Move: ${WORD[kind]}.`}>
+    <svg class="diagram mig-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Moving a VM from its source platform to Nutanix AHV with Nutanix Move: ${WORD[kind]}.`}>
       <defs>
         <marker id="mig-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M0 0 L10 5 L0 10 z" class="mig-ar" />

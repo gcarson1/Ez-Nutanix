@@ -118,34 +118,29 @@ export const SCENES: Scene[] = [
   { path: 'nci/flow', params: { tab: 'net', vp: 'fip' }, group: 'Follow a packet', label: 'In from the internet', words: 'floating ip fip ingress' },
 
   // ── LCM Rolling Upgrade ──
+  { path: 'nci/lcm', group: 'What is upgraded', label: 'Nutanix cluster', words: 'aos ahv firmware' },
+  { path: 'nci/lcm', params: { tab: 'k8s' }, group: 'What is upgraded', label: 'Kubernetes (NKP)', words: 'kubernetes k8s nkp cluster api fleet upgrade' },
+  { path: 'nci/lcm', params: { tab: 'k8s' }, group: 'What happens', label: 'Healthy rollout', words: 'kubernetes upgrade fleet canary' },
+  { path: 'nci/lcm', params: { tab: 'k8s', ro: 'fail' }, group: 'What happens', label: 'Canary fails', words: 'kubernetes upgrade health check rollback' },
   { path: 'nci/lcm', group: 'What happens', label: 'Healthy cluster', words: 'rolling upgrade one click' },
   { path: 'nci/lcm', params: { sc: 'fail' }, group: 'What happens', label: 'A node fails mid-upgrade', words: 'upgrade failure pause' },
 
   // ── Migration with Nutanix Move ──
-  { path: 'nci/move', group: 'Source platform', label: 'VMware ESXi', words: 'vmware vsphere vcenter migrate' },
-  { path: 'nci/move', params: { src: 'hyperv' }, group: 'Source platform', label: 'Hyper-V', words: 'hyperv microsoft migrate' },
-  { path: 'nci/move', params: { src: 'ec2' }, group: 'Source platform', label: 'AWS EC2', words: 'amazon migrate' },
-  { path: 'nci/move', params: { src: 'azure' }, group: 'Source platform', label: 'Azure', words: 'microsoft migrate' },
 
   // ── Cloud Manager ──
   { path: 'ncm', group: 'Cloud Manager areas', label: 'AIOps', words: 'intelligent operations anomaly forecasting right sizing' },
-  { path: 'ncm', params: { tab: 'ss' }, group: 'Cloud Manager areas', label: 'Self-Service', words: 'calm catalog blueprint' },
+  { path: 'ncm', params: { tab: 'ss' }, group: 'Cloud Manager areas', label: 'Self-Service', words: 'calm catalog blueprint request quota approval denied' },
   { path: 'ncm', params: { tab: 'cost' }, group: 'Cloud Manager areas', label: 'Cost', words: 'cost governance beam chargeback showback' },
   { path: 'ncm', params: { tab: 'sec' }, group: 'Cloud Manager areas', label: 'Security', words: 'security compliance security central baseline' },
-  { path: 'ncm', params: { rq: 'vm', tab: 'ss' }, group: 'Request', label: 'Linux VM', words: 'self service request' },
-  { path: 'ncm', params: { tab: 'ss' }, group: 'Request', label: '3-tier web app', words: 'blueprint self service' },
-  { path: 'ncm', params: { rq: 'over', tab: 'ss' }, group: 'Request', label: 'App over quota', words: 'quota approval denied' },
   { path: 'ncm', params: { tab: 'sec' }, group: 'Baseline', label: 'Platform hardening', words: 'hardening compliance baseline' },
   { path: 'ncm', params: { bl: 'reg', tab: 'sec' }, group: 'Baseline', label: 'Card data (PCI)', words: 'pci dss compliance regulation' },
 
   // ── Database Service ──
   { path: 'ndb', group: 'Database Service', label: 'Time Machine', words: 'ndb point in time recovery pitr' },
-  { path: 'ndb', params: { tab: 'prov' }, group: 'Database Service', label: 'Provisioning', words: 'ndb provision new database' },
+  { path: 'ndb', params: { tab: 'prov' }, group: 'Database Service', label: 'Provisioning', words: 'ndb provision new database ha high availability cluster standby' },
   { path: 'ndb', params: { tab: 'patch' }, group: 'Database Service', label: 'Patching', words: 'ndb patch upgrade database' },
   { path: 'ndb', group: 'Recover as', label: 'Clone beside production', words: 'clone copy dev test' },
   { path: 'ndb', params: { rm: 'restore' }, group: 'Recover as', label: 'Restore in place', words: 'restore rollback recover' },
-  { path: 'ndb', params: { tab: 'prov' }, group: 'Topology', label: 'Single instance', words: 'standalone' },
-  { path: 'ndb', params: { tab: 'prov', tp: 'ha' }, group: 'Topology', label: 'High availability', words: 'ha cluster' },
 
   // ── AHV Networking ──
   { path: 'nci/network', group: 'Bond type', label: 'Active-Backup', hint: 'Prism: Active-Backup (default, recommended)', words: 'nic teaming bond uplink failover' },
@@ -155,8 +150,6 @@ export const SCENES: Scene[] = [
   { path: 'nci/network', params: { lf: 'one' }, group: 'Link failure', label: 'One link fails', words: 'uplink down cable nic failure' },
 
   // ── Kubernetes Platform ──
-  { path: 'nkp', group: 'What happens', label: 'Healthy rollout', words: 'kubernetes upgrade fleet canary' },
-  { path: 'nkp', params: { ro: 'fail' }, group: 'What happens', label: 'Canary fails', words: 'kubernetes upgrade health check rollback' },
 
   // ── Don’t want the full stack? ──
   { path: 'partial', group: 'Ways to start', label: 'Nutanix with external storage', words: 'external array san everpure pure storage flasharray dell powerstore powerflex netapp ontap compute only' },
@@ -165,11 +158,6 @@ export const SCENES: Scene[] = [
   { path: 'partial', params: { go: 'conv', tab: 'esxi' }, group: 'Path', label: 'Convert to AHV later', words: 'conversion vmware' },
 
   // ── Data Security ──
-  { path: 'nci/security', params: { enc: 'off' }, group: 'Encryption', label: 'Off', words: 'unencrypted' },
-  { path: 'nci/security', group: 'Encryption', label: 'On · built-in key manager', words: 'encryption at rest native kms local key manager' },
-  { path: 'nci/security', params: { enc: 'ext' }, group: 'Encryption', label: 'On · external key manager', words: 'encryption at rest ekm kms kmip' },
-  { path: 'nci/security', group: 'What happens', label: 'A drive is stolen', words: 'theft disk' },
-  { path: 'nci/security', params: { th: 'node' }, group: 'What happens', label: 'A whole node is stolen', words: 'theft server' },
 
   // ── Unified Storage ──
   { path: 'storage', group: 'Storage services', label: 'Files · SMB / NFS', words: 'nutanix files file server nas share' },
@@ -190,9 +178,9 @@ export const MODULE_WORDS: Record<string, string> = {
   'nci/failures': 'resiliency self healing',
   'nci/lcm': 'upgrade firmware patch',
   'nci/network': 'nic bond virtual switch ovs open vswitch vlan',
-  'nci/security': 'encryption at rest kms',
+  'nci/security': 'encryption at rest kms ekm kmip native key manager external key manager unencrypted stolen drive theft disk',
   'nci/dr': 'business continuity bcdr failover rpo rto',
-  'nci/move': 'migrate migration vmware exit',
+  'nci/move': 'migrate migration vmware exit vsphere esxi vcenter hyperv hyper v microsoft ec2 amazon azure',
   'nci/edge': 'robo remote office branch office',
   central: 'multi cluster management prism',
   ncm: 'ncm nutanix cloud manager',
@@ -200,6 +188,7 @@ export const MODULE_WORDS: Record<string, string> = {
   datalens: 'ransomware data governance audit',
   storage: 'nas file share unified storage',
   cnaos: 'ndk kubernetes storage containers',
+  metal: 'nkp metal bare metal baremetal linux hardware cisco lenovo thinksystem supermicro intel xeon ubuntu canonical foundation lcm',
   ndb: 'database dbaas sql server oracle postgres mysql mongodb',
   ai: 'nai llm genai generative ai gpu',
   cloud: 'nc2 nutanix cloud clusters aws azure gcp',

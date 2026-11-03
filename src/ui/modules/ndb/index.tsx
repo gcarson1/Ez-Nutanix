@@ -215,24 +215,20 @@ const PROFILES = [
 const PV_PH = [0, 1.4, 3.2, 5, 6.6];
 const PV_END = 10;
 
-function pvLines(ha: boolean): Line[] {
-  return [
-      { tone: 'ink', k: 'One request', text: 'A developer or DBA asks for a database: engine, size and protection level. Everything else comes from profiles the DBA defined once.' },
-      { tone: 'flow', k: 'Servers built', text: ha ? 'NDB creates the database server VMs for a high-availability cluster from the software and compute profiles.' : 'NDB creates the database server VM from the software and compute profiles.' },
-      { tone: 'flow', k: 'Database created', text: ha ? 'It creates the database on the primary and sets up standby copies that follow every change, so one server can fail without an outage.' : 'It creates the database and applies the database settings, the same way every time.' },
-      { tone: 'ok', k: 'First snapshot taken', text: 'Time Machine takes the first snapshot, so the database is protected from its first minute.' },
-      { tone: 'ok', k: 'Database ready', text: 'The connection details go back to whoever asked. No tickets passed between the DBA, storage and VM teams.' },
-  ];
-}
+const PV_LINES: Line[] = [
+  { tone: 'ink', k: 'One request', text: 'A developer or DBA asks for a database: engine, size and protection level. Everything else comes from profiles the DBA defined once.' },
+  { tone: 'flow', k: 'Servers built', text: 'NDB creates the database server VMs for a high-availability cluster from the software and compute profiles.' },
+  { tone: 'flow', k: 'Database created', text: 'It creates the database on the primary and sets up standby copies that follow every change, so one server can fail without an outage.' },
+  { tone: 'ok', k: 'First snapshot taken', text: 'Time Machine takes the first snapshot, so the database is protected from its first minute.' },
+  { tone: 'ok', k: 'Database ready', text: 'The connection details go back to whoever asked. No tickets passed between the DBA, storage and VM teams.' },
+];
+const PV_STEPS = paced(PV_PH, PV_LINES.map((l) => [l.k, l.text]));
 
 function Provisioning() {
-  const [topo, setTopo] = useEnum<'single' | 'ha'>('tp', 'single', ['single', 'ha']);
-  const clock = useClock({ rate: 1, duration: PV_END, keys: true, poster: PV_END - 0.5, steps: paced(PV_PH, pvLines(topo === 'ha').map((l) => [l.k, l.text])) });
-  useRestartOn(clock, [topo]);
+  const clock = useClock({ rate: 1, duration: PV_END, keys: true, poster: PV_END - 0.5, steps: PV_STEPS });
   const t = clock.t;
   const ph = phaseAt(PV_PH, t);
-  const ha = topo === 'ha';
-  const n = ha ? 3 : 1;
+  const n = 3;
 
   const PX = 214;
   const PW = 210;
@@ -254,22 +250,10 @@ function Provisioning() {
     [88, 164],
   ];
 
-  const lines = pvLines(ha);
-  const line = lines[ph];
+  const line = PV_LINES[ph];
 
   return (
     <Show
-      top={
-        <Choice<'single' | 'ha'>
-          label="Topology"
-          value={topo}
-          onChange={setTopo}
-          options={[
-            { value: 'single', label: 'Single instance' },
-            { value: 'ha', label: 'High availability' },
-          ]}
-        />
-      }
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -278,7 +262,7 @@ function Provisioning() {
           <Kpis
             items={[
               { k: 'Asked for', v: 'One request', sub: 'no tickets between teams' },
-              ha ? { k: 'If a server fails', v: 'Failover', tone: 'ok', sub: 'a standby takes over' } : { k: 'If a server fails', v: 'Restart', sub: 'the VM restarts on another host' },
+              { k: 'If a server fails', v: 'Failover', tone: 'ok', sub: 'a standby takes over' },
               { k: 'Time Machine', v: tmIn ? 'Protecting' : 'Not yet', tone: tmIn ? 'ok' : undefined, sub: tmIn ? 'from the first snapshot' : undefined },
             ]}
           />
@@ -286,7 +270,7 @@ function Provisioning() {
       }
     >
       <div class="diagram-scroll">
-        <svg class="diagram" viewBox={`0 0 ${W} 280`} role="img" aria-label={`One request becomes a ${ha ? 'high-availability PostgreSQL cluster' : 'single PostgreSQL database'}, built from shared profiles and protected by Time Machine.`}>
+        <svg class="diagram" viewBox={`0 0 ${W} 280`} role="img" aria-label="One request becomes a high-availability PostgreSQL cluster, built from shared profiles and protected by Time Machine.">
           <rect x={8} y={96} width={160} height={66} class={`node-box${back >= 1 ? ' sel' : ''}`} />
           <text x={22} y={122} style={{ fontSize: '14px', fontWeight: 600 }}>
             Developer or DBA
@@ -320,7 +304,7 @@ function Provisioning() {
           {Array.from({ length: n }, (_, i) => {
             const f = vmIn(i);
             const x = vmX(i);
-            const role = ha ? (i === 0 ? 'Primary' : 'Standby') : 'DB server';
+            const role = i === 0 ? 'Primary' : 'Standby';
             return (
               <g key={i} style={{ opacity: f > 0 ? 0.3 + 0.7 * f : 0 }}>
                 <rect x={x} y={VY} width={VW} height={VH} class={`vm${f >= 1 ? ' hl' : ''}`} stroke-dasharray={f >= 1 ? undefined : '5 4'} />
@@ -332,13 +316,12 @@ function Provisioning() {
                 </text>
                 <Cylinder x={x + VW / 2 - 22} y={VY + 54} w={44} h={50} cls={dbIn(i) ? 'ndb-db on' : 'ndb-db'} />
                 <text x={x + VW / 2} y={VY + 126} text-anchor="middle" class={dbIn(i) ? '' : 'faint'} style={{ fontSize: '11.5px', fontWeight: 600 }}>
-                  {dbIn(i) ? (ha && i > 0 ? 'standby copy' : 'PostgreSQL') : 'database'}
+                  {dbIn(i) ? (i > 0 ? 'standby copy' : 'PostgreSQL') : 'database'}
                 </text>
               </g>
             );
           })}
-          {ha &&
-            t >= PV_PH[2] + 1 &&
+          {t >= PV_PH[2] + 1 &&
             [1, 2].map((i) => (
               <path key={i} d={`M${vmX(i - 1) + VW} ${VY + 80} H${vmX(i)}`} class="ndb-rep" marker-end="url(#ndb-ar)" />
             ))}
@@ -372,7 +355,7 @@ function Provisioning() {
       <Legend
         items={[
           { color: 'var(--ink)', label: 'Request and profile settings' },
-          ...(ha ? [{ color: 'var(--flow)', label: 'Standby follows every change' }] : []),
+          { color: 'var(--flow)', label: 'Standby follows every change' },
           { color: 'var(--ok)', dashed: true, label: 'Connection details back to the requester' },
         ]}
       />

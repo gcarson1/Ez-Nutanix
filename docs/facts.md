@@ -339,6 +339,25 @@ The Agent Gateway tab of Enterprise AI (`src/ui/modules/ai/gateway.tsx`). Apps, 
 [nai-aigw]: https://www.nutanix.com/blog/building-enterprise-ai-stack-with-nutanix-agentic-ai
 [b-aos-admin]: https://www.nutanixbible.com/4f-book-of-aos-administration.html
 
+## 17. Bare metal, NKP's operating model, and the November 2026 rework
+
+The new Kubernetes on Bare Metal module (`src/ui/modules/metal/`), the reworked Kubernetes Platform module (`src/ui/modules/nkp/`), the Kubernetes tab moved into LCM (`src/ui/modules/lcm/k8s.tsx`, claims unchanged from the old NKP module) and the redrawn Snapshots & Clones, Self-Service and Data Security stories. Server sizes, project quotas, versions and timings are examples.
+
+| ID | Claim (as the app states it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| BM-1 | NKP Metal's named hardware partners are Cisco (including Cisco Unified Edge, managed with Intersight), Lenovo ThinkSystem servers and Supermicro, with Intel Xeon processors and Ubuntu from Canonical. | Press release (Apr 7, 2026) quotes each partner: Cisco, "NKP Metal running on Cisco infrastructure solutions, including our new Cisco Unified Edge platform" and "integrating with Cisco Intersight"; Lenovo, "NKP Metal with Lenovo's high-performance, resilient ThinkSystem servers"; Supermicro, "Our collaboration with Nutanix on NKP Metal"; Intel, "Intel® Xeon®"; Canonical, Ubuntu. Dell and HPE are not named. No public compatibility list found. | [pr-nkpm] | 2026-11-03 | keep; the app says "named at launch" and the Q&A points to the compatibility lists |
+| BM-2 | Foundation discovers and deploys the bare-metal nodes; LCM patches their operating system and updates firmware. | Press release: "automated node deployment with Nutanix Foundation and Operating System and Firmware lifecycle management through Lifecycle Manager". Blog (Aug 26, 2026): "Nutanix Foundation for automated bare-metal node discovery and deployment"; it also says NKP Metal is still in development. | [pr-nkpm]; [blog-nkpm] | 2026-11-03 | keep, with the early-access note |
+| BM-3 | Pre-provisioned bare metal has long been supported, and there you install and patch the OS and firmware yourself. | Blog: "It's important to note that NKP has long supported pre-provisioned bare-metal nodes"; under that model customers handle the OS and ongoing patching and firmware. | [blog-nkpm] | 2026-11-03 | keep |
+| NKP-1 | NKP is built from upstream CNCF projects, integrated and validated, with no forked Kubernetes and no wrapper API. | Product page: "Composed of upstream CNCF projects that are fully integrated and validated"; "avoiding the risks of forked Kubernetes versions"; "NKP does not add a 'wrapper' api". | [pg-nkp] | 2026-11-03 | keep |
+| NKP-2 | Pro adds observability, backup and restore, GPU support and deployment beyond AHV; Ultimate adds fleet management, GitOps, cost management and multitenancy. | Product page editions: Pro "Adds observability, backup/restore, GPU support, and multi-platform deployment"; Ultimate "Adds fleet management, GitOps, cost management, and multitenancy". | [pg-nkp] | 2026-11-03 | keep |
+| NKP-3 | The environments drawn are Nutanix (AHV), VMware vSphere, AWS and an attached Azure AKS cluster; attached clusters keep their cloud's Kubernetes upgrades. | Product page: NKP deploys "on bare metal, natively on public clouds, and on third-party virtualization platforms" and manages "Amazon EKS and Azure AKS cluster capabilities". It does not name Google Cloud, so the picture leaves it out. The upgrade point is the existing Q&A (MP-20, REV-6). | [pg-nkp] | 2026-11-03 | keep |
+| NKP-4 | A developer's namespace lands on an approved cluster with storage, networking, observability and policy attached. | The positioning brief's scene 5. Multitenancy is Ultimate (NKP-2); the product page lists observability, networking, policy and data services but publishes no per-namespace flow. | [pg-nkp] | 2026-11-03 | keep as illustrative (the Illus note says the story is simplified) |
+| SNC-1 | Restoring a VM from a snapshot is quick because nothing is copied back: its map points at the snapshot's data again; anything written after the snapshot is lost. | Follows from redirect-on-write, already the basis of this module (the snapshot keeps the old blocks, writes go to new ones). Nutanix publishes no restore-time figure. | — | 2026-11-03 | keep (inferred; the Illus note says restore time depends on the VM and release) |
+| NCM-SS-1 | Approval is an optional policy: requests over its limit wait for an admin, the rest go straight to the cluster; an over-quota request is sent back before anything is created. | Existing NCM rows: approvals are NCM Ultimate and set per project; the quota check refuses before provisioning. Re-ordering at a smaller size is an example of a remedy, as are freeing up VMs or a bigger quota. | (section 6) | 2026-11-03 | keep |
+
+[blog-nkpm]: https://www.nutanix.com/blog/introducing-nkp-metal
+[pg-nkp]: https://www.nutanix.com/products/kubernetes-management-platform
+
 ---
 
 ## Changes needed in the app

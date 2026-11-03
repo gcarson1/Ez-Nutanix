@@ -1,17 +1,15 @@
-// Data Security: pick whether data at rest is encrypted (and where its keys live) and a theft, and
-// watch data being written to a small cluster, a drive or a whole node being carried off, and
-// whether the stolen data can be read, on a loop.
-import { useEnum } from '../../../state/route';
-import { paced, useClock, useRestartOn } from '../../components/clock';
+// Data Security: one loop in three acts. The same drive is pulled out of a small cluster three
+// times: with encryption off, on with the built-in key manager, and on with an external key
+// manager, and each act ends with whether the stolen data can be read.
+import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 import './style.css';
 
 type Enc = 'off' | 'native' | 'ext';
-type Threat = 'drive' | 'node';
 
+const ACTS: Enc[] = ['off', 'native', 'ext'];
 const ENC_LABEL: Record<Enc, string> = { off: 'Off', native: 'On · built-in key manager', ext: 'On · external key manager' };
-const THREAT_LABEL: Record<Threat, string> = { drive: 'A drive is stolen', node: 'A whole node is stolen' };
 
 // ── timeline (sim seconds) ──
 const NODES = 3;
@@ -25,6 +23,9 @@ const STEAL = 4;
 const MOVED = 5.4;
 const RESULT = 5.6;
 const END = 9.4;
+/** Each act plays the full write, theft and result; the loop is all three. */
+const ACT_AT = ACTS.map((_, i) => i * END);
+const LOOP = ACTS.length * END;
 
 // ── geometry ──
 const W = 960;
@@ -40,9 +41,8 @@ const OUT = { x: 630, y: 106, w: 320, h: 256 };
 const KMS = { x: 630, y: 58, w: 320, h: 40 };
 const STOLEN_NODE = 2;
 const STOLEN_DRIVE = 1;
-/** Where the stolen thing ends up, as an offset from where it was. */
+/** Where the stolen drive ends up, as an offset from where it was. */
 const DRIVE_TO = { x: OUT.x + (OUT.w - DRIVE.w) / 2 - (nodeX(STOLEN_NODE) + DRIVE.dx), y: 196 - driveY(STOLEN_DRIVE) };
-const NODE_TO = { x: OUT.x + (OUT.w - NODE.w) / 2 - nodeX(STOLEN_NODE), y: 142 - NODE.y };
 const R = 8;
 
 interface Verdict {
@@ -53,16 +53,16 @@ interface Verdict {
   mark: string;
 }
 
-function verdict(enc: Enc, th: Threat): Verdict {
+function verdict(enc: Enc): Verdict {
   if (enc === 'off')
     return {
       tone: 'bad',
       word: 'Readable',
       k: 'Data is readable',
       mark: '✕ Readable: data is stored as written',
-      text: th === 'drive' ? 'The drive holds data exactly as it was written. Anyone who has it can read it.' : 'Every drive in the node holds data exactly as it was written. Anyone who has the node can read it.',
+      text: 'The drive holds data exactly as it was written. Anyone who has it can read it.',
     };
-  if (th === 'drive')
+  if (enc === 'native')
     return {
       tone: 'ok',
       word: 'Unreadable',
@@ -70,20 +70,12 @@ function verdict(enc: Enc, th: Threat): Verdict {
       mark: '✓ Unreadable: scrambled, no key on it',
       text: 'The drive holds only scrambled data and the keys are not on it, so it is useless to whoever has it. The same goes for a drive sent back for repair or thrown away.',
     };
-  if (enc === 'ext')
-    return {
-      tone: 'ok',
-      word: 'Unreadable',
-      k: 'Data is unreadable',
-      mark: '✓ Unreadable: key server out of reach',
-      text: 'The keys live on your own key server, which a stolen node cannot reach from somewhere else. Keys and data are never in the same place.',
-    };
   return {
-    tone: 'warn',
-    word: 'Depends',
-    k: 'Result depends on setup',
-    mark: '! Depends on the setup',
-    text: 'With the built-in key manager the cluster itself holds the keys, so how well a whole stolen node is protected depends on the configuration and release. If this is in your threat model, use an external key manager.',
+    tone: 'ok',
+    word: 'Unreadable',
+    k: 'Unreadable, keys kept apart',
+    mark: '✓ Unreadable: keys on your key server',
+    text: 'The drive is just as unreadable. The keys live on your own key server, apart from the cluster, so keys and data are never in the same place. The cost is another server to run, back up and keep reachable.',
   };
 }
 
@@ -126,14 +118,13 @@ function Key({ x, y }: { x: number; y: number }) {
 
 const slot = (n: number, d: number, s: number) => ({ x: nodeX(n) + DRIVE.dx + 30 + s * 46, y: driveY(d) + DRIVE.h / 2 });
 
-function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
+function TheftDiagram({ enc, t }: { enc: Enc; t: number }) {
   const on = enc !== 'off';
   const move = ease(prog(t, STEAL, MOVED));
-  const v = verdict(enc, th);
+  const v = verdict(enc);
   const result = t >= RESULT;
-  const nodeOff = th === 'node' ? { x: NODE_TO.x * move, y: NODE_TO.y * move } : { x: 0, y: 0 };
-  const driveOff = th === 'drive' ? { x: DRIVE_TO.x * move, y: DRIVE_TO.y * move } : { x: 0, y: 0 };
-  const off = (n: number, d: number) => (n !== STOLEN_NODE ? { x: 0, y: 0 } : th === 'node' ? nodeOff : d === STOLEN_DRIVE ? driveOff : { x: 0, y: 0 });
+  const driveOff = { x: DRIVE_TO.x * move, y: DRIVE_TO.y * move };
+  const off = (n: number, d: number) => (n === STOLEN_NODE && d === STOLEN_DRIVE ? driveOff : { x: 0, y: 0 });
   const gateEnd = GATE.y + GATE.h;
 
   const pieces = Array.from({ length: PIECES }, (_, i) => {
@@ -157,16 +148,15 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
       x = SRC.x + (to.x - SRC.x) * f + o.x;
       y = gateEnd + 6 + (to.y - gateEnd - 6) * f + o.y;
     }
-    const stolen = n === STOLEN_NODE && (th === 'node' || d === STOLEN_DRIVE);
+    const stolen = n === STOLEN_NODE && d === STOLEN_DRIVE;
     if (on && y > gateEnd) return <Cipher key={i} x={x} y={y} />;
     return <Piece key={i} kind={i} x={x} y={y} cls={`sc-piece${stolen && result && !on ? ' exposed' : ''}`} />;
   });
 
-  const stolenBox = th === 'node' ? { x: nodeX(STOLEN_NODE) + NODE_TO.x, y: NODE.y + NODE_TO.y, w: NODE.w, h: NODE.h } : { x: nodeX(STOLEN_NODE) + DRIVE.dx + DRIVE_TO.x, y: driveY(STOLEN_DRIVE) + DRIVE_TO.y, w: DRIVE.w, h: DRIVE.h };
-  const keyCut = enc === 'ext' && th === 'node' && t >= MOVED;
+  const stolenBox = { x: nodeX(STOLEN_NODE) + DRIVE.dx + DRIVE_TO.x, y: driveY(STOLEN_DRIVE) + DRIVE_TO.y, w: DRIVE.w, h: DRIVE.h };
 
   return (
-    <svg class="diagram sc-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A three-node cluster with encryption ${ENC_LABEL[enc]}. ${THREAT_LABEL[th]}. Result: ${v.k}.`}>
+    <svg class="diagram sc-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A three-node cluster with encryption ${ENC_LABEL[enc]}. A drive is stolen. Result: ${v.k}.`}>
       <defs>
         <pattern id="sc-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <rect width="5" height="5" class="sc-hatch-bg" />
@@ -233,20 +223,18 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
 
       {/* nodes and drives */}
       {Array.from({ length: NODES }, (_, n) => {
-        const o = n === STOLEN_NODE ? nodeOff : { x: 0, y: 0 };
-        const x = nodeX(n) + o.x;
-        const y = NODE.y + o.y;
+        const x = nodeX(n);
+        const y = NODE.y;
         return (
           <g key={n}>
-            {n === STOLEN_NODE && th === 'node' && t >= STEAL && <rect x={nodeX(n)} y={NODE.y} width={NODE.w} height={NODE.h} class="sc-gone" />}
             <rect x={x} y={y} width={NODE.w} height={NODE.h} class="node-box" />
             <text x={x + 12} y={y + 22} style={{ fontSize: '14px', fontWeight: 600 }}>
               Node {n + 1}
             </text>
             {Array.from({ length: DRIVES }, (_, d) => {
-              const stolenDrive = n === STOLEN_NODE && d === STOLEN_DRIVE && th === 'drive';
-              const dx = nodeX(n) + DRIVE.dx + (stolenDrive ? driveOff.x : o.x);
-              const dy = driveY(d) + (stolenDrive ? driveOff.y : o.y);
+              const stolenDrive = n === STOLEN_NODE && d === STOLEN_DRIVE;
+              const dx = nodeX(n) + DRIVE.dx + (stolenDrive ? driveOff.x : 0);
+              const dy = driveY(d) + (stolenDrive ? driveOff.y : 0);
               return (
                 <g key={d}>
                   {stolenDrive && t >= STEAL && <rect x={nodeX(n) + DRIVE.dx} y={driveY(d)} width={DRIVE.w} height={DRIVE.h} class="sc-gone" />}
@@ -260,14 +248,6 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
 
       {pieces}
 
-      {keyCut && (
-        <g>
-          <line x1={stolenBox.x + stolenBox.w - 16} y1={KMS.y + KMS.h} x2={stolenBox.x + stolenBox.w - 16} y2={stolenBox.y} class="sc-keyline cut" />
-          <text x={stolenBox.x + stolenBox.w - 8} y={(KMS.y + KMS.h + stolenBox.y) / 2 + 5} class="sc-s bad-fill halo" style={{ fontWeight: 600 }}>
-            ✕ no key
-          </text>
-        </g>
-      )}
       {result && (
         <text x={OUT.x + OUT.w / 2} y={stolenBox.y + stolenBox.h + 24} text-anchor="middle" class={`sc-s halo ${v.tone}-fill`} style={{ fontWeight: 700 }}>
           {v.mark}
@@ -277,30 +257,36 @@ function TheftDiagram({ enc, th, t }: { enc: Enc; th: Threat; t: number }) {
   );
 }
 
-export default function Security() {
-  const [enc, setEnc] = useEnum<Enc>('enc', 'native', ['off', 'native', 'ext']);
-  const [th, setTh] = useEnum<Threat>('th', 'drive', ['drive', 'node']);
-  const v = verdict(enc, th);
-  const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
-    { tone: 'ink' as const, k: enc === 'off' ? 'Apps write plain data' : 'Apps write encrypted data', text: writeCaption(enc) },
-    { tone: 'warn' as const, k: THREAT_LABEL[th], text: th === 'drive' ? 'Someone pulls a drive out of Node 3 and walks out of the data center with it.' : 'Someone takes Node 3, with all of its drives, out of the data center.' },
+const CARDS: Point[] = ACTS.map((enc, i) => ({
+  at: ACT_AT[i],
+  tone: verdict(enc).tone === 'bad' ? 'bad' : 'ok',
+  k: ENC_LABEL[enc],
+  by: verdict(enc).word,
+  text: enc === 'off' ? 'Data lands on the drives as written.' : enc === 'native' ? 'The cluster holds the keys; no extra server.' : 'Your own key server holds the keys, apart from the data.',
+}));
+
+function captions(enc: Enc): { tone: Tone | 'ink'; k: string; text: string }[] {
+  const v = verdict(enc);
+  return [
+    { tone: 'ink', k: enc === 'off' ? 'Encryption off: apps write plain data' : `${ENC_LABEL[enc]}: apps write encrypted data`, text: writeCaption(enc) },
+    { tone: 'warn', k: 'A drive is stolen', text: 'Someone pulls a drive out of Node 3 and walks out of the data center with it.' },
     { tone: v.tone, k: v.k, text: v.text },
   ];
-  const starts = [0, STEAL, RESULT];
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: RESULT + 1, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
-  useRestartOn(clock, [enc, th]);
+}
+const STARTS = ACT_AT.flatMap((a) => [a, a + STEAL, a + RESULT]);
+const LINES = ACTS.flatMap(captions);
+
+export default function Security() {
+  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: ACT_AT[1] + RESULT + 1, steps: paced(STARTS, LINES.map((c) => [c.k, c.text])) });
   const t = clock.t;
-  const phase = phaseAt(starts, t);
-  const caption = captions[phase];
+  const act = phaseAt(ACT_AT, t);
+  const enc = ACTS[act];
+  const v = verdict(enc);
+  const caption = LINES[phaseAt(STARTS, t)];
 
   return (
     <Show
-      top={
-        <>
-          <Choice<Enc> label="Encryption" value={enc} onChange={setEnc} options={(['off', 'native', 'ext'] as Enc[]).map((e) => ({ value: e, label: ENC_LABEL[e] }))} />
-          <Choice<Threat> label="What happens" value={th} onChange={setTh} options={(['drive', 'node'] as Threat[]).map((x) => ({ value: x, label: THREAT_LABEL[x] }))} />
-        </>
-      }
+      top={<Points label="The same stolen drive, three ways" items={CARDS} t={t} />}
       foot={
         <>
           <Follow tone={caption.tone} k={caption.k}>
@@ -308,7 +294,7 @@ export default function Security() {
           </Follow>
           <Kpis
             items={[
-              { k: 'Stolen data', v: v.word, tone: v.tone },
+              { k: 'Stolen data', v: t - ACT_AT[act] >= RESULT ? v.word : '…', tone: t - ACT_AT[act] >= RESULT ? v.tone : undefined },
               { k: 'Keys kept', v: enc === 'off' ? 'No keys' : enc === 'ext' ? 'Your key server' : 'On the cluster' },
               { k: 'Extra server to run', v: enc === 'ext' ? 'Yes' : 'No', sub: enc === 'ext' ? 'keep it reachable and backed up' : undefined },
               { k: 'Changes for apps', v: 'None', tip: 'Encryption at rest is invisible to VMs and applications: they read and write plain data.' },
@@ -318,11 +304,11 @@ export default function Security() {
       }
     >
       <div class="diagram-scroll">
-        <TheftDiagram enc={enc} th={th} t={t} />
+        <TheftDiagram enc={enc} t={t - ACT_AT[act]} />
       </div>
       <PlayBar
         clock={clock}
-        label="Theft animation"
+        label="Stolen drive animation"
         extra={<Illus why="Three nodes and one copy of each piece shown; real clusters keep two or three copies on different nodes. Key handling (key types, rotation, caching) is simplified." />}
       />
     </Show>

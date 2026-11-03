@@ -19,7 +19,7 @@ interface PaneDef {
 const CENTRAL: PaneDef[] = [
   { id: 'fed', title: 'Prism Federation', sub: 'API | Alerts | LCM | IAM', path: 'central', params: { tab: 'fed' } },
   { id: 'ncm', title: 'Cloud Manager', sub: 'AIOps | Self-Service | Cost | SecOps', path: 'ncm' },
-  { id: 'nkp', title: 'Kubernetes Platform', sub: 'LCM | Fleet Management | Security', path: 'nkp' },
+  { id: 'nkp', title: 'Kubernetes Platform', sub: 'Fleet Management | Security | GitOps', path: 'nkp' },
   { id: 'lens', title: 'Data Lens', sub: 'Security | Privacy', path: 'datalens' },
 ];
 
@@ -53,7 +53,7 @@ const TOUR: TourStep[] = [
   { sel: 'nci', title: 'Start with the foundation', text: 'Nutanix Cloud Infrastructure turns ordinary servers into one cluster: the AHV hypervisor, a storage controller on every node, networking and security (Flow) and disaster recovery.' },
   { sel: 'partial', title: 'Or start with the part you need', text: 'Customers can keep an external storage array under AHV and Prism, or keep vSphere and vCenter and run ESXi on Nutanix nodes, then grow into the rest of the platform.' },
   { sel: 'clouds', title: 'The same stack in public cloud', text: 'The platform also runs in public clouds, so the same operating model covers data center and cloud. Which offering applies differs by provider.' },
-  { sel: 'bare', title: 'Or on any bare-metal Linux', text: 'Container-native Nutanix services can also run directly on Kubernetes on bare-metal Linux, without a hypervisor. Bare metal (NKP Metal) is in early access.' },
+  { sel: 'bare', title: 'Or on any bare-metal Linux', text: 'Kubernetes can also run directly on bare-metal servers from Cisco, Lenovo and Supermicro, without a hypervisor, deployed by Foundation and updated by LCM. NKP Metal is in early access.' },
   { sel: 'services', title: 'Data and AI services on top', text: 'File, object and block storage, databases as a service and AI inference all run on the same platform, so they share its resilience, protection and management.' },
   { sel: 'central', title: 'One control plane across everything', text: 'Nutanix Central sits above many clusters and sites: fleet management, operations, Kubernetes and data security from one place.' },
 ];
@@ -151,7 +151,7 @@ export function Landing() {
               </Pane>
             ))}
           </div>
-          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'cnaos', params: { on: 'metal' } }} cls="bare" tour="bare">
+          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'metal' }} cls="bare" tour="bare">
             <Icon name="server" />
             <span class="pt">Any Bare Metal Linux</span>
           </Pane>

@@ -4,7 +4,7 @@ export const content: ModuleContent = {
   path: 'nci/lcm',
   title: 'LCM Rolling Upgrade',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'Life Cycle Manager (LCM) updates AOS, AHV, firmware and tools one node at a time while workloads keep running, checking that data is fully protected before each step.',
+  summary: 'Life Cycle Manager (LCM) updates AOS, AHV, firmware and tools one node at a time while workloads keep running, checking that data is fully protected before each step. Kubernetes clusters on NKP get the same one-node-at-a-time treatment.',
   priority: 'P0',
   talk: [
     'One tool for software and firmware: LCM finds what is installed, shows what is available and orders the updates for you.',
@@ -13,6 +13,7 @@ export const content: ModuleContent = {
     'AOS updates are lighter: only the Controller VM (CVM) restarts. Its host’s storage traffic goes to the other CVMs for a moment, and the VMs never move.',
     'Pick “A node fails mid-upgrade”: nothing warns you first. HA restarts the failed node’s VMs and copies rebuild at once. LCM finishes its current node, then holds until the repaired node’s data has caught up.',
     'Point at VM downtime: on three or more nodes a planned upgrade keeps it at none. Total time grows with node count because nodes go one at a time. Timeline times are illustrative, not official.',
+    'Kubernetes (NKP) tab: NKP rolls a Kubernetes upgrade across the fleet, a canary first, and inside each cluster a new node joins before an old one drains and leaves. With NKP Metal (early access), LCM itself also patches the OS and firmware of bare-metal Kubernetes nodes.',
   ],
   numbers: [
     { k: 'Nodes out at once during LCM', v: '1' },
@@ -38,6 +39,7 @@ export const content: ModuleContent = {
   next: [
     'Under “What happens”, let “Healthy cluster” play and point at one node out at a time and VM downtime staying at None.',
     'Pick “A node fails mid-upgrade”: the failure comes without warning, LCM holds, then resumes after the repair.',
+    'On the Kubernetes (NKP) tab, let Healthy rollout loop once and point at a new node joining before an old one leaves; then pick Canary fails: the rollout stops at the first cluster.',
     'Then open Failure Gauntlet to show what an unplanned failure does on its own.',
   ],
   then: ['nci/failures'],

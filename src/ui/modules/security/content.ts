@@ -4,7 +4,7 @@ export const content: ModuleContent = {
   path: 'nci/security',
   title: 'Data Security',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'Encryption at rest keeps a stolen drive unreadable and, with keys on your own key server, a stolen node too. It does not protect against an attacker inside a running VM.',
+  summary: 'Encryption at rest keeps a stolen drive unreadable, with keys held by the cluster or by your own key server. It does not protect against an attacker inside a running VM.',
   priority: 'P1',
   talk: [
     'Start with the threat. Encryption at rest protects drives and nodes that leave your control: stolen, sent back for repair or thrown away. It does nothing against an attacker inside a running VM.',
@@ -35,8 +35,8 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Start on “On · built-in key manager” and “A drive is stolen”: the drive is unreadable. Switch Encryption to “Off” and the same drive is readable.',
-    'Choose “A whole node is stolen” and compare “On · built-in key manager” with “On · external key manager”: only the external one keeps the keys away from the stolen node.',
+    'Let one loop play: the same drive is stolen three times. With encryption off it is readable; with the built-in key manager it is not.',
+    'On the third act, the external key manager: the drive is just as unreadable, and the keys live on your own key server, apart from the data.',
     'Point at “Extra server to run” for the cost of the external key manager: another server to run, back up and keep reachable.',
     'Then open Flow: Network Security & Virtual Networking for traffic between VMs, or Snapshots & Clones and Disaster Recovery for recovery, which encryption at rest does not cover.',
   ],

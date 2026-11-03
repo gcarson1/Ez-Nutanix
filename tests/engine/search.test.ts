@@ -18,7 +18,7 @@ describe('search', () => {
     expect(first('erasure coding')).toBe('nci/capacity?tab=ec Erasure coding (EC-X)');
     expect(first('floating ip')).toBe('nci/flow?tab=net&vp=fip In from the internet');
     expect(first('time machine')).toBe('ndb Time Machine');
-    expect(first('hyper-v')).toBe('nci/move?src=hyperv Hyper-V');
+    expect(first('hyper-v')).toBe('nci/move Migration with Nutanix Move');
     expect(first('split brain')).toBe('nci/edge?ev=peer Nodes lose contact');
   });
 

@@ -1,8 +1,8 @@
 // Cloud Native AOS: Nutanix storage and data protection for Kubernetes apps, with no hypervisor
 // underneath. One loop on one cluster: AOS runs as a pod on every worker, keeps two copies of each
 // write, rides out a worker failure, then NDK snapshots the whole app and replicates it for DR.
-// Pick Amazon EKS (generally available) or bare metal (NKP Metal, early access). The landing's
-// "Any Bare Metal Linux" pane opens this module with on=metal. Claims: docs/facts.md section 10.
+// Pick Amazon EKS (generally available) or bare metal (NKP Metal, early access). Claims:
+// docs/facts.md section 10.
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';

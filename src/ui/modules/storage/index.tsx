@@ -50,6 +50,8 @@ const NS = { x: W / 2 - 210, y: 8, w: 420, h: 50 };
 const FS_Y = 96;
 const FS_H = 190;
 const CHIP_H = 24;
+const REQ_PERIOD = 3;
+const REQ_TRAVEL = 0.9;
 
 function Files() {
   const [nS, setN] = useEnum<'3' | '1'>('fv', '3', ['3', '1']);
@@ -100,6 +102,9 @@ function Files() {
   const ownCount = (fs: number) => home.filter((o) => o.home === fs).length;
   const takenSlot = taken.map((o, i) => (o.moved ? slot(o.servedBy!, ownCount(o.servedBy!) + taken.slice(0, i).filter((q) => q.moved && q.servedBy === o.servedBy).length) : homeSlot[i]));
   const cap = capAt(t);
+  // Each folder gets a request once per period, evenly staggered, so the dots arrive at a steady beat.
+  const reqPhase = (i: number) => (t + (i * REQ_PERIOD) / home.length) % REQ_PERIOD;
+  const servedBy = (i: number) => (k > 0.5 ? taken[i].servedBy! : home[i].home);
 
   const H = FS_Y + FS_H + 94;
   const DSF_Y = FS_Y + FS_H + 26;
@@ -168,9 +173,11 @@ function Files() {
             const y = a.y + (b.y - a.y) * k;
             const lost = unreachable(o.home) && k < 0.02;
             const moving = taken[i].moved && k > 0;
+            const q = reqPhase(i);
+            const hit = !lost && !unreachable(o.home) && q >= REQ_TRAVEL && q < REQ_TRAVEL + 0.4;
             return (
               <g key={o.name}>
-                <rect class={`sto-chip${lost ? ' lost' : moving ? ' moved' : ''}`} x={x} y={y} width={chipW} height={CHIP_H} />
+                <rect class={`sto-chip${lost ? ' lost' : moving ? ' moved' : ''}${hit ? ' hit' : ''}`} x={x} y={y} width={chipW} height={CHIP_H} />
                 <text x={x + 8} y={y + 16} class={`mono${lost ? ' faint' : ''}`} style={{ fontSize: '12px' }}>
                   /{o.name}
                 </text>
@@ -182,15 +189,12 @@ function Files() {
               </g>
             );
           })}
-          {/* requests: users opening files in each folder */}
+          {/* requests: users opening files, one folder after another, along the line to the FSVM serving it */}
           {home.map((o, i) => {
-            const period = 2.4;
-            const q = (t + i * 0.37) % period;
-            if (q > 0.8) return null;
-            if (unreachable(o.home)) return null;
-            const s = k > 0.5 ? takenSlot[i] : homeSlot[i];
-            const tx = s.x + chipW / 2;
-            const [dx, dy] = along([[W / 2, NS.y + NS.h], [W / 2, FS_Y - 18], [tx, FS_Y - 18], [tx, s.y]], q / 0.8);
+            const q = reqPhase(i);
+            if (q >= REQ_TRAVEL || unreachable(o.home)) return null;
+            const cx = fx(servedBy(i)) + colW / 2;
+            const [dx, dy] = along([[W / 2, NS.y + NS.h], [W / 2, FS_Y - 18], [cx, FS_Y - 18], [cx, FS_Y]], q / REQ_TRAVEL);
             return <circle key={o.name} class="sto-dot" cx={dx} cy={dy} r={4} />;
           })}
           <Fabric y={DSF_Y} h={64} note="each FSVM keeps its folders in its own volume group" />

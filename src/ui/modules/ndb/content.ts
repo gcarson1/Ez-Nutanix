@@ -38,7 +38,7 @@ export const content: ModuleContent = {
   next: [
     'On the Time Machine tab, play Recover as Clone beside production and pause on Clone ready.',
     'Switch Recover as to Restore in place and pause on Production rolled back.',
-    'On the Provisioning tab, play Topology Single instance, then High availability.',
+    'On the Provisioning tab, pause on Database created: the standbys follow every change on the primary.',
     'On the Patching tab, pause on Primary role moves.',
     'Then open Disaster Recovery for a copy of the database at another site.',
   ],

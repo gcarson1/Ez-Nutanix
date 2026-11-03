@@ -36,10 +36,9 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Start with Source platform set to “VMware ESXi”: point at the seed copy while users keep working on the source.',
+    'Point at the seed copy while users keep working on the source. The four source platforms named above the picture all follow this same pattern.',
     'Pause while it is in sync to show that only changed blocks travel.',
     'Let it reach the cutover and compare the downtime with “Shut down, then copy all”.',
-    'Switch Source platform to “Hyper-V”, “AWS EC2” or “Azure”: the pattern is the same.',
     'Then open Hybrid & Public Cloud for NC2 targets and keeping IP addresses.',
   ],
   then: ['cloud'],

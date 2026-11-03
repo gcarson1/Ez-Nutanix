@@ -56,6 +56,20 @@ export function Choice<T extends string | number>({ label, value, options, onCha
   );
 }
 
+/** A labeled list of names (what something works with), plain text, not buttons. */
+export function Names({ label, items }: { label: string; items: readonly string[] }) {
+  return (
+    <div class="names">
+      <span class="choice-l">{label}</span>
+      <ul aria-label={label}>
+        {items.map((a) => (
+          <li key={a}>{a}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export interface KpiItem {
   k: string;
   v: ComponentChildren;

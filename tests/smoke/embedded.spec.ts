@@ -22,13 +22,13 @@ test('works inside an about:srcdoc preview frame', async ({ page }) => {
   const app = page.frameLocator('iframe');
   await app.getByRole('button', { name: /Nutanix Cloud Infrastructure/ }).click();
   await expect(app.locator('.mod-head h1')).toHaveText('Nutanix Cloud Infrastructure');
-  await app.getByRole('button', { name: /Data Security/ }).click();
-  await expect(app.locator('.mod-head h1')).toHaveText('Data Security');
+  await app.getByRole('button', { name: /Disaster Recovery/ }).click();
+  await expect(app.locator('.mod-head h1')).toHaveText('Disaster Recovery');
 
   // A URL-backed control: the choice must stick even though the URL can't change.
-  const stolen = app.getByRole('button', { name: 'A whole node is stolen' });
-  await stolen.click();
-  await expect(stolen).toHaveAttribute('aria-pressed', 'true');
+  const metro = app.getByRole('button', { name: 'Metro Availability' });
+  await metro.click();
+  await expect(metro).toHaveAttribute('aria-pressed', 'true');
 
   // Back still works through the in-memory route.
   await app.getByRole('button', { name: 'Back to Nutanix Cloud Infrastructure' }).click();

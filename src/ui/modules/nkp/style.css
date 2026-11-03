@@ -1,28 +1,25 @@
-/* Kubernetes Platform module (prefix nkp-) */
-.diagram .nkp-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .nkp-box.flow { stroke: var(--flow); stroke-width: 1.75; }
-.diagram .nkp-box.warn { stroke: var(--warn); stroke-width: 1.75; }
-.diagram .nkp-box.ok { stroke: var(--ok); }
-.diagram .nkp-box.bad { stroke: var(--bad); stroke-width: 2; fill: var(--bad-bg); }
-.diagram .nkp-off { opacity: 0.45; }
-.diagram .nkp-off .nkp-box { stroke-dasharray: 4 4; }
-.diagram .nkp-node { stroke-width: 1.25; }
-.diagram .nkp-node.old { fill: var(--bg-3); stroke: var(--line-2); }
-.diagram .nkp-node.new { fill: var(--ink); stroke: var(--ink); }
-.diagram .nkp-node.joining { fill: var(--bg); stroke: var(--flow); stroke-width: 1.75; stroke-dasharray: 3 2; }
-.diagram .nkp-node.old.drain { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.75; }
-.diagram .nkp-node.failed { fill: var(--bad); stroke: var(--bad); }
-.diagram .nkp-nl { font-size: 10.5px; font-family: var(--mono); fill: var(--muted); }
-.diagram .nkp-nl.on { fill: #fff; }
-.diagram .nkp-pod { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
-.diagram .nkp-head { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; fill: var(--muted); }
-.diagram .nkp-head.flow { fill: var(--flow); }
-.diagram .nkp-head.ok { fill: var(--ok); }
-.diagram .nkp-head.off { fill: var(--faint); }
-.diagram .nkp-arrow { stroke: var(--line-2); stroke-width: 1.5; }
-.diagram .nkp-mk { fill: var(--line-2); }
-.diagram .nkp-st.ok { fill: var(--ok); }
-.diagram .nkp-st.warn { fill: var(--warn); }
-.diagram .nkp-st.bad { fill: var(--bad); }
-.diagram .nkp-st.flow { fill: var(--flow); }
-.diagram .nkp-st.neutral { fill: var(--muted); }
+/* Kubernetes Platform module (prefix nk-) */
+.diagram .nk-isl { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .nk-isl.loose { stroke-dasharray: 5 4; }
+.diagram .nk-cl { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .nk-cl.on { stroke: var(--ink); stroke-width: 2; }
+.diagram .nk-node { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .nk-node.new { fill: var(--ink); stroke: var(--ink); }
+.diagram .nk-pod { fill: var(--flow); stroke: var(--bg); stroke-width: 1.25; }
+.diagram .nk-warn { fill: var(--warn); }
+.diagram .nk-task { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .nk-layer { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 1.5; }
+.diagram .nk-band { fill: var(--bg); stroke: var(--ink-line); }
+.diagram .nk-band.on { fill: var(--ink); stroke: var(--ink); }
+.diagram text.nk-band-t { font-size: 12px; font-weight: 600; }
+.diagram text.nk-band-t.on { fill: #fff; }
+.diagram .nk-link { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.diagram .nk-dot { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .nk-dot.req { fill: var(--flow); }
+.diagram .nk-chip { fill: var(--bg); stroke: var(--line-2); }
+.diagram .nk-chip.ok { stroke: var(--ok); fill: var(--ok-bg, var(--bg)); }
+.diagram .nk-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .nk-ns { fill: var(--flow-bg); stroke: var(--flow); stroke-width: 1.5; }
+@media (max-width: 600px) {
+  .diagram-scroll > .nk-svg { min-width: 54rem; }
+}
