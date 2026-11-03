@@ -10,7 +10,7 @@ export const content: ModuleContent = {
   talk: [
     'Start with the pain: a dropped table, a test team waiting days for a copy, patch nights for dozens of databases.',
     'Time Machine: recover to one minute before the mistake. NDB uses the nearest earlier snapshot and replays transaction logs to that point.',
-    'Recover side by side as a clone to pull back just what you need, or restore in place when you want production rolled back.',
+    'Recover side by side as a clone to pull back just what you need, or restore in place when you want production rolled back. A test clone can be given a retention period, here a week, and NDB deletes it automatically when it runs out.',
     'Database clones come from AOS snapshots, the same mechanism as in Snapshots & Clones: ready in minutes, using space only for what they change.',
     'Provisioning and patching follow profiles the database administrator (DBA) defines once, so every database is built and patched the same way.',
     'Engines in NDB 2.11: Oracle, SQL Server, PostgreSQL (including pgvector), EDB Postgres, MySQL, MariaDB and MongoDB. Recovery, high availability (HA) and disaster recovery (DR) options differ by engine and version.',

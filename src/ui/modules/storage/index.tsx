@@ -145,6 +145,12 @@ function Files() {
           <text x={W / 2} y={NS.y + 39} text-anchor="middle" class="mono" style={{ fontSize: '12.5px' }}>
             \\files01\corp
           </text>
+          <text x={NS.x + NS.w + 14} y={NS.y + 21} class="muted" style={{ fontSize: '12px' }}>
+            SMB · NFS · parallel NFS for HPC
+          </text>
+          <text x={NS.x + NS.w + 14} y={NS.y + 39} class="muted" style={{ fontSize: '12px' }}>
+            exabyte-scale unstructured data
+          </text>
           {Array.from({ length: n }, (_, i) => {
             const isDown = down && i === failed;
             const x = fx(i);

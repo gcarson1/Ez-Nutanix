@@ -17,3 +17,20 @@
 .diagram .dl-dot.bad { fill: var(--bad); }
 .diagram .dl-dot.ok { fill: var(--ok); }
 .diagram .dl-dot.ev { fill: var(--flow); }
+
+/* Data age & tiering tab (prefix dt-) */
+.diagram .dt-cell { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
+.diagram .dt-cell.hot { fill: var(--flow-bg); stroke: var(--flow); stroke-width: 1.5; }
+.diagram .dt-cell.warm { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.25; }
+.diagram .dt-cell.cold { fill: var(--bg-3); stroke: var(--s2); }
+.diagram .dt-cell.stub { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.diagram .dt-cell.hit { stroke: var(--flow); stroke-width: 2.5; }
+.diagram .dt-bar.hot { fill: var(--flow); }
+.diagram .dt-bar.warm { fill: var(--warn); }
+.diagram .dt-bar.cold { fill: var(--s2); }
+.diagram .dt-limit { stroke: var(--text); stroke-width: 2; }
+.diagram .dt-move { fill: var(--s2); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .dl-srv.dt-on { stroke: var(--ink); stroke-width: 2; }
+@media (max-width: 600px) {
+  .diagram-scroll > .dt-svg { min-width: 50rem; }
+}

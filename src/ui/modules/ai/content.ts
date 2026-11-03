@@ -9,9 +9,9 @@ export const content: ModuleContent = {
   talk: [
     'Most teams do not want to send sensitive prompts to a shared public service. NAI lets them run models on infrastructure they control.',
     'Pick where it runs: your data center (NKP on Nutanix), public cloud (EKS, AKS or GKE in your own account) or an air-gapped site, which means NKP in your data center with no internet and no Hugging Face.',
-    'Each replica loads its own copy of the model onto its GPUs. Apps and agents call one endpoint address with an API token; role-based access control decides who creates endpoints and tokens, with GPU and model monitoring built in. A supported model can span several GPUs; spanning GPU nodes is a tech preview.',
+    'Each replica loads its own copy of the model onto its GPUs. Apps and agents call one endpoint address with an API token; role-based access control decides who creates endpoints and tokens, with GPU and model monitoring built in. A supported model can span several GPUs; spanning GPU nodes is a tech preview. Not every model needs a full GPU: from NAI 2.5 a replica can run on an NVIDIA MIG slice (or a vGPU), which suits embedding models and small language models.',
     'The endpoint spreads requests over the replicas. With one replica, requests queue in busy moments, and a stop for an update or a fault means a pause. With two or more, the others keep answering.',
-    'Agent Gateway, licensed separately, gives apps one address for every model: your NAI endpoints, a remote NAI cluster or an external provider, with fallback and per-client rate limits. Its Model Context Protocol (MCP) Gateway adds API keys, limits tool actions and logs every call.',
+    'Agent Gateway, licensed separately, gives apps one address for every model: your NAI endpoints, a remote NAI cluster or an external provider, with fallback and per-client rate limits, and semantic routing by policy planned for NAI 2.10. Its Model Context Protocol (MCP) Gateway adds API keys, limits tool actions and logs every call.',
     'Naming: NAI is the product, now at 2.8. Nutanix Agentic AI is the wider full-stack solution around it, and GPT-in-a-Box is the earlier name for the bundle NAI was part of.',
   ],
   numbers: [
@@ -20,6 +20,8 @@ export const content: ModuleContent = {
     { k: 'Model sources', v: 'NVIDIA Inference Microservices (NIM), Hugging Face, your own files; a catalog of pre-validated models. Air-gapped sites use air-gapped NIM or your own files' },
     { k: 'Licensing', v: 'By GPU memory (vCPUs on clusters without GPUs), not tokens' },
     { k: 'Agent Gateway', v: 'Licensed separately · one unified endpoint for NAI endpoints, remote NAI clusters and external provider APIs · fallback · token rate limits, global or per client · MCP Gateway (GA in 2.8) with API keys added at the gateway, tool permissions and audit logs' }, // AGW-1 to AGW-5
+    { k: 'GPUs per replica', v: 'Whole GPUs, or an NVIDIA MIG slice (from NAI 2.5) or vGPU for models that do not need a full GPU' },
+    { k: 'Semantic routing', v: 'Planned for NAI 2.10: Agent Gateway routes each request to a model by policy' },
     { k: 'Also in NAI 2.8', v: 'Multi-GPU serving (multi-node in tech preview), batch inference, speculative decoding, LoRA fine-tuning (models under 8B), custom IAM roles, air-gapped NIM' },
   ],
   qa: [

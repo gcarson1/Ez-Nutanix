@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Data Lens, Data age & tiering tab:** Data Lens tracks access patterns, ages every file hot, warm or cold, and once the file server passes its capacity threshold Smart Tiering moves cold data to Nutanix Objects on its own, leaving a stub so a user still reads the file inline.
+- **Snapshots & Clones, Recovery points vs snapshots tab:** one VM snapshot by hand on its cluster beside recovery points made by a protection policy for a whole category and replicated to another site.
+- **Blocks and racks:** VMs on the failed block or rack restart elsewhere, and at the end the block comes back up.
+- **Cluster & DSF Lab:** every node taking part in a rebuild is marked "Rebuilding"; the live-migration story says which reads stay local and that the new node's CVM reads the rest from the original node.
+- **External storage:** "Works with" is now a card per array with its own technology (NVMe/TCP and FlashArray or PowerStore APIs, Dell SDC in the CVM, NFS and ONTAP APIs).
+- **Kubernetes Platform:** open, upstream Kubernetes with no lock-in, contrasted with EKS, AKS and OpenShift, and a Lock-in number; NKP Metal nodes with Fibre Channel.
+- **Enterprise AI:** a GPU line (whole GPUs, or a MIG slice for small models); Agent Gateway's routing scene is semantic routing (planned for NAI 2.10).
+- **Database Service:** the recovery clone is a test clone that deletes itself after 7 days.
+- **Unified Storage:** parallel NFS for HPC and exabyte-scale positioning.
+- **Wording:** HA restarts VMs "instantly"; Self-Service tiles say "Deploying…".
 - **New module, OEM of Your Choice:** the landing's "Any Bare Metal Linux" pane is now "OEM of your choice". The same Nutanix software lands on Nutanix NX and on Dell XC, HPE DX, Lenovo ThinkAgile HX, Cisco Compute Hyperconverged, Fujitsu PRIMEFLEX XF and Supermicro, then clusters on three vendors share one Prism Central, then servers you already own and NC2 in the public cloud. Sources are in `docs/facts.md` section 17.
 - **Kubernetes Platform, reworked:** one loop from islands to one operating model: four environments each run their own way, the same work repeated behind each, the NKP layer above them, one policy and one upgrade across the fleet (attached AKS keeps Azure's upgrades), the platform team and a developer on the same road, and the outcome. The landing pane reads "Fleet Management | Security | GitOps".
 - **LCM Rolling Upgrade, Kubernetes (NKP) tab:** the NKP fleet rollout (Healthy rollout, Canary fails) moved here from the Kubernetes Platform module.

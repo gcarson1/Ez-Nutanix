@@ -3,9 +3,11 @@
 // from the snapshot; three clones go to dev, test and analytics; each grows only by what it writes;
 // and none of it is a backup on its own. Two colors only: data shared with another disk, and data
 // only this disk has. The meter compares what is stored with what full copies would need.
+import { useEnum } from '../../../state/route';
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { Kpis, Show, Tabs, ease, phaseAt, prog } from '../../components/show';
+import { Compare } from './compare';
 import './style.css';
 
 const DISK = 500;
@@ -153,7 +155,7 @@ function SnapDiagram({ t }: { t: number }) {
   );
 }
 
-export default function Snapshots() {
+function Story() {
   const clock = useClock({ rate: 1, duration: END, keys: true, poster: S[5] + 3.5, steps: STEPS });
   const t = clock.t;
   const s = stateAt(t);
@@ -191,5 +193,20 @@ export default function Snapshots() {
         extra={<Illus why="Example sizes and times. Space is shown before the replication factor, which multiplies stored data and full copies alike. AOS tracks changes at a fine granularity and manages snapshot chains in the background; how fast a restore completes depends on the VM and the release." />}
       />
     </Show>
+  );
+}
+
+type TabId = 'day' | 'rp';
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'day', label: 'An admin’s day' },
+  { id: 'rp', label: 'Recovery points vs snapshots' },
+];
+
+export default function Snapshots() {
+  const [tab, setTab] = useEnum<TabId>('tab', 'day', ['day', 'rp']);
+  return (
+    <Tabs label="Snapshots and clones topics" value={tab} tabs={TABS} onChange={setTab}>
+      {tab === 'day' ? <Story /> : <Compare />}
+    </Tabs>
   );
 }

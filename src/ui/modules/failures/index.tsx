@@ -81,7 +81,7 @@ export default function Failures() {
         <PlayBar
           clock={clock}
           label="Failure animation"
-          extra={<Illus why="Time is compressed so each failure plays in seconds, and timings are illustrative. In a real cluster HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left. Each tile is a tenth of a drive." />}
+          extra={<Illus why="Time is compressed so each failure plays in seconds, and timings are illustrative. In a real cluster HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left. Each tile is a tenth of a drive." />}
         />
       </div>
 

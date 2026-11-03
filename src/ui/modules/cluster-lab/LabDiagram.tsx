@@ -100,9 +100,9 @@ const WORD: Record<NodeLook, { text: string; tone: 'ok' | 'warn' | 'bad' | 'flow
   returning: { text: 'Catching up', tone: 'flow' },
 };
 
-function Node({ n, look, tiles, failed, tag }: { n: number; look: NodeLook; tiles: Map<string, TileF[]>; failed: string[]; tag?: string }) {
+function Node({ n, look, tiles, failed, tag, rebuilding }: { n: number; look: NodeLook; tiles: Map<string, TileF[]>; failed: string[]; tag?: string; rebuilding?: boolean }) {
   const x = nodeX(n);
-  const word = tag ? { text: `✓ ${tag}`, tone: 'ok' as const } : WORD[look];
+  const word = tag ? { text: `✓ ${tag}`, tone: 'ok' as const } : rebuilding ? { text: '↻ Rebuilding', tone: 'flow' as const } : WORD[look];
   const cvmDown = look === 'off' || look === 'maint';
   const storageOff = look === 'off' || look === 'maint';
   return (
@@ -218,7 +218,7 @@ export function LabDiagram({ frame, label }: { frame: Frame; label: string }) {
         </g>
       )}
       {Array.from({ length: NODES }, (_, n) => (
-        <Node key={n} n={n} look={frame.nodes[n]} tiles={frame.tiles} failed={frame.failedDisks} tag={frame.tag?.node === n ? frame.tag.text : undefined} />
+        <Node key={n} n={n} look={frame.nodes[n]} tiles={frame.tiles} failed={frame.failedDisks} tag={frame.tag?.node === n ? frame.tag.text : undefined} rebuilding={frame.rebuilding?.includes(n)} />
       ))}
       <g aria-hidden="true">{lines}</g>
       {vms.map((vm) => (

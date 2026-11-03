@@ -12,7 +12,10 @@ import {
   paceEnd,
   provSteps,
   requestSteps,
+  runRequests,
   score,
+  SS_PROJECT,
+  SS_REQUESTS,
   stepAt,
   stretches,
   withSpike,
@@ -153,5 +156,23 @@ describe('compliance', () => {
   it('score is 100 when all checks pass and weighs by severity', () => {
     expect(score([{ id: 'a', label: '', fix: '', pass: true, sev: 'high' }])).toBe(100);
     expect(score([{ id: 'a', label: '', fix: '', pass: false, sev: 'high' }, { id: 'b', label: '', fix: '', pass: true, sev: 'low' }])).toBe(25);
+  });
+});
+
+describe('self-service story', () => {
+  // The module's four cards say: straight through, held for approval, over quota, fits at size S.
+  it('plays out the way its cards say', () => {
+    const runs = runRequests(SS_PROJECT, SS_REQUESTS);
+    expect(runs.map((r) => ({ ok: r.v.ok, approval: r.v.ok && r.v.needsApproval }))).toEqual([
+      { ok: true, approval: false },
+      { ok: true, approval: true },
+      { ok: false, approval: false },
+      { ok: true, approval: false },
+    ]);
+  });
+  it('lets only approved requests use up the quota', () => {
+    const runs = runRequests(SS_PROJECT, SS_REQUESTS);
+    expect(runs.map((r) => r.p.used.vcpu)).toEqual([16, 20, 36, 36]);
+    expect(runs[3].v.after.vcpu).toBeLessThanOrEqual(SS_PROJECT.quota.vcpu);
   });
 });

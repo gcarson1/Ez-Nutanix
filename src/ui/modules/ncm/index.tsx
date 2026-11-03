@@ -9,21 +9,19 @@ import {
   budgetState,
   cpuSeries,
   crossDay,
-  demand,
-  evaluate,
   monthlyCost,
   paceEnd,
   requestSteps,
+  runRequests,
   score,
   SEV_WEIGHT,
+  SS_PROJECT,
+  SS_REQUESTS,
   stepAt,
   stretches,
   withSpike,
-  type CatalogItem,
   type Check,
-  type Project,
   type ProvStep,
-  type Size,
   type Surge,
   type Usage,
 } from '../../../engine/ncm';
@@ -202,36 +200,24 @@ function AiOps() {
 // ───────────────────────── Self-Service ─────────────────────────
 // One project, four requests in a row: one goes straight through, one is held by the optional
 // approval policy, one is over the quota and sent back, and the same app re-ordered smaller fits.
-const LINUX: CatalogItem = { id: 'linux', label: 'Linux VM', vms: 1, vcpu: 4, memGB: 8, diskGB: 100, multiVm: false };
-const APP: CatalogItem = { id: 'app', label: '3-tier web app', vms: 4, vcpu: 4, memGB: 16, diskGB: 200, multiVm: true };
-const WEB: Project = { id: 'web', label: 'web-shop', quota: { vcpu: 48, memGB: 192, diskGB: 3000 }, used: { vcpu: 16, memGB: 64, diskGB: 800 }, approvalAbove: 8 };
+// The requests, project and quota math are in engine/ncm.ts (SS_REQUESTS, runRequests); a unit
+// test keeps their outcomes matched to these cards.
 const APP_ROLES = ['Balancer', 'Web', 'App', 'Database'];
 
-interface Req {
-  item: CatalogItem;
-  size: Size;
-  /** How the card above the picture names it. */
-  card: Omit<Point, 'at'>;
-  order: string;
-}
-const REQS: Req[] = [
-  { item: LINUX, size: 'M', order: 'orders: Linux VM', card: { tone: 'ok', k: 'Linux VM', by: 'Fits · no approval', text: 'Under the approval limit, so it goes straight to the cluster.' } },
-  { item: APP, size: 'M', order: 'orders: 3-tier web app', card: { tone: 'warn', k: '3-tier web app', by: 'Approval policy', text: 'Over the approval limit, so an admin approves it first.' } },
-  { item: APP, size: 'M', order: 'orders: a second app', card: { tone: 'bad', k: 'A second app', by: 'Over the quota', text: 'Sent back with the reason before anything is created.' } },
-  { item: APP, size: 'S', order: 're-orders it at size S', card: { tone: 'ok', k: 'Same app, size S', by: 'The fix', text: 'Half the vCPU per VM fits the quota, so it is created.' } },
+/** How each request's card and App team box name it, in SS_REQUESTS order. */
+const SS_TEXT: { card: Omit<Point, 'at'>; order: string }[] = [
+  { order: 'orders: Linux VM', card: { tone: 'ok', k: 'Linux VM', by: 'Fits · no approval', text: 'Under the approval limit, so it goes straight to the cluster.' } },
+  { order: 'orders: 3-tier web app', card: { tone: 'warn', k: '3-tier web app', by: 'Approval policy', text: 'Over the approval limit, so an admin approves it first.' } },
+  { order: 'orders: a second app', card: { tone: 'bad', k: 'A second app', by: 'Over the quota', text: 'Sent back with the reason before anything is created.' } },
+  { order: 're-orders it at size S', card: { tone: 'ok', k: 'Same app, size S', by: 'The fix', text: 'Half the vCPU per VM fits the quota, so it is created.' } },
 ];
 
 /** Each request with the project as it stands when that request arrives, and its steps on the shared timeline. */
 const RUN = (() => {
-  let used = WEB.used;
   let at = 0;
-  return REQS.map((r) => {
-    const p: Project = { ...WEB, used };
-    const d = demand(r.item, r.size);
-    const v = evaluate(p, d, true);
-    const steps = requestSteps(r.item, v);
-    const run = { ...r, p, d, v, steps, at, end: at + steps.reduce((s, x) => s + x.dur, 0) };
-    if (v.ok) used = v.after;
+  return runRequests(SS_PROJECT, SS_REQUESTS).map((x, i) => {
+    const steps = requestSteps(SS_REQUESTS[i].item, x.v);
+    const run = { ...SS_REQUESTS[i], ...SS_TEXT[i], ...x, steps, at, end: at + steps.reduce((s, y) => s + y.dur, 0) };
     at = run.end;
     return run;
   });
@@ -308,7 +294,7 @@ function Provision({ i, t }: { i: number; t: number }) {
   const usedW = (p.used.vcpu / p.quota.vcpu) * QW;
   const addW = Math.min(QW - usedW, (d.vcpu / p.quota.vcpu) * QW);
   const overW = refused ? Math.min(28, ((p.used.vcpu + d.vcpu - p.quota.vcpu) / p.quota.vcpu) * QW) : 0;
-  const aprStatus = !v.ok ? (checked ? 'Not reached' : 'Waiting') : !v.needsApproval ? 'Skipped: under the limit' : past('approve') ? '✓ Approved' : now('approve') && at.frac > 0.35 ? 'Waiting for an admin' : 'Waiting';
+  const aprStatus = !v.ok ? (checked ? 'Not reached' : 'Waiting') : !v.needsApproval ? 'Skipped: not above the limit' : past('approve') ? '✓ Approved' : now('approve') && at.frac > 0.35 ? 'Waiting for an admin' : 'Waiting';
   const aprCls = past('approve') ? 'ok-fill' : now('approve') && at.frac > 0.35 ? 'warn-fill' : 'muted';
 
   const box = (k: keyof typeof BOX, title: string, sub: string, status: string, statusCls: string) => (
@@ -341,7 +327,8 @@ function Provision({ i, t }: { i: number; t: number }) {
 
       {/* the optional approval policy: a detour, taken only by requests over its limit */}
       <polyline points={poly(TO_APPROVAL)} class={`ss-arrow${detour ? '' : ' off'}`} fill="none" />
-      <polyline points={poly(FROM_APPROVAL.slice(0, 3))} class={`ss-arrow${detour ? '' : ' off'}`} fill="none" />
+      {/* only the detour in use draws its own way into the cluster; otherwise it stops where it meets the lane */}
+      <polyline points={poly(detour ? [...FROM_APPROVAL.slice(0, 3), [CL.x - 6, LANE]] : FROM_APPROVAL.slice(0, 3))} class={`ss-arrow${detour ? '' : ' off'}`} fill="none" marker-end={detour ? 'url(#ss-ar)' : undefined} />
       <g class={detour ? '' : 'ss-dim'}>
         <rect class={`ss-box${detour ? '' : ' dashed'}`} x={APR.x} y={APR.y} width={APR.w} height={APR.h} />
         <text x={APR.x + 14} y={APR.y + 22} class="ss-h">
@@ -389,7 +376,7 @@ function Provision({ i, t }: { i: number; t: number }) {
             )}
             {!live && configFrac === 0 && (
               <text x={x + 8} y={y + 50} class="muted" style={{ fontSize: '10.5px' }}>
-                Created
+                Deploying…
               </text>
             )}
             {live && (
@@ -433,8 +420,8 @@ function ssLine(r: Run, id: ProvStep['id']): Line {
       r.size === 'S'
         ? { tone: 'ink', k: 'Re-ordered at size S', text: `The team orders the same app at size S: half the vCPU per VM, ${d.vcpu} vCPU in all. It is checked again before anything is created.` }
         : { tone: 'ink', k: 'Quota and policy checked', text: `Someone in project ${p.label} orders a ${item.label} from the catalog. Before anything is created, it is checked against the project’s quota and policy.` },
-    approve: { tone: 'warn', k: 'Approval requested', text: `The app asks for ${d.vcpu} vCPU, over the ${p.approvalAbove} vCPU limit of the project’s approval policy, so an admin approves it first. Approval is optional: requests under the limit, or projects without the policy, skip it.` },
-    create: { tone: 'flow', k: 'Blueprint creates the VMs', text: `The blueprint creates ${n} on the cluster, already inside the project${r.v.needsApproval ? '' : ', with no approval step and no ticket'}.` },
+    approve: { tone: 'warn', k: 'Approval requested', text: `The app asks for ${d.vcpu} vCPU, over the ${p.approvalAbove} vCPU limit of the project’s approval policy, so an admin approves it first. Approval is optional: requests at or under the limit, or projects without the policy, skip it.` },
+    create: { tone: 'flow', k: 'Deploying on the cluster', text: `The blueprint is deploying ${n} on the cluster, already inside the project${r.v.needsApproval ? '' : ', with no approval step and no ticket'}.` },
     config: { tone: 'flow', k: 'Install tasks run', text: 'Install and configuration tasks from the blueprint run inside the VMs.' },
     ready: { tone: 'ok', k: `${item.multiVm ? 'App' : 'VM'} is ready`, text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
     refused: { tone: 'bad', k: 'Sent back with the reason', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. It is refused before anything is created, and the reason goes back to the team: order a smaller size, free up VMs, or ask for a bigger quota.` },
@@ -448,7 +435,7 @@ const SS_STEPS = paced(SS_STARTS, SS_LINES.map((l) => [l.k, l.text]));
 function SelfService() {
   const clock = useClock({ rate: 1.5, duration: SS_END, keys: true, poster: RUN[1].at + 4, steps: SS_STEPS });
   const t = clock.t;
-  const i = Math.min(RUN.length - 1, phaseAt(RUN.map((r) => r.at), t));
+  const i = phaseAt(RUN.map((r) => r.at), t);
   const r = RUN[i];
   const line = SS_LINES[phaseAt(SS_STARTS, t)];
   const left = r.p.quota.vcpu - r.p.used.vcpu;
@@ -489,7 +476,7 @@ function SelfService() {
       <PlayBar
         clock={clock}
         label="Self-service requests animation"
-        extra={<Illus why="Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Approval is a policy you choose to add; requests under its limit, or in projects without it, skip it. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
+        extra={<Illus why="Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Approval is a policy you choose to add; requests at or under its limit, or in projects without it, skip it. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
       />
     </Show>
   );

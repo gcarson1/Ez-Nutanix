@@ -2,7 +2,7 @@
 // Four Kubernetes environments start as islands, each run its own way; the NKP layer arrives above
 // them without replacing them; one upgrade and one policy go out from it (the attached AKS cluster
 // keeps Azure's upgrades); the platform team and a developer use the same layer; apps run
-// everywhere. Kubernetes version upgrades themselves are on the LCM module's Kubernetes tab.
+// everywhere. Kubernetes version upgrades themselves are on LCM Rolling Upgrade's Kubernetes (NKP) tab.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
 import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
@@ -14,12 +14,14 @@ const END = 50;
 const SCENES: { tone: Point['tone']; k: string; label: string; text: string }[] = [
   { tone: 'ink', k: 'Islands', label: 'Kubernetes is powerful, but operating every cluster consistently is hard.', text: 'Four places run Kubernetes: Nutanix, VMware, AWS and Azure. Each cluster comes with its own upgrade scripts, monitoring, security and ticket queue, managed its own way.' },
   { tone: 'warn', k: 'Hidden work', label: 'Every cluster becomes its own project.', text: 'Behind every island the same work repeats: provisioning, upgrades, security policies, observability, storage and data protection, developer access and troubleshooting. Four environments, seven jobs each, 28 separate processes.' },
-  { tone: 'flow', k: 'NKP arrives', label: 'NKP adds one consistent operating model across Kubernetes environments.', text: 'NKP sits above the environments without replacing them. The clusters stay where they are; NKP connects to each, built from upstream CNCF projects that Nutanix integrates and validates as one stack.' },
+  { tone: 'flow', k: 'NKP arrives', label: 'NKP adds one consistent operating model across Kubernetes environments.', text: 'NKP sits above the environments without replacing them and connects to each. It is open, upstream Kubernetes built from CNCF projects with open-source APIs, so apps and automation stay portable. EKS and AKS each tie you to one cloud, and OpenShift to RHEL and the Red Hat stack; NKP runs across all of these environments, with no lock-in to NKP.' },
   { tone: 'flow', k: 'One fleet', label: 'One view. Consistent policy. Controlled change.', text: 'The clusters now share one status language. A policy goes to all four; an upgrade goes to the three NKP clusters, while the attached AKS cluster keeps following Azure’s own upgrades.' },
   { tone: 'ok', k: 'Two teams, one road', label: 'Platform teams govern the road. Developers use the road.', text: 'The platform team sees fleet health, compliance and upgrades in one place. A developer asks for a namespace, and it lands on an approved cluster with storage, networking, observability and policy already attached.' },
   { tone: 'ok', k: 'The outcome', label: 'Consistent cloud-native operations wherever the apps run.', text: 'Apps run across private cloud, VMware and public cloud, on the same Kubernetes, storage, data protection, observability and automation, operated one way.' },
 ];
 const STEPS = paced(S, SCENES.map((s) => [s.k, s.text]));
+/** When the islands' own tools have faded out after NKP arrives; the legend switches then. */
+const TOOLS_GONE = S[2] + 2.2;
 const CARDS: Point[] = SCENES.map((s, i) => ({ at: S[i], tone: s.tone, k: s.k, text: s.label }));
 
 const W = 960;
@@ -30,10 +32,10 @@ const islX = (i: number) => i * (IW + IG);
 const ISL = { y: 240, h: 146 };
 const LAYER = { y: 104, h: 96 };
 const ENVS = [
-  { name: 'Nutanix (AHV)', sub: 'private cloud', nkp: true, shape: 0, color: 'var(--ink)' },
-  { name: 'VMware vSphere', sub: 'on-premises', nkp: true, shape: 1, color: 'var(--warn)' },
-  { name: 'AWS', sub: 'NKP cluster in your account', nkp: true, shape: 2, color: 'var(--flow)' },
-  { name: 'Azure', sub: 'existing AKS, attached', nkp: false, shape: 3, color: 'var(--s2)' },
+  { name: 'Nutanix (AHV)', sub: 'private cloud', nkp: true, shape: 0, color: 'var(--text)' },
+  { name: 'VMware vSphere', sub: 'on-premises', nkp: true, shape: 1, color: 'var(--muted)' },
+  { name: 'AWS', sub: 'NKP cluster in your account', nkp: true, shape: 2, color: 'var(--s2)' },
+  { name: 'Azure', sub: 'existing AKS, attached', nkp: false, shape: 3, color: 'var(--faint)' },
 ];
 const TOOLS = ['upgrades', 'monitoring', 'security', 'tickets'];
 const WORK = ['Provisioning', 'Upgrades', 'Security policies', 'Observability', 'Storage and data protection', 'Developer access', 'Troubleshooting'];
@@ -42,7 +44,7 @@ const BW = (W - 24 - 5 * 8) / 6;
 const bandX = (i: number) => 12 + i * (BW + 8);
 const ATTACH = ['storage', 'network', 'observability', 'policy'];
 
-/** One tool drawn in the island's own shape and color: every environment looks different. */
+/** One tool drawn in the island's own shape and gray, kept off the legend's colors: every environment looks different. */
 function Tool({ shape, color, x, y }: { shape: number; color: string; x: number; y: number }) {
   const r = 7;
   if (shape === 0) return <circle cx={x} cy={y} r={r} fill={color} />;
@@ -54,7 +56,7 @@ function Tool({ shape, color, x, y }: { shape: number; color: string; x: number;
 function NkpDiagram({ t }: { t: number }) {
   const sc = phaseAt(S, t);
   const islandsIn = (i: number) => ease(prog(t, 0.2 + i * 0.35, 0.9 + i * 0.35));
-  const toolsOut = 1 - ease(prog(t, S[2] + 1, S[2] + 2.2));
+  const toolsOut = 1 - ease(prog(t, S[2] + 1, TOOLS_GONE));
   const workIn = (row: number) => (sc === 1 ? ease(prog(t, S[1] + 0.6 + row * 0.6, S[1] + 1.1 + row * 0.6)) : 0);
   const layerIn = ease(prog(t, S[2], S[2] + 1.4));
   const linkIn = (i: number) => ease(prog(t, S[2] + 1.6 + i * 0.3, S[2] + 2.2 + i * 0.3));
@@ -144,7 +146,7 @@ function NkpDiagram({ t }: { t: number }) {
             Nutanix Kubernetes Platform
           </text>
           <text x={W - 12} y={LAYER.y + 22} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
-            upstream CNCF projects, integrated and validated
+            open, upstream Kubernetes · no lock-in
           </text>
           {BANDS.map((b, k) => {
             const on = bandOn(k);
@@ -260,6 +262,7 @@ export default function Nkp() {
               { k: 'Environments', v: 4, sub: 'Nutanix, vSphere, AWS, Azure' },
               { k: 'Ways of operating', v: ways, tone: ways > 1 ? 'warn' : 'ok', sub: sc === 1 ? '28 separate processes' : undefined },
               { k: 'Clusters on one policy', v: `${sc >= 3 ? policy : 0} of 4`, tone: policy === 4 ? 'ok' : undefined },
+              { k: 'Lock-in', v: sc >= 2 ? 'Open' : 'Per platform', tone: sc >= 2 ? 'ok' : 'warn', sub: sc >= 2 ? 'no NKP lock-in: upstream, open APIs' : 'each stack its own way', tip: 'NKP is upstream, CNCF-conformant Kubernetes with no forks and no proprietary APIs. In Nutanix’s comparison, EKS and AKS each run in one cloud, and OpenShift ties you to RHEL and the Red Hat ecosystem.' },
             ]}
           />
         </>
@@ -269,16 +272,22 @@ export default function Nkp() {
         <NkpDiagram t={t} />
       </div>
       <Legend
-        items={[
-          { color: 'var(--ink)', label: 'NKP and what it sends out' },
-          { color: 'var(--flow)', label: 'Apps and the developer’s request' },
-          { color: 'var(--warn)', label: 'Separate tools, each with its own issues' },
-        ]}
+        items={
+          t < TOOLS_GONE
+            ? [
+                { color: 'var(--muted)', label: 'Each environment’s own tools, a different shape and gray on each' },
+                { color: 'var(--warn)', label: 'An issue in one of them' },
+              ]
+            : [
+                { color: 'var(--ink)', label: 'NKP and what it sends out' },
+                { color: 'var(--flow)', label: 'Apps and the developer’s request' },
+              ]
+        }
       />
       <PlayBar
         clock={clock}
         label="NKP operating model animation"
-        extra={<Illus why="A simplified story. Fleet management, GitOps and multitenancy are in NKP Ultimate, and managing EKS or AKS needs a separate NKP Cloud Kubernetes SKU. Attached EKS and AKS clusters keep their cloud’s own Kubernetes upgrades. NKP also runs on bare metal. Versions are examples; the Kubernetes upgrade itself is shown on the LCM module’s Kubernetes tab." />}
+        extra={<Illus why="A simplified story. Fleet management, GitOps and multitenancy are in NKP Ultimate, and managing EKS or AKS needs a separate NKP Cloud Kubernetes SKU. Attached EKS and AKS clusters keep their cloud’s own Kubernetes upgrades. NKP also runs on bare metal. Versions are examples; the Kubernetes upgrade itself is shown on LCM Rolling Upgrade’s Kubernetes (NKP) tab." />}
       />
     </Show>
   );

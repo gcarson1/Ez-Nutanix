@@ -75,7 +75,7 @@ function verdict(enc: Enc): Verdict {
     word: 'Unreadable',
     k: 'Unreadable, keys kept apart',
     mark: '✓ Unreadable: keys on your key server',
-    text: 'The drive is just as unreadable. The keys live on your own key server, apart from the cluster, so keys and data are never in the same place. The cost is another server to run, back up and keep reachable.',
+    text: 'The drive is just as unreadable. The keys live on your own key server, apart from the cluster, so keys and data are kept in different places. The cost is another server to run, back up and keep reachable.',
   };
 }
 

@@ -160,6 +160,29 @@ export function stepAt(steps: ProvStep[], t: number): { idx: number; frac: numbe
   return { idx: steps.length - 1, frac: 1, done: true };
 }
 
+/** The Self-Service story: one project and four requests in a row (see the module's cards). */
+export const SS_LINUX: CatalogItem = { id: 'linux', label: 'Linux VM', vms: 1, vcpu: 4, memGB: 8, diskGB: 100, multiVm: false };
+export const SS_APP: CatalogItem = { id: 'app', label: '3-tier web app', vms: 4, vcpu: 4, memGB: 16, diskGB: 200, multiVm: true };
+export const SS_PROJECT: Project = { id: 'web', label: 'web-shop', quota: { vcpu: 48, memGB: 192, diskGB: 3000 }, used: { vcpu: 16, memGB: 64, diskGB: 800 }, approvalAbove: 8 };
+export const SS_REQUESTS: { item: CatalogItem; size: Size }[] = [
+  { item: SS_LINUX, size: 'M' },
+  { item: SS_APP, size: 'M' },
+  { item: SS_APP, size: 'M' },
+  { item: SS_APP, size: 'S' },
+];
+
+/** Requests evaluated in order: each sees the project as the earlier approved ones left it. */
+export function runRequests(project: Project, reqs: { item: CatalogItem; size: Size }[]): { p: Project; d: Demand; v: Verdict }[] {
+  let used = project.used;
+  return reqs.map((r) => {
+    const p = { ...project, used };
+    const d = demand(r.item, r.size);
+    const v = evaluate(p, d, true);
+    if (v.ok) used = v.after;
+    return { p, d, v };
+  });
+}
+
 // ── cost showback ──
 export interface Rates {
   vcpuMonth: number;

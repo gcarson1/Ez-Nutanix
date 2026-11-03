@@ -11,3 +11,14 @@
 @media (max-width: 600px) {
   .diagram-scroll > .diagram.sn-svg { min-width: 54rem; }
 }
+
+/* Recovery points vs snapshots tab */
+.diagram .sn-panel { fill: var(--bg-2); stroke: var(--line-2); }
+.diagram .sn-act { fill: var(--bg); stroke: var(--line-2); }
+.diagram .sn-act.on { stroke: var(--flow); stroke-width: 2; fill: var(--flow-bg); }
+.diagram .sn-lane { stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .sn-cat { fill: var(--bg); stroke: var(--line-2); stroke-dasharray: 4 3; }
+.diagram .sn-policy { fill: var(--bg); stroke: var(--line-2); }
+.diagram .sn-policy.on { stroke: var(--ink); stroke-width: 2; }
+.diagram .sn-copy { fill: var(--s3); stroke: var(--line-2); }
+.diagram .sn-rep-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }

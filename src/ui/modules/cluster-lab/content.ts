@@ -16,7 +16,7 @@ export const content: ModuleContent = {
   numbers: [
     { k: 'Copies of data', v: 'RF2: 2 copies on different nodes (default) · RF3: 3 copies' },
     { k: 'Minimum nodes', v: 'RF2: 3 · RF3: 5' },
-    { k: 'HA restart timing (typical)', v: 'Restarts begin about 60 s after a host fails; all VMs should be restarted within about 2 min if the other hosts have free memory' },
+    { k: 'HA restart', v: 'Automatic, once the host is declared failed (about 60 s), if the other hosts have free memory; after that it is each guest OS booting' },
     { k: 'Re-protection', v: 'Starts as soon as a failure is detected; every surviving node takes part' },
     { k: 'Maintenance', v: 'LCM updates one node at a time and waits for full protection before the next' },
     { k: 'CVMs', v: 'One per node: storage controller capacity grows with the cluster' },

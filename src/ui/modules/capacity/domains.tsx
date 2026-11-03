@@ -1,6 +1,7 @@
 // Blocks and racks tab: nodes sit in blocks (chassis) or racks. With block or rack awareness,
 // the two copies of every piece go to different blocks or racks, so a whole one can fail
-// without losing access to anything. "Node only" shows the risk without awareness: a piece
+// without losing access to anything. When it fails, HA restarts its VMs in the other blocks or
+// racks at once, the copies are re-created, and at the end the block or rack comes back. "Node only" shows the risk without awareness: a piece
 // whose copies share a block has no copy online while that block is down. The model lives in
 // src/engine/domainspread.ts; this file only animates it.
 import { useMemo } from 'preact/hooks';
@@ -19,6 +20,8 @@ const GROUP_GAP = 18;
 const FP = 8; // frame padding
 const LABEL = 22; // group label height inside the frame
 const FLIGHT = 0.7;
+const VMS_PER_NODE = 2;
+const VM_ROW = 24; // the strip under each node's data where its VMs run
 
 function useDomainTimeline(plan: DomainPlan) {
   return useMemo(() => {
@@ -26,11 +29,13 @@ function useDomainTimeline(plan: DomainPlan) {
     const t0 = 0.5;
     const writesEnd = t0 + (plan.pieces - 1) * dt + FLIGHT;
     const fail = writesEnd + 1;
-    const rebuild = fail + 1.5;
+    const vms = fail + 1.4;
+    const rebuild = vms + 1.6;
     const gap = 0.16;
     const done = rebuild + Math.max(0, plan.rebuild.length - 1) * gap + 0.9 + 0.4;
-    const end = done + 2.4;
-    return { t0, dt, fail, rebuild, gap, done, end };
+    const back = done + 2;
+    const end = back + 2.6;
+    return { t0, dt, fail, vms, rebuild, gap, done, back, end };
   }, [plan]);
 }
 
@@ -43,7 +48,7 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
   const sz = Math.min(34, (nW - 10) / cols);
   const maxSlot = Math.max(...plan.copies.map((c) => c.slot), ...plan.rebuild.map((r) => r.slot)) + 1;
   const rows = Math.ceil(maxSlot / cols);
-  const nH = 30 + rows * sz + 10;
+  const nH = 30 + rows * sz + 10 + VM_ROW;
   const frameW = perGroup * nW + (perGroup - 1) * NODE_GAP + FP * 2;
   const frameH = LABEL + nH + FP;
   const H = TOP + frameH + 34;
@@ -54,8 +59,21 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
     const x0 = nodeX(n) + (nW - cols * sz) / 2;
     return { x: x0 + (s % cols) * sz + sz / 2, y: nodeY + 30 + Math.floor(s / cols) * sz + sz / 2 };
   };
-  const failed = t >= tl.fail;
+  const failed = t >= tl.fail && t < tl.back;
+  const isBack = t >= tl.back;
   const down = new Set(plan.failedNodes);
+  // Each node runs two VMs; the failed nodes' VMs restart round-robin on the surviving nodes.
+  const up = Array.from({ length: nodes }, (_, n) => n).filter((n) => !down.has(n));
+  const vmW = Math.min(30, (nW - 16) / 4 - 4);
+  const vmAt = (n: number, k: number) => ({ x: nodeX(n) + 8 + k * (vmW + 4), y: nodeY + nH - VM_ROW + 4 });
+  const vms = Array.from({ length: nodes * VMS_PER_NODE }, (_, v) => {
+    const home = Math.floor(v / VMS_PER_NODE);
+    const j = plan.failedNodes.indexOf(home) * VMS_PER_NODE + (v % VMS_PER_NODE);
+    const host = down.has(home) ? up[j % up.length] : home;
+    const slot = down.has(home) ? VMS_PER_NODE + Math.floor(j / up.length) : v % VMS_PER_NODE;
+    return { v, home, host, slot, moved: down.has(home) };
+  });
+  const move = ease(prog(t, tl.vms, tl.vms + 0.8));
   const src = { x: W / 2, y: 58 };
   const r = sz * 0.32;
   const word = plan.groupKind === 'rack' ? 'Rack' : 'Block';
@@ -77,9 +95,9 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
         return (
           <g key={`g${g}`}>
             <rect class={`cp-group${isDown ? ' down' : ''}`} x={groupX(g)} y={TOP} width={frameW} height={frameH} />
-            <text x={groupX(g) + FP + 2} y={TOP + 15} class={`cp-group-t${isDown ? ' bad-fill' : ''}`}>
+            <text x={groupX(g) + FP + 2} y={TOP + 15} class={`cp-group-t${isDown ? ' bad-fill' : isBack && g === plan.failedGroup ? ' ok-fill' : ''}`}>
               {word} {g + 1}
-              {isDown ? ' · down' : ''}
+              {isDown ? ' · down' : isBack && g === plan.failedGroup ? ' · back up' : ''}
             </text>
           </g>
         );
@@ -92,8 +110,21 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
             <text x={nodeX(n) + 8} y={nodeY + 19} style={{ fontWeight: 600, fontSize: nW < 80 ? '12px' : '13px' }}>
               N{n + 1}
             </text>
+            {isBack && down.has(n) && t < tl.back + 1.6 && (
+              <text x={nodeX(n) + nW - 6} y={nodeY + 19} text-anchor="end" class="ok-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+                ✓ up
+              </text>
+            )}
           </g>
         );
+      })}
+      {/* VMs: the failed nodes' VMs go down, then HA restarts them on the surviving nodes */}
+      {vms.map((m) => {
+        const a = vmAt(m.home, m.v % VMS_PER_NODE);
+        const b = vmAt(m.host, m.slot);
+        const f = m.moved && t >= tl.vms ? move : 0;
+        const off = m.moved && t >= tl.fail && t < tl.vms;
+        return <rect key={`vm${m.v}`} x={a.x + (b.x - a.x) * f} y={a.y} width={vmW} height={VM_ROW - 8} rx={2} class={`cp-vm${off ? ' off' : f >= 1 ? ' moved' : ''}`} />;
       })}
       {plan.copies.map((c) => {
         const start = tl.t0 + c.piece * tl.dt;
@@ -101,6 +132,8 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
         const to = at(c.node, c.slot);
         const k = ease(prog(t, start, start + FLIGHT));
         const lost = failed && down.has(c.node);
+        // When the block is back, its old copies are no longer needed, except for a piece that had no other copy.
+        if (isBack && down.has(c.node) && !unavailable.has(c.piece)) return null;
         const cls = lost ? (unavailable.has(c.piece) ? 'cp-lost gone' : 'cp-lost') : 'cp-copy';
         return <Shape key={`${c.piece}:${c.node}`} kind={c.piece} x={src.x + (to.x - src.x) * k} y={src.y + (to.y - src.y) * k} r={r} cls={cls} />;
       })}
@@ -136,33 +169,43 @@ export function DomainsView() {
   const kind = plan.groupKind;
   const failedName = `${kind === 'rack' ? 'Rack' : 'Block'} ${plan.failedGroup + 1}`;
   const lost = plan.unavailable.length;
+  const VM_LINE = { tone: 'flow' as const, k: 'VMs restart elsewhere', text: `High availability (HA) instantly restarts ${failedName}’s VMs on nodes in the other ${kind}s, with no one paged; the rest is each guest OS booting.` };
+  const backLine = () => ({ tone: 'ok' as const, k: `The ${kind} comes back`, text: `${failedName} is back up and its nodes rejoin the cluster. Every piece already has its two copies again, so nothing waits on it.` });
 
   const captions: Record<Awareness, { tone: Tone | 'ink'; k: string; text: string }[]> = {
     block: [
       { tone: 'ink', k: 'Copies land in different blocks', text: '8 nodes in 4 blocks (chassis of 2 nodes). With block awareness, the two copies of every piece go to different blocks.' },
       { tone: 'bad', k: 'A block fails', text: `${failedName} loses power and both of its nodes go down at once. Every piece still has a copy in another block.` },
+      VM_LINE,
       { tone: 'flow', k: 'Copies re-created', text: 'The other blocks re-create the missing copies, still keeping each piece’s copies in different blocks.' },
       { tone: 'ok', k: 'Protected again', text: 'No piece was unavailable at any point. Block awareness needs at least 3 blocks with RF2, or 5 with RF3.' },
+      backLine(),
     ],
     node: [
       { tone: 'ink', k: 'Copies land on nodes only', text: 'Without block awareness, copies only have to be on different nodes, so a piece can end up with both copies in one block. Here 1 piece of 8 does.' },
       { tone: 'bad', k: 'A block fails', text: `${failedName} loses power. The piece with both copies in that block has no copy online until the block comes back.` },
+      VM_LINE,
       { tone: 'flow', k: 'Copies re-created', text: 'Pieces that still have a copy are re-created on other nodes. The unavailable piece has nothing to copy from.' },
       { tone: 'warn', k: 'Some data unavailable', text: 'That piece is back only when the block is. Block awareness prevents this once the cluster has at least 3 blocks.' },
+      { tone: 'ok', k: 'The block comes back', text: `${failedName} is powered back on and its nodes rejoin. Only now is the piece that had both copies there available again.` },
     ],
     rack: [
       { tone: 'ink', k: 'Copies land in different racks', text: '12 nodes in 3 racks, which an administrator defines. With rack awareness, the two copies of every piece go to different racks.' },
       { tone: 'bad', k: 'A rack fails', text: `${failedName} goes down, for example its power or top-of-rack switches. Every piece still has a copy in another rack.` },
+      VM_LINE,
       { tone: 'flow', k: 'Copies re-created', text: 'The other racks re-create the missing copies, still keeping each piece’s copies in different racks.' },
       { tone: 'ok', k: 'Protected again', text: 'No piece was unavailable at any point. Rack awareness needs at least 3 racks with RF2, or 5 with RF3.' },
+      backLine(),
     ],
   };
-  const starts = [0, tl.fail, tl.rebuild, tl.done];
+  const starts = [0, tl.fail, tl.vms, tl.rebuild, tl.done, tl.back];
   const clock = useClock({ rate: 1, duration: tl.end, keys: true, poster: tl.done + 0.5, steps: paced(starts, captions[aw].map((c) => [c.k, c.text])) });
   useRestartOn(clock, [aw]);
   const t = clock.t;
   const phase = phaseAt(starts, t);
   const caption = captions[aw][phase];
+  const vmTotal = plan.nodes * VMS_PER_NODE;
+  const vmDown = plan.failedNodes.length * VMS_PER_NODE;
   const third =
     aw === 'block'
       ? { k: 'Free space to keep', v: 'One block', sub: '2 nodes here', tip: 'Common sizing guidance: with RF2, keep a block’s worth of free space (two blocks with RF3) so the cluster can fully re-protect after losing a whole block.' }
@@ -181,6 +224,7 @@ export function DomainsView() {
           <Kpis
             items={[
               { k: `Survives a whole ${kind}`, v: lost ? 'No' : 'Yes', tone: lost ? 'bad' : 'ok' },
+              { k: 'VMs running', v: `${t >= tl.fail && t < tl.vms ? vmTotal - vmDown : vmTotal} of ${vmTotal}`, tone: t >= tl.fail && t < tl.vms ? 'bad' : t >= tl.vms ? 'ok' : undefined, sub: t >= tl.vms ? 'restarted instantly by HA' : undefined },
               { k: 'Unavailable during the failure', v: `${lost} of ${plan.pieces}`, sub: 'pieces', tone: lost ? 'bad' : 'ok' },
               third,
             ]}
@@ -196,6 +240,7 @@ export function DomainsView() {
           { color: 'var(--ink)', label: 'Copy of a piece of data' },
           { color: 'var(--flow)', label: 'Copy being re-created' },
           { color: 'var(--bad)', dashed: true, label: `Copy lost with the failed ${kind}` },
+          { color: 'var(--ok)', label: 'VM restarted by HA' },
         ]}
       />
       <PlayBar

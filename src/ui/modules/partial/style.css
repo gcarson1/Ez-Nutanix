@@ -19,7 +19,6 @@
 .diagram .es-link { stroke: var(--ink-line); stroke-width: 1.5; }
 .diagram text.es-ink { fill: var(--ink-fg); font-weight: 600; }
 .diagram text.es-warn { fill: var(--warn); }
-/* The supported arrays, by name: a plain list, not a picker. */
 @media (max-width: 600px) {
   .diagram-scroll > .xs-dia, .diagram-scroll > .es-dia { min-width: 44rem; }
 }

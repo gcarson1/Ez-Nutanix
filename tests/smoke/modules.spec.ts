@@ -133,7 +133,7 @@ test('full-stack band opens the external storage and ESXi tabs', async ({ page }
   await expect.poll(() => page.url()).toContain('go=conv');
   await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
   await tabs.getByRole('tab', { name: 'Nutanix with external storage' }).click();
-  await expect(page.locator('.names li', { hasText: 'PowerFlex' })).toHaveText('Dell PowerStore · PowerFlex');
+  await expect(page.locator('.points li', { hasText: 'Dell PowerFlex' })).toContainText('Dell SDC in the CVM');
   expect(errors).toEqual([]);
 });
 
@@ -315,13 +315,15 @@ test('Enterprise AI: the Agent Gateway tab routes, falls back, rate-limits and g
   expect(errors).toEqual([]);
 });
 
-test('external storage names every array without a picker, NetApp counted as announced, and the footer shows the release', async ({ page }) => {
+test('external storage names every array with its own technology, no picker, NetApp counted as announced, and the footer shows the release', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/partial`);
-  await expect(page.locator('.names li')).toHaveText(['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP']);
+  const arrays = page.locator('.points', { hasText: 'Works with' }).locator('li');
+  await expect(arrays.locator('b')).toHaveText(['Everpure FlashArray', 'Dell PowerStore', 'Dell PowerFlex', 'NetApp ONTAP']);
+  await expect(arrays.locator('.by')).toHaveText(['NVMe/TCP · FlashArray APIs', 'NVMe/TCP · PowerStore APIs', 'Dell SDC in the CVM', 'NFS · ONTAP APIs']);
   // A plain list, not a picker: nothing above the picture is a toggle.
   await expect(page.locator('.show-top [aria-pressed]')).toHaveCount(0);
-  await expect(page.locator('.xs-dia')).toContainText('Your Everpure / Dell / NetApp array');
+  await expect(page.locator('.xs-dia')).toContainText('Your existing array');
   await expect(page.locator('.kpi', { hasText: 'Supported arrays' })).toContainText('NetApp announced');
   await expect(page.locator('.kpi', { hasText: 'Supported arrays' }).locator('.v')).toHaveText('4');
   await expect(page.locator('.foot-bar .ver')).toHaveText('v1.1');

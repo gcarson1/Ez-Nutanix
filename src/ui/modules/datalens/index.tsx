@@ -1,10 +1,12 @@
 // Data Lens: a ransomware attack on a file server's shares, on a loop. Data Lens spots it and
 // auto-blocks the PC right away, then the hit files come back from the last clean snapshot.
-// Logic is in engine/ransomware.ts.
+// Logic is in engine/ransomware.ts. The Data age & tiering tab is in tiering.tsx.
 import { useMemo } from 'preact/hooks';
+import { useEnum } from '../../../state/route';
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Kpis, Show, prog } from '../../components/show';
+import { Kpis, Show, Tabs, prog } from '../../components/show';
+import { Tiering } from './tiering';
 import { FILES, PER_SHARE, SHARES, SIM, attackState, encryptTime, restoreTime, timeline, type FileState, type Phase, type Timeline } from '../../../engine/ransomware';
 import './style.css';
 
@@ -206,7 +208,7 @@ function caption(tl: Timeline, phase: Phase): { tone: Tone | 'ink'; k: string; t
   }
 }
 
-export default function Datalens() {
+function Ransomware() {
   const tl = useMemo(() => timeline('block'), []);
   const steps = useMemo(() => {
     const order: Phase[] = ['quiet', 'attack', 'detected', 'stopped', 'recovering', 'recovered'];
@@ -254,5 +256,20 @@ export default function Datalens() {
         extra={<Illus why="Detection, response and restore times are examples; real times depend on the attack, the shares and the deployment. Behavior-based detection, which catches strains with no known signature, is a Pro feature." />}
       />
     </Show>
+  );
+}
+
+type TabId = 'rw' | 'tier';
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'rw', label: 'Ransomware' },
+  { id: 'tier', label: 'Data age & tiering' },
+];
+
+export default function Datalens() {
+  const [tab, setTab] = useEnum<TabId>('tab', 'rw', ['rw', 'tier']);
+  return (
+    <Tabs label="Data Lens topics" value={tab} tabs={TABS} onChange={setTab}>
+      {tab === 'rw' ? <Ransomware /> : <Tiering />}
+    </Tabs>
   );
 }

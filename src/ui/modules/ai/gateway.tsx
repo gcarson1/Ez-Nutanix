@@ -12,7 +12,7 @@ const P = [0, 4.0, 8.0, 12.0, 16.0, 20.4];
 const END = 24.6;
 const STEPS_TEXT: { tone: Tone | 'ink'; k: string; text: string }[] = [
   { tone: 'ink', k: 'One front door', text: 'Apps and agents call one Agent Gateway address with one standard API instead of connecting to each model provider. The gateway passes each request on to a model.' },
-  { tone: 'flow', k: 'Many providers, one API', text: 'Behind that address can sit your own NAI endpoints, a remote NAI cluster and external providers’ APIs. Apps keep the same API whichever one answers.' },
+  { tone: 'flow', k: 'Semantic routing, planned for NAI 2.10', text: 'Behind that address sit your own NAI endpoints, a remote NAI cluster and external providers’ APIs. Semantic routing, planned for NAI 2.10, picks the model for each request by policy: the finance app’s sensitive questions stay on your own NAI endpoint, while other work can go elsewhere. Apps keep the same API whichever one answers.' },
   { tone: 'warn', k: 'A provider fails', text: 'When a provider fails or runs over its budget, the gateway sends its traffic to a healthy fallback, so agents stay online.' },
   { tone: 'warn', k: 'A runaway agent is capped', text: 'The coding agent gets stuck in a loop and floods requests. Its token-based rate limit stops the excess at the gateway, and the other apps keep their share.' },
   { tone: 'ink', k: 'Tools through the MCP Gateway', text: 'Agents reach tools and data through the MCP Gateway, which adds each server’s API key itself. It allows only the tool actions granted, such as reading customer records but not changing them.' },
@@ -57,8 +57,8 @@ interface Trip {
 const TRIPS: Trip[] = [
   // one front door: everything goes to the NAI endpoint
   ...[0.6, 1.4, 2.2, 3.0].map((at, k) => ({ kind: 'model' as const, agent: k % 2, to: 0, at })),
-  // many providers behind it
-  ...[4.2, 4.8, 5.4, 6.0, 6.6, 7.2].map((at, k) => ({ kind: 'model' as const, agent: k % 3, to: k % 3, at })),
+  // semantic routing: the finance app's sensitive questions stay on the NAI endpoint, other work goes elsewhere
+  ...[4.2, 4.8, 5.4, 6.0, 6.6, 7.2].map((at, k) => ({ kind: 'model' as const, agent: k % 3, to: [1, 0, 2][k % 3], at })),
   // the NAI endpoint fails: what would have gone there goes to the remote NAI cluster
   ...[8.6, 9.2, 9.8, 10.4, 11.0].map((at, k) => ({ kind: 'model' as const, agent: k % 3, to: k % 2 ? 2 : 1, at })),
   // a runaway agent: two requests within its limit, then the rest stopped; the others still get through
@@ -144,7 +144,7 @@ function GatewayDiagram({ t }: { t: number }) {
   const looping = t >= 12.2 && t < 15.2;
 
   return (
-    <svg class="diagram ai-svg gw-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Apps and agents call one Agent Gateway. Its unified endpoint routes model requests to an NAI endpoint, a remote NAI cluster or an external provider, falls back when one fails and rate-limits a runaway agent. Its MCP Gateway adds API keys, enforces tool permissions and logs every tool call.">
+    <svg class="diagram ai-svg gw-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Apps and agents call one Agent Gateway. Its unified endpoint routes model requests by policy (semantic routing) to an NAI endpoint, a remote NAI cluster or an external provider, falls back when one fails and rate-limits a runaway agent. Its MCP Gateway adds API keys, enforces tool permissions and logs every tool call.">
       {/* wires */}
       {AGENTS.map((_, i) => (
         <g key={i}>
@@ -176,8 +176,8 @@ function GatewayDiagram({ t }: { t: number }) {
       <text x={GW.x + 14} y={82} class="muted" style={{ fontSize: '11.5px' }}>
         one standard API for every model
       </text>
-      <Chip x={GW.x + 14} y={128} label="Routing" on={phase === 1} />
-      <Chip x={GW.x + 92} y={128} label="Fallback" on={down} tone="warn" />
+      <Chip x={GW.x + 14} y={128} label="Semantic routing" on={phase === 1} />
+      <Chip x={GW.x + 144} y={128} label="Fallback" on={down} tone="warn" />
       <Chip x={GW.x + 14} y={154} label="Rate limit per client" on={denyNow} tone="bad" />
       <text x={GW.x + 14} y={208} style={{ fontSize: '13px', fontWeight: 600 }}>
         MCP Gateway
@@ -269,7 +269,7 @@ export default function GatewayView() {
       <PlayBar
         clock={clock}
         label="Agent Gateway animation"
-        extra={<Illus why="Example apps, providers, tools and log lines, with times compressed. Agent Gateway is licensed separately (NAI 2.8, Aug 2026) and its MCP Gateway is generally available. Rate limits can be global or set per client by API key or request header." />}
+        extra={<Illus why="Example apps, providers, tools and log lines, with times compressed. Agent Gateway is licensed separately and its MCP Gateway is generally available; semantic routing is shown as planned for NAI 2.10. Rate limits can be global or set per client by API key or request header." />}
       />
     </Show>
   );

@@ -69,6 +69,14 @@ export const SCENES: Scene[] = [
   { path: 'cnaos', group: 'Kubernetes runs on', label: 'Amazon EKS', words: 'aws kubernetes' },
   { path: 'cnaos', params: { on: 'metal' }, group: 'Kubernetes runs on', label: 'Bare metal (NKP Metal)', words: 'baremetal nkp' },
 
+  // ── Snapshots & Clones ──
+  { path: 'nci/snapshots', group: 'Snapshots and clones topics', label: 'An admin’s day', words: 'snapshot patch restore clone dev test' },
+  { path: 'nci/snapshots', params: { tab: 'rp' }, group: 'Snapshots and clones topics', label: 'Recovery points vs snapshots', words: 'recovery point protection policy prism central replicate retention category leap' },
+
+  // ── Data Lens ──
+  { path: 'datalens', group: 'Data Lens topics', label: 'Ransomware', words: 'ransomware detection block restore snapshot' },
+  { path: 'datalens', params: { tab: 'tier' }, group: 'Data Lens topics', label: 'Data age & tiering', words: 'smart tiering access patterns frequency hot warm cold data age auto tiering objects s3 stub' },
+
   // ── Data Path ──
   { path: 'nci/datapath', group: 'What happens', label: 'Small write', words: 'random write oplog io path' },
   { path: 'nci/datapath', params: { m: 'ws' }, group: 'What happens', label: 'Large sequential write', words: 'extent store bypass oplog' },
@@ -125,8 +133,6 @@ export const SCENES: Scene[] = [
   { path: 'nci/lcm', group: 'What happens', label: 'Healthy cluster', words: 'rolling upgrade one click' },
   { path: 'nci/lcm', params: { sc: 'fail' }, group: 'What happens', label: 'A node fails mid-upgrade', words: 'upgrade failure pause' },
 
-  // ── Migration with Nutanix Move ──
-
   // ── Cloud Manager ──
   { path: 'ncm', group: 'Cloud Manager areas', label: 'AIOps', words: 'intelligent operations anomaly forecasting right sizing' },
   { path: 'ncm', params: { tab: 'ss' }, group: 'Cloud Manager areas', label: 'Self-Service', words: 'calm catalog blueprint request quota approval denied' },
@@ -149,15 +155,11 @@ export const SCENES: Scene[] = [
   { path: 'nci/network', group: 'Link failure', label: 'None', words: 'uplink' },
   { path: 'nci/network', params: { lf: 'one' }, group: 'Link failure', label: 'One link fails', words: 'uplink down cable nic failure' },
 
-  // ── Kubernetes Platform ──
-
   // ── Don’t want the full stack? ──
   { path: 'partial', group: 'Ways to start', label: 'Nutanix with external storage', words: 'external array san everpure pure storage flasharray dell powerstore powerflex netapp ontap compute only' },
   { path: 'partial', params: { tab: 'esxi' }, group: 'Ways to start', label: 'ESXi on Nutanix', words: 'vmware vsphere' },
   { path: 'partial', params: { tab: 'esxi' }, group: 'Path', label: 'Stay on ESXi', words: 'vmware vsphere' },
   { path: 'partial', params: { go: 'conv', tab: 'esxi' }, group: 'Path', label: 'Convert to AHV later', words: 'conversion vmware' },
-
-  // ── Data Security ──
 
   // ── Unified Storage ──
   { path: 'storage', group: 'Storage services', label: 'Files · SMB / NFS', words: 'nutanix files file server nas share' },

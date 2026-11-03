@@ -262,6 +262,7 @@ function EndpointView() {
             items={[
               { k: 'Replicas answering', v: phase === 0 ? 'Loading' : `${up} of ${n}`, tone: phase === 0 ? undefined : up === n ? 'ok' : up === 0 ? 'bad' : 'warn' },
               { k: 'Requests waiting', v: waiting, tone: waiting ? 'warn' : undefined },
+              { k: 'GPU per replica', v: 'Full or a slice', sub: 'MIG slices for small models', tip: 'A replica can use whole GPUs (several, for a large model) or, from NAI 2.5, an NVIDIA MIG slice of one, so embedding models and small language models that do not need a full GPU can share it. vGPU is supported too.' },
               { k: 'Prompts stay in', v: site.stays, sub: site.online ? undefined : 'no internet needed', tip: 'Prompts, answers and model files stay on infrastructure you control. In public cloud that is your own account and region.' },
             ]}
           />

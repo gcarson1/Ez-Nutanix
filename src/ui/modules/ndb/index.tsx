@@ -60,6 +60,8 @@ const SWEEP: [number, number] = [0.2, 4.6];
 const T_MISTAKE = SWEEP[0] + ((SWEEP[1] - SWEEP[0]) * MISTAKE) / NOW;
 const TM_PH = [0, T_MISTAKE, 4.6, 6, 8.8];
 const TM_END = 12.4;
+/** The test clone's retention: NDB purges it automatically after this many days. */
+const CLONE_DAYS = 7;
 
 function tmLines(clone: boolean): Line[] {
   return [
@@ -68,7 +70,7 @@ function tmLines(clone: boolean): Line[] {
       { tone: 'flow', k: 'Point in time chosen', text: 'Go back to one minute before the mistake. NDB can recover to the second, anywhere in the retention window up to the last captured log.' },
       { tone: 'flow', k: 'Database rebuilt', text: `To get to ${fmtT(TARGET)}, NDB starts from the nearest earlier snapshot (${fmtT(BASE)}) and replays ${fmtSpan(TARGET - BASE)} of transaction log on top of it.` },
       clone
-        ? { tone: 'ok', k: 'Clone ready', text: `A copy of the database at ${clockOf(TARGET)} comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back.` }
+        ? { tone: 'ok', k: 'Test clone ready', text: `A test copy of the database at ${clockOf(TARGET)} comes up beside production, using snapshots rather than a full copy. Production keeps running; copy the dropped table back and test against it. It is set to delete itself after ${CLONE_DAYS} days, so test copies do not pile up.` }
         : { tone: 'warn', k: 'Production rolled back', text: `Production is rolled back to ${clockOf(TARGET)} and the table is back. Anything written after ${clockOf(TARGET)} is gone, which is why many teams clone first.` },
   ];
 }
@@ -118,7 +120,7 @@ function TimeMachine() {
             items={[
               { k: 'Recovered to', v: fmtT(TARGET), sub: 'one minute before the mistake' },
               { k: 'Starting snapshot', v: fmtT(BASE), sub: `plus ${fmtSpan(TARGET - BASE)} of log` },
-              clone ? { k: 'Production', v: 'Keeps running', tone: 'ok', sub: 'copy the table back' } : { k: 'Production', v: 'Rolled back', tone: 'warn', sub: `changes after ${clockOf(TARGET)} are lost` },
+              clone ? { k: 'Production', v: 'Keeps running', tone: 'ok', sub: `test clone deletes itself in ${CLONE_DAYS} days` } : { k: 'Production', v: 'Rolled back', tone: 'warn', sub: `changes after ${clockOf(TARGET)} are lost` },
             ]}
           />
         </>
@@ -185,8 +187,13 @@ function TimeMachine() {
               <rect x={500} y={228} width={440} height={60} class={`node-box${ph >= 4 ? ' sel' : ''}`} stroke-dasharray={ph >= 4 ? undefined : '5 4'} />
               <Cylinder x={514} y={240} w={30} h={36} cls={ph >= 4 ? 'ndb-db on' : 'ndb-db'} />
               <text x={558} y={252} style={{ fontSize: '14px', fontWeight: 600 }}>
-                Clone at {fmtT(TARGET)}
+                Test clone at {fmtT(TARGET)}
               </text>
+              {ph >= 4 && (
+                <text x={926} y={252} text-anchor="end" class="ndb-st warn" style={{ fontSize: '12px', fontWeight: 600 }}>
+                  deletes itself in {CLONE_DAYS} days
+                </text>
+              )}
               <text x={558} y={272} class={`ndb-st ${ph >= 4 ? 'ok' : 'flow'}`} style={{ fontSize: '12px', fontWeight: 600 }}>
                 {ph >= 4 ? '✓ the table is there · beside production' : 'building from snapshot + log…'}
               </text>

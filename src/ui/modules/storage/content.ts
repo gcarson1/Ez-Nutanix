@@ -5,11 +5,11 @@ export const content: ModuleContent = {
   title: 'Unified Storage: Files, Volumes, Objects',
   tag: 'Platform services',
   summary:
-    'Nutanix Unified Storage (NUS) serves Files (SMB and NFS), Volumes (iSCSI) and Objects (S3) from the Distributed Storage Fabric (DSF) that runs your VMs, so one platform is protected, sized and upgraded the same way.',
+    'Nutanix Unified Storage (NUS) is fast, exabyte-scale unstructured storage: Files (SMB, NFS and parallel NFS for HPC), Volumes (iSCSI) and Objects (S3) from the Distributed Storage Fabric (DSF) that runs your VMs, so one platform is protected, sized and upgraded the same way.',
   priority: 'P1',
   talk: [
     'One fabric, three access methods: Files for shares, Volumes for block, Objects for S3. All three inherit the DSF’s copies, self-healing and data efficiency.',
-    'Files: a set of file server VMs (FSVMs) presents one namespace. Scale out with more FSVMs or up with bigger ones; clients keep the same path.',
+    'Position it as fast, exabyte-scale storage for unstructured data. Files: a set of file server VMs (FSVMs) presents one namespace. Scale out with more FSVMs or up with bigger ones; clients keep the same path. For HPC, parallel NFS (pNFS) lets clients read and write across many FSVMs at once.',
     'Fail an FSVM: a survivor takes over its volume group and IP address, folders stay reachable and the original takes them back when it returns.',
     'Volumes: hosts log in to one Data Services IP and are redirected to a healthy Controller VM (CVM), so path failover does not depend on client multipathing.',
     'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups. Lifecycle rules tier old objects to any S3-compatible store, on-premises or in a public cloud.',
@@ -17,7 +17,8 @@ export const content: ModuleContent = {
   numbers: [
     { k: 'Current release', v: 'NUS 5.4 (Jul 2026), with Files 5.4 and Objects 5.4' },
     { k: 'Files HA minimum', v: '3 FSVMs; a single FSVM has no HA' },
-    { k: 'Files protocols', v: 'SMB 2/3, NFS v3/v4; encrypted NFS in 5.4' },
+    { k: 'Files protocols', v: 'SMB 2/3, NFS v3/v4, parallel NFS (pNFS) for HPC; encrypted NFS in 5.4' },
+    { k: 'Scale', v: 'Exabyte-scale unstructured data' },
     { k: 'Objects minimum', v: '3 worker VMs; since 5.4 no load balancer VMs on supported AHV setups' },
     { k: 'Objects API', v: 'S3 (v4 signatures)' },
     { k: 'Licensing', v: 'NUS per usable TiB: Starter (hybrid, backup and archive) or Pro' },

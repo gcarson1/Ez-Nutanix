@@ -10,7 +10,7 @@ export const content: ModuleContent = {
     'Start with the threat. Encryption at rest protects drives and nodes that leave your control: stolen, sent back for repair or thrown away. It does nothing against an attacker inside a running VM.',
     'Two ways to encrypt: software encryption in AOS on ordinary drives, which Nutanix positions for most cases, or self-encrypting drives (SEDs) when policy requires hardware encryption. They can be layered (dual encryption).',
     'Apps see no change: data is encrypted before it reaches a drive and decrypted for any authorized reader.',
-    'Keys can be held by the cluster itself in the built-in key manager, with no extra server, or by your existing external key manager, which keeps keys and data in different places. That matters if a whole node walks out.',
+    'Keys can be held by the cluster itself in the built-in key manager, with no extra server, or by your existing external key manager, which keeps keys and data in different places. So a drive that leaves without access to your key server stays unreadable.',
     'Hardening is built in too. On AOS 7.6, Prism Central pc.7.6 and AHV 11.2, a security profile (Standard, Elevated or Strict) is checked every 2 hours; drift is fixed where possible, and changes needing a host reboot raise an alert.',
   ],
   numbers: [

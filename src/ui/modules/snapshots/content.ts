@@ -12,7 +12,7 @@ export const content: ModuleContent = {
     'The patch fails, so restore from the snapshot. Nothing is copied back, which is why it is quick; anything written after the snapshot is lost, so take it right before the change.',
     'Dev, test and analytics each get a clone: a full, writable disk to its team, ready in seconds and sharing every block until it changes one.',
     'Point at the meter: five 500 GB disks would be 2,500 GB as full copies; here about 550 GB is stored. Space is the container’s replication factor times that, for both sides alike.',
-    'Snapshots are local protection, not backups: they live on the same cluster as the data. Replicate them to another site, or use a backup product, to protect against losing the cluster.',
+    'Snapshots are local protection, not backups: they live on the same cluster as the data. The Recovery points vs snapshots tab shows they are the same technology: a snapshot is the Prism Element and AHV term, taken by hand and kept on its cluster; a recovery point is the Prism Central term, made by hand or on a schedule by a protection policy for every VM in a category, kept locally and replicated with its own retention, and used by recovery plans.',
   ],
   numbers: [
     { k: 'Data copied to take a snapshot', v: 'None (map only)' },

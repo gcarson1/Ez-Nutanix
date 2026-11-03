@@ -92,6 +92,15 @@ export interface Frame {
   pool: boolean;
   /** Short confirmation shown in a node's header in place of its state. */
   tag?: { node: number; text: string };
+  /** Nodes sending or receiving a re-created copy right now, marked in their header. */
+  rebuilding?: number[];
+}
+
+/** The nodes at either end of the rebuild copies in flight at time t: every node that takes part. */
+function rebuildingNodes(rebuilds: { from: string; to: string; start: number; end: number }[], t: number): number[] {
+  const busy = new Set<number>();
+  for (const r of rebuilds) if (t >= r.start && t < r.end) for (const d of [r.from, r.to]) busy.add(Number(d.split('.')[0]));
+  return [...busy].sort((a, b) => a - b);
 }
 
 export interface Step {
@@ -479,7 +488,7 @@ function failoverFrame(t: number): Frame {
     if (t >= r.start && t < r.end + 0.25)
       arcs.push({ id: `rb${r.item}-${r.to}`, kind: 'rebuild', from: { k: 'disk', disk: r.from }, to: { k: 'disk', disk: r.to }, dots: t < r.end ? [prog(t, r.start, r.end)] : [] });
   }
-  return { nodes, vms, tiles, failedDisks: [], arcs, pool: false };
+  return { nodes, vms, tiles, failedDisks: [], arcs, pool: false, rebuilding: rebuildingNodes(P.rebuilds, t) };
 }
 
 // ── 5. Drive failure ─────────────────────────────────────────────────────────
@@ -531,7 +540,7 @@ function driveFrame(t: number): Frame {
     if (t >= r.start && t < r.end + 0.25)
       arcs.push({ id: `rb${r.item}-${r.to}`, kind: 'rebuild', from: { k: 'disk', disk: r.from }, to: { k: 'disk', disk: r.to }, dots: t < r.end ? [prog(t, r.start, r.end)] : [] });
   }
-  return { nodes: Array(NODES).fill('up'), vms: homeVms(L), tiles, failedDisks: failed ? [DRIVE.disk] : [], arcs, pool: false };
+  return { nodes: Array(NODES).fill('up'), vms: homeVms(L), tiles, failedDisks: failed ? [DRIVE.disk] : [], arcs, pool: false, rebuilding: rebuildingNodes(P.rebuilds, t) };
 }
 
 // ── scenario copy ────────────────────────────────────────────────────────────
@@ -566,9 +575,9 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     title: 'Live migration',
     lede: 'Move a running VM to another node and watch its data follow.',
     steps: [
-      { at: 0, label: 'VM2 runs on Node 1', text: 'VM2 runs on Node 1 and reads its data from Node 1’s own drives.' },
+      { at: 0, label: 'VM2 runs on Node 1', text: 'VM2 runs on Node 1 and reads its data from Node 1’s own drives. Its second copies are spread over the other nodes, not kept together on one.' },
       { at: 3.5, label: 'VM2 moves to Node 2', text: 'VM2 live-migrates to Node 2. It keeps running the whole time.' },
-      { at: 6.5, label: 'Reads cross the network', text: 'At first, its reads go over the network to the node that holds its data.' },
+      { at: 6.5, label: 'Reads cross the network', text: 'Not all of VM2’s data is on Node 2: only the pieces whose second copy happened to be there are read locally. For the rest, Node 2’s CVM reads over the network from the original node, Node 1.' },
       { at: 10, label: 'Data follows VM2', text: 'As VM2 reads, that data is copied to Node 2. New writes land there right away.' },
       { at: 14, label: 'Reads local again', text: 'VM2 reads locally again. Its data kept two copies the whole time.' },
     ],
@@ -614,11 +623,11 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     steps: [
       { at: 0, label: 'Cluster healthy', text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
       { at: 2, label: 'Node 2 fails', text: 'Node 2 loses power. Its 4 VMs stop and the copies on its drives go offline.' },
-      { at: 5.5, label: 'VMs restart', text: 'High availability (HA) restarts those VMs on other nodes with free memory, typically within about two minutes.' },
-      { at: 10, label: 'Copies re-created', text: 'At the same time, every surviving node re-creates the missing copies, in parallel.' },
+      { at: 5.5, label: 'VMs restart', text: 'High availability (HA) instantly restarts those VMs on other nodes with free memory; the rest is each guest OS booting.' },
+      { at: 10, label: 'Copies re-created', text: 'At the same time, Nodes 1, 3 and 4 all re-create the missing copies, in parallel: each sends copies it holds and takes in new ones, so no single node does the rebuild.' },
       { at: 15.5, label: 'Fully protected', text: 'Every piece of data has two copies again, without anyone stepping in.' },
     ],
-    why: 'Recovery is automatic. VMs are typically back in minutes, and full protection returns on its own, before anyone repairs the failed node.',
+    why: 'Recovery is automatic. HA restarts the VMs instantly, and full protection returns on its own, before anyone repairs the failed node.',
     legend: [
       { look: 'copy', label: 'Copy of a piece of data' },
       { look: 'single', label: 'Only one copy online' },
@@ -638,7 +647,7 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
       { at: 0, label: 'Cluster healthy', text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
       { at: 2, label: 'A drive fails', text: 'Drive 2 in Node 1 fails. The copies it held are gone.' },
       { at: 3.6, label: 'VMs keep running', text: 'Each of those pieces still has its other copy on another node, so VMs keep running.' },
-      { at: 5.5, label: 'Copies re-created', text: 'Every node helps re-create the missing copies from the surviving ones, in parallel.' },
+      { at: 5.5, label: 'Copies re-created', text: 'All four nodes take part, Node 1 included: each re-creates missing copies from the surviving ones, in parallel.' },
       { at: 11, label: 'Fully protected', text: 'Two copies of everything again. Replace the drive whenever it suits you.' },
     ],
     why: 'Rebuild work is shared by every node instead of funneled into one spare drive, so no single drive or node becomes the bottleneck.',

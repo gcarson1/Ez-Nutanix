@@ -172,3 +172,22 @@ describe('story end states follow the engine', () => {
     for (const it of L.s0.items) expect(c.get(it.id)!.length).toBe(2);
   });
 });
+
+describe('every node takes part in a rebuild', () => {
+  // The captions say so; the node headers mark each node sending or receiving a copy.
+  const atOnce = (id: 'failover' | 'drive', from: number, to: number) => {
+    let best: number[] = [];
+    for (let t = from; t <= to; t += 0.05) {
+      const now = frameAt(id, t).rebuilding ?? [];
+      if (now.length > best.length) best = now;
+    }
+    return best;
+  };
+  it('after a node fails, all three survivors rebuild at the same moment', () => {
+    expect(atOnce('failover', 10, 15.5)).toEqual([0, 2, 3]);
+  });
+  it('after a drive fails, all four nodes rebuild, its own node included', () => {
+    expect(atOnce('drive', 5.7, 11)).toEqual([0, 1, 2, 3]);
+  });
+});
+

@@ -396,12 +396,12 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         steps: [
           { at: 0, label: 'Cluster healthy', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
           { at: 2, label: `${v} fails`, text: `${v} loses power. Its ${vmCount} VMs stop and the copies on its drives go offline.` },
-          { at: 5.5, label: 'VMs restart', text: 'High availability (HA) restarts those VMs on other nodes with free memory, typically within about two minutes.' },
+          { at: 5.5, label: 'VMs restart', text: 'High availability (HA) instantly restarts those VMs on other nodes with free memory; the rest is each guest OS booting.' },
           { at: 9.6, label: 'Copies re-created', text: 'Every surviving node re-creates some of the missing copies, all at the same time.' },
           { at: 15, label: 'Fully protected', text: 'Every piece of data has two copies again. Nobody had to step in.' },
         ],
         outcome: [
-          { tone: 'ok', text: 'VMs restarted on other nodes, typically in about two minutes' },
+          { tone: 'ok', text: 'VMs restarted instantly on other nodes' },
           { tone: 'ok', text: 'No data lost or unavailable' },
           { tone: 'ok', text: 'Back to two copies on its own' },
         ],

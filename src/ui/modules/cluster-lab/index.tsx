@@ -50,7 +50,7 @@ export default function ClusterLab() {
         <PlayBar
           clock={clock}
           label={`${def.title} animation`}
-          extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts typically take about two minutes, depending on the HA settings and free memory, and re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
+          extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
         />
       </div>
 

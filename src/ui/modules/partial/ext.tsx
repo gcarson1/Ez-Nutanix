@@ -7,10 +7,15 @@
 // volume and snapshot lines are worded for the generally available arrays.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
-import { Kpis, Names, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
-/** The supported arrays, by name only (Dell once for both of its arrays). */
-const ARRAYS = ['Everpure FlashArray', 'Dell PowerStore · PowerFlex', 'NetApp ONTAP'];
+/** The supported arrays, each with the technology Nutanix uses to reach it (EXT-1 to EXT-3, EXT-6, EXT-15). */
+const ARRAYS: Point[] = [
+  { k: 'Everpure FlashArray', by: 'NVMe/TCP · FlashArray APIs', text: 'Each VM disk is a FlashArray volume; Nutanix takes snapshots and clones through FlashArray’s own APIs.', tone: 'ink', at: 0 },
+  { k: 'Dell PowerStore', by: 'NVMe/TCP · PowerStore APIs', text: 'Generally available from AOS 7.6; snapshots and clones go through PowerStore’s own APIs.', tone: 'ink', at: 0 },
+  { k: 'Dell PowerFlex', by: 'Dell SDC in the CVM', text: 'No NVMe/TCP: Dell’s own storage client (SDC) runs inside each CVM and talks to PowerFlex directly.', tone: 'ink', at: 0 },
+  { k: 'NetApp ONTAP', by: 'NFS · ONTAP APIs', text: 'Announced, not yet generally available: AFF and select FAS systems over NFS, driven through ONTAP’s APIs.', tone: 'warn', at: 0 },
+];
 
 const P = [0, 3.2, 6.6, 10.4, 13.8];
 const END = 17.2;
@@ -75,7 +80,7 @@ function ExtDiagram({ t }: { t: number }) {
   const nodes = t >= NODE4_IN ? 4 : 3;
 
   return (
-    <svg class="diagram xs-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} AHV compute-only nodes connect over Ethernet to the Everpure, Dell or NetApp array you already own. Each VM disk is its own volume on the array. Adding a compute node leaves the array unchanged.`}>
+    <svg class="diagram xs-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} AHV compute-only nodes connect over Ethernet, each array with its own protocol, to the array you already own. Each VM disk is its own volume on the array. Adding a compute node leaves the array unchanged.`}>
       {/* Prism Central on top */}
       {pc > 0 ? (
         <g style={{ opacity: pc }}>
@@ -151,7 +156,7 @@ function ExtDiagram({ t }: { t: number }) {
           })}
           <rect x={0} y={NET_Y} width={W * link} height={NET_H} class="xs-net" />
           <text x={12} y={NET_Y + 15} class="mono" style={{ fontSize: '12px' }}>
-            Ethernet · NVMe/TCP, Dell SDC or NFS
+            Ethernet · each array’s own protocol (see Works with)
           </text>
           <text x={W - 12} y={NET_Y + 15} text-anchor="end" class="muted" style={{ fontSize: '11.5px' }}>
             no Fibre Channel fabric
@@ -180,7 +185,7 @@ function ExtDiagram({ t }: { t: number }) {
       <g style={{ opacity: arrIn }}>
         <rect x={ARR_X} y={ARR_Y} width={ARR_W} height={ARR_H} class="xs-array" rx={4} />
         <text x={ARR_X + 20} y={ARR_Y + 24} style={{ fontWeight: 600, fontSize: '15px' }}>
-          Your Everpure / Dell / NetApp array
+          Your existing array
         </text>
         <text x={ARR_X + ARR_W - 20} y={ARR_Y + 24} text-anchor="end" class="muted" style={{ fontSize: '12.5px' }}>
           {t >= P[3] && t < P[4] + 1 ? 'unchanged' : 'already in your data center'}
@@ -231,7 +236,7 @@ export default function ExtStorage() {
     <Show
       top={
         <>
-          <Names label="Works with" items={ARRAYS} />
+          <Points label="Works with" items={ARRAYS} t={0} until={-1} />
           <Points label="Why customers choose it" items={POINTS} t={t} />
         </>
       }
@@ -242,7 +247,7 @@ export default function ExtStorage() {
           </Follow>
           <Kpis
             items={[
-              { k: 'Connects over', v: 'Ethernet', sub: 'NVMe/TCP, Dell SDC or NFS' },
+              { k: 'Connects over', v: 'Ethernet', sub: 'each array its own protocol', tip: 'FlashArray and PowerStore use NVMe/TCP, PowerFlex uses Dell’s SDC client inside the CVM, and NetApp ONTAP uses NFS with ONTAP’s APIs.' },
               { k: 'Supported arrays', v: '4', sub: '3 generally available, NetApp announced' },
               { k: 'Licensed as', v: 'NCI-C', sub: 'per core', tip: 'NCI Compute: AHV, Prism and DR automation, priced per core. Snapshots and clones are left to the storage array.' },
             ]}
