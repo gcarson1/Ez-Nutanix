@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Search:** a search box at the top of every page. Type a keyword like "balance tcp", "metro" or "erasure coding" and it opens the module, or the exact tab or choice inside it, with that option outlined. Typos are forgiven, and older names (Calm, Beam) and acronyms (DR, NKP, VPC) work. Press / or Ctrl/⌘ K to search from the keyboard; on phones it is an icon in the top bar.
 - **Legacy vs Nutanix HCI tier labels:** COMPUTE, NETWORKING and STORAGE in large type beside the three legacy tiers, until they fold into one node.
 - **Legacy vs Nutanix HCI absorbs Scale-Out vs 3-Tier:** top-of-rack Ethernet switches are drawn from the first frame (the 3-tier hosts use them for VM and management traffic, and after the fold they carry the cluster's storage traffic too), data rebalances onto each new node, and a storage-controller count grows with the nodes while the array stays at two. Scale-Out's CVM cost, performance and node-type points moved into its presenter notes, and old Scale-Out links open it.
 - **Enterprise AI, Agent Gateway tab:** one address for every model (NAI endpoint, remote NAI cluster, external provider), a fallback when one fails, a rate limit catching a runaway agent, and the MCP Gateway adding API keys, blocking a tool write and logging every call. Sources are in `docs/facts.md` section 16.

@@ -12,6 +12,7 @@ import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG, VERSION } from './config';
 import { go, goUp } from './nav';
+import { Search, openSearch } from './Search';
 
 // ── toast ──
 let pushToast: (msg: string) => void = () => undefined;
@@ -259,6 +260,7 @@ function Glossary({ onClose }: { onClose: () => void }) {
 }
 
 const SHORTCUTS: [string, string][] = [
+  ['/', 'Search modules and settings'],
   ['P', 'Presenter notes'],
   ['G', 'Glossary'],
   ['?', 'This list'],
@@ -408,7 +410,13 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.defaultPrevented) return;
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && (e.key === 'k' || e.key === 'K') && !state.current.dialog) {
+        openSearch();
+        e.preventDefault();
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement;
       const typing = t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || (t.tagName === 'INPUT' && (t as HTMLInputElement).type !== 'range' && (t as HTMLInputElement).type !== 'checkbox'));
       const s = state.current;
@@ -429,6 +437,7 @@ export function App() {
       else if (k === 't' || k === 'T') setTheme((x) => (x === 'dark' ? 'light' : 'dark'));
       else if (k === 'j' || k === 'J') setDialog((d) => (d === 'jump' ? null : 'jump'));
       else if (s.dialog) return;
+      else if (k === '/') openSearch();
       // Space pauses unless it would press a button, but a preset, tab or step that is already selected
       // has nothing left to press, so presenters can click one and hold or resume a frame with Space.
       else if (k === ' ' && (t.tagName !== 'BUTTON' || t.closest('.seg [aria-pressed="true"], [role="tab"][aria-selected="true"], [aria-current="step"]')) && simKey('toggle')) e.preventDefault();
@@ -475,6 +484,7 @@ export function App() {
             </nav>
           )}
           <span class="spacer" />
+          <Search />
           <div class="bar-r hstack">
             {def && (
               <button type="button" class="tbtn" onClick={() => goUp(def.parent)} title={`Back to ${def.parent ? findModule(def.parent)?.content.title : 'platform'}`} aria-label={`Back to ${def.parent ? findModule(def.parent)?.content.title : 'platform'}`}>
