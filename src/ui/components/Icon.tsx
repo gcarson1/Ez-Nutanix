@@ -36,6 +36,7 @@ import {
   Puzzle,
   Radio,
   RefreshCw,
+  Search as SearchIcon,
   Server,
   Shield,
   ShipWheel,
@@ -95,6 +96,7 @@ const I: Record<string, LucideIcon> = {
   container: Container,
   key: KeyRound,
   puzzle: Puzzle,
+  search: SearchIcon,
 };
 
 export function Icon({ name, title, class: cls }: { name: string; title?: string; class?: string }) {
