@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **New module, Kubernetes on Bare Metal:** the "Any Bare Metal Linux" pane now opens it. It names NKP Metal's hardware partners (Cisco, Lenovo, Supermicro, with Intel Xeon and Ubuntu), shows Foundation deploying the servers, Kubernetes on top with no hypervisor and LCM updating firmware and OS, then pre-provisioned bare metal. Sources are in `docs/facts.md` section 17.
+- **New module, OEM of Your Choice:** the landing's "Any Bare Metal Linux" pane is now "OEM of your choice". The same Nutanix software lands on Nutanix NX and on Dell XC, HPE DX, Lenovo ThinkAgile HX, Cisco Compute Hyperconverged, Fujitsu PRIMEFLEX XF and Supermicro, then clusters on three vendors share one Prism Central, then servers you already own and NC2 in the public cloud. Sources are in `docs/facts.md` section 17.
 - **Kubernetes Platform, reworked:** one loop from islands to one operating model: four environments each run their own way, the same work repeated behind each, the NKP layer above them, one policy and one upgrade across the fleet (attached AKS keeps Azure's upgrades), the platform team and a developer on the same road, and the outcome. The landing pane reads "Fleet Management | Security | GitOps".
 - **LCM Rolling Upgrade, Kubernetes (NKP) tab:** the NKP fleet rollout (Healthy rollout, Canary fails) moved here from the Kubernetes Platform module.
 - **Snapshots & Clones, redrawn:** an admin's day instead of block maps: a snapshot before a patch, a restore when the patch fails, three clones for dev, test and analytics, and a meter of what is stored against full copies, in two colors.

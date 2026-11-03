@@ -53,7 +53,7 @@ const TOUR: TourStep[] = [
   { sel: 'nci', title: 'Start with the foundation', text: 'Nutanix Cloud Infrastructure turns ordinary servers into one cluster: the AHV hypervisor, a storage controller on every node, networking and security (Flow) and disaster recovery.' },
   { sel: 'partial', title: 'Or start with the part you need', text: 'Customers can keep an external storage array under AHV and Prism, or keep vSphere and vCenter and run ESXi on Nutanix nodes, then grow into the rest of the platform.' },
   { sel: 'clouds', title: 'The same stack in public cloud', text: 'The platform also runs in public clouds, so the same operating model covers data center and cloud. Which offering applies differs by provider.' },
-  { sel: 'bare', title: 'Or on any bare-metal Linux', text: 'Kubernetes can also run directly on bare-metal servers from Cisco, Lenovo and Supermicro, without a hypervisor, deployed by Foundation and updated by LCM. NKP Metal is in early access.' },
+  { sel: 'bare', title: 'On the OEM of your choice', text: 'Nutanix is software, so the hardware is your choice: Nutanix NX, or OEM platforms from Dell, HPE, Lenovo, Cisco, Fujitsu and Supermicro, or servers you already own. The platform runs the same on every one.' },
   { sel: 'services', title: 'Data and AI services on top', text: 'File, object and block storage, databases as a service and AI inference all run on the same platform, so they share its resilience, protection and management.' },
   { sel: 'central', title: 'One control plane across everything', text: 'Nutanix Central sits above many clusters and sites: fleet management, operations, Kubernetes and data security from one place.' },
 ];
@@ -151,9 +151,9 @@ export function Landing() {
               </Pane>
             ))}
           </div>
-          <Pane p={{ id: 'bare', title: 'Any Bare Metal Linux', path: 'metal' }} cls="bare" tour="bare">
+          <Pane p={{ id: 'bare', title: 'OEM of your choice', path: 'oem' }} cls="bare" tour="bare">
             <Icon name="server" />
-            <span class="pt">Any Bare Metal Linux</span>
+            <span class="pt">OEM of your choice</span>
           </Pane>
         </section>
 

@@ -69,7 +69,7 @@ const I: Record<string, LucideIcon> = {
   rebuild: RefreshCw,
   flow: Workflow,
   server: Server,
-  metal: ServerCog,
+  oem: ServerCog,
   cloud: Cloud,
   cpu: Cpu,
   db: Database,

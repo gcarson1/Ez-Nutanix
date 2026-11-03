@@ -33,7 +33,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Do we have to run it on Nutanix infrastructure?',
-      a: 'No. Starter is for NCI (AHV). Pro and Ultimate also deploy on vSphere, on bare metal and in public cloud. NKP Metal, for bare-metal servers with Foundation and LCM, is in early access; see Kubernetes on Bare Metal.',
+      a: 'No. Starter is for NCI (AHV). Pro and Ultimate also deploy on vSphere, on bare metal and in public cloud. NKP Metal, for bare-metal servers deployed by Foundation and updated by LCM, is in early access.',
     },
   ],
   next: [
@@ -41,7 +41,7 @@ export const content: ModuleContent = {
     'Pause on NKP arrives: the layer sits above the clusters and connects to each, without replacing them.',
     'On One fleet, point at the policy reaching all four clusters and the upgrade reaching only the three NKP clusters, while AKS keeps Azure’s upgrades.',
     'On Two teams, one road, follow the developer’s request through the guardrails to the Nutanix cluster.',
-    'Then open LCM Rolling Upgrade’s Kubernetes tab for the upgrade rollout, Cloud Native AOS for storage, or Kubernetes on Bare Metal.',
+    'Then open LCM Rolling Upgrade’s Kubernetes tab for the upgrade rollout, or Cloud Native AOS for storage.',
   ],
-  then: ['nci/lcm', 'cnaos', 'metal'],
+  then: ['nci/lcm', 'cnaos'],
 };

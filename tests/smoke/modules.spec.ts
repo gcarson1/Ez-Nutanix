@@ -28,7 +28,7 @@ test('landing page renders every pane and opens a module', async ({ page }) => {
   await page.goto(FILE);
   await expect(page.getByRole('heading', { name: /One Platform For All Apps/ })).toBeVisible();
   await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
-  for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'AWS', 'Azure', 'Google Cloud', 'Any Bare Metal Linux']) {
+  for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'AWS', 'Azure', 'Google Cloud', 'OEM of your choice']) {
     await expect(page.getByRole('button', { name: new RegExp(name) }).first()).toBeVisible();
   }
   await page.getByRole('button', { name: /Nutanix Cloud Infrastructure/ }).click();
@@ -137,13 +137,12 @@ test('full-stack band opens the external storage and ESXi tabs', async ({ page }
   expect(errors).toEqual([]);
 });
 
-test('Any Bare Metal Linux opens the bare-metal page with its hardware partners', async ({ page }) => {
+test('OEM of your choice opens the hardware page with every vendor', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(FILE);
-  await page.getByRole('button', { name: /Any Bare Metal Linux/ }).click();
-  await expect(page.locator('.mod-head h1')).toHaveText('Kubernetes on Bare Metal');
-  await expect(page.getByRole('list', { name: 'Hardware partners for NKP Metal' }).locator('li')).toHaveText(['Cisco', 'Lenovo', 'Supermicro']);
-  await expect(page.getByRole('button', { name: 'Bare metal (NKP Metal)' })).toHaveCount(0);
+  await page.getByRole('button', { name: /OEM of your choice/ }).click();
+  await expect(page.locator('.mod-head h1')).toHaveText('OEM of Your Choice');
+  await expect(page.getByRole('list', { name: 'Runs on' }).locator('li')).toHaveText(['Nutanix NX', 'Dell', 'HPE', 'Lenovo', 'Cisco', 'Fujitsu', 'Supermicro']);
   expect(errors).toEqual([]);
 });
 

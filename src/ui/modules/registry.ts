@@ -51,8 +51,8 @@ import Beacon from './beacon';
 import { content as BeaconC } from './beacon/content';
 import Cloud from './cloud';
 import { content as CloudC } from './cloud/content';
-import Metal from './metal';
-import { content as MetalC } from './metal/content';
+import Oem from './oem';
+import { content as OemC } from './oem/content';
 import Partial from './partial';
 import { content as PartialC } from './partial/content';
 
@@ -89,7 +89,7 @@ export const MODULES: ModuleDef[] = [
   { content: AiC, Component: Ai, icon: 'ai', parent: '' },
   { content: BeaconC, Component: Beacon, icon: 'beacon', parent: '' },
   { content: CloudC, Component: Cloud, icon: 'cloud', parent: '' },
-  { content: MetalC, Component: Metal, icon: 'metal', parent: '' },
+  { content: OemC, Component: Oem, icon: 'oem', parent: '' },
   { content: PartialC, Component: Partial, icon: 'puzzle', parent: '' },
 ];
 

@@ -188,7 +188,7 @@ export const MODULE_WORDS: Record<string, string> = {
   datalens: 'ransomware data governance audit',
   storage: 'nas file share unified storage',
   cnaos: 'ndk kubernetes storage containers',
-  metal: 'nkp metal bare metal baremetal linux hardware cisco lenovo thinksystem supermicro intel xeon ubuntu canonical foundation lcm',
+  oem: 'oem hardware vendor server choice freedom nx dell xc hpe dx greenlake lenovo thinkagile hx truscale cisco compute hyperconverged fujitsu primeflex xf uscale supermicro klas ktnf pacstar vsan readynode hcl compatibility bare metal',
   ndb: 'database dbaas sql server oracle postgres mysql mongodb',
   ai: 'nai llm genai generative ai gpu',
   cloud: 'nc2 nutanix cloud clusters aws azure gcp',
