@@ -72,7 +72,7 @@ function Timeline({ t, now }: { t: number; now: number }) {
   return (
     <svg class="diagram bc-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Project Beacon from 2023 to 2026: a vision of building an app once and running it anywhere. Delivered along the way: NDB and NDK (shipping), Cloud Native AOS (GA on Amazon EKS) and NKP Metal (early access). Beacon itself is not a product.">
       <rect class="bc-band" x={1} y={12} width={W - 2} height={80} />
-      <text x={22} y={36} class="warn-fill" style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.06em' }}>
+      <text x={22} y={36} class="warn-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
         ◇ THE VISION · NOT A PRODUCT YOU CAN BUY
       </text>
       <text x={22} y={60} style={{ fontSize: '16px', fontWeight: 600 }}>

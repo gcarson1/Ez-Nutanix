@@ -26,7 +26,7 @@
 .gx-dia { max-width: 70rem; }
 .gx-dia .gx-block { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
 .gx-dia .gx-block.down { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
-.gx-dia .gx-blabel { font-size: 10.5px; font-weight: 600; fill: var(--faint); letter-spacing: 0.02em; }
+.gx-dia .gx-blabel { font-size: 10.5px; font-weight: 600; fill: var(--faint); }
 .gx-dia .gx-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; rx: 6px; transition: fill var(--t-med), stroke var(--t-med); }
 .gx-dia .gx-node.down .gx-card { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 5 4; }
 .gx-dia .gx-node.cvm .gx-card { stroke: var(--warn); stroke-width: 1.75; }
@@ -35,7 +35,7 @@
 .gx-dia .gx-word.down { fill: var(--bad); }
 .gx-dia .gx-word.cvm { fill: var(--warn); }
 .gx-dia .gx-cvm rect { fill: var(--ink); }
-.gx-dia .gx-cvm text { fill: #fff; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; }
+.gx-dia .gx-cvm text { fill: #fff; font-size: 9.5px; font-weight: 700; }
 .gx-dia .gx-cvm.down rect { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
 .gx-dia .gx-cvm.stopped rect { fill: var(--warn-bg); stroke: var(--warn); stroke-dasharray: 3 2; }
 .gx-dia .gx-cvm.down text, .gx-dia .gx-cvm.stopped text { fill: var(--muted); }
@@ -46,7 +46,7 @@
 .gx-dia .gx-disk { fill: var(--bg); stroke: var(--line-2); stroke-width: 1; }
 .gx-dia .gx-disk.failed { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.5; }
 .gx-dia .gx-disk.full { stroke: var(--warn); stroke-width: 1.5; }
-.gx-dia .gx-dlabel { font-size: 9.5px; font-weight: 700; letter-spacing: 0.03em; }
+.gx-dia .gx-dlabel { font-size: 9.5px; font-weight: 700; }
 .gx-dia .gx-dlabel.bad { fill: var(--bad); }
 .gx-dia .gx-dlabel.warn { fill: var(--warn); }
 .gx-dia .gx-node.down .gx-disk { opacity: 0.55; }

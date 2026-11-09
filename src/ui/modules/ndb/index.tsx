@@ -286,8 +286,8 @@ function Provisioning() {
             {back >= 1 ? '✓ has a database' : 'asks for a database'}
           </text>
 
-          <text x={PX} y={40} class="muted" style={{ fontSize: '10.5px', letterSpacing: '0.06em' }}>
-            PROFILES, DEFINED ONCE
+          <text x={PX} y={40} class="muted" style={{ fontSize: '10.5px' }}>
+            Profiles, defined once
           </text>
           {PROFILES.map((p, i) => {
             const on = t >= 0.5 + i * 0.2 && ph < 3;
@@ -305,8 +305,8 @@ function Provisioning() {
           })}
 
           <rect x={CX} y={20} width={CWID} height={250} class="frame" />
-          <text x={CX + 12} y={40} class="muted" style={{ fontSize: '10.5px', letterSpacing: '0.06em' }}>
-            NUTANIX CLUSTER
+          <text x={CX + 12} y={40} class="muted" style={{ fontSize: '10.5px' }}>
+            Nutanix cluster
           </text>
           {Array.from({ length: n }, (_, i) => {
             const f = vmIn(i);

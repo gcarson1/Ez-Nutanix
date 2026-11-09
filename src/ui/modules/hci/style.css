@@ -19,7 +19,7 @@
 .diagram text.hci-on-ink.soft { opacity: 0.82; }
 .diagram text.hci-ink { fill: var(--ink-fg); font-weight: 600; }
 .show-stage .diagram.hci-dia { max-width: 66.75rem; }
-.diagram text.hci-tier-l { fill: var(--text-2); font-size: 19px; font-weight: 700; letter-spacing: 0.08em; }
+.diagram text.hci-tier-l { fill: var(--text-2); font-size: 19px; font-weight: 700; }
 @media (max-width: 600px) {
   .diagram-scroll > .hci-dia { min-width: 49.5rem; }
 }

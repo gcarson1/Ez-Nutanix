@@ -120,7 +120,7 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
       )}
       <rect class="ai-box" x={mb.x} y={mb.y} width={mb.w} height={mb.h} />
       <text x={mb.x + mb.w / 2} y={mb.y + 20} text-anchor="middle" class="muted ai-cap">
-        {site.online ? 'MODEL SOURCE' : 'MODEL FILES'}
+        {site.online ? 'Model source' : 'Model files'}
       </text>
       {site.model.map((l, i) => (
         <text key={l} x={mb.x + mb.w / 2} y={mb.y + 40 + i * 18} text-anchor="middle" style={{ fontSize: '13.5px', fontWeight: 600 }}>
@@ -185,7 +185,7 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
             <rect class="ai-bar" x={RX + BAR.x0} y={y + RH / 2 - 4} width={BAR.x1 - BAR.x0} height={8} />
             {job && <rect class="ai-bar-on" x={RX + BAR.x0} y={y + RH / 2 - 4} width={(BAR.x1 - BAR.x0) * prog(t, job.begin, job.done)} height={8} />}
             <rect class="ai-gpu" x={RX + GPU.dx} y={y + GPU.dy} width={GPU.s} height={GPU.s} style={{ opacity: off ? 0.4 : 1 }} />
-            <text x={RX + GPU.dx - 8} y={y + RH / 2 + 4} text-anchor="end" class="muted" style={{ fontSize: '10px', letterSpacing: '0.06em' }}>
+            <text x={RX + GPU.dx - 8} y={y + RH / 2 + 4} text-anchor="end" class="muted" style={{ fontSize: '10px' }}>
               GPU
             </text>
             {ready && <Hex x={gx} y={gy} r={12} cls={off ? 'ai-model off' : 'ai-model'} />}

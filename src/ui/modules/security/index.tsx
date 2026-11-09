@@ -217,8 +217,8 @@ function TheftDiagram({ enc, t }: { enc: Enc; t: number }) {
 
       {/* outside */}
       <rect x={OUT.x} y={OUT.y} width={OUT.w} height={OUT.h} class="sc-out" />
-      <text x={OUT.x + 14} y={OUT.y + 22} class="sc-s muted" style={{ fontWeight: 600, letterSpacing: '0.04em' }}>
-        OUTSIDE YOUR DATA CENTER
+      <text x={OUT.x + 14} y={OUT.y + 22} class="sc-s muted" style={{ fontWeight: 600 }}>
+        Outside your data center
       </text>
 
       {/* nodes and drives */}

@@ -24,7 +24,7 @@ export interface Site {
 export const SITE: Record<Where, Site> = {
   dc: {
     label: 'Your data center',
-    title: 'YOUR DATA CENTER',
+    title: 'Your data center',
     runsOn: 'Kubernetes (NKP) on Nutanix servers with GPUs',
     online: true,
     model: ['NVIDIA NIM or', 'Hugging Face'],
@@ -33,7 +33,7 @@ export const SITE: Record<Where, Site> = {
   },
   cloud: {
     label: 'Public cloud',
-    title: 'YOUR CLOUD ACCOUNT',
+    title: 'Your cloud account',
     runsOn: 'Amazon EKS, Azure AKS or Google GKE, on cloud GPU instances',
     online: true,
     model: ['NVIDIA NIM or', 'Hugging Face'],
@@ -43,7 +43,7 @@ export const SITE: Record<Where, Site> = {
   airgap: {
     // Air-gapped means no outside connection, so it applies to your own data center (NKP), not a hyperscaler.
     label: 'Air-gapped site',
-    title: 'AIR-GAPPED SITE · NO INTERNET',
+    title: 'Air-gapped site · no internet',
     runsOn: 'Kubernetes (NKP) on Nutanix servers with GPUs',
     online: false,
     // Pulling from Hugging Face needs the internet; air-gapped NIM or your own files do not.

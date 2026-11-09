@@ -274,7 +274,7 @@ function SiteDiagram({ size, nodes, slots, step, prev, t, t0 }: { size: Size; no
       {/* data center */}
       <rect x={DC.x} y={DC.y} width={DC.w} height={DC.h} class="frame" />
       <text x={DC.x + 12} y={DC.y - 12} class="edge-cap muted">
-        DATA CENTER
+        Data center
       </text>
       <rect x={DC.x + 16} y={DC.y + 18} width={DC.w - 32} height={64} class="ink-fill" />
       <text x={DC.x + DC.w / 2} y={DC.y + 45} text-anchor="middle" class="edge-t" style={{ fill: '#fff' }}>
@@ -327,7 +327,7 @@ function SiteDiagram({ size, nodes, slots, step, prev, t, t0 }: { size: Size; no
       {/* site */}
       <rect x={SITE.x} y={SITE.y} width={SITE.w} height={SITE.h} class="frame" />
       <text x={SITE.x + 12} y={SITE.y - 12} class="edge-cap muted">
-        BRANCH SITE
+        Branch site
       </text>
       <text x={SITE.x + 14} y={SITE.y + 28} class="edge-s muted">
         Prism Element runs on the cluster

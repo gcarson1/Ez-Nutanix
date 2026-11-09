@@ -167,7 +167,7 @@ function GatewayDiagram({ t }: { t: number }) {
       {/* the gateway: unified endpoint for models, MCP Gateway for tools */}
       <rect x={GW.x} y={GW.y} width={GW.w} height={GW.h} rx={8} class="ai-ep" />
       <text x={GW.x + 14} y={GW.y + 20} class="ai-site-t">
-        AGENT GATEWAY
+        Agent gateway
       </text>
       <line x1={GW.x + 1} x2={GW.x + GW.w - 1} y1={186} y2={186} class="ai-net" />
       <text x={GW.x + 14} y={66} style={{ fontSize: '13px', fontWeight: 600 }}>
@@ -201,10 +201,10 @@ function GatewayDiagram({ t }: { t: number }) {
         <Box key={tl.t} x={690} y={toolCy(k) - 22} w={254} h={44} t={tl.t} s={tl.s} />
       ))}
       <text x={690} y={22} class="muted ai-cap">
-        MODEL PROVIDERS
+        Model providers
       </text>
       <text x={690} y={203} class="muted ai-cap">
-        TOOLS AND DATA (MCP SERVERS)
+        Tools and data (MCP servers)
       </text>
 
       {/* requests and tool calls in flight, and the ones stopped at the gateway */}

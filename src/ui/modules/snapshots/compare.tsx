@@ -48,8 +48,8 @@ function CompareDiagram({ t }: { t: number }) {
       <text x={L.x + 260} y={91} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
         Take snapshot
       </text>
-      <text x={L.x + 16} y={SITE_A - 18} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-        THIS CLUSTER
+      <text x={L.x + 16} y={SITE_A - 18} class="muted" style={{ fontSize: '11px' }}>
+        This cluster
       </text>
       <line x1={L.x + 16} x2={L.x + L.w - 16} y1={SITE_A + 16} y2={SITE_A + 16} class="sn-lane" />
       {snapIn > 0 && (
@@ -60,8 +60,8 @@ function CompareDiagram({ t }: { t: number }) {
           </text>
         </g>
       )}
-      <text x={L.x + 16} y={SITE_B - 18} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-        ANOTHER SITE
+      <text x={L.x + 16} y={SITE_B - 18} class="muted" style={{ fontSize: '11px' }}>
+        Another site
       </text>
       <line x1={L.x + 16} x2={L.x + L.w - 16} y1={SITE_B + 16} y2={SITE_B + 16} class="sn-lane" stroke-dasharray="4 4" />
       <text x={L.x + 30} y={SITE_B + 8} class="faint" style={{ fontSize: '12px' }}>
@@ -101,12 +101,12 @@ function CompareDiagram({ t }: { t: number }) {
       <text x={R.x + 170} y={138} class="muted" style={{ fontSize: '12px' }}>
         used by recovery plans for failover
       </text>
-      <text x={R.x + 16} y={SITE_A - 18} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-        THIS SITE
+      <text x={R.x + 16} y={SITE_A - 18} class="muted" style={{ fontSize: '11px' }}>
+        This site
       </text>
       <line x1={R.x + 16} x2={R.x + R.w - 16} y1={SITE_A + 16} y2={SITE_A + 16} class="sn-lane" />
-      <text x={R.x + 16} y={SITE_B - 18} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-        OTHER SITE
+      <text x={R.x + 16} y={SITE_B - 18} class="muted" style={{ fontSize: '11px' }}>
+        Other site
       </text>
       <line x1={R.x + 16} x2={R.x + R.w - 16} y1={SITE_B + 16} y2={SITE_B + 16} class="sn-lane" />
       {RP_AT.map((a, k) => {

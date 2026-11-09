@@ -32,7 +32,7 @@ const DC_FLOW = [P[4] + 2.0, P[4] + 3.2];
 
 const SITE: Record<On, { cluster: string; worker: string; kind: string; vol: string; dcLine: string; regionHead: string; regionSub: string; regionFoot: string; drHead: string }> = {
   eks: {
-    cluster: 'AMAZON EKS CLUSTER IN AWS',
+    cluster: 'Amazon EKS cluster in AWS',
     worker: 'Worker',
     kind: 'EC2',
     vol: 'EBS gp3',
@@ -40,10 +40,10 @@ const SITE: Record<On, { cluster: string; worker: string; kind: string; vol: str
     regionHead: 'Another AWS region or zone',
     regionSub: 'EKS with Cloud Native AOS',
     regionFoot: 'Target RPO 1 hour or more in release 1.0',
-    drHead: 'DR SITES',
+    drHead: 'DR sites',
   },
   metal: {
-    cluster: 'BARE-METAL SERVERS WITH NKP METAL',
+    cluster: 'Bare-metal servers with NKP Metal',
     worker: 'Server',
     kind: 'bare metal',
     vol: 'Local drive',
@@ -176,10 +176,10 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       role="img"
       aria-label={`${metal ? 'Three bare-metal servers running NKP Metal' : 'Three Amazon EKS workers'}, each running AOS as a pod. A database writes every block on two ${s.worker.toLowerCase()}s; when one fails the pod restarts on another with its data. NDK snapshots the whole app and ${metal ? 'would replicate it to other sites, which is planned' : 'replicates it to another AWS region; apps on NKP in your data center can fail over to EKS'}.`}
     >
-      <text x={0} y={16} class="muted" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
+      <text x={0} y={16} class="muted" style={{ fontSize: '11px' }}>
         {s.cluster}
       </text>
-      <text x={DR_X} y={16} class={metal ? 'cn-warn' : 'muted'} style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
+      <text x={DR_X} y={16} class={metal ? 'cn-warn' : 'muted'} style={{ fontSize: '11px' }}>
         {s.drHead}
       </text>
       <rect x={0} y={TOP} width={CW} height={CH} class="frame" rx={4} />
@@ -287,8 +287,8 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       {snap > 0 ? (
         <g style={{ opacity: snap }}>
           <rect x={PAD} y={SNAP_Y} width={CW - 2 * PAD} height={SNAP_H} class="cn-snaprow" rx={3} />
-          <text x={PAD + 14} y={SNAP_Y + 26} class="muted" style={{ fontSize: '11px', letterSpacing: '0.08em' }}>
-            NDK APP SNAPSHOT
+          <text x={PAD + 14} y={SNAP_Y + 26} class="muted" style={{ fontSize: '11px' }}>
+            NDK app snapshot
           </text>
           {[
             { x: PAD + 168, w: 156, label: 'Kubernetes resources' },

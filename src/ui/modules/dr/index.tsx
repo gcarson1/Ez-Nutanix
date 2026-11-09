@@ -129,8 +129,8 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
       <text x={x + 14} y={ST + 44} class="muted" style={{ fontSize: '12px' }}>
         {sub}
       </text>
-      <text x={x + 14} y={GRID_Y - 10} class="muted" style={{ fontSize: '10.5px', letterSpacing: '0.06em' }}>
-        DATA THE APPS WROTE
+      <text x={x + 14} y={GRID_Y - 10} class="muted" style={{ fontSize: '10.5px' }}>
+        Data the apps wrote
       </text>
       <text x={x + 14} y={ST + SH - 12} class={`dr-st ${word.c}`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
         {word.w}

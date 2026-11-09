@@ -207,7 +207,7 @@ export function LabDiagram({ frame, label }: { frame: Frame; label: string }) {
     <svg class="diagram dl-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
       <line class="dl-lane" x1={PAD} y1={LANE_Y} x2={W - PAD} y2={LANE_Y} />
       <text class="dl-lanet" x={PAD} y={LANE_Y + 16}>
-        NETWORK
+        Network
       </text>
       {frame.pool && (
         <g class="dl-poolg">

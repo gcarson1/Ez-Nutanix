@@ -100,8 +100,8 @@ function SnapDiagram({ t }: { t: number }) {
         </g>
       )}
       {s.sc >= 4 && (
-        <text x={8} y={rowY[2] - 14} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-          CLONES OF THE 9:00 SNAPSHOT
+        <text x={8} y={rowY[2] - 14} class="muted" style={{ fontSize: '11px' }}>
+          Clones of the 9:00 snapshot
         </text>
       )}
       {s.clones.map(

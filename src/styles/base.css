@@ -75,8 +75,7 @@ sup { line-height: 0; }
 
 .eyebrow {
   display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--sp-2);
-  font-size: var(--fs-11); font-weight: 600; line-height: 1.4;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  font-size: var(--fs-11); font-weight: 600; line-height: 1.4; color: var(--muted);
 }
 .eyebrow .n { font-family: var(--mono); font-weight: 500; letter-spacing: 0; color: var(--faint); }
 

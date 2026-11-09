@@ -15,7 +15,7 @@
 .diagram .nkp-nl { font-size: 10.5px; font-family: var(--mono); fill: var(--muted); }
 .diagram .nkp-nl.on { fill: #fff; }
 .diagram .nkp-pod { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
-.diagram .nkp-head { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; fill: var(--muted); }
+.diagram .nkp-head { font-size: 13px; font-weight: 600; fill: var(--muted); }
 .diagram .nkp-head.flow { fill: var(--flow); }
 .diagram .nkp-head.ok { fill: var(--ok); }
 .diagram .nkp-head.off { fill: var(--faint); }

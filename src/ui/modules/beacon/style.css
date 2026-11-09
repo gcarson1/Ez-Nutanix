@@ -12,7 +12,7 @@
 .diagram .bc-piece.ok { stroke: var(--ok); }
 .diagram .bc-piece.warn { stroke: var(--warn); stroke-dasharray: 6 4; }
 .diagram .bc-piece.now { stroke-width: 2.5; fill: var(--sel); }
-.diagram .bc-st { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+.diagram .bc-st { font-size: 12px; font-weight: 600; }
 .diagram .bc-st.ok { fill: var(--ok); }
 .diagram .bc-st.warn { fill: var(--warn); }
 @media (max-width: 600px) {

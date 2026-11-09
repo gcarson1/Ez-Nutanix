@@ -334,10 +334,6 @@ function ModuleView({ def }: { def: ModuleDef }) {
     <div class="mod">
       <header class="mod-head" style={{ viewTransitionName: 'hero' }}>
         <div>
-          <div class="mod-tag">
-            <i />
-            {def.parent ? findModule(def.parent)?.content.title ?? c.tag : c.tag}
-          </div>
           <h1 tabIndex={-1} ref={h1}>
             {c.title}
           </h1>

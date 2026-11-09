@@ -26,7 +26,7 @@
 .diagram .cp-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1; }
 .cp-ec { grid-column: 1 / -1; max-width: 54rem; margin-top: var(--sp-3); }
 .diagram .cp-nl { paint-order: stroke; stroke: var(--bg-2); stroke-width: 5px; stroke-linejoin: round; }
-.cp-ec-h { font-size: var(--fs-11); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--sp-2); }
+.cp-ec-h { font-size: var(--fs-11); font-weight: 600; color: var(--muted); margin-bottom: var(--sp-2); }
 .cp-ec-row { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 19rem; gap: var(--sp-3); align-items: center; padding: var(--sp-1) 0; font-size: var(--fs-13); color: var(--text-2); }
 .cp-ec-row .bar { height: 0.75rem; border: 1px solid var(--line-2); position: relative; }
 .cp-ec-row .bar i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
@@ -36,7 +36,7 @@
 /* blocks and racks tab */
 .diagram .cp-group { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
 .diagram .cp-group.down { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 6 4; }
-.diagram .cp-group-t { font-size: 12px; font-weight: 600; fill: var(--muted); letter-spacing: 0.02em; }
+.diagram .cp-group-t { font-size: 12px; font-weight: 600; fill: var(--muted); }
 .diagram .cp-lost.gone { stroke-width: 2.25; opacity: 1; }
 .diagram .cp-warn-t { font-size: 13px; font-weight: 600; }
 

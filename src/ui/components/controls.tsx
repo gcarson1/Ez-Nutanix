@@ -76,11 +76,14 @@ export function Tip({ text, detail, children, align }: { text: string; detail?: 
   );
 }
 
-/** "Illustrative" tag with an explanation of the simplification. */
+/** A small info button that explains how the picture is simplified. */
 export function Illus({ why }: { why: string }) {
   return (
-    <Tip text={why}>
-      <span class="illus">Illustrative</span>
+    <Tip text={why} align="right">
+      <span class="illus">
+        <Icon name="info" />
+        <span class="sr-only">About this illustration</span>
+      </span>
     </Tip>
   );
 }

@@ -27,8 +27,8 @@ function NodeCutaway() {
   return (
     <svg class="diagram" viewBox="0 0 520 300" role="img" aria-label="What is in a node: user VMs and a Controller VM on the hypervisor, local drives passed to the CVM, and network ports">
       <rect class="frame" x={1} y={1} width={518} height={298} />
-      <text x={14} y={22} class="muted" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>
-        ONE NODE
+      <text x={14} y={22} class="muted" style={{ fontSize: '12px' }}>
+        One node
       </text>
       {[0, 1, 2].map((i) => (
         <g key={i}>

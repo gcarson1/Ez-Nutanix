@@ -96,8 +96,8 @@ function ExtDiagram({ t }: { t: number }) {
           ))}
         </g>
       ) : (
-        <text x={0} y={22} class="muted" style={{ fontSize: '12px', letterSpacing: '0.08em' }}>
-          COMPUTE: AHV NODES WITH NO DATA DRIVES
+        <text x={0} y={22} class="muted" style={{ fontSize: '12px' }}>
+          Compute: AHV nodes with no data drives
         </text>
       )}
 

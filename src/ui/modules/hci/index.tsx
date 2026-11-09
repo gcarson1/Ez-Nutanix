@@ -90,7 +90,7 @@ const CON = [
   { t: 'Array console', s: 'LUNs · masking' },
 ];
 /** The tier each console runs, outlined as the console arrives and labeled on the left. */
-const TIER_L = ['COMPUTE', 'NETWORKING', 'STORAGE'];
+const TIER_L = ['Compute', 'Networking', 'Storage'];
 const TIER: R[] = [
   { x: 1, y: 78, w: W - 2, h: 96 },
   { x: 34, y: 192, w: 652, h: 36 },
@@ -381,8 +381,8 @@ function Controllers({ n, o, hl }: { n: number; o: number; hl: boolean }) {
   );
   return (
     <g style={{ opacity: o }}>
-      <text x={2} y={y - 8} class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-        STORAGE CONTROLLERS
+      <text x={2} y={y - 8} class="muted" style={{ fontSize: '11px' }}>
+        Storage controllers
       </text>
       {row(0, 'Nutanix cluster', n, 'one CVM per node')}
       {row(20, '3-tier array', 2, 'however many hosts share them')}

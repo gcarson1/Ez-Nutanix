@@ -33,8 +33,8 @@ function Fabric({ y, h, note }: { y: number; h: number; note: string }) {
   return (
     <g>
       <rect class="sto-dsf" x={20} y={y} width={W - 40} height={h} />
-      <text x={36} y={y + h - 10} class="muted" style={{ fontSize: '11.5px', letterSpacing: '0.06em' }}>
-        DISTRIBUTED STORAGE FABRIC
+      <text x={36} y={y + h - 10} class="muted" style={{ fontSize: '11.5px' }}>
+        Distributed storage fabric
       </text>
       <text x={W - 36} y={y + h - 10} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
         {note}

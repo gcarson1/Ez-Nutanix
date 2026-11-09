@@ -1,9 +1,9 @@
 /* Enterprise AI module (prefix ai-) */
 .diagram .ai-site { fill: none; stroke: var(--ink-line); stroke-width: 1.5; stroke-dasharray: 8 5; }
 .diagram .ai-site.off { stroke: var(--warn); }
-.diagram .ai-site-t { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; fill: var(--ink-fg); }
+.diagram .ai-site-t { font-size: 12px; font-weight: 600; fill: var(--ink-fg); }
 .diagram .ai-site-t.warn-fill { fill: var(--warn); }
-.diagram .ai-cap { font-size: 11px; letter-spacing: 0.08em; }
+.diagram .ai-cap { font-size: 11px; }
 .diagram .ai-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .ai-ep { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 1.5; }
 .diagram .ai-net { fill: none; stroke: var(--line-2); stroke-dasharray: 4 4; }

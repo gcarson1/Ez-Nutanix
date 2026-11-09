@@ -122,8 +122,8 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
         ))}
       </defs>
       <rect x={X0} y={NET_Y - 16} width={W - X0 * 2} height={24} class="bg3" />
-      <text x={W - X0 - 8} y={NET_Y + 1} text-anchor="end" class="muted" style={{ fontSize: '11px', letterSpacing: '0.06em' }}>
-        CLUSTER NETWORK
+      <text x={W - X0 - 8} y={NET_Y + 1} text-anchor="end" class="muted" style={{ fontSize: '11px' }}>
+        Cluster network
       </text>
       {Array.from({ length: DP_NODES }, (_, n) => {
         const x = nx(n);
@@ -180,7 +180,7 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
               </text>
             )}
             <rect x={x + 4} y={Y.sg - 14} width={NW - 8} height={Y.extent + BOX_H.extent - Y.sg + 22} class="dp-cvm" />
-            <text x={x + NW - 10} y={Y.sg - 3} text-anchor="end" class="ink-text dp-cvm-l" style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.06em' }}>
+            <text x={x + NW - 10} y={Y.sg - 3} text-anchor="end" class="ink-text dp-cvm-l" style={{ fontSize: '10.5px', fontWeight: 600 }}>
               CVM
             </text>
             {box('sg', { at: 'stargate', node: n }, 'Stargate', 'serves all I/O')}
@@ -273,8 +273,8 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
         </g>
       ))}
       <rect x={10} y={198} width={500} height={14} class="bg3" />
-      <text x={505} y={224} text-anchor="end" class="muted" style={{ fontSize: '10px', letterSpacing: '0.06em' }}>
-        NETWORK
+      <text x={505} y={224} text-anchor="end" class="muted" style={{ fontSize: '10px' }}>
+        Network
       </text>
       {readPts && <polyline points={readPts.map((p) => p.join(',')).join(' ')} class={`dp-hop ${f.readRemote ? 'rep' : 'io'}`} marker-end={`url(#dp-lar-${f.readRemote ? 'rep' : 'io'})`} />}
       {f.phase === 'migrate' && <path d={`M ${nodeX[0] + 210} 67 H ${nodeX[1] + 10}`} class="dp-hop ack" marker-end="url(#dp-lar-ack)" />}
