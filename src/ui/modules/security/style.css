@@ -9,7 +9,7 @@
 .sc-dia .sc-km { fill: var(--ink-soft); stroke: var(--ink-line); }
 .sc-dia .sc-key circle, .sc-dia .sc-key path { fill: none; stroke: var(--ink-fg); stroke-width: 2; }
 .sc-dia .sc-keyline { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
-.sc-dia .sc-out { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 7 5; opacity: 0.7; }
+.sc-dia .sc-out { fill: none; stroke: var(--bad); stroke-width: 1.5; opacity: 0.7; }
 .sc-dia .sc-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; rx: 3px; }
 .sc-dia .sc-piece { fill: var(--ink); }
 .sc-dia .sc-piece.exposed { stroke: var(--bad); stroke-width: 2.5; }

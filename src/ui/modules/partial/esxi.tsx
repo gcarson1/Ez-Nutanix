@@ -147,7 +147,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
         const label = h.ahv >= 0.5 ? 'AHV' : 'ESXi';
         return (
           <g key={i} style={{ opacity: k }}>
-            <rect x={x} y={HOST_Y} width={NW} height={HOST_H} class={`node-box${h.maint ? ' warn' : ''}`} stroke-dasharray={h.maint ? '5 4' : undefined} />
+            <rect x={x} y={HOST_Y} width={NW} height={HOST_H} class={`node-box${h.maint ? ' warn' : ''}`} />
             <text x={x + 12} y={HOST_Y + 20} style={{ fontSize: '13.5px', fontWeight: 600 }}>
               Host {i + 1}
             </text>
@@ -211,7 +211,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
           </text>
         </g>
       ) : (
-        <rect x={0} y={DS_Y} width={W} height={DS_H} class="frame-dash" />
+        <rect x={0} y={DS_Y} width={W} height={DS_H} class="frame" />
       )}
     </svg>
   );
@@ -278,7 +278,7 @@ export default function EsxiOnNutanix() {
           { color: 'var(--ink)', label: conv ? 'Controller VM (CVM) and AHV' : 'Controller VM (CVM), which owns the drives' },
           { color: 'var(--flow)', label: 'Storage traffic' },
           { color: 'var(--line-2)', label: 'Drives passed through to the CVM', dashed: true },
-          { color: 'var(--warn)', label: conv ? 'Host converting' : 'Host being upgraded', dashed: true },
+          { color: 'var(--warn)', label: conv ? 'Host converting' : 'Host being upgraded' },
         ]}
       />
       <PlayBar

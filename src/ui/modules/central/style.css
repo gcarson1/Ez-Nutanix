@@ -15,6 +15,6 @@
 .diagram .cen-beat { fill: var(--ink-fg); opacity: 0.75; }
 .diagram .cen-warn-dot { fill: var(--warn); stroke: var(--bg); stroke-width: 2; }
 .diagram .cen-out { opacity: 0.38; }
-.diagram .cen-scope { fill: none; stroke: var(--ink-fg); stroke-width: 2; stroke-dasharray: 8 5; transition: stroke-width var(--t-fast); }
+.diagram .cen-scope { fill: none; stroke: var(--ink-fg); stroke-width: 2; transition: stroke-width var(--t-fast); }
 .diagram .cen-scope.now { stroke-width: 3; }
 .diagram .cen-scope-t { font-size: 13px; font-weight: 600; fill: var(--ink-fg); }

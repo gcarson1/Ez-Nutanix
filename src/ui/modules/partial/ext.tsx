@@ -263,7 +263,7 @@ export default function ExtStorage() {
           { color: 'var(--ink)', label: 'Controller VM (CVM), the storage client' },
           { color: 'var(--flow)', label: 'Storage traffic' },
           { color: 'var(--flow)', label: 'Disk-to-volume mapping', dashed: true },
-          { color: 'var(--line-2)', label: 'Array snapshot', dashed: true },
+          { color: 'var(--line-2)', label: 'Array snapshot' },
         ]}
       />
       <PlayBar

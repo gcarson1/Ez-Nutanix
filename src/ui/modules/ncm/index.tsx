@@ -880,7 +880,7 @@ function Security() {
           { color: 'var(--bad)', label: 'Failing, high severity' },
           { color: 'var(--warn)', label: 'Failing, medium or low severity' },
           { color: 'var(--flow)', label: 'Being fixed' },
-          { color: 'var(--warn)', dashed: true, label: 'Changed by hand' },
+          { color: 'var(--warn)', label: 'Changed by hand' },
         ]}
       />
       <PlayBar

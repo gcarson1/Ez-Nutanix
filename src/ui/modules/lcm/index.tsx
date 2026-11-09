@@ -131,7 +131,7 @@ function ClusterUpgrade() {
           ...(sc === 'fail'
             ? [
                 { color: 'var(--bad)', label: 'Failed' },
-                { color: 'var(--warn)', dashed: true, label: 'LCM holding' },
+                { color: 'var(--warn)', label: 'LCM holding' },
               ]
             : []),
         ]}

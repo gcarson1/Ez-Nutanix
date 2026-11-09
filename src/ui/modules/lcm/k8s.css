@@ -5,7 +5,7 @@
 .diagram .nkp-box.ok { stroke: var(--ok); }
 .diagram .nkp-box.bad { stroke: var(--bad); stroke-width: 2; fill: var(--bad-bg); }
 .diagram .nkp-off { opacity: 0.45; }
-.diagram .nkp-off .nkp-box { stroke-dasharray: 4 4; }
+.diagram .nkp-off .nkp-box { }
 .diagram .nkp-node { stroke-width: 1.25; }
 .diagram .nkp-node.old { fill: var(--bg-3); stroke: var(--line-2); }
 .diagram .nkp-node.new { fill: var(--ink); stroke: var(--ink); }

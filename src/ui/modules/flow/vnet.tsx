@@ -274,7 +274,7 @@ export function VNet() {
       <Legend
         items={[
           { color: 'var(--ink)', label: 'VPC A' },
-          { color: 'var(--flow)', dashed: true, label: 'VPC B' },
+          { color: 'var(--flow)', label: 'VPC B' },
           { color: 'var(--flow)', label: 'Path of the packet' },
           ...(preset !== 'vpc' ? [{ color: 'var(--warn)', label: 'Address swapped' }] : []),
         ]}

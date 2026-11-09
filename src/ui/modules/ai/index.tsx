@@ -277,7 +277,7 @@ function EndpointView() {
           { color: 'var(--flow)', label: 'Request' },
           { color: 'var(--ok)', label: 'Answer' },
           { color: 'var(--ink)', label: 'Copy of the model on a GPU' },
-          { color: 'var(--bad)', label: 'Stopped replica', dashed: true },
+          { color: 'var(--bad)', label: 'Stopped replica' },
         ]}
       />
       <PlayBar

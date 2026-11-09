@@ -157,7 +157,7 @@ function HostDiagram({ bond, fail, t, pkts }: { bond: BondMode; fail: LinkFail; 
       <rect x={BR.x} y={BR.y} width={BR.w} height={BR.h} class="net-br" />
 
       {/* bond, links and switches */}
-      <rect x={BOND.x} y={BOND.y} width={BOND.w} height={BOND.h} class="frame-dash" />
+      <rect x={BOND.x} y={BOND.y} width={BOND.w} height={BOND.h} class="frame" />
       {bond === 'lacp' && (
         <g>
           <rect x={SW.x - 14} y={nicY(0) - 18} width={SW.w + 28} height={nicY(1) + NIC.h - nicY(0) + 36} class="net-lag" />

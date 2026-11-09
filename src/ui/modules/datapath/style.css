@@ -3,7 +3,7 @@
 .diagram .dp-cvm { fill: var(--ink-soft); stroke: var(--ink-line); stroke-width: 1; }
 .diagram .dp-box { fill: var(--bg); stroke: var(--line-2); stroke-width: 1; transition: stroke var(--t-fast), fill var(--t-fast); }
 .diagram .dp-box.on { stroke: var(--ink); stroke-width: 2; }
-.diagram .dp-box.dim { opacity: 0.4; stroke-dasharray: 4 3; }
+.diagram .dp-box.dim { opacity: 0.4; }
 .diagram .dp-box.miss { fill: var(--bg-3); stroke: var(--faint); stroke-dasharray: 3 3; }
 .diagram .dp-box.hit { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 2; }
 .diagram .dp-hop { fill: none; stroke-width: 2; stroke-linejoin: round; }

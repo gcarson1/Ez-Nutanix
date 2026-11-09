@@ -4,7 +4,7 @@
 .diagram .oe-ru { stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .oe-name { font-size: 15px; font-weight: 650; }
 .diagram .oe-copy { fill: var(--ink); }
-.diagram .oe-strip { fill: var(--bg-2); stroke: var(--line-2); stroke-dasharray: 5 4; }
+.diagram .oe-strip { fill: var(--bg-2); stroke: var(--line-2); }
 .diagram .oe-pc { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 1.5; }
 .diagram .oe-cl { fill: var(--bg); stroke: var(--ink); stroke-width: 1.5; }
 .diagram .oe-link { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }

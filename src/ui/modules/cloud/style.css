@@ -2,6 +2,6 @@
 .cld-dia .cld-t { font-size: 15px; font-weight: 650; }
 .cld-dia .cld-s { font-size: 13px; }
 .cld-dia .cld-xs { font-size: 11.5px; }
-.cld-dia .cld-cloud { fill: var(--bg-2); stroke: var(--line-2); stroke-dasharray: 6 4; }
-.cld-dia .cld-replica { fill: none; stroke: var(--flow); stroke-dasharray: 3 3; }
+.cld-dia .cld-cloud { fill: var(--bg-2); stroke: var(--line-2); }
+.cld-dia .cld-replica { fill: none; stroke: var(--flow); }
 .cld-dia .cld-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }

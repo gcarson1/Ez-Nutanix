@@ -8,7 +8,7 @@
 .lcm-dia .lcm-done { fill: var(--ink); opacity: 0.85; }
 .lcm-dia .lcm-now { fill: var(--flow); }
 .lcm-dia .lcm-todo { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.5; }
-.lcm-dia .lcm-wait { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1; stroke-dasharray: 4 3; }
+.lcm-dia .lcm-wait { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1; }
 .lcm-dia .warn-fill { fill: var(--warn); }
 .lcm-dia text.bad-fill { fill: var(--bad); }
 .lcm-dia text.flow-fill { fill: var(--flow); }

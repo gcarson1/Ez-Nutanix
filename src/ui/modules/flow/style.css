@@ -1,7 +1,7 @@
 /* Flow module (prefix fl-) */
 /* Network Security */
 .diagram .fl-env { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1; }
-.diagram .fl-env.dev { stroke-dasharray: 6 4; }
+.diagram .fl-env.dev { }
 .diagram .fl-envlbl { font-size: 12px; font-weight: 600; fill: var(--muted); }
 .diagram .fl-st { font-size: 12.5px; font-weight: 600; }
 .diagram .fl-st.off { fill: var(--muted); }
@@ -9,7 +9,7 @@
 .diagram .fl-st.enforce { fill: var(--ink-fg); }
 .diagram .fl-wall { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 6 5; }
 .diagram .fl-wall.enforce { stroke: var(--ink); stroke-width: 2.5; stroke-dasharray: none; }
-.diagram .fl-ext { fill: var(--bg-3); stroke: var(--line-2); stroke-dasharray: 3 3; }
+.diagram .fl-ext { fill: var(--bg-3); stroke: var(--line-2); }
 .diagram .fl-vm { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .fl-vm.quar { fill: var(--bad-bg); }
 .diagram .fl-guard { fill: none; stroke: var(--ink); stroke-width: 1.5; }
@@ -27,7 +27,7 @@
 /* Virtual Networking */
 .diagram .fl-vpc { fill: var(--bg); stroke-width: 2; }
 .diagram .fl-vpc.a { stroke: var(--ink); }
-.diagram .fl-vpc.b { stroke: var(--flow); stroke-dasharray: 6 3; }
+.diagram .fl-vpc.b { stroke: var(--flow); }
 .diagram .fl-vpc.got, .diagram .fl-netbox.got { fill: var(--ok-bg); }
 .diagram .fl-sw { fill: var(--ink-soft); stroke: var(--ink-line); }
 .diagram .fl-netbox { fill: var(--bg-2); stroke: var(--line-2); }
@@ -38,5 +38,5 @@
 .diagram .fl-pkt { fill: var(--bg); stroke: var(--text-2); stroke-width: 1.5; }
 .diagram .fl-pkt.swap { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 2; }
 .diagram .fl-wrap { fill: var(--bg-3); stroke: var(--ink); stroke-width: 2; }
-.diagram .fl-wrap.b { stroke: var(--flow); stroke-dasharray: 6 3; }
+.diagram .fl-wrap.b { stroke: var(--flow); }
 .diagram .fl-wrap-t { font-size: 11px; font-weight: 600; }

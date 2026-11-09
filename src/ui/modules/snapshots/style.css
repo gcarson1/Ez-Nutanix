@@ -3,9 +3,9 @@
 .diagram .sn-own { fill: var(--ink); stroke: var(--ink); }
 .diagram text.sn-on-own { fill: #fff; }
 .diagram .sn-full { fill: var(--s2); }
-.diagram .sn-cluster { fill: none; stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 7 5; }
+.diagram .sn-cluster { fill: none; stroke: var(--warn); stroke-width: 1.5; }
 .diagram .sn-rep { stroke: var(--warn); stroke-width: 2; }
-.diagram .sn-site { fill: var(--bg-2); stroke: var(--line-2); stroke-dasharray: 5 4; }
+.diagram .sn-site { fill: var(--bg-2); stroke: var(--line-2); }
 
 /* On phones the 960-wide picture scrolls sideways; keep its labels readable. */
 @media (max-width: 600px) {
@@ -17,7 +17,7 @@
 .diagram .sn-act { fill: var(--bg); stroke: var(--line-2); }
 .diagram .sn-act.on { stroke: var(--flow); stroke-width: 2; fill: var(--flow-bg); }
 .diagram .sn-lane { stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .sn-cat { fill: var(--bg); stroke: var(--line-2); stroke-dasharray: 4 3; }
+.diagram .sn-cat { fill: var(--bg); stroke: var(--line-2); }
 .diagram .sn-policy { fill: var(--bg); stroke: var(--line-2); }
 .diagram .sn-policy.on { stroke: var(--ink); stroke-width: 2; }
 .diagram .sn-copy { fill: var(--s3); stroke: var(--line-2); }

@@ -60,7 +60,7 @@ const USE_IDS = Object.keys(USES) as Use[];
 const LEGEND: Record<Use, { color: string; label: string; dashed?: boolean }[]> = {
   dr: [
     { color: 'var(--ink)', label: 'Running VM' },
-    { color: 'var(--flow)', label: 'Replica waiting in the cloud', dashed: true },
+    { color: 'var(--flow)', label: 'Replica waiting in the cloud' },
     { color: 'var(--flow)', label: 'Replication' },
     { color: 'var(--bad)', label: 'Stopped VM' },
   ],

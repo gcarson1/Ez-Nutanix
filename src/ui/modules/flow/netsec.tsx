@@ -378,7 +378,7 @@ export function NetSec() {
           ...(shots.some((s) => !s.v.allowed) ? [{ color: 'var(--ok)', label: 'Stopped by a policy' }] : []),
           ...(verdicts.some((v) => v.allowed && v.wouldDrop) ? [{ color: 'var(--warn)', label: 'Logged, but let through (Monitor)', dashed: true }] : []),
           ...(mode === 'off' ? [] : [{ color: mode === 'monitor' ? 'var(--warn)' : 'var(--ink)', label: 'Outline: the policy, checked at each VM', dashed: true }]),
-          ...(quar ? [{ color: 'var(--bad)', label: 'Outline: quarantined VM', dashed: true }] : []),
+          ...(quar ? [{ color: 'var(--bad)', label: 'Outline: quarantined VM' }] : []),
         ]}
       />
       <PlayBar

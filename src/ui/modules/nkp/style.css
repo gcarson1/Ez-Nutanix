@@ -1,6 +1,6 @@
 /* Kubernetes Platform module (prefix nk-) */
 .diagram .nk-isl { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
-.diagram .nk-isl.loose { stroke-dasharray: 5 4; }
+.diagram .nk-isl.loose { }
 .diagram .nk-cl { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .nk-cl.on { stroke: var(--ink); stroke-width: 2; }
 .diagram .nk-node { fill: var(--bg-3); stroke: var(--line-2); }

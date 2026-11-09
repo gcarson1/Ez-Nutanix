@@ -119,7 +119,7 @@ export default function Edge() {
           items={[
             { color: 'var(--ink)', label: 'VM running' },
             ...(marks.stopped ? [{ color: 'var(--bad)', label: 'VM stopped' }] : []),
-            ...(marks.restarted ? [{ color: 'var(--warn)', label: 'VM restarted by HA', dashed: true }] : []),
+            ...(marks.restarted ? [{ color: 'var(--warn)', label: 'VM restarted by HA' }] : []),
             ...(marks.healed ? [{ color: 'var(--flow)', label: 'Copies being re-created' }] : []),
           ]}
         />

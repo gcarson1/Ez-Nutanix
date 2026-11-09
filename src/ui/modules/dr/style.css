@@ -13,10 +13,10 @@
 .diagram .dr-person { fill: var(--warn); }
 .diagram .dr-vm { stroke-width: 1.25; }
 .diagram .dr-vm.on { fill: var(--ok-bg); stroke: var(--ok); }
-.diagram .dr-vm.off { fill: var(--bg); stroke: var(--line-2); stroke-dasharray: 3 2; }
+.diagram .dr-vm.off { fill: var(--bg); stroke: var(--line-2); }
 .diagram .dr-vm.boot { fill: var(--flow-bg); stroke: var(--flow); }
 .diagram .dr-vm.stopping { fill: var(--warn-bg); stroke: var(--warn); }
-.diagram .dr-vm.lost { fill: var(--bad-bg); stroke: var(--bad); stroke-dasharray: 3 2; }
+.diagram .dr-vm.lost { fill: var(--bad-bg); stroke: var(--bad); }
 .diagram .dr-st { fill: var(--muted); }
 .diagram .dr-st.ok, .diagram .dr-st.on { fill: var(--ok); }
 .diagram .dr-st.warn, .diagram .dr-st.stopping { fill: var(--warn); }
