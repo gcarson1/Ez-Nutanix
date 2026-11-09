@@ -101,19 +101,19 @@ function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; 
       {[0, 25, 50, 75, 100].map((v) => (
         <g key={v}>
           <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
-          <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted" style={{ fontSize: '11px' }}>
+          <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted d-fine">
             {v}%
           </text>
         </g>
       ))}
       {WEEKDAYS.map((d, i) => (
-        <text key={d} x={sx(i * 24 + 12)} y={H - 10} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        <text key={d} x={sx(i * 24 + 12)} y={H - 10} text-anchor="middle" class="muted d-sub">
           {d}
         </text>
       ))}
       <path d={`${hi} ${lo} Z`} class="ncm-band" style={{ opacity: prog(t, 0, DRAW_FROM) }} />
       <line x1={l} x2={W - r} y1={sy(FIXED)} y2={sy(FIXED)} class="ncm-fixed" />
-      <text x={W - r} y={sy(FIXED) - 6} text-anchor="end" class="muted halo" style={{ fontSize: '12px' }}>
+      <text x={W - r} y={sy(FIXED) - 6} text-anchor="end" class="muted halo d-sub">
         A fixed {FIXED}% alarm
       </text>
       {t >= DRAW_FROM && <path d={line} class="ncm-cpu" />}
@@ -127,14 +127,14 @@ function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; 
         return (
           <g key={s.start}>
             <circle cx={x} cy={y} r={7} class="bad-fill" stroke="var(--bg)" stroke-width={2} />
-            <text x={right ? x + 14 : x - 14} y={y + 5} text-anchor={right ? 'start' : 'end'} class="bad-fill halo" style={{ fontSize: '13px', fontWeight: 600 }}>
+            <text x={right ? x + 14 : x - 14} y={y + 5} text-anchor={right ? 'start' : 'end'} class="bad-fill halo d-label" style={{ fontWeight: 600 }}>
               ✕ Unusual for this hour
             </text>
           </g>
         );
       })}
       {shown.map((s) => (
-        <text key={`fx${s.start}`} x={sx(s.start) + 14} y={alarmed(s) ? sy(FIXED) - 22 : sy(FIXED) + 18} class={`${alarmed(s) ? 'muted' : 'warn-fill'} halo`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        <text key={`fx${s.start}`} x={sx(s.start) + 14} y={alarmed(s) ? sy(FIXED) - 22 : sy(FIXED) + 18} class={`${`${alarmed(s) ? 'muted' : 'warn-fill'} halo`} d-label`} style={{ fontWeight: 600 }}>
           {alarmed(s) ? `Over ${FIXED}%: the fixed alarm fires too` : `Under ${FIXED}%: the fixed alarm stays silent`}
         </text>
       ))}
@@ -303,10 +303,10 @@ function Provision({ i, t }: { i: number; t: number }) {
       <text x={BOX[k].x + 14} y={BY + 24} class="ss-h">
         {title}
       </text>
-      <text x={BOX[k].x + 14} y={BY + 43} class="muted" style={{ fontSize: '12px' }}>
+      <text x={BOX[k].x + 14} y={BY + 43} class="muted d-sub">
         {sub}
       </text>
-      <text x={BOX[k].x + 14} y={BY + 66} class={statusCls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+      <text x={BOX[k].x + 14} y={BY + 66} class={`${statusCls} d-label`} style={{ fontWeight: 600 }}>
         {status}
       </text>
     </g>
@@ -321,7 +321,7 @@ function Provision({ i, t }: { i: number; t: number }) {
       </defs>
       <line x1={reqR + 4} x2={BOX.chk.x - 6} y1={LANE} y2={LANE} class="ss-arrow" marker-end="url(#ss-ar)" />
       <line x1={chkR + 4} x2={CL.x - 6} y1={LANE} y2={LANE} class={`ss-arrow${refused || detour ? ' off' : ''}`} marker-end="url(#ss-ar)" />
-      <text x={(chkR + CL.x) / 2} y={LANE + 20} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={(chkR + CL.x) / 2} y={LANE + 20} text-anchor="middle" class="muted d-sub">
         no approval needed
       </text>
 
@@ -332,12 +332,12 @@ function Provision({ i, t }: { i: number; t: number }) {
       <g class={detour ? '' : 'ss-dim'}>
         <rect class={`ss-box${detour ? '' : ' dashed'}`} x={APR.x} y={APR.y} width={APR.w} height={APR.h} />
         <text x={APR.x + 14} y={APR.y + 22} class="ss-h">
-          Approval <tspan class="muted" style={{ fontSize: '11.5px', fontWeight: 400 }}>· optional policy</tspan>
+          Approval <tspan class="muted d-sub" style={{ fontWeight: 400 }}>· optional policy</tspan>
         </text>
-        <text x={APR.x + 14} y={APR.y + 39} class="muted" style={{ fontSize: '12px' }}>
+        <text x={APR.x + 14} y={APR.y + 39} class="muted d-sub">
           only above {p.approvalAbove} vCPU
         </text>
-        <text x={APR.x + 14} y={APR.y + 56} class={aprCls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        <text x={APR.x + 14} y={APR.y + 56} class={`${aprCls} d-label`} style={{ fontWeight: 600 }}>
           {aprStatus}
         </text>
       </g>
@@ -350,7 +350,7 @@ function Provision({ i, t }: { i: number; t: number }) {
       <text x={CL.x + 14} y={CL.y + 24} class="ss-h">
         Cluster
       </text>
-      <text x={CL.x + 14} y={CL.y + 42} class={refused ? 'bad-fill' : 'muted'} style={{ fontSize: '12px' }}>
+      <text x={CL.x + 14} y={CL.y + 42} class={`${refused ? 'bad-fill' : 'muted'} d-sub`}>
         {refused ? 'nothing created for this request' : `project ${p.label}`}
       </text>
       {tiles.map((v2, n) => {
@@ -362,10 +362,10 @@ function Provision({ i, t }: { i: number; t: number }) {
         return (
           <g key={n}>
             <rect x={x} y={y} width={TILE.w} height={TILE.h} class={v2.mine && ready ? 'vm hl' : 'vm'} />
-            <text x={x + 8} y={y + 18} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+            <text class="d-sub" x={x + 8} y={y + 18} style={{ fontWeight: 600 }}>
               {v2.role}
             </text>
-            <text x={x + 8} y={y + 33} class="mono muted" style={{ fontSize: '10.5px' }}>
+            <text x={x + 8} y={y + 33} class="mono muted d-fine">
               {v2.vcpu} vCPU
             </text>
             {!live && configFrac > 0 && (
@@ -375,12 +375,12 @@ function Provision({ i, t }: { i: number; t: number }) {
               </>
             )}
             {!live && configFrac === 0 && (
-              <text x={x + 8} y={y + 50} class="muted" style={{ fontSize: '10.5px' }}>
+              <text x={x + 8} y={y + 50} class="muted d-fine">
                 Deploying…
               </text>
             )}
             {live && (
-              <text x={x + 8} y={y + 50} class="ok-fill" style={{ fontSize: '10.5px', fontWeight: 600 }}>
+              <text x={x + 8} y={y + 50} class="ok-fill d-fine" style={{ fontWeight: 600 }}>
                 ✓ Running
               </text>
             )}
@@ -388,7 +388,7 @@ function Provision({ i, t }: { i: number; t: number }) {
         );
       })}
       {ready && (
-        <text x={CL.x + 14} y={CL.y + CL.h - 12} class="ok-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
+        <text x={CL.x + 14} y={CL.y + CL.h - 12} class="ok-fill d-sub" style={{ fontWeight: 600 }}>
           ✓ Owner, project, categories set
         </text>
       )}
@@ -396,7 +396,7 @@ function Provision({ i, t }: { i: number; t: number }) {
       {token && <rect x={token.at[0] - 13} y={token.at[1] - 9} width={26} height={18} rx={3} class={token.bad ? 'bad-fill' : 'ink-fill'} />}
 
       {/* the project's vCPU quota */}
-      <text x={12} y={QY - 10} class="muted" style={{ fontSize: '12px' }}>
+      <text x={12} y={QY - 10} class="muted d-sub">
         Project {p.label} · vCPU quota
       </text>
       <rect x={12} y={QY} width={QW} height={18} class="bg3" />
@@ -404,7 +404,7 @@ function Provision({ i, t }: { i: number; t: number }) {
       {checked && <rect x={12 + usedW} y={QY} width={addW} height={18} class={v.ok ? 'flow-fill' : 'bad-fill'} />}
       {refused && <rect x={12 + QW} y={QY} width={overW} height={18} class="ss-over" />}
       <line x1={12 + QW} x2={12 + QW} y1={QY - 6} y2={QY + 24} class="ss-limit" />
-      <text x={12} y={QY + 40} class="mono" style={{ fontSize: '12.5px' }}>
+      <text x={12} y={QY + 40} class="mono d-label">
         {checked ? (v.ok ? `${p.used.vcpu} used + ${d.vcpu} for this request = ${v.after.vcpu} of ${p.quota.vcpu} vCPU` : `${p.used.vcpu} used, needs ${d.vcpu}, only ${p.quota.vcpu - p.used.vcpu} left of ${p.quota.vcpu}`) : `${p.used.vcpu} of ${p.quota.vcpu} vCPU used`}
       </text>
     </svg>
@@ -538,37 +538,37 @@ function SpendChart({ t }: { t: number }) {
       {[0, 1000, 2000, 3000, 4000, 5000, 6000, 7000].map((v) => (
         <g key={v}>
           <line x1={l} x2={sx(MONTH)} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
-          <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted" style={{ fontSize: '11px' }}>
+          <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted d-fine">
             {v ? `$${v / 1000}k` : '$0'}
           </text>
         </g>
       ))}
       {[1, 5, 10, 15, 20, 25, 30].map((d) => (
-        <text key={d} x={sx(d)} y={H - 10} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+        <text key={d} x={sx(d)} y={H - 10} text-anchor="middle" class="muted d-sub">
           Day {d}
         </text>
       ))}
       {t < MONTH && <line x1={sx(day)} x2={sx(day)} y1={top} y2={H - b} class="ncm-cursor" />}
       <line x1={l} x2={sx(MONTH)} y1={sy(DEV.budget)} y2={sy(DEV.budget)} class="ss-limit" />
-      <text x={l + 8} y={sy(DEV.budget) - 7} class="halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+      <text x={l + 8} y={sy(DEV.budget) - 7} class="halo d-label" style={{ fontWeight: 600 }}>
         Budget {usd(DEV.budget)}
       </text>
       <line x1={l} x2={sx(MONTH)} y1={sy(DEV.budget * ALERT_AT)} y2={sy(DEV.budget * ALERT_AT)} class="ncm-fixed" />
-      <text x={l + 8} y={sy(DEV.budget * ALERT_AT) - 7} class="muted halo" style={{ fontSize: '12px' }}>
+      <text x={l + 8} y={sy(DEV.budget * ALERT_AT) - 7} class="muted halo d-sub">
         Alert at {ALERT_AT * 100}%
       </text>
 
       {t >= HOT.from && (
         <g style={{ opacity: prog(t, HOT.from, HOT.from + 1) }}>
           <path d={path(LEFT_ALONE, HOT.from, MONTH)} class="ncm-alone" />
-          <text x={sx(MONTH) + 10} y={sy(ALONE_END) + 4} class="bad-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text x={sx(MONTH) + 10} y={sy(ALONE_END) + 4} class="bad-fill d-label" style={{ fontWeight: 600 }}>
             Left alone
           </text>
-          <text x={sx(MONTH) + 10} y={sy(ALONE_END) + 21} class="mono bad-fill" style={{ fontSize: '12px' }}>
+          <text x={sx(MONTH) + 10} y={sy(ALONE_END) + 21} class="mono bad-fill d-sub">
             {usd(ALONE_END)}
           </text>
           <circle cx={hot.x} cy={hot.y} r={6} class="bad-fill" stroke="var(--bg)" stroke-width={2} />
-          <text x={hot.x + 12} y={hot.y + 20} class="bad-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text x={hot.x + 12} y={hot.y + 20} class="bad-fill halo d-label" style={{ fontWeight: 600 }}>
             Runs hot from day {HOT.from}
           </text>
         </g>
@@ -578,10 +578,10 @@ function SpendChart({ t }: { t: number }) {
       <circle cx={sx(day)} cy={sy(spent)} r={4} class="ncm-spend-dot" />
       {t >= MONTH && (
         <>
-          <text x={sx(MONTH) + 10} y={sy(NCM_END) + 4} class="ok-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text x={sx(MONTH) + 10} y={sy(NCM_END) + 4} class="ok-fill d-label" style={{ fontWeight: 600 }}>
             With NCM
           </text>
-          <text x={sx(MONTH) + 10} y={sy(NCM_END) + 21} class="mono ok-fill" style={{ fontSize: '12px' }}>
+          <text x={sx(MONTH) + 10} y={sy(NCM_END) + 21} class="mono ok-fill d-sub">
             {usd(NCM_END)}
           </text>
         </>
@@ -777,13 +777,13 @@ function Compliance({ base, t, tl }: { base: Base; t: number; tl: ReturnType<typ
           />
         );
       })}
-      <text x={130} y={140} text-anchor="middle" class="mono" style={{ fontSize: '44px', fontWeight: 600 }}>
+      <text x={130} y={140} text-anchor="middle" class="mono d-display" style={{ fontWeight: 600 }}>
         {scanned ? sc : '—'}
       </text>
-      <text x={130} y={164} text-anchor="middle" class="muted" style={{ fontSize: '13px' }}>
+      <text x={130} y={164} text-anchor="middle" class="muted d-label">
         score of 100
       </text>
-      <text x={130} y={H - 8} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={130} y={H - 8} text-anchor="middle" class="muted d-sub">
         Each arc is one check, sized by severity
       </text>
       {B.checks.map((c, i) => {
@@ -796,13 +796,13 @@ function Compliance({ base, t, tl }: { base: Base; t: number; tl: ReturnType<typ
         return (
           <g key={c.id}>
             <rect class={tileCls(s, c.sev)} x={x} y={y} width={tw} height={th} />
-            <text x={x + 14} y={y + 28} style={{ fontSize: '14px', fontWeight: 600 }}>
+            <text class="d-title" x={x + 14} y={y + 28} style={{ fontWeight: 600 }}>
               {c.short}
             </text>
-            <text x={x + 14} y={y + 47} class="muted" style={{ fontSize: '11.5px' }}>
+            <text x={x + 14} y={y + 47} class="muted d-sub">
               {c.sev} severity
             </text>
-            <text x={x + 14} y={y + 80} class={textCls(s, c.sev)} style={{ fontSize: '13px', fontWeight: 600 }}>
+            <text x={x + 14} y={y + 80} class={`${textCls(s, c.sev)} d-label`} style={{ fontWeight: 600 }}>
               {STATE_TEXT[s]}
             </text>
             {s === 'scan' && <rect x={x} y={y + th - 4} width={tw * scanF} height={4} class="ink-fill" />}

@@ -1,7 +1,7 @@
 /* LCM Rolling Upgrade module (prefix lcm-) */
-.lcm-dia .lcm-cap { font-size: 12.5px; }
-.lcm-dia .lcm-small { font-size: 14px; }
-.lcm-dia .lcm-node-name { font-size: 17px; font-weight: 650; }
+.lcm-dia .lcm-cap { font-size: 13px; }
+.lcm-dia .lcm-small { font-size: 15px; }
+.lcm-dia .lcm-node-name { font-size: 15px; font-weight: 650; }
 .lcm-dia .lcm-on-ink { fill: #fff; }
 .lcm-dia .lcm-on-warn { fill: #16161b; }
 .lcm-dia .lcm-tick { stroke: var(--line-2); stroke-width: 1; }

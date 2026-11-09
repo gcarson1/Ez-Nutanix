@@ -97,18 +97,18 @@ function ShareDiagram({ tl, t }: { tl: Timeline; t: number }) {
     <svg class="diagram dl-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A user’s PC is infected and encrypts files on three file shares. Data Lens watches the file activity, spots the attack and blocks the PC at once. The hit files are then restored from the last clean snapshot.`}>
       {/* PC */}
       <rect class={`dl-pc${attacking ? ' bad' : s.blocked ? ' off' : ''}`} x={PC.x} y={PC.y} width={PC.w} height={PC.h} />
-      <text x={PC.x + PC.w / 2} y={PC.y + 28} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
+      <text class="d-title" x={PC.x + PC.w / 2} y={PC.y + 28} text-anchor="middle" style={{ fontWeight: 600 }}>
         User’s PC
       </text>
-      <text x={PC.x + PC.w / 2} y={PC.y + 52} text-anchor="middle" class={s.blocked ? 'ok-fill' : infected ? 'bad-fill' : 'muted'} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text x={PC.x + PC.w / 2} y={PC.y + 52} text-anchor="middle" class={`${s.blocked ? 'ok-fill' : infected ? 'bad-fill' : 'muted'} d-label`} style={{ fontWeight: 600 }}>
         {pcWord}
       </text>
-      <text x={PC.x + PC.w / 2} y={PC.y + 72} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+      <text x={PC.x + PC.w / 2} y={PC.y + 72} text-anchor="middle" class="muted d-sub">
         {pcSub}
       </text>
       {/* PC → shares */}
       <line x1={PC.x + PC.w} y1={LINK_Y} x2={SRV.x} y2={LINK_Y} class={s.blocked ? 'line' : attacking ? 'bad-stroke' : 'dl-link'} stroke-width={2} stroke-dasharray={s.blocked ? '4 4' : undefined} />
-      <text x={mx} y={LINK_Y - 22} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={mx} y={LINK_Y - 22} text-anchor="middle" class="muted d-sub">
         file access (SMB)
       </text>
       {s.blocked && (
@@ -119,14 +119,14 @@ function ShareDiagram({ tl, t }: { tl: Timeline; t: number }) {
       )}
       {/* file server and its shares */}
       <rect class="dl-srv" x={SRV.x} y={SRV.y} width={SRV.w} height={SRV.h} />
-      <text x={SRV.x + 18} y={SRV.y + 24} style={{ fontWeight: 600, fontSize: '14px' }}>
+      <text class="d-title" x={SRV.x + 18} y={SRV.y + 24} style={{ fontWeight: 600 }}>
         File server · {SHARES.length} shares
       </text>
-      <text x={SRV.x + SRV.w - 18} y={SRV.y + 24} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+      <text x={SRV.x + SRV.w - 18} y={SRV.y + 24} text-anchor="end" class="muted d-sub">
         {FILES} files
       </text>
       {SHARES.map((name, i) => (
-        <text key={name} x={gridX(i)} y={GRID_Y - 8} class="mono" style={{ fontSize: '12px' }}>
+        <text key={name} x={gridX(i)} y={GRID_Y - 8} class="mono d-sub">
           \\{name}
         </text>
       ))}
@@ -136,50 +136,50 @@ function ShareDiagram({ tl, t }: { tl: Timeline; t: number }) {
       })}
       {/* snapshot */}
       <rect class={`dl-snap${restoring ? ' on' : ''}`} x={SNAP.x} y={SNAP.y} width={SNAP.w} height={SNAP.h} />
-      <text x={SNAP.x + 18} y={SNAP.y + 23} style={{ fontWeight: 600, fontSize: '13.5px' }}>
+      <text class="d-label" x={SNAP.x + 18} y={SNAP.y + 23} style={{ fontWeight: 600 }}>
         Last clean snapshot
       </text>
-      <text x={SNAP.x + 18} y={SNAP.y + 42} class="muted" style={{ fontSize: '12px' }}>
+      <text x={SNAP.x + 18} y={SNAP.y + 42} class="muted d-sub">
         Taken before the attack. Read-only, so the PC cannot touch it.
       </text>
       {/* shares → Data Lens */}
       <line x1={SRV.x + SRV.w} y1={LINK_Y} x2={DL.x} y2={LINK_Y} class="flow-stroke" stroke-width={1.5} stroke-dasharray="4 3" />
-      <text x={(SRV.x + SRV.w + DL.x) / 2} y={LINK_Y - 22} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={(SRV.x + SRV.w + DL.x) / 2} y={LINK_Y - 22} text-anchor="middle" class="muted d-sub">
         activity
       </text>
       {/* Data Lens */}
       <rect class="bg2" x={DL.x} y={DL.y} width={DL.w} height={DL.h} stroke="var(--line-2)" />
       <rect class="ink-fill" x={DL.x} y={DL.y} width={DL.w} height={40} />
-      <text x={dcx} y={DL.y + 26} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '15px' }}>
+      <text class="d-title" x={dcx} y={DL.y + 26} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600 }}>
         Data Lens
       </text>
-      <text x={dcx} y={DL.y + 62} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+      <text x={dcx} y={DL.y + 62} text-anchor="middle" class="muted d-sub">
         watches every file operation
       </text>
       <rect class={`dl-alert${s.alert ? ' on' : ''}`} x={DL.x + 12} y={DL.y + 78} width={DL.w - 24} height={76} />
-      <text x={dcx} y={DL.y + 106} text-anchor="middle" class={s.alert ? 'warn-fill' : 'muted'} style={{ fontSize: '14px', fontWeight: 600 }}>
+      <text x={dcx} y={DL.y + 106} text-anchor="middle" class={`${s.alert ? 'warn-fill' : 'muted'} d-title`} style={{ fontWeight: 600 }}>
         {s.alert ? '⚠ Ransomware alert' : 'No alerts'}
       </text>
       {s.alert && (
         <>
-          <text x={dcx} y={DL.y + 126} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+          <text x={dcx} y={DL.y + 126} text-anchor="middle" class="muted d-sub">
             one user is rewriting
           </text>
-          <text x={dcx} y={DL.y + 142} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+          <text x={dcx} y={DL.y + 142} text-anchor="middle" class="muted d-sub">
             files far too fast
           </text>
         </>
       )}
-      <text x={dcx} y={DL.y + 180} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+      <text x={dcx} y={DL.y + 180} text-anchor="middle" class="muted d-sub">
         Response: auto-block
       </text>
       {resp && (
-        <text x={dcx} y={DL.y + 202} text-anchor="middle" class={resp.cls} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        <text x={dcx} y={DL.y + 202} text-anchor="middle" class={`${resp.cls} d-label`} style={{ fontWeight: 600 }}>
           {resp.text}
         </text>
       )}
       {(s.phase === 'recovering' || s.phase === 'recovered') && (
-        <text x={dcx} y={DL.y + 230} text-anchor="middle" class={s.phase === 'recovered' ? 'ok-fill' : 'flow-fill'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+        <text x={dcx} y={DL.y + 230} text-anchor="middle" class={`${s.phase === 'recovered' ? 'ok-fill' : 'flow-fill'} d-label`} style={{ fontWeight: 600 }}>
           {s.phase === 'recovered' ? '✓ Files restored' : '↺ Restoring from snapshot'}
         </text>
       )}

@@ -119,20 +119,20 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
       {/* management */}
       <g style={{ opacity: 1 - vcGone * 0.65 }}>
         <rect x={0} y={0} width={MG_W} height={MG_H} rx={3} class={vcGone > 0.5 ? 'frame-dash' : 'es-vc'} />
-        <text x={14} y={22} style={{ fontWeight: 600, fontSize: '14px' }}>
+        <text class="d-title" x={14} y={22} style={{ fontWeight: 600 }}>
           vCenter
         </text>
-        <text x={MG_W - 14} y={22} text-anchor="end" class="muted" style={{ fontSize: '12.5px' }}>
+        <text x={MG_W - 14} y={22} text-anchor="end" class="muted d-label">
           {vcGone > 0.5 ? 'no longer needed for this cluster' : conv ? 'VMs · runs outside this cluster' : 'VMs · vMotion · HA · DRS'}
         </text>
       </g>
       {prism > 0 ? (
         <g style={{ opacity: prism }}>
           <rect x={MG_W + GAP} y={0} width={MG_W} height={MG_H} rx={3} class="ink-fill" />
-          <text x={MG_W + GAP + 14} y={22} class="es-on-ink" style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text x={MG_W + GAP + 14} y={22} class="es-on-ink d-title" style={{ fontWeight: 600 }}>
             {allAhv && conv ? 'Prism Central' : 'Prism'}
           </text>
-          <text x={W - 14} y={22} text-anchor="end" class="es-on-ink soft" style={{ fontSize: '12.5px' }}>
+          <text x={W - 14} y={22} text-anchor="end" class="es-on-ink soft d-label">
             {allAhv && conv ? 'VMs · Flow · DR · upgrades' : 'storage · upgrades · DR'}
           </text>
         </g>
@@ -148,17 +148,17 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
         return (
           <g key={i} style={{ opacity: k }}>
             <rect x={x} y={HOST_Y} width={NW} height={HOST_H} class={`node-box${h.maint ? ' warn' : ''}`} />
-            <text x={x + 12} y={HOST_Y + 20} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+            <text class="d-label" x={x + 12} y={HOST_Y + 20} style={{ fontWeight: 600 }}>
               Host {i + 1}
             </text>
-            <text x={x + NW - 12} y={HOST_Y + 20} text-anchor="end" class={`mono ${h.maint ? 'es-warn' : 'muted'}`} style={{ fontSize: '12px' }}>
+            <text x={x + NW - 12} y={HOST_Y + 20} text-anchor="end" class={`${`mono ${h.maint ? 'es-warn' : 'muted'}`} d-sub`}>
               {h.maint ? (conv ? 'converting' : 'maintenance') : label}
             </text>
             {/* CVM */}
             {cvm > 0 && (
               <g style={{ opacity: cvm }}>
                 <rect x={x + 12} y={HOST_Y + 62} width={IN_W} height={22} class={h.maint && !conv ? 'es-cvm-off' : 'cvm'} />
-                <text x={x + 20} y={HOST_Y + 77} class={h.maint && !conv ? 'muted' : 'es-on-ink'} style={{ fontSize: '11.5px' }}>
+                <text x={x + 20} y={HOST_Y + 77} class={`${h.maint && !conv ? 'muted' : 'es-on-ink'} d-sub`}>
                   {h.maint && !conv ? 'CVM · maintenance' : 'Controller VM (CVM)'}
                 </text>
               </g>
@@ -167,7 +167,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
             <rect x={x + 12} y={HOST_Y + 92} width={IN_W} height={20} class="es-hv" />
             {h.ahv > 0 && <rect x={x + 12} y={HOST_Y + 92} width={IN_W * h.ahv} height={20} class="es-hv ahv" />}
             {h.upgrading >= 0 && <rect x={x + 12} y={HOST_Y + 92} width={IN_W * h.upgrading} height={20} class="es-hv up" />}
-            <text x={x + 20} y={HOST_Y + 106} class={h.ahv >= 0.5 ? 'es-on-ink' : undefined} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+            <text x={x + 20} y={HOST_Y + 106} class={`${h.ahv >= 0.5 ? 'es-on-ink' : undefined} d-sub`} style={{ fontWeight: 600 }}>
               {h.ahv >= 0.5 ? 'Nutanix AHV' : h.upgrading >= 0 ? 'Upgrading ESXi' : 'VMware ESXi'}
             </text>
             {/* drives, passed through to the CVM */}
@@ -195,7 +195,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
         return (
           <g key={v.key} style={{ opacity: k * (v.dim ? 0.25 : 1) }}>
             <rect x={v.x} y={HOST_Y + 30} width={VMW} height={VMH} class="vm" />
-            <text x={v.x + VMW / 2} y={HOST_Y + 46} text-anchor="middle" class="muted" style={{ fontSize: '11px' }}>
+            <text x={v.x + VMW / 2} y={HOST_Y + 46} text-anchor="middle" class="muted d-fine">
               VM
             </text>
           </g>
@@ -206,7 +206,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
       {ds > 0 ? (
         <g>
           <rect x={0} y={DS_Y} width={W * ds} height={DS_H} class="ink-soft" stroke="var(--ink-line)" />
-          <text x={12} y={DS_Y + 17} class="es-ink" style={{ fontSize: '12.5px' }}>
+          <text x={12} y={DS_Y + 17} class="es-ink d-label">
             {conv ? 'Same datastore, same data on the same drives' : 'One datastore across all four hosts’ drives, mounted over NFS'}
           </text>
         </g>

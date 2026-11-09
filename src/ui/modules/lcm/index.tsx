@@ -195,7 +195,7 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
   });
 
   return (
-    <svg class="diagram lcm-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Rolling upgrade of ${n} nodes. ${view.resiliency.text}`}>
+    <svg class="diagram lcm-dia" viewBox={`0 0 ${W} ${H}`} style={{ maxWidth: `${W}px` }} role="img" aria-label={`Rolling upgrade of ${n} nodes. ${view.resiliency.text}`}>
       <text x={10} y={13} class="muted lcm-cap">
         One node at a time
       </text>

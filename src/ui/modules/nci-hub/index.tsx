@@ -27,42 +27,42 @@ function NodeCutaway() {
   return (
     <svg class="diagram" viewBox="0 0 520 300" role="img" aria-label="What is in a node: user VMs and a Controller VM on the hypervisor, local drives passed to the CVM, and network ports">
       <rect class="frame" x={1} y={1} width={518} height={298} />
-      <text x={14} y={22} class="muted" style={{ fontSize: '12px' }}>
+      <text x={14} y={22} class="muted d-sub">
         One node
       </text>
       {[0, 1, 2].map((i) => (
         <g key={i}>
           <rect class="vm" x={20 + i * 92} y={40} width={80} height={56} />
-          <text x={60 + i * 92} y={73} text-anchor="middle" style={{ fontSize: '13px' }}>
+          <text class="d-label" x={60 + i * 92} y={73} text-anchor="middle">
             VM {i + 1}
           </text>
         </g>
       ))}
       <rect class="ink-fill" x={300} y={40} width={200} height={56} />
-      <text x={400} y={64} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '14px' }}>
+      <text class="d-title" x={400} y={64} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600 }}>
         Controller VM (CVM)
       </text>
-      <text x={400} y={83} text-anchor="middle" style={{ fill: 'rgba(255,255,255,.8)', fontSize: '11.5px' }}>
+      <text class="d-sub" x={400} y={83} text-anchor="middle" style={{ fill: 'rgba(255,255,255,.8)' }}>
         AOS services · Stargate, Curator…
       </text>
       <rect class="bg3" x={20} y={112} width={480} height={36} stroke="var(--line-2)" />
-      <text x={260} y={135} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+      <text class="d-label" x={260} y={135} text-anchor="middle" style={{ fontWeight: 600 }}>
         AHV hypervisor
       </text>
       <rect class="bg2" x={20} y={164} width={480} height={118} stroke="var(--line-2)" />
-      <text x={34} y={184} class="muted" style={{ fontSize: '12px' }}>
+      <text x={34} y={184} class="muted d-sub">
         Hardware: CPU · memory · local drives · NICs
       </text>
       {['NVMe', 'NVMe', 'SSD', 'SSD', 'SSD', 'SSD'].map((d, i) => (
         <g key={i}>
           <rect class="disk" x={34 + i * 56} y={198} width={48} height={34} />
-          <text x={58 + i * 56} y={219} text-anchor="middle" class="mono" style={{ fontSize: '10.5px' }}>
+          <text x={58 + i * 56} y={219} text-anchor="middle" class="mono d-fine">
             {d}
           </text>
         </g>
       ))}
       <path d="M400 96 V 112 M400 148 V 190 H 190 V 198" class="flow-stroke" fill="none" stroke-width={1.5} stroke-dasharray="4 3" />
-      <text x={410} y={178} class="flow-fill" style={{ fontSize: '11px' }}>
+      <text x={410} y={178} class="flow-fill d-fine">
         <tspan>drives passed</tspan>
         <tspan x={410} dy={14}>
           to the CVM
@@ -71,7 +71,7 @@ function NodeCutaway() {
       {[0, 1].map((i) => (
         <g key={i}>
           <rect x={380 + i * 56} y={244} width={44} height={26} fill="none" stroke="var(--line-2)" />
-          <text x={402 + i * 56} y={261} text-anchor="middle" class="mono" style={{ fontSize: '10.5px' }}>
+          <text x={402 + i * 56} y={261} text-anchor="middle" class="mono d-fine">
             NIC
           </text>
         </g>

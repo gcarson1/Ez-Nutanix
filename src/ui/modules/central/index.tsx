@@ -261,7 +261,7 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
             <text x={x + 12} y={TY + 20} class="cen-name">
               {c.name}
             </text>
-            <text x={x + 12} y={TY + 36} class="muted" style={{ fontSize: '11px' }}>
+            <text x={x + 12} y={TY + 36} class="muted d-fine">
               {c.site}
             </text>
             <rect class={`cen-pe${peOn ? ' on' : ''}`} x={x + 10} y={STRIP_Y} width={TW - 20} height={STRIP_H} />
@@ -278,7 +278,7 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
               const y = NODES_Y - (NODES_Y - (STRIP_Y + STRIP_H)) * ease(f);
               return <circle key={`b${n}`} class="cen-beat" cx={nodeX(c.id, n) + 6.5} cy={y} r={2.6} />;
             })}
-            <text x={x + 12} y={TY + TH - 12} class={isWarn ? 'warn-fill' : 'ok-fill'} style={{ fontSize: '11px', fontWeight: 600 }}>
+            <text x={x + 12} y={TY + TH - 12} class={`${isWarn ? 'warn-fill' : 'ok-fill'} d-fine`} style={{ fontWeight: 600 }}>
               {isWarn ? `⚠ ${c.issue ?? 'Warning'}` : '✓ Healthy'}
             </text>
           </g>

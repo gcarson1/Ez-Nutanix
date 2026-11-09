@@ -224,14 +224,14 @@ function VmBox({ id, mode, quar }: { id: string; mode: Mode; quar: boolean }) {
     <g>
       {(mode !== 'off' || quar) && <rect class={`fl-guard ${quar ? 'quar' : mode}`} x={b.x - 5} y={b.y - 5} width={b.w + 10} height={VM_H + 10} />}
       <rect class={`fl-vm${quar ? ' quar' : ''}`} x={b.x} y={b.y} width={b.w} height={VM_H} />
-      <text x={b.x + 12} y={b.y + 23} style={{ fontSize: '14px', fontWeight: 600 }}>
+      <text class="d-title" x={b.x + 12} y={b.y + 23} style={{ fontWeight: 600 }}>
         {vm.name}
       </text>
-      <text x={b.x + 12} y={b.y + 43} class="mono muted" style={{ fontSize: '11.5px' }}>
+      <text x={b.x + 12} y={b.y + 43} class="mono muted d-sub">
         AppTier: {vm.cats.AppTier}
       </text>
       {quar && (
-        <text x={b.x + b.w - 10} y={b.y + 23} text-anchor="end" class="bad-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
+        <text x={b.x + b.w - 10} y={b.y + 23} text-anchor="end" class="bad-fill d-sub" style={{ fontWeight: 600 }}>
           Quarantined
         </text>
       )}
@@ -329,10 +329,10 @@ export function NetSec() {
       <div class="diagram-scroll">
         <svg class="diagram fl-sec" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A three-tier app in Production and one Dev VM. ${MODE_WORD[mode]}${quar ? ', Web-2 quarantined' : ''}. ${caption.k}: ${caption.text}`}>
           <rect class="fl-ext" x={BOX.external.x} y={BOX.external.y} width={BOX.external.w} height={VM_H} />
-          <text x={BOX.external.x + BOX.external.w / 2} y={BOX.external.y + 23} text-anchor="middle" style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={BOX.external.x + BOX.external.w / 2} y={BOX.external.y + 23} text-anchor="middle" style={{ fontWeight: 600 }}>
             Users
           </text>
-          <text x={BOX.external.x + BOX.external.w / 2} y={BOX.external.y + 42} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={BOX.external.x + BOX.external.w / 2} y={BOX.external.y + 42} text-anchor="middle" class="muted d-sub">
             outside the app
           </text>
 
@@ -350,7 +350,7 @@ export function NetSec() {
           {mode !== 'off' && (
             <g>
               <line x1={168} x2={944} y1={285} y2={285} class={`fl-wall ${mode}`} />
-              <text x={184} y={298} class="fl-st muted halo" style={{ fontSize: '11.5px' }}>
+              <text x={184} y={298} class="fl-st muted halo d-sub">
                 Production and Dev kept apart
               </text>
             </g>

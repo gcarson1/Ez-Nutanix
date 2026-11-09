@@ -1,6 +1,6 @@
 /* Protection & Capacity module (prefix cp-) */
 .diagram .cp-src { fill: var(--bg-3); stroke: var(--line-2); }
-.diagram .cp-src-t { font-size: 14px; font-weight: 600; }
+.diagram .cp-src-t { font-size: 15px; font-weight: 600; }
 .diagram .cp-copy { fill: var(--ink); }
 .diagram .cp-new { fill: var(--flow); }
 .diagram .cp-lost { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 3 2; opacity: 0.75; }

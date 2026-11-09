@@ -94,7 +94,7 @@ function NkpDiagram({ t }: { t: number }) {
     <svg class="diagram nk-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Four Kubernetes environments, Nutanix, VMware vSphere, AWS and an attached Azure AKS cluster, each start out managed separately. The NKP layer arrives above them with six capabilities, connects to every cluster, sends one policy to all four and one upgrade to the three NKP clusters, gives the platform team one view and lands a developer's namespace on an approved cluster.">
       {/* the on-screen label for the first two scenes, where the NKP layer will be */}
       {sc < 2 && (
-        <text x={W / 2} y={sc === 0 ? 150 : 24} text-anchor="middle" class="halo" style={{ fontSize: sc === 0 ? '19px' : '15px', fontWeight: 600, opacity: sc === 0 ? ease(prog(t, 1.4, 2.4)) : 1 }}>
+        <text x={W / 2} y={sc === 0 ? 150 : 24} text-anchor="middle" class="halo d-title" style={{ fontWeight: 600, opacity: sc === 0 ? ease(prog(t, 1.4, 2.4)) : 1 }}>
           {SCENES[sc].label}
         </text>
       )}
@@ -105,7 +105,7 @@ function NkpDiagram({ t }: { t: number }) {
           WORK.map((w, row) => (
             <g key={`${i}${w}`} style={{ opacity: workIn(row) }}>
               <rect x={islX(i) + 8} y={40 + row * 27} width={IW - 16} height={22} rx={3} class="nk-task" />
-              <text x={islX(i) + 18} y={55 + row * 27} style={{ fontSize: '11.5px' }}>
+              <text class="d-sub" x={islX(i) + 18} y={55 + row * 27}>
                 {w}
               </text>
               <Tool shape={ENVS[i].shape} color={ENVS[i].color} x={islX(i) + IW - 22} y={51 + row * 27} />
@@ -117,22 +117,22 @@ function NkpDiagram({ t }: { t: number }) {
       {sc >= 4 && (
         <g style={{ opacity: peopleIn }}>
           <rect x={0} y={4} width={470} height={88} class="nk-card" />
-          <text x={14} y={26} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={14} y={26} style={{ fontWeight: 600 }}>
             Platform team
           </text>
           {['✓ Fleet health: 4 of 4 clusters', '✓ Policy applied: 4 of 4', '✓ Upgraded: 3 of 3 NKP clusters'].map((l, k) => (
-            <text key={l} x={14} y={48 + k * 17} class="ok-fill" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+            <text key={l} x={14} y={48 + k * 17} class="ok-fill d-label" style={{ fontWeight: 600 }}>
               {l}
             </text>
           ))}
           <rect x={490} y={4} width={470} height={88} class="nk-card" />
-          <text x={504} y={26} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={504} y={26} style={{ fontWeight: 600 }}>
             Developer
           </text>
-          <text x={504} y={48} class="muted" style={{ fontSize: '12.5px' }}>
+          <text x={504} y={48} class="muted d-label">
             asks for a namespace for team-a
           </text>
-          <text x={504} y={66} class={nsIn ? 'ok-fill' : 'muted'} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text x={504} y={66} class={`${nsIn ? 'ok-fill' : 'muted'} d-label`} style={{ fontWeight: 600 }}>
             {nsIn ? '✓ Ready on an approved cluster' : t >= reqAt ? 'Through the platform’s guardrails…' : ''}
           </text>
         </g>
@@ -142,10 +142,10 @@ function NkpDiagram({ t }: { t: number }) {
       {layerIn > 0 && (
         <g style={{ opacity: layerIn, transform: `translateY(${(1 - layerIn) * -20}px)` }}>
           <rect x={0} y={LAYER.y} width={W} height={LAYER.h} class="nk-layer" />
-          <text x={12} y={LAYER.y + 22} style={{ fontSize: '14.5px', fontWeight: 650 }}>
+          <text class="d-title" x={12} y={LAYER.y + 22} style={{ fontWeight: 650 }}>
             Nutanix Kubernetes Platform
           </text>
-          <text x={W - 12} y={LAYER.y + 22} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+          <text x={W - 12} y={LAYER.y + 22} text-anchor="end" class="muted d-sub">
             open, upstream Kubernetes · no lock-in
           </text>
           {BANDS.map((b, k) => {
@@ -179,17 +179,17 @@ function NkpDiagram({ t }: { t: number }) {
         return (
           <g key={e.name} style={{ opacity: k, transform: `translateY(${bob + (1 - k) * 14}px)` }}>
             <rect x={x} y={ISL.y} width={IW} height={ISL.h} rx={sc < 2 ? 14 : 4} class={`nk-isl${sc < 2 ? ' loose' : ''}`} />
-            <text x={x + 12} y={ISL.y + 20} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+            <text class="d-label" x={x + 12} y={ISL.y + 20} style={{ fontWeight: 600 }}>
               {e.name}
             </text>
-            <text x={x + 12} y={ISL.y + 35} class="muted" style={{ fontSize: '11px' }}>
+            <text x={x + 12} y={ISL.y + 35} class="muted d-fine">
               {e.sub}
             </text>
             <rect x={x + 10} y={ISL.y + 44} width={IW - 20} height={58} rx={4} class={`nk-cl${sc >= 3 ? ' on' : ''}`} />
-            <text x={x + 20} y={ISL.y + 61} style={{ fontSize: '12px', fontWeight: 600 }}>
+            <text class="d-sub" x={x + 20} y={ISL.y + 61} style={{ fontWeight: 600 }}>
               Kubernetes
             </text>
-            <text x={x + IW - 20} y={ISL.y + 61} text-anchor="end" class={upgraded(i) ? 'ink-fill mono' : 'muted mono'} style={{ fontSize: '11.5px', fontWeight: upgraded(i) ? 700 : 400 }}>
+            <text x={x + IW - 20} y={ISL.y + 61} text-anchor="end" class={`${upgraded(i) ? 'ink-fill mono' : 'muted mono'} d-sub`} style={{ fontWeight: upgraded(i) ? 700 : 400 }}>
               {e.nkp ? ver : 'AKS-managed'}
             </text>
             {[0, 1, 2, 3].map((n) => (
@@ -201,7 +201,7 @@ function NkpDiagram({ t }: { t: number }) {
             {i === 0 && nsIn && (
               <g>
                 <rect x={x + 128} y={ISL.y + 66} width={IW - 146} height={28} rx={3} class="nk-ns" />
-                <text x={x + 136} y={ISL.y + 84} style={{ fontSize: '11px', fontWeight: 600 }}>
+                <text class="d-fine" x={x + 136} y={ISL.y + 84} style={{ fontWeight: 600 }}>
                   team-a
                 </text>
               </g>
@@ -212,7 +212,7 @@ function NkpDiagram({ t }: { t: number }) {
               TOOLS.map((tool, n) => (
                 <g key={tool} style={{ opacity: toolsOut * ease(prog(t, 1 + i * 0.3 + n * 0.15, 1.5 + i * 0.3 + n * 0.15)) }}>
                   <Tool shape={e.shape} color={e.color} x={x + 32 + n * 54} y={ISL.y + 118} />
-                  <text x={x + 32 + n * 54} y={ISL.y + 138} text-anchor="middle" class="muted" style={{ fontSize: '10px' }}>
+                  <text x={x + 32 + n * 54} y={ISL.y + 138} text-anchor="middle" class="muted d-fine">
                     {tool}
                   </text>
                   {t >= 3 + i * 0.4 + n * 0.3 && <circle cx={x + 40 + n * 54} cy={ISL.y + 110} r={4} class="nk-warn" />}
@@ -221,11 +221,11 @@ function NkpDiagram({ t }: { t: number }) {
             {sc >= 3 && (
               <g>
                 <rect x={x + 10} y={ISL.y + 110} width={96} height={24} rx={3} class={`nk-chip${policyDone(i) ? ' ok' : ''}`} />
-                <text x={x + 20} y={ISL.y + 126} class={policyDone(i) ? 'ok-fill' : 'muted'} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                <text x={x + 20} y={ISL.y + 126} class={`${policyDone(i) ? 'ok-fill' : 'muted'} d-sub`} style={{ fontWeight: 600 }}>
                   {policyDone(i) ? '✓ policy' : 'policy'}
                 </text>
                 <rect x={x + 114} y={ISL.y + 110} width={IW - 124} height={24} rx={3} class={`nk-chip${t >= S[3] + 0.6 ? ' ok' : ''}`} />
-                <text x={x + 124} y={ISL.y + 126} class={t >= S[3] + 0.6 ? 'ok-fill' : 'muted'} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                <text x={x + 124} y={ISL.y + 126} class={`${t >= S[3] + 0.6 ? 'ok-fill' : 'muted'} d-sub`} style={{ fontWeight: 600 }}>
                   ● healthy
                 </text>
               </g>
@@ -234,7 +234,7 @@ function NkpDiagram({ t }: { t: number }) {
         );
       })}
       {sc === 4 && nsIn && (
-        <text x={cx(0) + IW / 2 + IG / 2} y={ISL.y - 8} class="flow-fill halo" style={{ fontSize: '11.5px', fontWeight: 600 }}>
+        <text x={cx(0) + IW / 2 + IG / 2} y={ISL.y - 8} class="flow-fill halo d-sub" style={{ fontWeight: 600 }}>
           {`team-a gets ${ATTACH.join(', ')} attached`}
         </text>
       )}

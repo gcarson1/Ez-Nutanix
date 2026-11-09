@@ -1,6 +1,6 @@
 /* Migration with Move module (prefix mig-) */
 .mig-dia .mig-t { font-size: 15px; font-weight: 600; }
-.mig-dia .mig-s { font-size: 13.5px; }
+.mig-dia .mig-s { font-size: 13px; }
 .mig-dia .mig-xs { font-size: 12px; }
 .mig-dia .mig-users { fill: var(--bg-3); stroke: var(--line-2); }
 .mig-dia .mig-use { fill: none; stroke: var(--ok); stroke-width: 2; }

@@ -229,7 +229,7 @@ function Hba({ g }: { g: HostGeom }) {
       {g.hba.map((h, f) => (
         <rect key={f} {...box(h)} rx={1.5} class="hci-hba" />
       ))}
-      <text x={g.frame.x + 10} y={g.frame.y + 81} class="faint" style={{ fontSize: '11px' }}>
+      <text x={g.frame.x + 10} y={g.frame.y + 81} class="faint d-fine">
         HBAs
       </text>
     </>
@@ -237,17 +237,17 @@ function Hba({ g }: { g: HostGeom }) {
 }
 
 const HostHead = ({ r, i, o }: { r: R; i: number; o?: number }) => (
-  <text x={r.x + 10} y={r.y + 18} style={{ fontSize: '13px', fontWeight: 600, opacity: o }}>
+  <text class="d-label" x={r.x + 10} y={r.y + 18} style={{ fontWeight: 600, opacity: o }}>
     Host {i + 1}
   </text>
 );
 const HvLabel = ({ r, o }: { r: R; o?: number }) => (
-  <text x={r.x + 8} y={r.y + 12} class="muted" style={{ fontSize: '11px', opacity: o }}>
+  <text x={r.x + 8} y={r.y + 12} class="muted d-fine" style={{ opacity: o }}>
     hypervisor
   </text>
 );
 const CtlLabel = ({ r, c, o }: { r: R; c: number; o?: number }) => (
-  <text x={r.x + r.w / 2} y={r.y + 16} text-anchor="middle" class="hci-on-ink" style={{ fontSize: '12px', fontWeight: 600, opacity: o }}>
+  <text x={r.x + r.w / 2} y={r.y + 16} text-anchor="middle" class="hci-on-ink d-sub" style={{ fontWeight: 600, opacity: o }}>
     Controller {c ? 'B' : 'A'}
   </text>
 );
@@ -260,7 +260,7 @@ function Host({ g, i, sel, vms, note }: { g: HostGeom; i: number; sel: boolean; 
       <Hba g={g} />
       <HostHead r={g.frame} i={i} />
       {note && (
-        <text x={g.frame.x + CW - 10} y={g.frame.y + 18} text-anchor="end" class="mono muted" style={{ fontSize: '11.5px' }}>
+        <text x={g.frame.x + CW - 10} y={g.frame.y + 18} text-anchor="end" class="mono muted d-sub">
           {note}
         </text>
       )}
@@ -368,20 +368,20 @@ function Controllers({ n, o, hl }: { n: number; o: number; hl: boolean }) {
   const y = 318;
   const row = (dy: number, label: string, count: number, note: string) => (
     <g>
-      <text x={2} y={y + dy + 11} class={hl ? undefined : 'muted'} style={{ fontSize: '12px', fontWeight: hl ? 600 : undefined }}>
+      <text x={2} y={y + dy + 11} class={`${hl ? undefined : 'muted'} d-sub`} style={{ fontWeight: hl ? 600 : undefined }}>
         {label}
       </text>
       {Array.from({ length: count }, (_, k) => (
         <rect key={k} x={118 + k * 20} y={y + dy} width={14} height={14} class="cvm" />
       ))}
-      <text x={118 + count * 20 + 6} y={y + dy + 11} class="mono" style={{ fontSize: '11.5px' }}>
+      <text x={118 + count * 20 + 6} y={y + dy + 11} class="mono d-sub">
         {count} <tspan class="muted">{note}</tspan>
       </text>
     </g>
   );
   return (
     <g style={{ opacity: o }}>
-      <text x={2} y={y - 8} class="muted" style={{ fontSize: '11px' }}>
+      <text x={2} y={y - 8} class="muted d-fine">
         Storage controllers
       </text>
       {row(0, 'Nutanix cluster', n, 'one CVM per node')}
@@ -500,7 +500,7 @@ function HciDiagram({ t }: { t: number }) {
             tiers && (
               <g key={i} style={{ opacity: hostK[2] }}>
                 <rect {...box(hostGeom(3).frame)} rx={6} class="frame-dash" />
-                <text x={hostGeom(3).frame.x + CW / 2} y={HOST_Y + CH / 2 + 4} text-anchor="middle" class="faint" style={{ fontSize: '12px' }}>
+                <text x={hostGeom(3).frame.x + CW / 2} y={HOST_Y + CH / 2 + 4} text-anchor="middle" class="faint d-sub">
                   room for another host
                 </text>
               </g>
@@ -519,10 +519,10 @@ function HciDiagram({ t }: { t: number }) {
           {SW_X.map((x, f) => (
             <g key={f}>
               <rect x={x} y={SW_Y} width={SW_W} height={SW_H} rx={3} class="hci-sw" />
-              <text x={x + 12} y={SW_Y + 16} style={{ fontSize: '12px' }}>
+              <text class="d-sub" x={x + 12} y={SW_Y + 16}>
                 SAN switch · fabric {f ? 'B' : 'A'}
               </text>
-              <text x={x + SW_W - 12} y={SW_Y + 16} text-anchor="end" class={zoning ? 'mono' : 'mono muted'} style={{ fontSize: '11px', fontWeight: zoning ? 600 : undefined }}>
+              <text x={x + SW_W - 12} y={SW_Y + 16} text-anchor="end" class={`${zoning ? 'mono' : 'mono muted'} d-fine`} style={{ fontWeight: zoning ? 600 : undefined }}>
                 {t >= TASK[1].at ? 'zone: host 4' : 'FC'}
               </text>
             </g>
@@ -545,7 +545,7 @@ function HciDiagram({ t }: { t: number }) {
             <rect key={j} {...box(s)} rx={2} class="hci-shelf" />
           ))}
           {SHELF.map((_, s) => Array.from({ length: 10 }, (_, k) => (tiers || k > 1) && <rect key={`${s}-${k}`} {...box(shelfDrive(s, k))} class="disk" />))}
-          <text x={54} y={354} class="muted" style={{ fontSize: '12px' }}>
+          <text x={54} y={354} class="muted d-sub">
             Storage array · 2 controllers · LUNs · drive shelves
           </text>
         </g>
@@ -558,7 +558,7 @@ function HciDiagram({ t }: { t: number }) {
           o > 0 && (
             <g key={k} style={{ opacity: o }}>
               <rect {...box(r)} rx={2} class={`hci-lun${hl ? ' hl' : ''}`} />
-              <text x={r.x + r.w / 2} y={r.y + 13} text-anchor="middle" class="mono" style={{ fontSize: '11px' }}>
+              <text x={r.x + r.w / 2} y={r.y + 13} text-anchor="middle" class="mono d-fine">
                 LUN {k + 1}
               </text>
             </g>
@@ -566,7 +566,7 @@ function HciDiagram({ t }: { t: number }) {
         );
       })}
       {prog(t, 2.9, 3.2) * hostOut > 0 && (
-        <text x={446} y={305} class="muted" style={{ fontSize: '11px', opacity: prog(t, 2.9, 3.2) * hostOut }}>
+        <text x={446} y={305} class="muted d-fine" style={{ opacity: prog(t, 2.9, 3.2) * hostOut }}>
           masked to hosts 1–{t >= TASK[2].at ? 4 : 3}
         </text>
       )}
@@ -592,10 +592,10 @@ function HciDiagram({ t }: { t: number }) {
                       </text>
                     </g>
                   )}
-                  <text x={r.x + 30} y={20} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                  <text class="d-label" x={r.x + 30} y={20} style={{ fontWeight: 600 }}>
                     {c.t}
                   </text>
-                  <text x={r.x + r.w - 12} y={20} text-anchor="end" class="muted" style={{ fontSize: '11px' }}>
+                  <text x={r.x + r.w - 12} y={20} text-anchor="end" class="muted d-fine">
                     {c.s}
                   </text>
                 </g>
@@ -616,10 +616,10 @@ function HciDiagram({ t }: { t: number }) {
                   </text>
                 </g>
               )}
-              <text x={30} y={20} class="hci-on-ink" style={{ fontWeight: 600, fontSize: '14px' }}>
+              <text x={30} y={20} class="hci-on-ink d-title" style={{ fontWeight: 600 }}>
                 Prism
               </text>
-              <text x={W - 12} y={20} text-anchor="end" class="hci-on-ink soft" style={{ fontSize: '12px' }}>
+              <text x={W - 12} y={20} text-anchor="end" class="hci-on-ink soft d-sub">
                 {joining >= 0 ? `Expand Cluster · adding node ${joining + 1}` : phase >= 5 ? 'one console for the cluster' : 'one console instead of three'}
               </text>
             </g>
@@ -651,17 +651,17 @@ function HciDiagram({ t }: { t: number }) {
       {tor > 0 && (
         <g>
           <rect x={TOR.x} y={TOR.y} width={TOR.w * tor} height={TOR.h} rx={3} class="hci-net" />
-          <text x={12} y={TOR.y + 13} style={{ fontSize: '12px', fontWeight: 600, opacity: tor }}>
+          <text class="d-sub" x={12} y={TOR.y + 13} style={{ fontWeight: 600, opacity: tor }}>
             Top-of-rack switches <tspan class="muted" style={{ fontWeight: 400 }}>· standard Ethernet</tspan>
           </text>
           {/* in 3-tier the switches carry VM and management traffic beside a SAN; in HCI, storage too */}
           {out(FOLD, 0.4) > 0 && (
-            <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted" style={{ fontSize: '11.5px', opacity: tor * out(FOLD, 0.4) }}>
+            <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted d-sub" style={{ opacity: tor * out(FOLD, 0.4) }}>
               redundant pair · VM and management traffic
             </text>
           )}
           {t >= FOLD + 0.4 && (
-            <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted" style={{ fontSize: '11.5px', opacity: prog(t, FOLD + 0.4, FOLD + 0.8) }}>
+            <text x={W - 12} y={TOR.y + 13} text-anchor="end" class="muted d-sub" style={{ opacity: prog(t, FOLD + 0.4, FOLD + 0.8) }}>
               redundant pair · no SAN, no HBAs
             </text>
           )}
@@ -680,7 +680,7 @@ function HciDiagram({ t }: { t: number }) {
                   <g key={i} style={{ opacity: slots }}>
                     <rect x={nx(i)} y={NODE_Y} width={NW} height={NH} rx={6} class="frame-dash" />
                     {i === firstEmpty && (
-                      <text x={nx(i) + NW / 2} y={NODE_Y + NH / 2 + 4} text-anchor="middle" class="faint" style={{ fontSize: '12px' }}>
+                      <text x={nx(i) + NW / 2} y={NODE_Y + NH / 2 + 4} text-anchor="middle" class="faint d-sub">
                         room to grow
                       </text>
                     )}
@@ -719,7 +719,7 @@ function HciDiagram({ t }: { t: number }) {
           o > 0 && (
             <g key={n.y} style={{ opacity: o }}>
               {n.lead && <line x1={315} x2={330} y1={n.y - 4} y2={n.y - 4} class="hci-lead" />}
-              <text x={336} y={n.y} style={{ fontSize: '12.5px' }}>
+              <text class="d-label" x={336} y={n.y}>
                 <tspan class="muted">{n.was} →</tspan> {n.now}
               </text>
             </g>
@@ -741,12 +741,12 @@ function HciDiagram({ t }: { t: number }) {
       })}
       {/* the pool's labels are drawn last, so no copy dot crosses the words */}
       {!tiers && pool > 0 && (
-        <text x={2} y={NODE_Y + NH + 20} class="hci-ink halo" style={{ fontSize: '12.5px', opacity: prog(t, NODES[0].pool, NODES[0].pool + 0.8) }}>
+        <text x={2} y={NODE_Y + NH + 20} class="hci-ink halo d-label" style={{ opacity: prog(t, NODES[0].pool, NODES[0].pool + 0.8) }}>
           Distributed Storage Fabric: one storage pool across {inPool} nodes’ drives
         </text>
       )}
       {!tiers && t >= COPY_AT[0] && (
-        <text x={2} y={NODE_Y + NH + 38} class="muted halo" style={{ fontSize: '12px', opacity: prog(t, COPY_AT[0], COPY_AT[0] + 0.4) }}>
+        <text x={2} y={NODE_Y + NH + 38} class="muted halo d-sub" style={{ opacity: prog(t, COPY_AT[0], COPY_AT[0] + 0.4) }}>
           each write kept on two nodes (RF2)
         </text>
       )}

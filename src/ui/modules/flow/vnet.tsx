@@ -143,7 +143,7 @@ function Packet({ p, addr, wrap, swapped }: { p: Pt; addr: string; wrap?: string
           {wrap}
         </text>
         <rect class="fl-pkt" x={p.x - pw / 2} y={p.y - 1} width={pw} height={20} />
-        <text x={p.x} y={p.y + 13} text-anchor="middle" class="mono" style={{ fontSize: '11.5px' }}>
+        <text x={p.x} y={p.y + 13} text-anchor="middle" class="mono d-sub">
           {addr}
         </text>
       </g>
@@ -153,7 +153,7 @@ function Packet({ p, addr, wrap, swapped }: { p: Pt; addr: string; wrap?: string
     <g aria-hidden="true">
       <rect class="fl-pbg" x={p.x - pw / 2} y={p.y - 11} width={pw} height={22} />
       <rect class={`fl-pkt${swapped ? ' swap' : ''}`} x={p.x - pw / 2} y={p.y - 11} width={pw} height={22} />
-      <text x={p.x} y={p.y + 4} text-anchor="middle" class="mono" style={{ fontSize: '11.5px', fontWeight: swapped ? 600 : 400 }}>
+      <text x={p.x} y={p.y + 4} text-anchor="middle" class="mono d-sub" style={{ fontWeight: swapped ? 600 : 400 }}>
         {addr}
       </text>
     </g>
@@ -203,28 +203,28 @@ export function VNet() {
         <svg class="diagram fl-net" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Two hosts running VMs in two private networks, VPC A and VPC B, over one physical network. ${hop.k}: ${hop.text}`}>
           {/* physical network and the way out */}
           <rect class="bg3" x={16} y={BAR_Y - 15} width={680} height={30} stroke="var(--line-2)" />
-          <text x={16} y={BAR_Y + 46} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text class="d-label" x={16} y={BAR_Y + 46} style={{ fontWeight: 600 }}>
             Physical network
           </text>
-          <text x={128} y={BAR_Y + 46} class="muted" style={{ fontSize: '12px' }}>
+          <text x={128} y={BAR_Y + 46} class="muted d-sub">
             only ever sees host-to-host traffic
           </text>
           {HOST_X.map((_, h) => (
             <line key={h} x1={hostC(h).x} x2={hostC(h).x} y1={SW_Y + 40} y2={BAR_Y - 15} class="line" stroke-width={2} />
           ))}
           <polyline points={toNet.map((p) => `${p.x},${p.y}`).join(' ')} class="fl-extline" />
-          <text x={712} y={SW_C + 20} class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={712} y={SW_C + 20} class="muted d-sub">
             External network (VLAN)
           </text>
           <rect class={`fl-netbox${got === 'net' ? ' got' : ''}`} x={NET.x} y={NET.y} width={NET.w} height={NET.h} />
-          <text x={NET_C} y={NET.y + 28} text-anchor="middle" style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={NET_C} y={NET.y + 28} text-anchor="middle" style={{ fontWeight: 600 }}>
             Internet
           </text>
-          <text x={NET_C} y={NET.y + 48} text-anchor="middle" class="mono muted" style={{ fontSize: '11.5px' }}>
+          <text x={NET_C} y={NET.y + 48} text-anchor="middle" class="mono muted d-sub">
             client 198.51.100.7
           </text>
           {got === 'net' && (
-            <text x={NET_C} y={NET.y + 68} text-anchor="middle" class="ok-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+            <text x={NET_C} y={NET.y + 68} text-anchor="middle" class="ok-fill d-fine" style={{ fontWeight: 600 }}>
               ✓ received
             </text>
           )}
@@ -233,14 +233,14 @@ export function VNet() {
           {HOST_X.map((x, h) => (
             <g key={h}>
               <rect class="node-box" x={x} y={16} width={HOST_W} height={216} />
-              <text x={x + 14} y={40} style={{ fontSize: '14px', fontWeight: 600 }}>
+              <text class="d-title" x={x + 14} y={40} style={{ fontWeight: 600 }}>
                 Host {h + 1}
               </text>
-              <text x={x + HOST_W - 14} y={40} text-anchor="end" class="mono muted" style={{ fontSize: '11.5px' }}>
+              <text x={x + HOST_W - 14} y={40} text-anchor="end" class="mono muted d-sub">
                 172.16.0.1{h + 1}
               </text>
               <rect class="fl-sw" x={x + 14} y={SW_Y - 8} width={HOST_W - 28} height={48} />
-              <text x={x + HOST_W / 2} y={SW_Y + 6} text-anchor="middle" style={{ fontSize: '12px' }}>
+              <text class="d-sub" x={x + HOST_W / 2} y={SW_Y + 6} text-anchor="middle">
                 {h === 1 ? sw2 : 'Virtual switch'}
               </text>
             </g>
@@ -250,14 +250,14 @@ export function VNet() {
             return (
               <g key={v.id}>
                 <rect class={`fl-vpc ${v.vpc === 'A' ? 'a' : 'b'}${got === v.id ? ' got' : ''}`} x={x} y={VM_Y} width={VM_W} height={VM_H} />
-                <text x={x + 12} y={VM_Y + 22} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+                <text class="d-label" x={x + 12} y={VM_Y + 22} style={{ fontWeight: 600 }}>
                   {v.name} · VPC {v.vpc}
                 </text>
-                <text x={x + 12} y={VM_Y + 43} class="mono muted" style={{ fontSize: '11.5px' }}>
+                <text x={x + 12} y={VM_Y + 43} class="mono muted d-sub">
                   {v.ip}
                 </text>
                 {got === v.id && (
-                  <text x={x + 12} y={VM_Y + 60} class="ok-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+                  <text x={x + 12} y={VM_Y + 60} class="ok-fill d-fine" style={{ fontWeight: 600 }}>
                     ✓ received
                   </text>
                 )}

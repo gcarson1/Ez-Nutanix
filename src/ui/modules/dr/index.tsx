@@ -110,10 +110,10 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
     return (
       <g key={`${site}-${i}`}>
         <rect x={x} y={y} width={VMW} height={36} class={`dr-vm ${cls}`} />
-        <text x={x + 10} y={y + 15} style={{ fontSize: '13px', fontWeight: 600 }}>
+        <text class="d-label" x={x + 10} y={y + 15} style={{ fontWeight: 600 }}>
           {STAGES[i]}
         </text>
-        <text x={x + 10} y={y + 29} class={`dr-st ${cls}`} style={{ fontSize: '10.5px' }}>
+        <text x={x + 10} y={y + 29} class={`${`dr-st ${cls}`} d-fine`}>
           {word}
         </text>
       </g>
@@ -123,16 +123,16 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
   const site = (x: number, title: string, sub: string, down: boolean, word: { w: string; c: string }) => (
     <>
       <rect x={x} y={ST} width={SW} height={SH} class={`node-box${down ? ' down' : ''}`} />
-      <text x={x + 14} y={ST + 26} style={{ fontSize: '16px', fontWeight: 600 }}>
+      <text class="d-title" x={x + 14} y={ST + 26} style={{ fontWeight: 600 }}>
         {title}
       </text>
-      <text x={x + 14} y={ST + 44} class="muted" style={{ fontSize: '12px' }}>
+      <text x={x + 14} y={ST + 44} class="muted d-sub">
         {sub}
       </text>
-      <text x={x + 14} y={GRID_Y - 10} class="muted" style={{ fontSize: '10.5px' }}>
+      <text x={x + 14} y={GRID_Y - 10} class="muted d-fine">
         Data the apps wrote
       </text>
-      <text x={x + 14} y={ST + SH - 12} class={`dr-st ${word.c}`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+      <text x={x + 14} y={ST + SH - 12} class={`${`dr-st ${word.c}`} d-label`} style={{ fontWeight: 600 }}>
         {word.w}
       </text>
     </>
@@ -155,10 +155,10 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
 
       {/* link */}
       <path d={`M${LINK_A + 6} ${LINK_Y} H${LINK_B - 8}`} class={`dr-link ${linkCls}`} marker-end="url(#dr-ar)" />
-      <text x={MID} y={LINK_Y - 42} text-anchor="middle" class={aLost ? 'bad-fill' : ''} style={{ fontSize: '15px', fontWeight: 600 }}>
+      <text x={MID} y={LINK_Y - 42} text-anchor="middle" class={`${aLost ? 'bad-fill' : ''} d-title`} style={{ fontWeight: 600 }}>
         {linkLabel[0]}
       </text>
-      <text x={MID} y={LINK_Y - 24} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={MID} y={LINK_Y - 24} text-anchor="middle" class="muted d-sub">
         {linkLabel[1]}
       </text>
 
@@ -168,10 +168,10 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
           <path d={`M${MID - 70} ${ST + 206} H${AX + SW}`} class="dr-wline" />
           <path d={`M${MID + 70} ${ST + 206} H${BX}`} class="dr-wline" />
           <rect x={MID - 70} y={ST + 186} width={140} height={40} class={`dr-witness${deciding ? ' on' : ''}`} />
-          <text x={MID} y={ST + 202} text-anchor="middle" style={{ fontSize: '13px', fontWeight: 600 }}>
+          <text class="d-label" x={MID} y={ST + 202} text-anchor="middle" style={{ fontWeight: 600 }}>
             Witness
           </text>
-          <text x={MID} y={ST + 218} text-anchor="middle" class={deciding ? 'dr-st warn' : 'muted'} style={{ fontSize: '10.5px' }}>
+          <text x={MID} y={ST + 218} text-anchor="middle" class={`${deciding ? 'dr-st warn' : 'muted'} d-fine`}>
             {deciding ? 'Site A is gone: fail over' : 'in a third location'}
           </text>
         </g>
@@ -180,7 +180,7 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
         <g>
           <circle cx={MID} cy={ST + 194} r={7} class="dr-person" />
           <path d={`M${MID - 12} ${ST + 218} a12 12 0 0 1 24 0 z`} class="dr-person" />
-          <text x={MID} y={ST + 236} text-anchor="middle" class="dr-st warn" style={{ fontSize: '11px', fontWeight: 600 }}>
+          <text x={MID} y={ST + 236} text-anchor="middle" class="dr-st warn d-fine" style={{ fontWeight: 600 }}>
             someone declares a disaster
           </text>
         </g>
@@ -220,7 +220,7 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
           return (
             <g key={`lm${i}`}>
               <rect x={cx - 36} y={LINK_Y - 11} width={72} height={22} class="dr-vm boot" />
-              <text x={cx} y={LINK_Y + 4} text-anchor="middle" style={{ fontSize: '11px', fontWeight: 600 }}>
+              <text class="d-fine" x={cx} y={LINK_Y + 4} text-anchor="middle" style={{ fontWeight: 600 }}>
                 {STAGES[i]}
               </text>
             </g>

@@ -12,7 +12,7 @@
 .diagram .nkp-node.joining { fill: var(--bg); stroke: var(--flow); stroke-width: 1.75; stroke-dasharray: 3 2; }
 .diagram .nkp-node.old.drain { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.75; }
 .diagram .nkp-node.failed { fill: var(--bad); stroke: var(--bad); }
-.diagram .nkp-nl { font-size: 10.5px; font-family: var(--mono); fill: var(--muted); }
+.diagram .nkp-nl { font-size: 11px; font-family: var(--mono); fill: var(--muted); }
 .diagram .nkp-nl.on { fill: #fff; }
 .diagram .nkp-pod { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .nkp-head { font-size: 13px; font-weight: 600; fill: var(--muted); }

@@ -33,10 +33,10 @@ function Fabric({ y, h, note }: { y: number; h: number; note: string }) {
   return (
     <g>
       <rect class="sto-dsf" x={20} y={y} width={W - 40} height={h} />
-      <text x={36} y={y + h - 10} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={36} y={y + h - 10} class="muted d-sub">
         Distributed storage fabric
       </text>
-      <text x={W - 36} y={y + h - 10} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+      <text x={W - 36} y={y + h - 10} text-anchor="end" class="muted d-sub">
         {note}
       </text>
     </g>
@@ -139,16 +139,16 @@ function Files() {
       <div class="diagram-scroll">
         <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ha ? 'Nutanix Files: users see one path. Three file server VMs serve the folders. When one fails, another takes over its volume group and IP address, and hands them back when it returns.' : 'Nutanix Files with a single file server VM: when it fails, every folder is out of reach until it returns.'}>
           <rect class="sto-ns" x={NS.x} y={NS.y} width={NS.w} height={NS.h} />
-          <text x={W / 2} y={NS.y + 21} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text class="d-title" x={W / 2} y={NS.y + 21} text-anchor="middle" style={{ fontWeight: 600 }}>
             Users see one path
           </text>
-          <text x={W / 2} y={NS.y + 39} text-anchor="middle" class="mono" style={{ fontSize: '12.5px' }}>
+          <text x={W / 2} y={NS.y + 39} text-anchor="middle" class="mono d-label">
             \\files01\corp
           </text>
-          <text x={NS.x + NS.w + 14} y={NS.y + 21} class="muted" style={{ fontSize: '12px' }}>
+          <text x={NS.x + NS.w + 14} y={NS.y + 21} class="muted d-sub">
             SMB · NFS · parallel NFS for HPC
           </text>
-          <text x={NS.x + NS.w + 14} y={NS.y + 39} class="muted" style={{ fontSize: '12px' }}>
+          <text x={NS.x + NS.w + 14} y={NS.y + 39} class="muted d-sub">
             exabyte-scale unstructured data
           </text>
           {Array.from({ length: n }, (_, i) => {
@@ -160,13 +160,13 @@ function Files() {
                 <path d={`M${W / 2} ${NS.y + NS.h} V ${FS_Y - 18} H ${x + colW / 2} V ${FS_Y}`} fill="none" class={isDown ? 'bad-stroke' : 'line'} stroke-dasharray={isDown ? '4 4' : undefined} />
                 <rect class={`node-box${isDown ? ' down' : ''}`} x={x} y={FS_Y} width={colW} height={FS_H} />
                 <rect x={x} y={FS_Y} width={colW} height={30} class={isDown ? 'bad-fill' : 'ink-fill'} />
-                <text x={x + 12} y={FS_Y + 20} style={{ fill: '#fff', fontWeight: 600, fontSize: '13.5px' }}>
+                <text class="d-label" x={x + 12} y={FS_Y + 20} style={{ fill: '#fff', fontWeight: 600 }}>
                   FSVM-{i + 1}
                 </text>
-                <text x={x + colW - 12} y={FS_Y + 20} text-anchor="end" style={{ fill: '#fff', fontWeight: 600, fontSize: '12.5px' }}>
+                <text class="d-label" x={x + colW - 12} y={FS_Y + 20} text-anchor="end" style={{ fill: '#fff', fontWeight: 600 }}>
                   {isDown ? '✕ down' : 'running'}
                 </text>
-                <text x={x + 12} y={FS_Y + 46} class={i === survivor && k > 0.5 ? 'warn-fill mono' : 'muted mono'} style={{ fontSize: '12px' }}>
+                <text x={x + 12} y={FS_Y + 46} class={`${i === survivor && k > 0.5 ? 'warn-fill mono' : 'muted mono'} d-sub`}>
                   {ip}
                 </text>
               </g>
@@ -184,11 +184,11 @@ function Files() {
             return (
               <g key={o.name}>
                 <rect class={`sto-chip${lost ? ' lost' : moving ? ' moved' : ''}${hit ? ' hit' : ''}`} x={x} y={y} width={chipW} height={CHIP_H} />
-                <text x={x + 8} y={y + 16} class={`mono${lost ? ' faint' : ''}`} style={{ fontSize: '12px' }}>
+                <text x={x + 8} y={y + 16} class={`${`mono${lost ? ' faint' : ''}`} d-sub`}>
                   /{o.name}
                 </text>
                 {lost && (
-                  <text x={x + chipW - 8} y={y + 16} text-anchor="end" class="bad-fill" style={{ fontSize: '12px', fontWeight: 700 }}>
+                  <text x={x + chipW - 8} y={y + 16} text-anchor="end" class="bad-fill d-sub" style={{ fontWeight: 700 }}>
                     ✕
                   </text>
                 )}
@@ -213,7 +213,7 @@ function Files() {
               <g key={i}>
                 <path d={`M${vx} ${DSF_Y + 10} C ${vx} ${DSF_Y - 10}, ${ox} ${DSF_Y - 8}, ${ox} ${FS_Y + FS_H}`} fill="none" class={owner === null ? 'line' : owner !== i ? 'warn-stroke' : 'flow-stroke'} stroke-width={1.5} stroke-dasharray={owner === null ? '3 3' : undefined} />
                 <rect class="disk" x={vx - 60} y={DSF_Y + 10} width={120} height={24} />
-                <text x={vx} y={DSF_Y + 26} text-anchor="middle" class="mono" style={{ fontSize: '11.5px' }}>
+                <text x={vx} y={DSF_Y + 26} text-anchor="middle" class="mono d-sub">
                   VG-{i + 1} {owner === null ? '· no owner' : owner !== i ? `→ FSVM-${owner + 1}` : ''}
                 </text>
               </g>
@@ -313,10 +313,10 @@ function Volumes() {
             return (
               <g key={c}>
                 <rect class="vm" x={hostX(c)} y={HOST_Y} width={HOST_W} height={52} />
-                <text x={hostX(c) + HOST_W / 2} y={HOST_Y + 22} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+                <text class="d-label" x={hostX(c) + HOST_W / 2} y={HOST_Y + 22} text-anchor="middle" style={{ fontWeight: 600 }}>
                   Host {c + 1}
                 </text>
-                <text x={hostX(c) + HOST_W / 2} y={HOST_Y + 40} text-anchor="middle" class={broken ? (t < V.relog ? 'bad-fill' : 'warn-fill') : 'muted'} style={{ fontSize: '12px', fontWeight: broken ? 600 : 400 }}>
+                <text x={hostX(c) + HOST_W / 2} y={HOST_Y + 40} text-anchor="middle" class={`${broken ? (t < V.relog ? 'bad-fill' : 'warn-fill') : 'muted'} d-sub`} style={{ fontWeight: broken ? 600 : 400 }}>
                   {broken ? (t < V.relog ? '✕ lost its session' : 'logging in again') : 'server outside the cluster'}
                 </text>
                 {(live || loggingIn || broken) && (
@@ -337,7 +337,7 @@ function Volumes() {
             );
           })}
           <rect class="sto-ip" x={40} y={IP_Y} width={W - 80} height={36} />
-          <text x={W / 2} y={IP_Y + 23} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+          <text class="d-label" x={W / 2} y={IP_Y + 23} text-anchor="middle" style={{ fontWeight: 600 }}>
             Data Services IP: one address for the whole cluster
           </text>
           {Array.from({ length: CVMS }, (_, i) => {
@@ -348,13 +348,13 @@ function Volumes() {
               <g key={i}>
                 <rect class={`node-box${isDown ? ' down' : ''}`} x={x} y={CVM_Y} width={cvmW} height={64} />
                 <rect class={isDown ? 'cvm down' : 'cvm'} x={x + 10} y={CVM_Y + 10} width={72} height={44} />
-                <text x={x + 46} y={CVM_Y + 37} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '12.5px' }}>
+                <text class="d-label" x={x + 46} y={CVM_Y + 37} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600 }}>
                   CVM-{i + 1}
                 </text>
-                <text x={x + 94} y={CVM_Y + 28} class={isDown ? 'bad-fill' : ''} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                <text x={x + 94} y={CVM_Y + 28} class={`${isDown ? 'bad-fill' : ''} d-label`} style={{ fontWeight: 600 }}>
                   {isDown ? '✕ down' : 'up'}
                 </text>
-                <text x={x + 94} y={CVM_Y + 46} class="muted" style={{ fontSize: '12px' }}>
+                <text x={x + 94} y={CVM_Y + 46} class="muted d-sub">
                   {isDown ? '' : `${sessions} host${sessions === 1 ? '' : 's'}`}
                 </text>
                 <line x1={x + cvmW / 2} y1={CVM_Y + 64} x2={x + cvmW / 2} y2={VG_Y} class={isDown ? 'line' : 'sto-reach'} stroke-dasharray="3 3" />
@@ -362,7 +362,7 @@ function Volumes() {
             );
           })}
           <Fabric y={VG_Y} h={78} note="every CVM can reach every disk" />
-          <text x={36} y={VG_Y + 34} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text class="d-label" x={36} y={VG_Y + 34} style={{ fontWeight: 600 }}>
             Volume group
           </text>
           {Array.from({ length: 4 }, (_, d) => {
@@ -370,7 +370,7 @@ function Volumes() {
             return (
               <g key={d}>
                 <rect class="disk" x={x} y={VG_Y + 12} width={150} height={34} />
-                <text x={x + 75} y={VG_Y + 34} text-anchor="middle" class="mono" style={{ fontSize: '12px' }}>
+                <text x={x + 75} y={VG_Y + 34} text-anchor="middle" class="mono d-sub">
                   Disk {d + 1}
                 </text>
               </g>
@@ -456,26 +456,26 @@ function Objects() {
             </marker>
           </defs>
           <rect class="sto-ns" x={SRC.x} y={SRC.y} width={SRC.w} height={SRC.h} />
-          <text x={SRC.x + SRC.w / 2} y={SRC.y + 28} text-anchor="middle" style={{ fontWeight: 600, fontSize: '13.5px' }}>
+          <text class="d-label" x={SRC.x + SRC.w / 2} y={SRC.y + 28} text-anchor="middle" style={{ fontWeight: 600 }}>
             Apps and backup software write over the S3 API
           </text>
           <path d={`M${SRC.x + SRC.w / 2} ${SRC.y + SRC.h} V ${BKT.y}`} class="line" />
           <rect class="node-box" x={BKT.x} y={BKT.y} width={BKT.w} height={BKT.h} />
-          <text x={BKT.x + 20} y={BKT.y + 26} style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text class="d-title" x={BKT.x + 20} y={BKT.y + 26} style={{ fontWeight: 600 }}>
             Bucket on the cluster
           </text>
-          <text x={BKT.x + BKT.w - 20} y={BKT.y + 26} text-anchor="end" class="muted" style={{ fontSize: '12px' }}>
+          <text x={BKT.x + BKT.w - 20} y={BKT.y + 26} text-anchor="end" class="muted d-sub">
             object workers · 3 or more VMs
           </text>
           <rect class="sto-tgt" x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} />
-          <text x={TGT.x + TGT.w / 2} y={TGT.y + 26} text-anchor="middle" style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text class="d-title" x={TGT.x + TGT.w / 2} y={TGT.y + 26} text-anchor="middle" style={{ fontWeight: 600 }}>
             Cheaper S3-compatible store
           </text>
-          <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted" style={{ fontSize: '11px' }}>
+          <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted d-fine">
             optional: AWS S3, Azure Blob, other S3 clouds
           </text>
           <path d={`M${BKT.x + BKT.w + 4} ${BKT.y + BKT.h / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />
-          <text text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+          <text text-anchor="middle" class="muted d-sub">
             <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 26}>
               older than
             </tspan>
@@ -512,14 +512,14 @@ function Objects() {
               </g>
             );
           })}
-          <text x={BKT.x + 20} y={BKT.y + BKT.h - 14} class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={BKT.x + 20} y={BKT.y + BKT.h - 14} class="muted d-sub">
             ← older
           </text>
-          <text x={BKT.x + BKT.w - 20} y={BKT.y + BKT.h - 14} text-anchor="end" class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={BKT.x + BKT.w - 20} y={BKT.y + BKT.h - 14} text-anchor="end" class="muted d-sub">
             newer →
           </text>
           <Fabric y={DSF_Y} h={56} note="the bucket gets the container’s copies, erasure coding and compression" />
-          <text x={36} y={DSF_Y + 22} style={{ fontSize: '12.5px' }}>
+          <text class="d-label" x={36} y={DSF_Y + 22}>
             Object data and metadata live in vDisks like any VM’s data; on hybrid nodes AOS also moves it between flash and HDD.
           </text>
         </svg>

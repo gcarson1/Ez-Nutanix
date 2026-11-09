@@ -27,8 +27,8 @@
 .dl-dia .dl-node.entering .dl-card { stroke: var(--warn); stroke-width: 1.75; }
 .dl-dia .dl-node.maint .dl-card { fill: var(--warn-bg); stroke: var(--warn); }
 .dl-dia .dl-node.returning .dl-card { stroke: var(--flow); stroke-width: 1.75; }
-.dl-dia .dl-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
-.dl-dia .dl-word { font-size: 12.5px; font-weight: 600; }
+.dl-dia .dl-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.dl-dia .dl-word { font-size: 13px; font-weight: 600; }
 .dl-dia .dl-word.ok { fill: var(--ok); }
 .dl-dia .dl-word.warn { fill: var(--warn); }
 .dl-dia .dl-word.bad { fill: var(--bad); }
@@ -45,16 +45,16 @@
 .dl-dia .dl-cvm.paused .dl-x { stroke: var(--warn); }
 .dl-dia .dl-hyp { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
 .dl-dia .dl-hyp.off { fill: var(--bad-bg); stroke: var(--bad); }
-.dl-dia .dl-hypt { font-size: 10.5px; fill: var(--muted); }
+.dl-dia .dl-hypt { font-size: 11px; fill: var(--muted); }
 
 .dl-dia .dl-disk { fill: var(--bg); stroke: var(--line-2); stroke-width: 1; }
 .dl-dia .dl-disk.failed { fill: var(--bad-bg); stroke: var(--bad); stroke-width: 1.5; }
 .dl-dia .dl-drive.dim .dl-disk { opacity: 0.55; }
-.dl-dia .dl-dl { font-size: 10px; fill: var(--faint); }
+.dl-dia .dl-dl { font-size: 11px; fill: var(--faint); }
 .dl-dia .dl-dl.bad { fill: var(--bad); font-weight: 600; }
 
 .dl-dia .dl-vm rect { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 1; }
-.dl-dia .dl-vm text { font-family: var(--mono); font-size: 11.5px; font-weight: 600; fill: var(--text); }
+.dl-dia .dl-vm text { font-family: var(--mono); font-size: 12px; font-weight: 600; fill: var(--text); }
 .dl-dia .dl-vm.hl rect { fill: var(--ink-soft); stroke: var(--ink); stroke-width: 2; }
 .dl-dia .dl-vm.moving rect { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 2; }
 .dl-dia .dl-vm.restarting rect { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.75; }
@@ -83,7 +83,7 @@
 .dl-dot.write, .dl-dot.copy, .dl-dot.localize { fill: var(--ink-fg); }
 .dl-dot.rebuild, .dl-dot.resync, .dl-dot.read { fill: var(--flow); }
 .dl-dia .dl-lane { stroke: var(--line-2); stroke-dasharray: 2 5; }
-.dl-dia .dl-lanet { font-size: 10px; font-weight: 600; fill: var(--faint); }
+.dl-dia .dl-lanet { font-size: 11px; font-weight: 600; fill: var(--faint); }
 .dl-dia .dl-pool { fill: none; stroke: var(--ink-fg); stroke-width: 1.5; }
 .dl-dia .dl-poolt { font-size: 13px; font-weight: 600; fill: var(--ink-fg); }
 

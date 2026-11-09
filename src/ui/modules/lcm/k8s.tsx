@@ -115,19 +115,19 @@ function ClusterBox({ c, s, x, y }: { c: FleetCluster; s: ClusterState; x: numbe
   return (
     <g class={off ? 'nkp-off' : undefined}>
       <rect class={`nkp-box ${st.tone}`} x={x} y={y} width={COL_W} height={BOX_H} />
-      <text x={x + 12} y={y + 22} style={{ fontWeight: 600, fontSize: '14px' }}>
+      <text class="d-title" x={x + 12} y={y + 22} style={{ fontWeight: 600 }}>
         {c.name}
       </text>
-      <text x={x + COL_W - 12} y={y + 22} text-anchor="end" class="mono" style={{ fontSize: '12.5px' }}>
+      <text x={x + COL_W - 12} y={y + 22} text-anchor="end" class="mono d-label">
         {version(s)}
       </text>
-      <text x={x + 12} y={y + 40} class="muted" style={{ fontSize: '12px' }}>
+      <text x={x + 12} y={y + 40} class="muted d-sub">
         {SITE[c.site]} · {WHERE[c.infra]}
       </text>
       {squares}
       {surge}
       {pods}
-      <text x={x + 12} y={y + 98} class={`nkp-st ${st.tone}`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+      <text x={x + 12} y={y + 98} class={`${`nkp-st ${st.tone}`} d-label`} style={{ fontWeight: 600 }}>
         {st.text(s, c)}
       </text>
     </g>
@@ -153,7 +153,7 @@ function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: 
         </marker>
       </defs>
       <rect class="ink-fill" x={0} y={0} width={W} height={BAR_H} />
-      <text x={W / 2} y={29} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600, fontSize: '15px' }}>
+      <text class="d-title" x={W / 2} y={29} text-anchor="middle" style={{ fill: '#fff', fontWeight: 600 }}>
         NKP fleet management · Kubernetes {FROM} → {TO}, one wave at a time
       </text>
       {GROUPS.map((g, w) => {
@@ -177,7 +177,7 @@ function FleetDiagram({ run, plan, states, t }: { run: Run; plan: Plan; states: 
           </g>
         );
       })}
-      <text x={0} y={LEG_Y} class="muted" style={{ fontSize: '12px' }}>
+      <text x={0} y={LEG_Y} class="muted d-sub">
         C = control plane node · W = worker node
       </text>
     </svg>

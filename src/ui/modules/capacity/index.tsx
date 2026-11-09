@@ -72,11 +72,11 @@ function Spread({ nodes, rf, t, tl }: { nodes: number; rf: RF; t: number; tl: Re
       {Array.from({ length: nodes }, (_, n) => (
         <g key={n}>
           <rect class={`node-box${isDown(n) ? ' down' : ''}`} x={nodeX(n)} y={TOP} width={nW} height={nH} />
-          <text x={nodeX(n) + 10} y={TOP + 21} style={{ fontWeight: 600, fontSize: nodes > 8 ? '12px' : '14px' }}>
+          <text x={nodeX(n) + 10} y={TOP + 21} class={nodes > 8 ? 'd-sub' : 'd-title'} style={{ fontWeight: 600 }}>
             N{n + 1}
           </text>
           {isDown(n) && (
-            <text x={nodeX(n) + nW - 8} y={TOP + 21} text-anchor="end" class="bad-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+            <text x={nodeX(n) + nW - 8} y={TOP + 21} text-anchor="end" class="bad-fill d-fine" style={{ fontWeight: 600 }}>
               ✕ {nW > 90 ? 'down' : ''}
             </text>
           )}

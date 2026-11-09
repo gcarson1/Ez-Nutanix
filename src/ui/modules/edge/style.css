@@ -6,7 +6,7 @@
 .edge-cell { margin-top: var(--sp-1); color: var(--text-2); }
 .edge-dia .edge-cap { font-size: 12px; }
 .edge-dia .edge-t { font-size: 15px; font-weight: 600; }
-.edge-dia .edge-s { font-size: 13.5px; }
+.edge-dia .edge-s { font-size: 13px; }
 .edge-dia .edge-xs { font-size: 12px; }
 .edge-dia .edge-mode { font-weight: 600; }
 .edge-dia .edge-link { stroke: var(--s2); }

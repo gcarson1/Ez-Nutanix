@@ -81,29 +81,29 @@ function TierDiagram({ t }: { t: number }) {
   return (
     <svg class="diagram dt-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A share of ${N} files. Data Lens tracks access and ages files: ${COUNT.hot} hot, ${COUNT.warm} warm and ${COUNT.cold} cold. Over the capacity threshold, cold data tiers to Nutanix Objects with a stub left in the share, and a user still reads a tiered file inline.`}>
       <rect x={USERS.x} y={USERS.y} width={USERS.w} height={USERS.h} rx={4} class="dl-pc" />
-      <text x={USERS.x + 12} y={USERS.y + 24} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+      <text class="d-label" x={USERS.x + 12} y={USERS.y + 24} style={{ fontWeight: 600 }}>
         Users
       </text>
-      <text x={USERS.x + 12} y={USERS.y + 42} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={USERS.x + 12} y={USERS.y + 42} class="muted d-sub">
         SMB and NFS clients
       </text>
       <line x1={USERS.x + USERS.w} x2={SHARE.x} y1={USERS.y + USERS.h / 2} y2={USERS.y + USERS.h / 2} class="dl-link" />
 
       {/* the share and its capacity */}
       <rect x={SHARE.x} y={SHARE.y} width={SHARE.w} height={SHARE.h} rx={4} class="dl-srv" />
-      <text x={SHARE.x + 14} y={SHARE.y + 20} style={{ fontSize: '14px', fontWeight: 600 }}>
-        Nutanix Files · <tspan class="mono" style={{ fontWeight: 400, fontSize: '12.5px' }}>\\files01\projects</tspan>
+      <text class="d-title" x={SHARE.x + 14} y={SHARE.y + 20} style={{ fontWeight: 600 }}>
+        Nutanix Files · <tspan class="mono d-label" style={{ fontWeight: 400 }}>\\files01\projects</tspan>
       </text>
-      <text x={SHARE.x + 14} y={SHARE.y + 42} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={SHARE.x + 14} y={SHARE.y + 42} class="muted d-sub">
         capacity used
       </text>
       <rect x={SHARE.x + 100} y={SHARE.y + 33} width={220} height={12} class="bg3" />
       <rect x={SHARE.x + 100} y={SHARE.y + 33} width={(220 * used) / 100} height={12} class={used > THRESHOLD ? 'warn-fill' : 'ok-fill'} />
       <line x1={SHARE.x + 100 + (220 * THRESHOLD) / 100} x2={SHARE.x + 100 + (220 * THRESHOLD) / 100} y1={SHARE.y + 29} y2={SHARE.y + 49} class="dt-limit" />
-      <text x={SHARE.x + 330} y={SHARE.y + 44} class="mono" style={{ fontSize: '12px', fontWeight: 600 }}>
+      <text x={SHARE.x + 330} y={SHARE.y + 44} class="mono d-sub" style={{ fontWeight: 600 }}>
         {Math.round(used)}%
       </text>
-      <text x={SHARE.x + 330 + 38} y={SHARE.y + 44} class="muted" style={{ fontSize: '10.5px' }}>
+      <text x={SHARE.x + 330 + 38} y={SHARE.y + 44} class="muted d-fine">
         limit {THRESHOLD}%
       </text>
 
@@ -118,7 +118,7 @@ function TierDiagram({ t }: { t: number }) {
           <g key={i}>
             <rect x={c.x} y={c.y} width={CW} height={CH} rx={3} class={`${colored > 0.5 ? heatCls(h) : 'dt-cell'}${stub ? ' stub' : ''}${hit || read ? ' hit' : ''}`} />
             {stub && (
-              <text x={c.x + CW / 2} y={c.y + 17} text-anchor="middle" class="muted" style={{ fontSize: '10px' }}>
+              <text x={c.x + CW / 2} y={c.y + 17} text-anchor="middle" class="muted d-fine">
                 stub
               </text>
             )}
@@ -128,42 +128,42 @@ function TierDiagram({ t }: { t: number }) {
 
       {/* Data Lens: the data age explorer and the tiering policy */}
       <rect x={DL.x} y={DL.y} width={DL.w} height={DL.h} rx={4} class={`dl-srv${ph >= 1 ? ' dt-on' : ''}`} />
-      <text x={DL.x + 12} y={DL.y + 22} style={{ fontSize: '14px', fontWeight: 600 }}>
+      <text class="d-title" x={DL.x + 12} y={DL.y + 22} style={{ fontWeight: 600 }}>
         Data Lens
       </text>
-      <text x={DL.x + 12} y={DL.y + 40} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={DL.x + 12} y={DL.y + 40} class="muted d-sub">
         {ph === 0 ? 'watching reads and writes' : 'data age explorer'}
       </text>
       {(['hot', 'warm', 'cold'] as Heat[]).map((h, r) => (
         <g key={h} style={{ opacity: colored }}>
           <rect x={DL.x + 12} y={DL.y + 56 + r * 44} width={((DL.w - 24) * COUNT[h]) / N} height={14} class={`dt-bar ${h}`} />
-          <text x={DL.x + 12} y={DL.y + 84 + r * 44} style={{ fontSize: '12px', fontWeight: 600 }}>
+          <text class="d-sub" x={DL.x + 12} y={DL.y + 84 + r * 44} style={{ fontWeight: 600 }}>
             {h[0].toUpperCase() + h.slice(1)} · {COUNT[h]} files
           </text>
-          <text x={DL.x + 12} y={DL.y + 97 + r * 44} class="muted" style={{ fontSize: '10.5px' }}>
+          <text x={DL.x + 12} y={DL.y + 97 + r * 44} class="muted d-fine">
             {AGE[h]}
           </text>
         </g>
       ))}
-      <text x={DL.x + 12} y={DL.y + DL.h - 30} class={ph >= 2 ? 'warn-fill' : 'muted'} style={{ fontSize: '11px', fontWeight: 600 }}>
+      <text x={DL.x + 12} y={DL.y + DL.h - 30} class={`${ph >= 2 ? 'warn-fill' : 'muted'} d-fine`} style={{ fontWeight: 600 }}>
         policy: cold, over {THRESHOLD}%
       </text>
-      <text x={DL.x + 12} y={DL.y + DL.h - 14} class="muted" style={{ fontSize: '11px' }}>
+      <text x={DL.x + 12} y={DL.y + DL.h - 14} class="muted d-fine">
         {ph >= 4 ? 'cost saved: shown here' : 'runs in its time window'}
       </text>
 
       {/* the tiering target */}
       <rect x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} rx={4} class={`dl-snap${ph >= 2 ? ' on' : ''}`} />
-      <text x={TGT.x + 12} y={TGT.y + 24} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+      <text class="d-label" x={TGT.x + 12} y={TGT.y + 24} style={{ fontWeight: 600 }}>
         Nutanix Objects
       </text>
-      <text x={TGT.x + 12} y={TGT.y + 42} class="muted" style={{ fontSize: '11px' }}>
+      <text x={TGT.x + 12} y={TGT.y + 42} class="muted d-fine">
         or AWS S3, Azure Blob,
       </text>
-      <text x={TGT.x + 12} y={TGT.y + 56} class="muted" style={{ fontSize: '11px' }}>
+      <text x={TGT.x + 12} y={TGT.y + 56} class="muted d-fine">
         Wasabi
       </text>
-      <text x={TGT.x + 12} y={TGT.y + 92} class="mono" style={{ fontSize: '12px', fontWeight: 600 }}>
+      <text x={TGT.x + 12} y={TGT.y + 92} class="mono d-sub" style={{ fontWeight: 600 }}>
         {stateAt(t).tiered} files tiered
       </text>
       <polyline points={`${cx0 - 6},${LANE} ${TGT.x + TGT.w / 2},${LANE} ${TGT.x + TGT.w / 2},${TGT.y + TGT.h}`} class="dl-link" fill="none" stroke-dasharray="4 4" />

@@ -122,7 +122,7 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
         ))}
       </defs>
       <rect x={X0} y={NET_Y - 16} width={W - X0 * 2} height={24} class="bg3" />
-      <text x={W - X0 - 8} y={NET_Y + 1} text-anchor="end" class="muted" style={{ fontSize: '11px' }}>
+      <text x={W - X0 - 8} y={NET_Y + 1} text-anchor="end" class="muted d-fine">
         Cluster network
       </text>
       {Array.from({ length: DP_NODES }, (_, n) => {
@@ -132,11 +132,11 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
           return (
             <g>
               <rect x={BX(n)} y={Y[key]} width={NW - 36} height={BOX_H[key]} class={`dp-box ${on ? 'on' : ''} ${extra ?? ''}`} />
-              <text x={BX(n) + 8} y={Y[key] + 16} style={{ fontSize: '14px', fontWeight: 600 }}>
+              <text class="d-title" x={BX(n) + 8} y={Y[key] + 16} style={{ fontWeight: 600 }}>
                 {title}
               </text>
               {sub && (
-                <text x={BX(n) + 8} y={Y[key] + 30} class="muted" style={{ fontSize: '11.5px' }}>
+                <text x={BX(n) + 8} y={Y[key] + 30} class="muted d-sub">
                   {sub}
                 </text>
               )}
@@ -148,19 +148,19 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
         return (
           <g key={n}>
             <rect x={x} y={8} width={NW} height={NET_Y - 30} class="node-box" />
-            <text x={x + 10} y={27} style={{ fontSize: '14px', fontWeight: 600 }}>
+            <text class="d-title" x={x + 10} y={27} style={{ fontWeight: 600 }}>
               Node {n + 1}
             </text>
             {n === vmNode ? (
               <g>
                 <rect x={x + 10} y={Y.vm} width={NW - 20} height={BOX_H.vm} class={`vm ${isAt(step.active, { at: 'vm' }) ? 'hl' : ''}`} />
-                <text x={x + 18} y={Y.vm + 23} style={{ fontSize: '14px', fontWeight: 600 }}>
+                <text class="d-title" x={x + 18} y={Y.vm + 23} style={{ fontWeight: 600 }}>
                   App VM
                 </text>
                 {step.acked && (
                   <g>
                     <rect x={x + NW - 74} y={Y.vm + 8} width={56} height={18} class="ok-fill" />
-                    <text x={x + NW - 46} y={Y.vm + 21} text-anchor="middle" style={{ fontSize: '11px', fontWeight: 700, fill: '#08130c' }}>
+                    <text class="d-fine" x={x + NW - 46} y={Y.vm + 21} text-anchor="middle" style={{ fontWeight: 700, fill: '#08130c' }}>
                       ✓ ACK
                     </text>
                   </g>
@@ -168,19 +168,19 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
                 {mode === 'rd' && step.id === 'return' && (
                   <g>
                     <rect x={x + NW - 82} y={Y.vm + 8} width={64} height={18} class="ok-fill" />
-                    <text x={x + NW - 50} y={Y.vm + 21} text-anchor="middle" style={{ fontSize: '11px', fontWeight: 700, fill: '#08130c' }}>
+                    <text class="d-fine" x={x + NW - 50} y={Y.vm + 21} text-anchor="middle" style={{ fontWeight: 700, fill: '#08130c' }}>
                       ✓ DATA
                     </text>
                   </g>
                 )}
               </g>
             ) : (
-              <text x={x + 18} y={Y.vm + 21} class="faint" style={{ fontSize: '11.5px' }}>
+              <text x={x + 18} y={Y.vm + 21} class="faint d-sub">
                 other VMs
               </text>
             )}
             <rect x={x + 4} y={Y.sg - 14} width={NW - 8} height={Y.extent + BOX_H.extent - Y.sg + 22} class="dp-cvm" />
-            <text x={x + NW - 10} y={Y.sg - 3} text-anchor="end" class="ink-text dp-cvm-l" style={{ fontSize: '10.5px', fontWeight: 600 }}>
+            <text x={x + NW - 10} y={Y.sg - 3} text-anchor="end" class="ink-text dp-cvm-l d-fine" style={{ fontWeight: 600 }}>
               CVM
             </text>
             {box('sg', { at: 'stargate', node: n }, 'Stargate', 'serves all I/O')}
@@ -190,7 +190,7 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
             {hasOp && <CopyTile x={x + NW - 40} y={Y.oplog + 10} n={step.oplogCopies.indexOf(n) + 1} />}
             {hasEx && <CopyTile x={x + NW - 40} y={Y.extent + 10} n={step.extentCopies.indexOf(n) + 1} />}
             {step.id === 'ilm' && step.extentCopies.includes(n) && (
-              <text x={BX(n) + 8} y={Y.extent + 52} class="flow-fill" style={{ fontSize: '10.5px', fontWeight: 600 }}>
+              <text x={BX(n) + 8} y={Y.extent + 52} class="flow-fill d-fine" style={{ fontWeight: 600 }}>
                 ILM: hot → fast tier
               </text>
             )}
@@ -217,7 +217,7 @@ function CopyTile({ x, y, n }: { x: number; y: number; n: number }) {
   return (
     <g>
       <rect x={x} y={y} width={26} height={18} class="ink-fill" />
-      <text x={x + 13} y={y + 13} text-anchor="middle" class="mono" style={{ fontSize: '10.5px', fill: '#fff', fontWeight: 600 }}>
+      <text x={x + 13} y={y + 13} text-anchor="middle" class="mono d-fine" style={{ fill: '#fff', fontWeight: 600 }}>
         #{n}
       </text>
     </g>
@@ -243,26 +243,26 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
       {nodeX.map((x, i) => (
         <g key={i}>
           <rect x={x} y={20} width={220} height={170} class="node-box" />
-          <text x={x + 10} y={38} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+          <text class="d-label" x={x + 10} y={38} style={{ fontWeight: 600 }}>
             Node {i + 1}
           </text>
           {f.vmNode === i ? (
             <g>
               <rect x={x + 10} y={50} width={200} height={34} class="vm hl" />
-              <text x={x + 20} y={72} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+              <text class="d-label" x={x + 20} y={72} style={{ fontWeight: 600 }}>
                 App VM
               </text>
             </g>
           ) : (
-            <text x={x + 20} y={72} class="faint" style={{ fontSize: '11.5px' }}>
+            <text x={x + 20} y={72} class="faint d-sub">
               {f.phase === 'before' || i === 1 ? '' : 'VM moved away'}
             </text>
           )}
           <rect x={x + 10} y={96} width={200} height={14} class="dp-cvm" />
-          <text x={x + 16} y={107} class="ink-text" style={{ fontSize: '10px', fontWeight: 600 }}>
+          <text x={x + 16} y={107} class="ink-text d-fine" style={{ fontWeight: 600 }}>
             CVM · Stargate
           </text>
-          <text x={x + 10} y={130} class="muted" style={{ fontSize: '10.5px' }}>
+          <text x={x + 10} y={130} class="muted d-fine">
             Extent store: this VM’s hot extents
           </text>
           {Array.from({ length: n }, (_, e) => {
@@ -273,7 +273,7 @@ function LocalityDiagram({ f }: { f: LocalityFrame }) {
         </g>
       ))}
       <rect x={10} y={198} width={500} height={14} class="bg3" />
-      <text x={505} y={224} text-anchor="end" class="muted" style={{ fontSize: '10px' }}>
+      <text x={505} y={224} text-anchor="end" class="muted d-fine">
         Network
       </text>
       {readPts && <polyline points={readPts.map((p) => p.join(',')).join(' ')} class={`dp-hop ${f.readRemote ? 'rep' : 'io'}`} marker-end={`url(#dp-lar-${f.readRemote ? 'rep' : 'io'})`} />}

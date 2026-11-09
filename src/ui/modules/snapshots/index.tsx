@@ -59,18 +59,18 @@ const H = MY + 66;
 function Row({ y, name, sub, own, note, noteCls, dashed, o = 1, alone }: { y: number; name: string; sub: string; own: number; note: string; noteCls?: string; dashed?: boolean; o?: number; alone?: boolean }) {
   return (
     <g style={{ opacity: o }}>
-      <text x={8} y={y + 16} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+      <text class="d-label" x={8} y={y + 16} style={{ fontWeight: 600 }}>
         {name}
       </text>
-      <text x={8} y={y + 32} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={8} y={y + 32} class="muted d-sub">
         {sub}
       </text>
       <rect x={BX} y={y} width={gb(DISK - own)} height={ROW_H} class={alone ? 'sn-own' : 'sn-shared'} stroke-dasharray={dashed ? '5 4' : undefined} />
       {own > 0.05 && <rect x={BX + gb(DISK - own)} y={y} width={gb(own)} height={ROW_H} class="sn-own" />}
-      <text x={BX + 12} y={y + 24} class={alone ? 'sn-on-own' : ''} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+      <text x={BX + 12} y={y + 24} class={`${alone ? 'sn-on-own' : ''} d-label`} style={{ fontWeight: 600 }}>
         {DISK} GB disk
       </text>
-      <text x={BX + BW + 14} y={y + 24} class={noteCls ?? 'muted'} style={{ fontSize: '12px', fontWeight: noteCls ? 600 : 400 }}>
+      <text x={BX + BW + 14} y={y + 24} class={`${noteCls ?? 'muted'} d-sub`} style={{ fontWeight: noteCls ? 600 : 400 }}>
         {note}
       </text>
     </g>
@@ -100,7 +100,7 @@ function SnapDiagram({ t }: { t: number }) {
         </g>
       )}
       {s.sc >= 4 && (
-        <text x={8} y={rowY[2] - 14} class="muted" style={{ fontSize: '11px' }}>
+        <text x={8} y={rowY[2] - 14} class="muted d-fine">
           Clones of the 9:00 snapshot
         </text>
       )}
@@ -114,20 +114,20 @@ function SnapDiagram({ t }: { t: number }) {
       )}
 
       {/* what is stored against what full copies would need */}
-      <text x={8} y={MY + 14} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text class="d-label" x={8} y={MY + 14} style={{ fontWeight: 600 }}>
         Stored on the cluster
       </text>
       <rect x={BX} y={MY} width={MW} height={18} class="bg3" />
       <rect x={BX} y={MY} width={(s.stored / MMAX) * MW} height={18} class="sn-own" />
-      <text x={BX + MW + 14} y={MY + 14} class="mono" style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text x={BX + MW + 14} y={MY + 14} class="mono d-label" style={{ fontWeight: 600 }}>
         {Math.round(s.stored).toLocaleString('en-US')} GB
       </text>
-      <text x={8} y={MY + 44} class="muted" style={{ fontSize: '13px' }}>
+      <text x={8} y={MY + 44} class="muted d-label">
         As full copies
       </text>
       <rect x={BX} y={MY + 30} width={MW} height={18} class="bg3" />
       <rect x={BX} y={MY + 30} width={(s.full / MMAX) * MW} height={18} class="sn-full" />
-      <text x={BX + MW + 14} y={MY + 44} class="mono muted" style={{ fontSize: '13px' }}>
+      <text x={BX + MW + 14} y={MY + 44} class="mono muted d-label">
         {s.full.toLocaleString('en-US')} GB{saved > 1 ? ` · ${Math.round(saved).toLocaleString('en-US')} GB saved` : ''}
       </text>
 
@@ -135,18 +135,18 @@ function SnapDiagram({ t }: { t: number }) {
       {s.sc === 6 && (
         <g>
           <rect x={2} y={rowY[0] - 14} width={BX + BW + 8} height={rowY[4] + ROW_H + 26 - rowY[0]} class="sn-cluster" />
-          <text x={BX + BW + 2} y={rowY[0] - 20} text-anchor="end" class="warn-fill" style={{ fontSize: '12px', fontWeight: 600 }}>
+          <text x={BX + BW + 2} y={rowY[0] - 20} text-anchor="end" class="warn-fill d-sub" style={{ fontWeight: 600 }}>
             all on the same cluster as production
           </text>
           <line x1={BX + BW + 10} x2={BX + BW + 34} y1={rowY[2] + 46} y2={rowY[2] + 46} class="sn-rep" marker-end="url(#sn-ar)" />
           <rect x={BX + BW + 40} y={rowY[2]} width={W - BX - BW - 46} height={92} class="sn-site" />
-          <text x={BX + BW + 54} y={rowY[2] + 26} style={{ fontSize: '13px', fontWeight: 600 }}>
+          <text class="d-label" x={BX + BW + 54} y={rowY[2] + 26} style={{ fontWeight: 600 }}>
             Another site
           </text>
-          <text x={BX + BW + 54} y={rowY[2] + 46} class="muted" style={{ fontSize: '12px' }}>
+          <text x={BX + BW + 54} y={rowY[2] + 46} class="muted d-sub">
             replicated snapshots
           </text>
-          <text x={BX + BW + 54} y={rowY[2] + 64} class="muted" style={{ fontSize: '12px' }}>
+          <text x={BX + BW + 54} y={rowY[2] + 64} class="muted d-sub">
             or a backup product
           </text>
         </g>

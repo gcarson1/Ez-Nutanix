@@ -85,10 +85,10 @@ function ExtDiagram({ t }: { t: number }) {
       {pc > 0 ? (
         <g style={{ opacity: pc }}>
           <rect x={0} y={0} width={W} height={PC_H} class="ink-fill" rx={3} />
-          <text x={14} y={22} class="xs-on-ink" style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text x={14} y={22} class="xs-on-ink d-title" style={{ fontWeight: 600 }}>
             Prism Central
           </text>
-          <text x={W - 14} y={22} text-anchor="end" class="xs-on-ink soft" style={{ fontSize: '12.5px' }}>
+          <text x={W - 14} y={22} text-anchor="end" class="xs-on-ink soft d-label">
             VMs · networks · Flow Network Security · DR orchestration · the array’s storage
           </text>
           {Array.from({ length: nodes }, (_, i) => (
@@ -96,7 +96,7 @@ function ExtDiagram({ t }: { t: number }) {
           ))}
         </g>
       ) : (
-        <text x={0} y={22} class="muted" style={{ fontSize: '12px' }}>
+        <text x={0} y={22} class="muted d-sub">
           Compute: AHV nodes with no data drives
         </text>
       )}
@@ -109,7 +109,7 @@ function ExtDiagram({ t }: { t: number }) {
             <g key={i}>
               <rect x={nx(i)} y={NODE_Y} width={NW} height={NODE_H} class="frame-dash" />
               {i === 3 && (
-                <text x={nx(i) + NW / 2} y={NODE_Y + NODE_H / 2 + 4} text-anchor="middle" class="faint" style={{ fontSize: '12.5px' }}>
+                <text x={nx(i) + NW / 2} y={NODE_Y + NODE_H / 2 + 4} text-anchor="middle" class="faint d-label">
                   room for more compute
                 </text>
               )}
@@ -120,26 +120,26 @@ function ExtDiagram({ t }: { t: number }) {
         return (
           <g key={i} style={{ opacity: k }}>
             <rect x={x} y={NODE_Y} width={NW} height={NODE_H} class={`node-box${i === 3 && t < P[4] ? ' sel' : ''}`} />
-            <text x={x + 12} y={NODE_Y + 20} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+            <text class="d-label" x={x + 12} y={NODE_Y + 20} style={{ fontWeight: 600 }}>
               Node {i + 1}
             </text>
-            <text x={x + NW - 12} y={NODE_Y + 20} text-anchor="end" class="mono muted" style={{ fontSize: '12px' }}>
+            <text x={x + NW - 12} y={NODE_Y + 20} text-anchor="end" class="mono muted d-sub">
               AHV
             </text>
             {[0, 1, 2].map((j) => (
               <g key={j} style={{ opacity: vmIn }}>
                 <rect x={x + 12 + j * (VMW + 10)} y={NODE_Y + 30} width={VMW} height={VMH} class={`vm${latest === i * 3 + j ? ' hl' : ''}`} />
-                <text x={x + 12 + j * (VMW + 10) + VMW / 2} y={NODE_Y + 46} text-anchor="middle" class="muted" style={{ fontSize: '11px' }}>
+                <text x={x + 12 + j * (VMW + 10) + VMW / 2} y={NODE_Y + 46} text-anchor="middle" class="muted d-fine">
                   VM
                 </text>
               </g>
             ))}
             <rect x={x + 12} y={NODE_Y + 64} width={NW - 24} height={20} class="cvm" />
-            <text x={x + 20} y={NODE_Y + 78} class="xs-on-ink" style={{ fontSize: '11.5px' }}>
+            <text x={x + 20} y={NODE_Y + 78} class="xs-on-ink d-sub">
               Controller VM (CVM)
             </text>
             <rect x={x + 12} y={NODE_Y + 92} width={30} height={12} class="disk" />
-            <text x={x + 50} y={NODE_Y + 102} class="faint" style={{ fontSize: '11px' }}>
+            <text x={x + 50} y={NODE_Y + 102} class="faint d-fine">
               boot drive only
             </text>
           </g>
@@ -155,10 +155,10 @@ function ExtDiagram({ t }: { t: number }) {
             return l > 0 && <line key={i} x1={cx} x2={cx} y1={NODE_Y + NODE_H} y2={NODE_Y + NODE_H + (NET_Y - NODE_Y - NODE_H) * l} class="xs-link" />;
           })}
           <rect x={0} y={NET_Y} width={W * link} height={NET_H} class="xs-net" />
-          <text x={12} y={NET_Y + 15} class="mono" style={{ fontSize: '12px' }}>
+          <text x={12} y={NET_Y + 15} class="mono d-sub">
             Ethernet · each array’s own protocol (see Works with)
           </text>
-          <text x={W - 12} y={NET_Y + 15} text-anchor="end" class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={W - 12} y={NET_Y + 15} text-anchor="end" class="muted d-sub">
             no Fibre Channel fabric
           </text>
           {LINK_X.map((lx) => (
@@ -184,10 +184,10 @@ function ExtDiagram({ t }: { t: number }) {
       {/* the array */}
       <g style={{ opacity: arrIn }}>
         <rect x={ARR_X} y={ARR_Y} width={ARR_W} height={ARR_H} class="xs-array" rx={4} />
-        <text x={ARR_X + 20} y={ARR_Y + 24} style={{ fontWeight: 600, fontSize: '15px' }}>
+        <text class="d-title" x={ARR_X + 20} y={ARR_Y + 24} style={{ fontWeight: 600 }}>
           Your existing array
         </text>
-        <text x={ARR_X + ARR_W - 20} y={ARR_Y + 24} text-anchor="end" class="muted" style={{ fontSize: '12.5px' }}>
+        <text x={ARR_X + ARR_W - 20} y={ARR_Y + 24} text-anchor="end" class="muted d-label">
           {t >= P[3] && t < P[4] + 1 ? 'unchanged' : 'already in your data center'}
         </text>
         {vols.map((v, k) =>
@@ -197,13 +197,13 @@ function ExtDiagram({ t }: { t: number }) {
             <g key={k} style={{ opacity: v }}>
               {snap > 0 && k < 9 && <rect x={tileX(k) + 5} y={tileY(k) - 5} width={TW} height={TH} class="xs-snap" style={{ opacity: snap }} />}
               <rect x={tileX(k)} y={tileY(k)} width={TW} height={TH} class={`xs-vol${k === latest ? ' hl' : ''}`} />
-              <text x={tileX(k) + 10} y={tileY(k) + 19} class="mono" style={{ fontSize: '11.5px' }}>
+              <text x={tileX(k) + 10} y={tileY(k) + 19} class="mono d-sub">
                 N{Math.floor(k / 3) + 1} VM{(k % 3) + 1} disk
               </text>
             </g>
           ),
         )}
-        <text x={ARR_X + 20} y={ARR_Y + ARR_H - 12} class="muted" style={{ fontSize: '12px' }}>
+        <text x={ARR_X + 20} y={ARR_Y + ARR_H - 12} class="muted d-sub">
           {snap > 0 ? 'One volume per VM disk, with the array’s own snapshots per disk' : 'One volume per VM disk · no datastore'}
         </text>
       </g>

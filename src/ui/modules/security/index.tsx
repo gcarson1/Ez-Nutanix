@@ -228,7 +228,7 @@ function TheftDiagram({ enc, t }: { enc: Enc; t: number }) {
         return (
           <g key={n}>
             <rect x={x} y={y} width={NODE.w} height={NODE.h} class="node-box" />
-            <text x={x + 12} y={y + 22} style={{ fontSize: '14px', fontWeight: 600 }}>
+            <text class="d-title" x={x + 12} y={y + 22} style={{ fontWeight: 600 }}>
               Node {n + 1}
             </text>
             {Array.from({ length: DRIVES }, (_, d) => {

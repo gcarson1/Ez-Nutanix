@@ -3,7 +3,7 @@
 .diagram .fl-env { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1; }
 .diagram .fl-env.dev { }
 .diagram .fl-envlbl { font-size: 12px; font-weight: 600; fill: var(--muted); }
-.diagram .fl-st { font-size: 12.5px; font-weight: 600; }
+.diagram .fl-st { font-size: 13px; font-weight: 600; }
 .diagram .fl-st.off { fill: var(--muted); }
 .diagram .fl-st.monitor { fill: var(--warn); }
 .diagram .fl-st.enforce { fill: var(--ink-fg); }

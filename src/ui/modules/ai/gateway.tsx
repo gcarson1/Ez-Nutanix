@@ -107,10 +107,10 @@ function Box({ x, y, w, h, t, s, cls = 'ai-box', sub }: { x: number; y: number; 
   return (
     <g>
       <rect x={x} y={y} width={w} height={h} rx={6} class={cls} />
-      <text x={x + 12} y={y + 19} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text class="d-label" x={x + 12} y={y + 19} style={{ fontWeight: 600 }}>
         {t}
       </text>
-      <text x={x + 12} y={y + 35} class={sub ? 'bad-fill' : 'muted'} style={{ fontSize: '11.5px' }}>
+      <text x={x + 12} y={y + 35} class={`${sub ? 'bad-fill' : 'muted'} d-sub`}>
         {sub ?? s}
       </text>
     </g>
@@ -123,7 +123,7 @@ function Chip({ x, y, label, on, tone = 'flow' }: { x: number; y: number; label:
   return (
     <g>
       <rect x={x} y={y} width={w} height={20} rx={3} class={on ? `ai-chip on ${tone}` : 'ai-chip'} />
-      <text x={x + 9} y={y + 14} class={on ? undefined : 'muted'} style={{ fontSize: '11px', fontWeight: on ? 600 : 400 }}>
+      <text x={x + 9} y={y + 14} class={`${on ? undefined : 'muted'} d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
         {label}
       </text>
     </g>
@@ -170,25 +170,25 @@ function GatewayDiagram({ t }: { t: number }) {
         Agent gateway
       </text>
       <line x1={GW.x + 1} x2={GW.x + GW.w - 1} y1={186} y2={186} class="ai-net" />
-      <text x={GW.x + 14} y={66} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text class="d-label" x={GW.x + 14} y={66} style={{ fontWeight: 600 }}>
         Unified endpoint
       </text>
-      <text x={GW.x + 14} y={82} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={GW.x + 14} y={82} class="muted d-sub">
         one standard API for every model
       </text>
       <Chip x={GW.x + 14} y={128} label="Semantic routing" on={phase === 1} />
       <Chip x={GW.x + 144} y={128} label="Fallback" on={down} tone="warn" />
       <Chip x={GW.x + 14} y={154} label="Rate limit per client" on={denyNow} tone="bad" />
-      <text x={GW.x + 14} y={208} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text class="d-label" x={GW.x + 14} y={208} style={{ fontWeight: 600 }}>
         MCP Gateway
       </text>
-      <text x={GW.x + 14} y={224} class="muted" style={{ fontSize: '11.5px' }}>
+      <text x={GW.x + 14} y={224} class="muted d-sub">
         tools and data for agents
       </text>
       <Chip x={GW.x + 14} y={236} label="API keys added here" on={keyNow} tone="ok" />
       <Chip x={GW.x + 150} y={236} label="Tool permissions" on={permNow} tone="bad" />
       {logged.map(({ tr, k }, row) => (
-        <text key={k} x={GW.x + 14} y={306 + row * 13} class={tr.deny ? 'mono bad-fill' : 'mono muted'} style={{ fontSize: '10.5px', opacity: prog(t, doneAt(k), doneAt(k) + 0.3) }}>
+        <text key={k} x={GW.x + 14} y={306 + row * 13} class={`${tr.deny ? 'mono bad-fill' : 'mono muted'} d-fine`} style={{ opacity: prog(t, doneAt(k), doneAt(k) + 0.3) }}>
           {tr.log}
         </text>
       ))}
@@ -221,7 +221,7 @@ function GatewayDiagram({ t }: { t: number }) {
         return null;
       })}
       {permNow && (
-        <text x={GW.x + 14} y={MCP_Y - 10} class="bad-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+        <text x={GW.x + 14} y={MCP_Y - 10} class="bad-fill d-fine" style={{ fontWeight: 600 }}>
           Support agent: write not allowed
         </text>
       )}

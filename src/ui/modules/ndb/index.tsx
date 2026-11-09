@@ -131,18 +131,18 @@ function TimeMachine() {
           {DOW.map((d, i) => (
             <g key={d}>
               <line x1={sx(i * DAY)} x2={sx(i * DAY)} y1={34} y2={176} class="line" stroke-dasharray="2 4" />
-              <text x={sx(i * DAY + DAY / 2)} y={194} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+              <text x={sx(i * DAY + DAY / 2)} y={194} text-anchor="middle" class="muted d-sub">
                 {d}
               </text>
             </g>
           ))}
-          <text x={l + 4} y={50} class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={l + 4} y={50} class="muted d-sub">
             Daily snapshots
           </text>
           {snapshots(POLICY, now).map((s) => (
             <rect key={s} x={sx(s) - 6} y={58} width={12} height={22} class={replay !== null && s === BASE ? 'ndb-snap on' : 'ndb-snap'} />
           ))}
-          <text x={l + 4} y={106} class="muted" style={{ fontSize: '11.5px' }}>
+          <text x={l + 4} y={106} class="muted d-sub">
             Transaction log, copied every 30 min
           </text>
           {logTo > 0 && <rect x={sx(0)} y={113} width={sx(logTo) - sx(0)} height={14} class="ndb-log" />}
@@ -150,7 +150,7 @@ function TimeMachine() {
           {t < SWEEP[1] + 0.05 && (
             <g>
               <line x1={sx(now)} x2={sx(now)} y1={34} y2={176} class="ndb-now" />
-              <text x={Math.max(sx(now), 34)} y={212} text-anchor="middle" class="muted" style={{ fontSize: '11.5px' }}>
+              <text x={Math.max(sx(now), 34)} y={212} text-anchor="middle" class="muted d-sub">
                 now
               </text>
             </g>
@@ -158,7 +158,7 @@ function TimeMachine() {
           {broken && (
             <g>
               <line x1={sx(MISTAKE)} x2={sx(MISTAKE)} y1={34} y2={176} class="bad-stroke" stroke-width={2} />
-              <text x={sx(MISTAKE) - 6} y={24} text-anchor="end" class="bad-fill halo" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+              <text x={sx(MISTAKE) - 6} y={24} text-anchor="end" class="bad-fill halo d-label" style={{ fontWeight: 600 }}>
                 ✕ table dropped {fmtT(MISTAKE)}
               </text>
             </g>
@@ -167,7 +167,7 @@ function TimeMachine() {
             <g>
               <line x1={sx(cursor)} x2={sx(cursor)} y1={40} y2={176} class="ndb-cursor" />
               <circle cx={sx(cursor)} cy={176} r={5} class="ndb-cursor-dot" />
-              <text x={sx(cursor) - 8} y={214} text-anchor="end" style={{ fontSize: '12.5px', fontWeight: 600 }}>
+              <text class="d-label" x={sx(cursor) - 8} y={214} text-anchor="end" style={{ fontWeight: 600 }}>
                 recover to {fmtT(cursor)}
               </text>
             </g>
@@ -175,10 +175,10 @@ function TimeMachine() {
           <g>
             <rect x={20} y={228} width={430} height={60} class={`node-box${broken && (clone || ph < 4) ? ' warn' : ''}`} />
             <Cylinder x={34} y={240} w={30} h={36} cls="ndb-db" />
-            <text x={78} y={252} style={{ fontSize: '14px', fontWeight: 600 }}>
+            <text class="d-title" x={78} y={252} style={{ fontWeight: 600 }}>
               Production database
             </text>
-            <text x={78} y={272} class={`ndb-st ${prodStatus.c}`} style={{ fontSize: '12px', fontWeight: 600 }}>
+            <text x={78} y={272} class={`${`ndb-st ${prodStatus.c}`} d-sub`} style={{ fontWeight: 600 }}>
               {prodStatus.w}
             </text>
           </g>
@@ -186,15 +186,15 @@ function TimeMachine() {
             <g style={{ opacity: ph >= 4 ? 0.4 + 0.6 * result : 0.5 }}>
               <rect x={500} y={228} width={440} height={60} class={`node-box${ph >= 4 ? ' sel' : ''}`} stroke-dasharray={ph >= 4 ? undefined : '5 4'} />
               <Cylinder x={514} y={240} w={30} h={36} cls={ph >= 4 ? 'ndb-db on' : 'ndb-db'} />
-              <text x={558} y={252} style={{ fontSize: '14px', fontWeight: 600 }}>
+              <text class="d-title" x={558} y={252} style={{ fontWeight: 600 }}>
                 Test clone at {fmtT(TARGET)}
               </text>
               {ph >= 4 && (
-                <text x={926} y={252} text-anchor="end" class="ndb-st warn" style={{ fontSize: '12px', fontWeight: 600 }}>
+                <text x={926} y={252} text-anchor="end" class="ndb-st warn d-sub" style={{ fontWeight: 600 }}>
                   deletes itself in {CLONE_DAYS} days
                 </text>
               )}
-              <text x={558} y={272} class={`ndb-st ${ph >= 4 ? 'ok' : 'flow'}`} style={{ fontSize: '12px', fontWeight: 600 }}>
+              <text x={558} y={272} class={`${`ndb-st ${ph >= 4 ? 'ok' : 'flow'}`} d-sub`} style={{ fontWeight: 600 }}>
                 {ph >= 4 ? '✓ the table is there · beside production' : 'building from snapshot + log…'}
               </text>
             </g>
@@ -279,14 +279,14 @@ function Provisioning() {
       <div class="diagram-scroll">
         <svg class="diagram" viewBox={`0 0 ${W} 280`} role="img" aria-label="One request becomes a high-availability PostgreSQL cluster, built from shared profiles and protected by Time Machine.">
           <rect x={8} y={96} width={160} height={66} class={`node-box${back >= 1 ? ' sel' : ''}`} />
-          <text x={22} y={122} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={22} y={122} style={{ fontWeight: 600 }}>
             Developer or DBA
           </text>
-          <text x={22} y={142} class={`ndb-st ${back >= 1 ? 'ok' : 'muted'}`} style={{ fontSize: '12px', fontWeight: back >= 1 ? 600 : 400 }}>
+          <text x={22} y={142} class={`${`ndb-st ${back >= 1 ? 'ok' : 'muted'}`} d-sub`} style={{ fontWeight: back >= 1 ? 600 : 400 }}>
             {back >= 1 ? '✓ has a database' : 'asks for a database'}
           </text>
 
-          <text x={PX} y={40} class="muted" style={{ fontSize: '10.5px' }}>
+          <text x={PX} y={40} class="muted d-fine">
             Profiles, defined once
           </text>
           {PROFILES.map((p, i) => {
@@ -294,10 +294,10 @@ function Provisioning() {
             return (
               <g key={p.t}>
                 <rect x={PX} y={cardY(i)} width={PW} height={42} class={`ndb-card${on ? ' on' : ''}`} />
-                <text x={PX + 12} y={cardY(i) + 18} style={{ fontSize: '13px', fontWeight: 600 }}>
+                <text class="d-label" x={PX + 12} y={cardY(i) + 18} style={{ fontWeight: 600 }}>
                   {p.t}
                 </text>
-                <text x={PX + 12} y={cardY(i) + 33} class="muted" style={{ fontSize: '11px' }}>
+                <text x={PX + 12} y={cardY(i) + 33} class="muted d-fine">
                   {p.s}
                 </text>
               </g>
@@ -305,7 +305,7 @@ function Provisioning() {
           })}
 
           <rect x={CX} y={20} width={CWID} height={250} class="frame" />
-          <text x={CX + 12} y={40} class="muted" style={{ fontSize: '10.5px' }}>
+          <text x={CX + 12} y={40} class="muted d-fine">
             Nutanix cluster
           </text>
           {Array.from({ length: n }, (_, i) => {
@@ -315,14 +315,14 @@ function Provisioning() {
             return (
               <g key={i} style={{ opacity: f > 0 ? 0.3 + 0.7 * f : 0 }}>
                 <rect x={x} y={VY} width={VW} height={VH} class={`vm${f >= 1 ? ' hl' : ''}`} stroke-dasharray={f >= 1 ? undefined : '5 4'} />
-                <text x={x + 12} y={VY + 22} style={{ fontSize: '13px', fontWeight: 600 }}>
+                <text class="d-label" x={x + 12} y={VY + 22} style={{ fontWeight: 600 }}>
                   {role}
                 </text>
-                <text x={x + 12} y={VY + 38} class="muted" style={{ fontSize: '11px' }}>
+                <text x={x + 12} y={VY + 38} class="muted d-fine">
                   database server VM
                 </text>
                 <Cylinder x={x + VW / 2 - 22} y={VY + 54} w={44} h={50} cls={dbIn(i) ? 'ndb-db on' : 'ndb-db'} />
-                <text x={x + VW / 2} y={VY + 126} text-anchor="middle" class={dbIn(i) ? '' : 'faint'} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                <text x={x + VW / 2} y={VY + 126} text-anchor="middle" class={`${dbIn(i) ? '' : 'faint'} d-sub`} style={{ fontWeight: 600 }}>
                   {dbIn(i) ? (i > 0 ? 'standby copy' : 'PostgreSQL') : 'database'}
                 </text>
               </g>
@@ -341,7 +341,7 @@ function Provisioning() {
             <g>
               <rect x={CX + 20} y={VY + VH + 14} width={CWID - 40} height={30} class="ndb-tm" />
               <rect x={CX + 32} y={VY + VH + 21} width={10} height={16} class="ndb-snap on" />
-              <text x={CX + 52} y={VY + VH + 34} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+              <text class="d-label" x={CX + 52} y={VY + VH + 34} style={{ fontWeight: 600 }}>
                 Time Machine · first snapshot taken
               </text>
             </g>
@@ -437,13 +437,13 @@ function Patching() {
       <div class="diagram-scroll">
         <svg class="diagram" viewBox={`0 0 ${W} 270`} role="img" aria-label="A software profile moves from version 1 to version 2 and four databases built from it are patched: HA databases one member at a time, single instances with a short restart.">
           <rect x={8} y={84} width={190} height={100} class={`ndb-card${v2 && t < 1.6 ? ' on' : ''}`} />
-          <text x={22} y={110} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={22} y={110} style={{ fontWeight: 600 }}>
             Software profile
           </text>
-          <text x={22} y={146} class="mono" style={{ fontSize: '26px', fontWeight: 600 }}>
+          <text x={22} y={146} class="mono d-display" style={{ fontWeight: 600 }}>
             {v2 ? 'v2' : 'v1'}
           </text>
-          <text x={22} y={170} class="muted" style={{ fontSize: '11px' }}>
+          <text x={22} y={170} class="muted d-fine">
             OS and database patches
           </text>
           {FLEET.map((db, i) => {
@@ -466,10 +466,10 @@ function Patching() {
                 <polyline points={poly(wire)} class={`ndb-wire${isDone ? ' done' : ''}`} />
                 {k > 0 && k < 1 && <circle cx={along(wire, k)[0]} cy={along(wire, k)[1]} r={5} class="ndb-dot" />}
                 <rect x={x} y={30} width={GW} height={210} class={`node-box${restarting ? ' warn' : ''}`} />
-                <text x={x + 12} y={52} class="mono" style={{ fontSize: '13px', fontWeight: 600 }}>
+                <text x={x + 12} y={52} class="mono d-label" style={{ fontWeight: 600 }}>
                   {db.name}
                 </text>
-                <text x={x + 12} y={68} class="muted" style={{ fontSize: '11px' }}>
+                <text x={x + 12} y={68} class="muted d-fine">
                   {db.ha ? 'HA cluster' : 'single instance'}
                 </text>
                 {wins.map(([s, e], m) => {
@@ -479,16 +479,16 @@ function Patching() {
                   return (
                     <g key={m}>
                       <rect x={x + 10} y={y} width={GW - 20} height={32} class={`ndb-member ${st}`} />
-                      <text x={x + 20} y={y + 20} style={{ fontSize: '12px', fontWeight: primary && db.ha ? 600 : 400 }}>
+                      <text class="d-sub" x={x + 20} y={y + 20} style={{ fontWeight: primary && db.ha ? 600 : 400 }}>
                         {db.ha ? (primary ? 'primary' : 'standby') : 'database'}
                       </text>
-                      <text x={x + GW - 20} y={y + 20} text-anchor="end" class={`mono ndb-st ${st === 'v2' ? 'ok' : st === 'busy' ? 'flow' : 'warn'}`} style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                      <text x={x + GW - 20} y={y + 20} text-anchor="end" class={`${`mono ndb-st ${st === 'v2' ? 'ok' : st === 'busy' ? 'flow' : 'warn'}`} d-sub`} style={{ fontWeight: 600 }}>
                         {st === 'busy' ? 'patching' : st}
                       </text>
                     </g>
                   );
                 })}
-                <text x={x + 12} y={80 + wins.length * 40 + 18} class={`ndb-st ${status.c}`} style={{ fontSize: '12.5px', fontWeight: 600 }}>
+                <text x={x + 12} y={80 + wins.length * 40 + 18} class={`${`ndb-st ${status.c}`} d-label`} style={{ fontWeight: 600 }}>
                   {status.w}
                 </text>
               </g>

@@ -56,10 +56,10 @@ function OemDiagram({ t }: { t: number }) {
       {/* the software: one stack, the same on every option */}
       <g style={{ opacity: stackIn }}>
         <rect x={0} y={STACK.y} width={W} height={STACK.h} class="ink-fill" rx={4} />
-        <text x={W / 2} y={STACK.y + 28} text-anchor="middle" style={{ fill: '#fff', fontSize: '16px', fontWeight: 650 }}>
+        <text class="d-title" x={W / 2} y={STACK.y + 28} text-anchor="middle" style={{ fill: '#fff', fontWeight: 650 }}>
           Nutanix Cloud Platform
         </text>
-        <text x={W / 2} y={STACK.y + 49} text-anchor="middle" style={{ fill: 'rgba(255,255,255,.85)', fontSize: '13px' }}>
+        <text class="d-label" x={W / 2} y={STACK.y + 49} text-anchor="middle" style={{ fill: 'rgba(255,255,255,.85)' }}>
           AOS · AHV · Prism · Flow · DR, the same software on every option
         </text>
       </g>
@@ -82,14 +82,14 @@ function OemDiagram({ t }: { t: number }) {
               {v.name}
             </text>
             {v.sub.map((s, k) => (
-              <text key={s} x={x + 12} y={TILE.y + 42 + k * 15} class="muted" style={{ fontSize: '11.5px' }}>
+              <text key={s} x={x + 12} y={TILE.y + 42 + k * 15} class="muted d-sub">
                 {s}
               </text>
             ))}
             {[0, 1].map((r) => (
               <line key={r} x1={x + 12} x2={x + TW - 12} y1={TILE.y + 74 + r * 8} y2={TILE.y + 74 + r * 8} class="oe-ru" />
             ))}
-            <text x={x + 12} y={TILE.y + TILE.h - 8} class={on ? 'ok-fill' : 'faint'} style={{ fontSize: '11px', fontWeight: on ? 600 : 400 }}>
+            <text x={x + 12} y={TILE.y + TILE.h - 8} class={`${on ? 'ok-fill' : 'faint'} d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
               {on ? '✓ runs Nutanix' : i === 0 ? 'Nutanix hardware' : 'OEM platform'}
             </text>
           </g>
@@ -103,17 +103,17 @@ function OemDiagram({ t }: { t: number }) {
             <g key={e.label}>
               <line x1={cx(e.v)} x2={cx(e.v)} y1={TILE.y + TILE.h} y2={LOW.y} class="oe-link" />
               <rect x={cx(e.v) - 60} y={LOW.y} width={120} height={30} rx={3} class="oe-cl" />
-              <text x={cx(e.v)} y={LOW.y + 19} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
+              <text class="d-sub" x={cx(e.v)} y={LOW.y + 19} text-anchor="middle" style={{ fontWeight: 600 }}>
                 {e.label}
               </text>
               <line x1={cx(e.v)} x2={cx(e.v)} y1={LOW.y + 30} y2={LOW.y + 50} class="oe-link" />
             </g>
           ))}
           <rect x={cx(1) - 60} y={LOW.y + 50} width={cx(3) - cx(1) + 120} height={30} rx={3} class="oe-pc" />
-          <text x={(cx(1) + cx(3)) / 2} y={LOW.y + 70} text-anchor="middle" style={{ fontSize: '13px', fontWeight: 650 }}>
+          <text class="d-label" x={(cx(1) + cx(3)) / 2} y={LOW.y + 70} text-anchor="middle" style={{ fontWeight: 650 }}>
             One Prism Central for all three
           </text>
-          <text x={cx(3) + 76} y={LOW.y + 19} class="muted" style={{ fontSize: '12px' }}>
+          <text x={cx(3) + 76} y={LOW.y + 19} class="muted d-sub">
             each cluster on one vendor
           </text>
         </g>
@@ -121,17 +121,17 @@ function OemDiagram({ t }: { t: number }) {
       {ph === 3 && (
         <g style={{ opacity: lowIn(P[3]) }}>
           <rect x={0} y={LOW.y} width={W / 2 - 8} height={LOW.h} class="oe-strip" />
-          <text x={16} y={LOW.y + 28} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={16} y={LOW.y + 28} style={{ fontWeight: 600 }}>
             Servers you already own
           </text>
-          <text x={16} y={LOW.y + 50} class="muted" style={{ fontSize: '12.5px' }}>
+          <text x={16} y={LOW.y + 50} class="muted d-label">
             vSAN ReadyNodes can move to Nutanix
           </text>
           <rect x={W / 2 + 8} y={LOW.y} width={W / 2 - 8} height={LOW.h} class="oe-strip" />
-          <text x={W / 2 + 24} y={LOW.y + 28} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={W / 2 + 24} y={LOW.y + 28} style={{ fontWeight: 600 }}>
             Through your reseller
           </text>
-          <text x={W / 2 + 24} y={LOW.y + 50} class="muted" style={{ fontSize: '12.5px' }}>
+          <text x={W / 2 + 24} y={LOW.y + 50} class="muted d-label">
             Cisco, HPE, Klas, KTNF and PacStar servers
           </text>
         </g>
@@ -139,10 +139,10 @@ function OemDiagram({ t }: { t: number }) {
       {ph === 4 && (
         <g style={{ opacity: lowIn(P[4]) }}>
           <rect x={0} y={LOW.y} width={W} height={LOW.h} class="oe-strip" />
-          <text x={16} y={LOW.y + 28} style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text class="d-title" x={16} y={LOW.y + 28} style={{ fontWeight: 600 }}>
             Or no hardware at all: Nutanix Cloud Clusters (NC2)
           </text>
-          <text x={16} y={LOW.y + 50} class="muted" style={{ fontSize: '12.5px' }}>
+          <text x={16} y={LOW.y + 50} class="muted d-label">
             the same software on bare-metal instances in AWS, Azure, Google Cloud and OVHcloud
           </text>
         </g>

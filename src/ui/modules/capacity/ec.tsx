@@ -165,11 +165,11 @@ function Picture({ plan, tl, t }: { plan: StripPlan; tl: ReturnType<typeof useEc
       {Array.from({ length: nodes }, (_, n) => (
         <g key={n}>
           <rect class={`node-box${isDown(n) ? ' down' : ''}`} x={nodeX(n)} y={TOP} width={nW} height={nH} />
-          <text x={nodeX(n) + 10} y={TOP + 21} class="cp-nl" style={{ fontWeight: 600, fontSize: '14px' }}>
+          <text x={nodeX(n) + 10} y={TOP + 21} class="cp-nl d-title" style={{ fontWeight: 600 }}>
             N{n + 1}
           </text>
           {isDown(n) && (
-            <text x={nodeX(n) + nW - 8} y={TOP + 21} text-anchor="end" class="bad-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+            <text x={nodeX(n) + nW - 8} y={TOP + 21} text-anchor="end" class="bad-fill d-fine" style={{ fontWeight: 600 }}>
               ✕ down
             </text>
           )}

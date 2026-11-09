@@ -176,10 +176,10 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       role="img"
       aria-label={`${metal ? 'Three bare-metal servers running NKP Metal' : 'Three Amazon EKS workers'}, each running AOS as a pod. A database writes every block on two ${s.worker.toLowerCase()}s; when one fails the pod restarts on another with its data. NDK snapshots the whole app and ${metal ? 'would replicate it to other sites, which is planned' : 'replicates it to another AWS region; apps on NKP in your data center can fail over to EKS'}.`}
     >
-      <text x={0} y={16} class="muted" style={{ fontSize: '11px' }}>
+      <text x={0} y={16} class="muted d-fine">
         {s.cluster}
       </text>
-      <text x={DR_X} y={16} class={metal ? 'cn-warn' : 'muted'} style={{ fontSize: '11px' }}>
+      <text x={DR_X} y={16} class={`${metal ? 'cn-warn' : 'muted'} d-fine`}>
         {s.drHead}
       </text>
       <rect x={0} y={TOP} width={CW} height={CH} class="frame" rx={4} />
@@ -193,10 +193,10 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
         return (
           <g key={w} style={{ opacity: k }}>
             <rect x={x} y={WY} width={NW} height={WH} class={`node-box${down ? ' down' : ''}`} />
-            <text x={x + 12} y={WY + 20} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+            <text class="d-label" x={x + 12} y={WY + 20} style={{ fontWeight: 600 }}>
               {s.worker} {w + 1}
             </text>
-            <text x={x + NW - 12} y={WY + 20} text-anchor="end" class={down ? 'cn-bad' : 'mono muted'} style={{ fontSize: '12px' }}>
+            <text x={x + NW - 12} y={WY + 20} text-anchor="end" class={`${down ? 'cn-bad' : 'mono muted'} d-sub`}>
               {down ? 'failed' : s.kind}
             </text>
             {PODS[w].map((p, j) => {
@@ -205,7 +205,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
               return (
                 <g key={j}>
                   <rect x={podX(w, j)} y={POD_Y} width={p.w} height={POD_H} rx={3} class={cls} />
-                  <text x={podX(w, j) + p.w / 2} y={POD_Y + 17} text-anchor="middle" class={db ? undefined : 'muted'} style={{ fontSize: '11.5px', fontWeight: db ? 600 : 400 }}>
+                  <text x={podX(w, j) + p.w / 2} y={POD_Y + 17} text-anchor="middle" class={`${db ? undefined : 'muted'} d-sub`} style={{ fontWeight: db ? 600 : 400 }}>
                     {p.label}
                   </text>
                 </g>
@@ -214,10 +214,10 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
             {aos > 0 ? (
               <g style={{ opacity: aos }}>
                 <rect x={x + 12 + (1 - ease(aos)) * 20} y={AOS_Y} width={NW - 24} height={AOS_H} class={down ? 'cvm down' : 'cvm'} />
-                <text x={x + 20} y={AOS_Y + 16} class="cn-on-ink" style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                <text x={x + 20} y={AOS_Y + 16} class="cn-on-ink d-sub" style={{ fontWeight: 600 }}>
                   AOS pod
                 </text>
-                <text x={x + NW - 20} y={AOS_Y + 16} text-anchor="end" class="cn-on-ink soft" style={{ fontSize: '11px' }}>
+                <text x={x + NW - 20} y={AOS_Y + 16} text-anchor="end" class="cn-on-ink soft d-fine">
                   storage
                 </text>
               </g>
@@ -227,7 +227,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
             {[0, 1].map((v) => (
               <g key={v}>
                 <rect x={vx(w, v)} y={VOL_Y} width={VW} height={VOL_H} class={`cn-vol${down ? ' lost' : ''}`} rx={2} />
-                <text x={vx(w, v) + 8} y={VOL_Y + 15} class="mono faint" style={{ fontSize: '10.5px' }}>
+                <text x={vx(w, v) + 8} y={VOL_Y + 15} class="mono faint d-fine">
                   {s.vol}
                 </text>
               </g>
@@ -268,7 +268,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       {restart > 0 && (
         <g style={{ opacity: restart }}>
           <rect x={NEW_DB_X} y={POD_Y} width={NEW_DB_W} height={POD_H} class={ready ? 'vm hl' : 'vm restart'} />
-          <text x={NEW_DB_X + NEW_DB_W / 2} y={POD_Y + 17} text-anchor="middle" style={{ fontSize: '11.5px', fontWeight: 600 }}>
+          <text class="d-sub" x={NEW_DB_X + NEW_DB_W / 2} y={POD_Y + 17} text-anchor="middle" style={{ fontWeight: 600 }}>
             Database
           </text>
           {ready && <line x1={NEW_DB_X + NEW_DB_W / 2} x2={NEW_DB_X + NEW_DB_W / 2} y1={POD_Y + POD_H} y2={AOS_Y} class="cn-link" />}
@@ -287,7 +287,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       {snap > 0 ? (
         <g style={{ opacity: snap }}>
           <rect x={PAD} y={SNAP_Y} width={CW - 2 * PAD} height={SNAP_H} class="cn-snaprow" rx={3} />
-          <text x={PAD + 14} y={SNAP_Y + 26} class="muted" style={{ fontSize: '11px' }}>
+          <text x={PAD + 14} y={SNAP_Y + 26} class="muted d-fine">
             NDK app snapshot
           </text>
           {[
@@ -296,22 +296,22 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
           ].map((c, i) => (
             <g key={c.label} style={{ opacity: chips[i] }}>
               <rect x={c.x} y={SNAP_Y + 9} width={c.w} height={26} class="vm hl" />
-              <text x={c.x + c.w / 2} y={SNAP_Y + 26} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
+              <text class="d-sub" x={c.x + c.w / 2} y={SNAP_Y + 26} text-anchor="middle" style={{ fontWeight: 600 }}>
                 {c.label}
               </text>
             </g>
           ))}
-          <text x={PAD + 337} y={SNAP_Y + 27} text-anchor="middle" class="muted" style={{ fontSize: '14px', opacity: chips[1] }}>
+          <text x={PAD + 337} y={SNAP_Y + 27} text-anchor="middle" class="muted d-title" style={{ opacity: chips[1] }}>
             +
           </text>
-          <text x={CW - PAD - 14} y={SNAP_Y + 26} text-anchor="end" class="muted" style={{ fontSize: '12px', opacity: note }}>
+          <text x={CW - PAD - 14} y={SNAP_Y + 26} text-anchor="end" class="muted d-sub" style={{ opacity: note }}>
             as one unit
           </text>
         </g>
       ) : (
         <g>
           <rect x={PAD} y={SNAP_Y} width={CW - 2 * PAD} height={SNAP_H} class="frame-dash" />
-          <text x={PAD + 14} y={SNAP_Y + 26} class="faint" style={{ fontSize: '12px' }}>
+          <text x={PAD + 14} y={SNAP_Y + 26} class="faint d-sub">
             app snapshots
           </text>
         </g>
@@ -324,7 +324,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
       {copy > 0 && (
         <g style={{ opacity: copy }}>
           <rect x={DR_X + 14} y={LINK_Y - 13} width={150} height={26} class="vm hl" />
-          <text x={DR_X + 89} y={LINK_Y + 4} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
+          <text class="d-sub" x={DR_X + 89} y={LINK_Y + 4} text-anchor="middle" style={{ fontWeight: 600 }}>
             App snapshot copy
           </text>
         </g>
@@ -354,14 +354,14 @@ function DrBox({ y, k, warn, head, sub, foot, sel }: { y: number; k: number; war
   return (
     <g>
       <rect x={DR_X} y={y} width={DR_W} height={BOX_H} class={on ? `node-box${warn ? ' warn' : sel ? ' sel' : ''}` : 'frame-dash'} rx={6} />
-      <text x={DR_X + 14} y={y + 22} class={txt} style={{ fontSize: '13.5px', fontWeight: 600 }}>
+      <text x={DR_X + 14} y={y + 22} class={`${txt} d-label`} style={{ fontWeight: 600 }}>
         {head}
       </text>
-      <text x={DR_X + 14} y={y + 40} class={on ? 'muted' : 'faint'} style={{ fontSize: '12px' }}>
+      <text x={DR_X + 14} y={y + 40} class={`${on ? 'muted' : 'faint'} d-sub`}>
         {sub}
       </text>
       {on && (
-        <text x={DR_X + 14} y={y + BOX_H - 9} class={warn ? 'cn-warn' : 'muted'} style={{ fontSize: '11px', opacity: k }}>
+        <text x={DR_X + 14} y={y + BOX_H - 9} class={`${warn ? 'cn-warn' : 'muted'} d-fine`} style={{ opacity: k }}>
           {foot}
         </text>
       )}

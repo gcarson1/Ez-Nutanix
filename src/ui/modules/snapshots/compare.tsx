@@ -34,78 +34,78 @@ function CompareDiagram({ t }: { t: number }) {
     <svg class="diagram sn-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Left: a VM snapshot taken by hand on one VM and kept on its own cluster. Right: recovery points taken on a schedule by a Prism Central protection policy for three VMs in one category, kept locally and replicated to another site.">
       {/* ── a VM snapshot ── */}
       <rect x={L.x} y={0} width={L.w} height={H} rx={6} class="sn-panel" />
-      <text x={L.x + 16} y={26} style={{ fontSize: '15px', fontWeight: 650 }}>
+      <text class="d-title" x={L.x + 16} y={26} style={{ fontWeight: 650 }}>
         VM snapshot
       </text>
-      <text x={L.x + 16} y={44} class="muted" style={{ fontSize: '12px' }}>
+      <text x={L.x + 16} y={44} class="muted d-sub">
         Prism Element and AHV · taken by hand
       </text>
       <rect x={L.x + 16} y={64} width={150} height={44} rx={4} class="vm" />
-      <text x={L.x + 28} y={91} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text class="d-label" x={L.x + 28} y={91} style={{ fontWeight: 600 }}>
         sql-prod
       </text>
       <rect x={L.x + 190} y={70} width={140} height={32} rx={4} class={`sn-act${t >= SNAP_AT - 0.4 && t < SNAP_AT + 0.4 ? ' on' : ''}`} />
-      <text x={L.x + 260} y={91} text-anchor="middle" style={{ fontSize: '12px', fontWeight: 600 }}>
+      <text class="d-sub" x={L.x + 260} y={91} text-anchor="middle" style={{ fontWeight: 600 }}>
         Take snapshot
       </text>
-      <text x={L.x + 16} y={SITE_A - 18} class="muted" style={{ fontSize: '11px' }}>
+      <text x={L.x + 16} y={SITE_A - 18} class="muted d-fine">
         This cluster
       </text>
       <line x1={L.x + 16} x2={L.x + L.w - 16} y1={SITE_A + 16} y2={SITE_A + 16} class="sn-lane" />
       {snapIn > 0 && (
         <g style={{ opacity: snapIn }}>
           <rect x={L.x + 30} y={SITE_A} width={84} height={32} rx={3} class="sn-own" />
-          <text x={L.x + 72} y={SITE_A + 21} text-anchor="middle" class="sn-on-own" style={{ fontSize: '12px', fontWeight: 600 }}>
+          <text x={L.x + 72} y={SITE_A + 21} text-anchor="middle" class="sn-on-own d-sub" style={{ fontWeight: 600 }}>
             9:00
           </text>
         </g>
       )}
-      <text x={L.x + 16} y={SITE_B - 18} class="muted" style={{ fontSize: '11px' }}>
+      <text x={L.x + 16} y={SITE_B - 18} class="muted d-fine">
         Another site
       </text>
       <line x1={L.x + 16} x2={L.x + L.w - 16} y1={SITE_B + 16} y2={SITE_B + 16} class="sn-lane" stroke-dasharray="4 4" />
-      <text x={L.x + 30} y={SITE_B + 8} class="faint" style={{ fontSize: '12px' }}>
+      <text x={L.x + 30} y={SITE_B + 8} class="faint d-sub">
         nothing here: a local snapshot stays on its cluster
       </text>
 
       {/* ── recovery points ── */}
       <rect x={R.x} y={0} width={R.w} height={H} rx={6} class="sn-panel" />
-      <text x={R.x + 16} y={26} style={{ fontSize: '15px', fontWeight: 650 }}>
+      <text class="d-title" x={R.x + 16} y={26} style={{ fontWeight: 650 }}>
         Recovery points
       </text>
-      <text x={R.x + 16} y={44} class="muted" style={{ fontSize: '12px' }}>
+      <text x={R.x + 16} y={44} class="muted d-sub">
         Prism Central · made by a protection policy, or by hand
       </text>
       <rect x={R.x + 16} y={60} width={128} height={88} rx={4} class="sn-cat" />
-      <text x={R.x + 26} y={78} class="mono" style={{ fontSize: '11px', fontWeight: 600 }}>
+      <text x={R.x + 26} y={78} class="mono d-fine" style={{ fontWeight: 600 }}>
         category app: erp
       </text>
       {['erp-web', 'erp-app', 'erp-db'].map((v, k) => (
         <g key={v}>
           <rect x={R.x + 26} y={86 + k * 20} width={108} height={16} rx={2} class="vm" />
-          <text x={R.x + 32} y={98 + k * 20} style={{ fontSize: '10.5px' }}>
+          <text class="d-fine" x={R.x + 32} y={98 + k * 20}>
             {v}
           </text>
         </g>
       ))}
       <rect x={R.x + 156} y={60} width={R.w - 172} height={88} rx={4} class={`sn-policy${t >= P[2] ? ' on' : ''}`} />
-      <text x={R.x + 170} y={82} style={{ fontSize: '13px', fontWeight: 600 }}>
+      <text class="d-label" x={R.x + 170} y={82} style={{ fontWeight: 600 }}>
         Protection policy
       </text>
-      <text x={R.x + 170} y={102} class="muted" style={{ fontSize: '12px' }}>
+      <text x={R.x + 170} y={102} class="muted d-sub">
         every hour, for every VM in the category
       </text>
-      <text x={R.x + 170} y={120} class="muted" style={{ fontSize: '12px' }}>
+      <text x={R.x + 170} y={120} class="muted d-sub">
         keep 24 here, 7 at the other site
       </text>
-      <text x={R.x + 170} y={138} class="muted" style={{ fontSize: '12px' }}>
+      <text x={R.x + 170} y={138} class="muted d-sub">
         used by recovery plans for failover
       </text>
-      <text x={R.x + 16} y={SITE_A - 18} class="muted" style={{ fontSize: '11px' }}>
+      <text x={R.x + 16} y={SITE_A - 18} class="muted d-fine">
         This site
       </text>
       <line x1={R.x + 16} x2={R.x + R.w - 16} y1={SITE_A + 16} y2={SITE_A + 16} class="sn-lane" />
-      <text x={R.x + 16} y={SITE_B - 18} class="muted" style={{ fontSize: '11px' }}>
+      <text x={R.x + 16} y={SITE_B - 18} class="muted d-fine">
         Other site
       </text>
       <line x1={R.x + 16} x2={R.x + R.w - 16} y1={SITE_B + 16} y2={SITE_B + 16} class="sn-lane" />
@@ -118,10 +118,10 @@ function CompareDiagram({ t }: { t: number }) {
           <g key={k}>
             <g style={{ opacity: f }}>
               <rect x={RP_X(k)} y={SITE_A} width={78} height={32} rx={3} class="sn-own" />
-              <text x={RP_X(k) + 39} y={SITE_A + 14} text-anchor="middle" class="sn-on-own" style={{ fontSize: '11.5px', fontWeight: 600 }}>
+              <text x={RP_X(k) + 39} y={SITE_A + 14} text-anchor="middle" class="sn-on-own d-sub" style={{ fontWeight: 600 }}>
                 {label}
               </text>
-              <text x={RP_X(k) + 39} y={SITE_A + 27} text-anchor="middle" class="sn-on-own" style={{ fontSize: '9.5px' }}>
+              <text x={RP_X(k) + 39} y={SITE_A + 27} text-anchor="middle" class="sn-on-own d-fine">
                 3 VMs
               </text>
             </g>
@@ -129,7 +129,7 @@ function CompareDiagram({ t }: { t: number }) {
             {rep >= 1 && (
               <g>
                 <rect x={RP_X(k)} y={SITE_B} width={78} height={32} rx={3} class="sn-copy" />
-                <text x={RP_X(k) + 39} y={SITE_B + 21} text-anchor="middle" style={{ fontSize: '11.5px', fontWeight: 600 }}>
+                <text class="d-sub" x={RP_X(k) + 39} y={SITE_B + 21} text-anchor="middle" style={{ fontWeight: 600 }}>
                   {label}
                 </text>
               </g>

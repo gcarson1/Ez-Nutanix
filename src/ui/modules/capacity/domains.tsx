@@ -107,11 +107,11 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
         return (
           <g key={n}>
             <rect class={`node-box${isDown ? ' down' : ''}`} x={nodeX(n)} y={nodeY} width={nW} height={nH} />
-            <text x={nodeX(n) + 8} y={nodeY + 19} style={{ fontWeight: 600, fontSize: nW < 80 ? '12px' : '13px' }}>
+            <text x={nodeX(n) + 8} y={nodeY + 19} class={nW < 80 ? 'd-sub' : 'd-label'} style={{ fontWeight: 600 }}>
               N{n + 1}
             </text>
             {isBack && down.has(n) && t < tl.back + 1.6 && (
-              <text x={nodeX(n) + nW - 6} y={nodeY + 19} text-anchor="end" class="ok-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+              <text x={nodeX(n) + nW - 6} y={nodeY + 19} text-anchor="end" class="ok-fill d-fine" style={{ fontWeight: 600 }}>
                 ✓ up
               </text>
             )}

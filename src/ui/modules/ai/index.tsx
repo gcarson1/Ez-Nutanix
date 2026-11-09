@@ -101,7 +101,7 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
     >
       {/* the site boundary */}
       <rect class={`ai-site${site.online ? '' : ' off'}`} x={BX} y={14} width={W - BX - 6} height={H - 28} />
-      <text x={BX + 20} y={38} style={{ fontSize: '12.5px' }}>
+      <text class="d-label" x={BX + 20} y={38}>
         <tspan class={site.online ? 'ai-site-t' : 'ai-site-t warn-fill'}>{site.online ? site.title : `✕ ${site.title}`}</tspan>
         <tspan class="muted"> · {site.runsOn}</tspan>
       </text>
@@ -110,10 +110,10 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
       {!site.online && (
         <g>
           <rect class="ai-net" x={16} y={40} width={176} height={64} />
-          <text x={104} y={66} text-anchor="middle" class="muted" style={{ fontSize: '14px', fontWeight: 600 }}>
+          <text x={104} y={66} text-anchor="middle" class="muted d-title" style={{ fontWeight: 600 }}>
             Internet
           </text>
-          <text x={104} y={88} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+          <text x={104} y={88} text-anchor="middle" class="muted d-sub">
             ✕ not connected
           </text>
         </g>
@@ -123,11 +123,11 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
         {site.online ? 'Model source' : 'Model files'}
       </text>
       {site.model.map((l, i) => (
-        <text key={l} x={mb.x + mb.w / 2} y={mb.y + 40 + i * 18} text-anchor="middle" style={{ fontSize: '13.5px', fontWeight: 600 }}>
+        <text class="d-label" key={l} x={mb.x + mb.w / 2} y={mb.y + 40 + i * 18} text-anchor="middle" style={{ fontWeight: 600 }}>
           {l}
         </text>
       ))}
-      <text x={mb.x + mb.w / 2} y={mb.y + 76} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+      <text x={mb.x + mb.w / 2} y={mb.y + 76} text-anchor="middle" class="muted d-sub">
         {site.modelHow}
       </text>
       {t < loaded + 0.6 &&
@@ -135,10 +135,10 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
 
       {/* apps and the endpoint */}
       <rect class="ai-box" x={APPS.x} y={APPS.y} width={APPS.w} height={APPS.h} />
-      <text x={APPS.x + APPS.w / 2} y={APPS.y + 31} text-anchor="middle" style={{ fontSize: '14.5px', fontWeight: 600 }}>
+      <text class="d-title" x={APPS.x + APPS.w / 2} y={APPS.y + 31} text-anchor="middle" style={{ fontWeight: 600 }}>
         Apps and agents
       </text>
-      <text x={APPS.x + APPS.w / 2} y={APPS.y + 51} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+      <text x={APPS.x + APPS.w / 2} y={APPS.y + 51} text-anchor="middle" class="muted d-sub">
         send prompts
       </text>
       <line x1={APPS.x + APPS.w} y1={CY} x2={EP.x} y2={CY} class="ai-wire" />
@@ -147,20 +147,20 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
         return <polyline key={r} points={[[EP.x + EP.w, CY], ...p.slice(1, 3), [RX, p[3][1]]].map((q) => q.join(',')).join(' ')} class={`ai-wire${stopped(r) ? ' cut' : ''}`} />;
       })}
       <rect class="ai-ep" x={EP.x} y={EP.y} width={EP.w} height={EP.h} />
-      <text x={EP_CX} y={EP.y + 24} text-anchor="middle" style={{ fontSize: '14.5px', fontWeight: 600 }}>
+      <text class="d-title" x={EP_CX} y={EP.y + 24} text-anchor="middle" style={{ fontWeight: 600 }}>
         Inference endpoint
       </text>
-      <text x={EP_CX} y={EP.y + 41} text-anchor="middle" class="muted" style={{ fontSize: '12px' }}>
+      <text x={EP_CX} y={EP.y + 41} text-anchor="middle" class="muted d-sub">
         one address · checks the token
       </text>
-      <text x={EP.x + 14} y={EP.y + 88} class={waiting.length ? 'warn-fill' : 'muted'} style={{ fontSize: '12px', fontWeight: waiting.length ? 600 : 400 }}>
+      <text x={EP.x + 14} y={EP.y + 88} class={`${waiting.length ? 'warn-fill' : 'muted'} d-sub`} style={{ fontWeight: waiting.length ? 600 : 400 }}>
         {waiting.length ? 'waiting' : 'no queue'}
       </text>
       {waiting.slice(0, 7).map((j, i) => (
         <circle key={j.id} cx={EP.x + 74 + i * 15} cy={EP.y + 84} r={5.5} class="ai-req" />
       ))}
       {waiting.length > 7 && (
-        <text x={EP.x + EP.w - 8} y={EP.y + 88} text-anchor="end" class="warn-fill" style={{ fontSize: '11px', fontWeight: 600 }}>
+        <text x={EP.x + EP.w - 8} y={EP.y + 88} text-anchor="end" class="warn-fill d-fine" style={{ fontWeight: 600 }}>
           +{waiting.length - 7}
         </text>
       )}
@@ -176,16 +176,16 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
         return (
           <g key={r}>
             <rect class={`node-box${off ? ' down' : ''}`} x={RX} y={y} width={RW} height={RH} />
-            <text x={RX + 14} y={y + 22} style={{ fontSize: '14px', fontWeight: 600 }}>
+            <text class="d-title" x={RX + 14} y={y + 22} style={{ fontWeight: 600 }}>
               Replica {r + 1}
             </text>
-            <text x={RX + 14} y={y + 43} class={off ? 'bad-fill' : 'muted'} style={{ fontSize: '12px', fontWeight: off ? 600 : 400 }}>
+            <text x={RX + 14} y={y + 43} class={`${off ? 'bad-fill' : 'muted'} d-sub`} style={{ fontWeight: off ? 600 : 400 }}>
               {state}
             </text>
             <rect class="ai-bar" x={RX + BAR.x0} y={y + RH / 2 - 4} width={BAR.x1 - BAR.x0} height={8} />
             {job && <rect class="ai-bar-on" x={RX + BAR.x0} y={y + RH / 2 - 4} width={(BAR.x1 - BAR.x0) * prog(t, job.begin, job.done)} height={8} />}
             <rect class="ai-gpu" x={RX + GPU.dx} y={y + GPU.dy} width={GPU.s} height={GPU.s} style={{ opacity: off ? 0.4 : 1 }} />
-            <text x={RX + GPU.dx - 8} y={y + RH / 2 + 4} text-anchor="end" class="muted" style={{ fontSize: '10px' }}>
+            <text x={RX + GPU.dx - 8} y={y + RH / 2 + 4} text-anchor="end" class="muted d-fine">
               GPU
             </text>
             {ready && <Hex x={gx} y={gy} r={12} cls={off ? 'ai-model off' : 'ai-model'} />}
