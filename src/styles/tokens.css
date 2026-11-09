@@ -116,7 +116,8 @@
   --h-sm: 2rem;
   --h-md: 2.25rem;
   --h-lg: 2.75rem;
-  --radius: 0.5rem;
+  --radius: 6px; /* cards and boxes */
+  --radius-sm: 4px; /* chips, buttons, inputs */
   --radius-slide: 0.875rem;
   --bar-h: 3.5rem;
   --rail-w: 19.5rem;

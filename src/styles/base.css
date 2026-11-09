@@ -83,7 +83,7 @@ sup { line-height: 0; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
   height: var(--h-md); padding: 0 var(--sp-4);
-  border: 1px solid var(--line-2); border-radius: 0; background: var(--bg); color: var(--text);
+  border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text);
   font-size: var(--fs-14); font-weight: 500; line-height: 1; white-space: nowrap;
   transition: border-color var(--t-fast), background var(--t-fast), opacity var(--t-fast);
 }
@@ -110,7 +110,7 @@ sup { line-height: 0; }
 .tbtn svg { width: var(--sp-4); height: var(--sp-4); flex: none; }
 
 /* Segmented control: one choice */
-.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line-2); background: var(--bg); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line-2); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg); }
 .seg button {
   display: inline-flex; align-items: center; gap: var(--sp-2);
   height: calc(var(--h-md) - 2px); padding: 0 var(--sp-4);
@@ -149,7 +149,7 @@ sup { line-height: 0; }
 
 .input {
   width: 100%; height: var(--h-md); padding: 0 var(--sp-3);
-  border: 1px solid var(--line-2); border-radius: 0; background: var(--bg);
+  border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: var(--bg);
   font-family: var(--mono); font-size: var(--fs-14);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }

@@ -403,7 +403,7 @@ body { min-height: 100vh; }
 .diagram [role='button'] { cursor: pointer; }
 .diagram [role='button']:focus-visible { outline: none; }
 .diagram [role='button']:focus-visible > .hit { stroke: var(--text); stroke-width: 2.5; }
-.diagram-scroll { overflow-x: auto; border: 1px solid var(--line-2); border-radius: 6px; background: var(--bg-2); padding: var(--sp-3); }
+.diagram-scroll { overflow-x: auto; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--bg-2); padding: var(--sp-3); }
 .diagram-scroll > .diagram { background-position: center; }
 
 .legend { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-12); color: var(--muted); margin-top: var(--sp-3); }
@@ -450,7 +450,9 @@ body { min-height: 100vh; }
 
 /* ── node visuals (cluster lab etc.) ───────────────────────────────── */
 .diagram .node-box { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; rx: 6px; }
-.diagram .vm, .diagram .cvm, .diagram .disk { rx: 3px; }
+.diagram .vm, .diagram .cvm, .diagram .disk { rx: 4px; }
+/* one radius for every box drawn in a diagram (N2-006): 6 px boxes, 4 px small parts */
+.diagram rect[class*='box'], .diagram rect[class*='card'], .diagram rect.frame, .diagram rect.frame-dash { rx: 6px; }
 .diagram .node-box.down { fill: var(--bad-bg); stroke: var(--bad); }
 .diagram .node-box.warn { fill: var(--warn-bg); stroke: var(--warn); }
 .diagram .node-box.removed { opacity: 0.25; }
