@@ -456,7 +456,7 @@ body { min-height: 100vh; }
 .diagram .node-box.sel { stroke: var(--ink); stroke-width: 2; }
 .diagram .block-box { fill: none; stroke: var(--line-2); stroke-dasharray: 2 3; }
 .diagram .rack-box { fill: none; stroke: var(--s3); stroke-width: 1; }
-.diagram .cvm { fill: var(--ink); }
+.diagram .cvm { fill: var(--part-cvm); }
 .diagram .cvm.down { fill: var(--bad); }
 .diagram .cvm.warn { fill: var(--warn); }
 .diagram .disk { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }

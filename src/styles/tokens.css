@@ -16,20 +16,20 @@
    ===================================================================== */
 
 :root {
-  /* neutral ramp (dark) */
-  --bg: #0a0a0d;
-  --bg-2: #101015;
-  --bg-3: #17171e;
-  --sel: #1d1b29;
-  --line: #24232d;
-  --line-2: #393745;
-  --text: #f6f6f8;
-  --text-2: #d7d6de;
-  --muted: #a5a4b0;
-  --faint: #73727e;
-  --track: #26252f;
-  --s2: #7c7b88;
-  --s3: #3a3946;
+  /* neutral ramp (dark): cool grey, not black-violet */
+  --bg: #14161a;
+  --bg-2: #1b1e24;
+  --bg-3: #242830;
+  --sel: #262a35;
+  --line: #2c3038;
+  --line-2: #3d424d;
+  --text: #f3f4f6;
+  --text-2: #d5d8de;
+  --muted: #a3a9b4;
+  --faint: #737a86;
+  --track: #2c3038;
+  --s2: #7f8796;
+  --s3: #3a404c;
 
   /* brand */
   --ink: #7855fa;
@@ -38,6 +38,12 @@
   --ink-soft: rgba(120, 85, 250, 0.16);
   --ink-line: rgba(120, 85, 250, 0.55);
   --ink-fg: #a993ff; /* purple used as text on the page background */
+  /* the accent: only for "selected" and the one thing the current step is about */
+  --accent: var(--ink);
+  /* parts drawn in diagrams, so the brand purple is not used for everything */
+  --part-cvm: #5b6ee1;
+  --part-cvm-text: #ffffff;
+  --part-data: #8a93a6;
 
   /* status (each paired with an icon + label in the UI) */
   --ok: #3fcf83;
@@ -128,19 +134,19 @@
 }
 
 :root[data-theme='light'] {
-  --bg: #ffffff;
-  --bg-2: #fafafb;
-  --bg-3: #f3f3f6;
-  --sel: #f1eefe;
-  --line: #e9e9ee;
-  --line-2: #d6d5de;
-  --text: #0b0b10;
-  --text-2: #3d3c48;
-  --muted: #6b6a76;
-  --faint: #9f9eaa;
-  --track: #e9e9ee;
-  --s2: #8c8b97;
-  --s3: #d3d2db;
+  --bg: #f4f5f7;
+  --bg-2: #ffffff;
+  --bg-3: #eceef2;
+  --sel: #eef0fb;
+  --line: #e3e6eb;
+  --line-2: #cfd4dc;
+  --text: #111318;
+  --text-2: #3a3f4a;
+  --muted: #5f6673;
+  --faint: #8d94a0;
+  --track: #e3e6eb;
+  --s2: #8a92a0;
+  --s3: #d5d9e0;
 
   --ink: #6a45f0;
   --ink-hover: #5a35e0;
@@ -148,6 +154,8 @@
   --ink-soft: rgba(106, 69, 240, 0.1);
   --ink-line: rgba(106, 69, 240, 0.5);
   --ink-fg: #5a35e0;
+  --part-cvm: #4c5fd5;
+  --part-data: #8a93a6;
 
   --ok: #13803f;
   --ok-bg: #effbf3;
