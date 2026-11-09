@@ -8,6 +8,7 @@ import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
 import lucideLicense from '../../assets/licenses/lucide.txt?raw';
+import montserratLicense from '../../assets/licenses/montserrat.txt?raw';
 import { simKey, stepSpeed } from '../components/clock';
 import { Landing } from './Landing';
 import { CONFIG, VERSION } from './config';
@@ -307,6 +308,10 @@ function About({ onClose }: { onClose: () => void }) {
         <details class="credits">
           <summary class="muted small">Icons: Lucide, ISC license</summary>
           <pre>{lucideLicense}</pre>
+        </details>
+        <details class="credits">
+          <summary class="muted small">Typeface: Montserrat, SIL Open Font License 1.1</summary>
+          <pre>{montserratLicense}</pre>
         </details>
       </div>
       <div class="modal-foot">
