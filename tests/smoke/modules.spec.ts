@@ -53,8 +53,9 @@ test('the theme button opens a menu with dark and light', async ({ page }) => {
   await page.getByRole('button', { name: 'Theme' }).click();
   const menu = page.getByRole('menu', { name: 'Theme' });
   await expect(menu.getByRole('menuitemradio')).toHaveCount(2);
-  await menu.getByRole('menuitemradio', { name: 'Light' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await menu.getByRole('menuitemradio', { name: 'Dark' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(menu).toHaveCount(0);
   expect(errors).toEqual([]);
 });

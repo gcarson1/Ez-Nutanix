@@ -1,6 +1,6 @@
 /* =====================================================================
-   Design tokens. Dark is the default (projector-first, matches the slide).
-   Light is available from the theme toggle.
+   Design tokens. Light is the default (owner decision, Nutanix 2.0); dark is
+   available from the theme menu and is defined first, light overrides it.
 
    Rules carried over from the design system:
    - every length is a rem token on a fluid root (scales to 4K)

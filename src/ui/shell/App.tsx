@@ -385,9 +385,9 @@ export function App() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
-      return localStorage.getItem('nax-theme') === 'light' ? 'light' : 'dark';
+      return localStorage.getItem('nax-theme') === 'dark' ? 'dark' : 'light';
     } catch {
-      return 'dark';
+      return 'light';
     }
   });
 
