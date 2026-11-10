@@ -10,6 +10,9 @@
 .diagram .sto-ip { fill: var(--ink-soft); stroke: var(--ink-line); }
 .diagram .sto-reach { stroke: var(--ink-line); }
 .diagram .sto-tgt { fill: var(--bg-3); stroke: var(--line-2); }
-.diagram .sto-slot { fill: none; stroke: var(--line-2); stroke-dasharray: 2 2; }
-.diagram .sto-obj { fill: var(--ink); }
-.diagram .sto-obj.tiered { fill: var(--flow); }
+.diagram .sto-folder { fill: none; stroke: var(--muted); stroke-width: 1.25; stroke-linejoin: round; }
+.diagram .sto-folder.lost { stroke: var(--bad); }
+.diagram .sto-rule { fill: var(--flow-bg); stroke: var(--flow); stroke-width: 1; }
+.diagram .sto-row { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
+.diagram .sto-row.match { stroke: var(--flow); stroke-width: 1.25; }
+.diagram .sto-row.tiered { fill: var(--flow-bg); stroke: var(--flow); }

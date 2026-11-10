@@ -184,7 +184,8 @@ function Files() {
             return (
               <g key={o.name}>
                 <rect class={`sto-chip${lost ? ' lost' : moving ? ' moved' : ''}${hit ? ' hit' : ''}`} x={x} y={y} width={chipW} height={CHIP_H} />
-                <text x={x + 8} y={y + 16} class={`${`mono${lost ? ' faint' : ''}`} d-sub`}>
+                <path d={`M${x + 8} ${y + 8} h4 l1.5 1.5 h6.5 v8 h-12 z`} class={lost ? 'sto-folder lost' : 'sto-folder'} />
+                <text x={x + 28} y={y + 16} class={`${`mono${lost ? ' faint' : ''}`} d-sub`}>
                   /{o.name}
                 </text>
                 {lost && (
@@ -391,21 +392,22 @@ function Volumes() {
 }
 
 // ── Objects ──
-/** Every bucket gets one lifecycle rule: objects older than 30 days move to a cheaper S3-compatible store. */
+/** The bucket has one example lifecycle rule: objects older than 30 days move to an S3-compatible tier. */
 const DAYS = 30;
 const YEAR = 365;
 const TILES = 24;
 const TOTAL_TB = 200;
 const ARRIVE = 8;
 const MOVE = 12;
+const ROWS = 5;
+const ROW_H = 26;
 const arriveAt = (i: number) => (i + 0.5) * (YEAR / TILES);
-const BKT = { x: 40, y: 84, w: 540, h: 150 };
-const TGT = { x: 660, y: 84, w: 260, h: 150 };
-const SRC = { x: 40, y: 8, w: 540, h: 46 };
-const TILE_W = 16;
-const TILE_GAP = 4.6;
-const bucketTile = (i: number) => ({ x: BKT.x + 20 + i * (TILE_W + TILE_GAP), y: BKT.y + 54 });
-const targetTile = (i: number) => ({ x: TGT.x + 18 + (i % 8) * 29, y: TGT.y + 62 + Math.floor(i / 8) * 26 });
+const BKT = { x: 40, y: 76, w: 540, h: 262 };
+const TGT = { x: 660, y: 76, w: 260, h: 262 };
+const SRC = { x: 40, y: 8, w: 540, h: 40 };
+const RULE_H = 50;
+const ROWS_Y = BKT.y + 40 + RULE_H + 12;
+const objName = (i: number) => `backup-${String(101 + i).padStart(4, '0')}`;
 
 /** The Objects caption on day d. */
 function objectsCap(d: number): Cap {
@@ -414,8 +416,8 @@ function objectsCap(d: number): Cap {
   return d >= YEAR
     ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob and other S3 clouds also work as targets; reading a tiered object back is slower, and from a public cloud it may cost egress.` }
     : today < DAYS
-      ? { tone: 'ink', k: 'The bucket fills', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster.' }
-      : { tone: 'flow', k: 'Old objects move', text: `A lifecycle rule on the bucket has Objects move anything older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. The bucket keeps the metadata and the recent data, which is read most.` };
+      ? { tone: 'ink', k: 'The bucket fills', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster. This bucket has one example lifecycle rule; no object moves until it is older than the rule says.' }
+      : { tone: 'flow', k: 'Old objects move', text: `The example lifecycle rule on this bucket has Objects move only the rows older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. Newer rows stay put. The bucket keeps the metadata of the moved objects. Tiering is set per bucket, so not every bucket does this.` };
 }
 const OBJECT_STEPS = stepsFrom(YEAR + 30, objectsCap);
 
@@ -428,6 +430,18 @@ function Objects() {
   const month = Math.min(12, Math.floor(today / (YEAR / 12)) + 1);
 
   const cap = objectsCap(d);
+  // Rows list the newest objects, newest at the bottom; each new arrival pushes the older rows up one slot.
+  const rows = Array.from({ length: TILES }, (_, i) => {
+    const a = arriveAt(i);
+    if (d < a) return null;
+    const born = ease(prog(d, a, a + ARRIVE));
+    let shift = 0;
+    for (let k = i + 1; k < TILES; k++) shift += ease(prog(d, arriveAt(k), arriveAt(k) + ARRIVE));
+    const age = d - a;
+    const q = age >= DAYS ? ease(prog(age, DAYS, DAYS + MOVE)) : 0;
+    const vis = Math.min(born, 1 - Math.max(0, Math.min(1, shift - (ROWS - 1))));
+    return vis > 0.01 ? { i, y: ROWS_Y + (ROWS - 1 - shift) * ROW_H, vis, age, q } : null;
+  }).filter((r) => r !== null);
 
   const H = BKT.y + BKT.h + 78;
   const DSF_Y = BKT.y + BKT.h + 16;
@@ -449,14 +463,14 @@ function Objects() {
       }
     >
       <div class="diagram-scroll">
-        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster over a year. A lifecycle rule moves objects older than ${DAYS} days to a cheaper S3-compatible store; AWS S3, Azure Blob and other S3 clouds are optional targets.`}>
+        <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Nutanix Objects: apps write objects over S3 into a bucket on the cluster. One example lifecycle rule on the bucket transitions objects older than ${DAYS} days to an S3-compatible tier; only the objects that match move, and the bucket keeps their metadata. AWS S3, Azure Blob and other S3 clouds are optional targets.`}>
           <defs>
             <marker id="sto-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
               <path d="M0 0 L10 5 L0 10 z" class="flow-fill" />
             </marker>
           </defs>
           <rect class="sto-ns" x={SRC.x} y={SRC.y} width={SRC.w} height={SRC.h} />
-          <text class="d-label" x={SRC.x + SRC.w / 2} y={SRC.y + 28} text-anchor="middle" style={{ fontWeight: 600 }}>
+          <text class="d-label" x={SRC.x + SRC.w / 2} y={SRC.y + 25} text-anchor="middle" style={{ fontWeight: 600 }}>
             Apps and backup software write over the S3 API
           </text>
           <path d={`M${SRC.x + SRC.w / 2} ${SRC.y + SRC.h} V ${BKT.y}`} class="line" />
@@ -467,56 +481,59 @@ function Objects() {
           <text x={BKT.x + BKT.w - 20} y={BKT.y + 26} text-anchor="end" class="muted d-sub">
             object workers · 3 or more VMs
           </text>
+          <rect class="sto-rule" x={BKT.x + 16} y={BKT.y + 40} width={BKT.w - 32} height={RULE_H} />
+          <text class="d-label" x={BKT.x + 30}>
+            <tspan y={BKT.y + 40 + 20} style={{ fontWeight: 600 }}>Lifecycle rule (example):</tspan>
+            <tspan x={BKT.x + 30} y={BKT.y + 40 + 40}>transition objects older than {DAYS} days to an S3-compatible tier</tspan>
+          </text>
           <rect class="sto-tgt" x={TGT.x} y={TGT.y} width={TGT.w} height={TGT.h} />
           <text class="d-title" x={TGT.x + TGT.w / 2} y={TGT.y + 26} text-anchor="middle" style={{ fontWeight: 600 }}>
-            Cheaper S3-compatible store
+            S3-compatible tier
           </text>
           <text x={TGT.x + TGT.w / 2} y={TGT.y + 44} text-anchor="middle" class="muted d-fine">
             optional: AWS S3, Azure Blob, other S3 clouds
           </text>
-          <path d={`M${BKT.x + BKT.w + 4} ${BKT.y + BKT.h / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />
+          <path d={`M${BKT.x + BKT.w + 4} ${ROWS_Y + (ROWS * ROW_H) / 2} H ${TGT.x - 4}`} class="xfer" marker-end="url(#sto-arr)" />
           <text text-anchor="middle" class="muted d-sub">
-            <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 26}>
-              older than
+            <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={ROWS_Y + (ROWS * ROW_H) / 2 - 24}>
+              rule
             </tspan>
-            <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={BKT.y + BKT.h / 2 - 10}>
-              {DAYS} days
+            <tspan x={(BKT.x + BKT.w + TGT.x) / 2} y={ROWS_Y + (ROWS * ROW_H) / 2 - 8}>
+              matches
             </tspan>
           </text>
-          {Array.from({ length: TILES }, (_, i) => {
-            const a = arriveAt(i);
-            const b = bucketTile(i);
-            if (d < a) return null;
-            const tierAt = a + DAYS;
-            const src = { x: SRC.x + SRC.w / 2 - TILE_W / 2, y: SRC.y + SRC.h };
-            let x = b.x;
-            let y = b.y;
-            let h = 56;
-            let cls = 'sto-obj';
-            if (d < a + ARRIVE) {
-              const q = ease(prog(d, a, a + ARRIVE));
-              x = src.x + (b.x - src.x) * q;
-              y = src.y + (b.y - src.y) * q;
-            } else if (d >= tierAt) {
-              const tt = targetTile(i);
-              const q = ease(prog(d, tierAt, tierAt + MOVE));
-              x = b.x + (tt.x - b.x) * q;
-              y = b.y + (tt.y - b.y) * q;
-              h = 56 + (20 - 56) * q;
-              cls = 'sto-obj tiered';
-            }
+          {rows.map((r) => {
+            const rx = BKT.x + 16;
+            const rw = BKT.w - 32;
+            const match = r.age >= DAYS;
+            const days = Math.floor(r.age);
+            const status = r.q <= 0 ? 'on the cluster' : r.q < 1 ? 'moving' : 'data on tier · metadata here';
             return (
-              <g key={i}>
-                {d >= tierAt && <rect class="sto-slot" x={b.x} y={b.y} width={TILE_W} height={56} />}
-                <rect class={cls} x={x} y={y} width={TILE_W} height={h} />
+              <g key={r.i} opacity={r.vis}>
+                <rect class={`sto-row${match ? ' match' : ''}`} x={rx} y={r.y} width={rw} height={ROW_H - 4} />
+                <path d={`M${rx + 8} ${r.y + 5} h8 l4 4 v9 h-12 z`} class="sto-folder" />
+                <text x={rx + 30} y={r.y + 16} class="mono d-sub">
+                  {objName(r.i)}
+                </text>
+                <text x={rx + 190} y={r.y + 16} class={`${match ? 'flow-fill' : ''} d-sub`}>
+                  {days} {days === 1 ? 'day' : 'days'} old{match ? ' · matches' : ''}
+                </text>
+                <text x={rx + rw - 10} y={r.y + 16} text-anchor="end" class={`${r.q >= 1 ? 'flow-fill' : 'muted'} d-sub`}>
+                  {status}
+                </text>
+                {r.q > 0 && (
+                  <g>
+                    <rect class="sto-row tiered" x={TGT.x + 16 + 40 * (1 - r.q)} y={r.y} width={TGT.w - 32 - 40 * (1 - r.q)} height={ROW_H - 4} style={{ opacity: r.q }} />
+                    <text x={TGT.x + 28 + 40 * (1 - r.q)} y={r.y + 16} class="mono d-sub" style={{ opacity: r.q }}>
+                      {objName(r.i)}
+                    </text>
+                  </g>
+                )}
               </g>
             );
           })}
-          <text x={BKT.x + 20} y={BKT.y + BKT.h - 14} class="muted d-sub">
-            ← older
-          </text>
-          <text x={BKT.x + BKT.w - 20} y={BKT.y + BKT.h - 14} text-anchor="end" class="muted d-sub">
-            newer →
+          <text x={BKT.x + 20} y={BKT.y + BKT.h - 10} class="muted d-fine">
+            The five newest objects are shown; the bucket holds many more.
           </text>
           <Fabric y={DSF_Y} h={56} note="the bucket gets the container’s copies, erasure coding and compression" />
           <text class="d-label" x={36} y={DSF_Y + 22}>
@@ -526,11 +543,11 @@ function Objects() {
       </div>
       <Legend
         items={[
-          { color: 'var(--ink)', label: 'About two weeks of objects, on the cluster' },
-          { color: 'var(--flow)', label: 'Moved to cheaper storage' },
+          { color: 'var(--bg-3)', label: 'Object on the cluster' },
+          { color: 'var(--flow)', label: 'Matches the rule: data moves to the tier' },
         ]}
       />
-      <PlayBar clock={clock} label="Object tiering over one year" fmt={() => (d >= YEAR ? 'One year' : `Month ${month}`)} extra={<Illus why="A year of writes plays in seconds. The 30-day rule and the data volumes are examples; you set your own lifecycle rules and targets." />} />
+      <PlayBar clock={clock} label="Object tiering over one year" fmt={() => (d >= YEAR ? 'One year' : `Month ${month}`)} extra={<Illus why="A year of writes plays in seconds. The 30-day rule, the object names and the data volumes are examples; you set your own lifecycle rules and targets." />} />
     </Show>
   );
 }
