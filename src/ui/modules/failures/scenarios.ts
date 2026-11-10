@@ -88,7 +88,6 @@ export interface GDef {
   why: string;
   legend: GLegend[];
   duration: number;
-  poster: number;
 }
 
 // ── the cluster ──────────────────────────────────────────────────────────────
@@ -408,7 +407,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         why: 'Recovery does not wait for a person or a spare part. And because every node helps rebuild, bigger clusters heal faster.',
         legend: [L_COPY, L_SHORT, L_OFF, L_NEW],
         duration: 18,
-        poster: 12,
       };
     case 'disk':
       return {
@@ -428,7 +426,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         why: 'The rebuild is shared by every node instead of funneled into one spare drive, so no single drive or node becomes the bottleneck.',
         legend: [L_COPY, L_SHORT, { look: 'lost', label: 'Copy lost with the drive' }, L_NEW],
         duration: 14,
-        poster: 8,
       };
     case 'cvm':
       return {
@@ -449,7 +446,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         why: 'The storage controller runs on every node, so losing one controller slows a node down a little instead of stopping it. If the CVM stayed down, the cluster would re-create its copies elsewhere, as it does for a node failure.',
         legend: [L_COPY, L_SHORT, L_OFF, { look: 'arc-redirect', label: 'I/O redirected to another CVM' }],
         duration: 16,
-        poster: 7,
       };
     case 'block':
       return {
@@ -470,7 +466,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         why: 'Nodes in one chassis can share power and cooling. Block awareness turns a whole-chassis failure into something the cluster rides through. It needs at least 3 blocks with two copies (5 with three).',
         legend: [L_COPY, L_SHORT, L_OFF, L_NEW],
         duration: 18.5,
-        poster: 12,
       };
     case 'double': {
       const [a, b] = doublePair();
@@ -494,7 +489,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
           why: 'Two copies tolerate one failure at a time. Two at once, or a second failure before the rebuild finishes, is the risk window that three copies, and block or rack awareness, are for. Whether data is affected depends on which failure domains hold the copies: these two nodes are in different blocks, while two nodes in the same block would be a block failure, which block awareness survives.',
           legend: [L_COPY, L_SHORT, { look: 'gone', label: 'No copy online' }, L_NEW],
           duration: 20,
-          poster: 7,
         };
       return {
         id,
@@ -514,7 +508,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         why: 'Three copies survive two failures at once, at the cost of a third copy of every piece of data and needing at least five nodes.',
         legend: [L_COPY, L_SHORT, L_OFF, L_NEW],
         duration: 20,
-        poster: 12,
       };
     }
     case 'full':
@@ -536,7 +529,6 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         why: 'Self-healing needs room on the survivors. Common sizing guidance is to keep the largest node’s worth of space free with two copies (the two largest with three), so a node failure can always be fully re-protected.',
         legend: [L_COPY, L_SHORT, L_OFF, L_NEW],
         duration: 18,
-        poster: 15,
       };
   }
 }

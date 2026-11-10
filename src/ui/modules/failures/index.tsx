@@ -25,7 +25,7 @@ export default function Failures() {
   const [cp, setCp] = useEnum<'2' | '3'>('cp', '2', ['2', '3']);
   const copies: Copies = sc === 'double' && cp === '3' ? 3 : 2;
   const def = useMemo(() => defFor(sc, copies), [sc, copies]);
-  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.poster, steps: paced(def.steps.map((s) => s.at), def.steps.map((s) => [s.label, s.text])) });
+  const clock = useClock({ rate: 1, duration: def.duration, keys: true, poster: def.duration - 0.5, steps: paced(def.steps.map((s) => s.at), def.steps.map((s) => [s.label, s.text])) });
   useRestartOn(clock, [sc, copies]);
   const frame = useMemo(() => frameAt(sc, copies, clock.t), [sc, copies, clock.t]);
   const step = stepIndex(def, clock.t);

@@ -82,7 +82,7 @@ function Files() {
           : { tone: 'ok', k: 'The FSVM is back', text: 'The FSVM is back and serves every folder again.' };
   };
   const steps = useMemo(() => stepsFrom(F.end, capAt), [n, survivor]);
-  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.taken + 1, steps });
+  const clock = useClock({ rate: 1, duration: F.end, keys: true, poster: F.end - 0.5, steps });
   useRestartOn(clock, [n]);
   const t = clock.t;
   const down = t >= F.fail && t < F.back;

@@ -254,7 +254,7 @@ function EndpointView() {
       : { tone: 'ok' as const, k: 'Replica 1 returns', text: 'Replica 1 is back and takes its share again. The endpoint kept answering the whole time.' },
   ];
   const starts = [0, T.start, plan.stop.from, plan.stop.to];
-  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.stop.from + 2.2, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
+  const clock = useClock({ rate: 1, duration: plan.end, keys: true, poster: plan.end - 0.5, steps: paced(starts, captions.map((c) => [c.k, c.text])) });
   useRestartOn(clock, [where, n]);
   const t = clock.t;
   const phase = phaseAt(starts, t);
