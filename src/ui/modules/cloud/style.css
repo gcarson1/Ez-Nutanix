@@ -5,3 +5,7 @@
 .cld-dia .cld-cloud { fill: var(--bg-2); stroke: var(--line-2); }
 .cld-dia .cld-replica { fill: none; stroke: var(--flow); }
 .cld-dia .cld-gone { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.cld-dia .cld-off { fill: var(--bg-3); stroke: var(--line-2); opacity: 0.6; }
+.cld-dia .cld-banner { fill: var(--bad-bg); stroke: var(--bad); }
+.cld-dia .cld-card { fill: var(--bg); stroke: var(--line-2); }
+.cld-dia .cld-card.on { stroke: var(--ink); stroke-width: 1.5; }

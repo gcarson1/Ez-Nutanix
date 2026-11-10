@@ -27,7 +27,7 @@ const USES: Record<Use, { label: string; link: string; end: number; phases: Phas
     phases: [
       { k: 'VMs replicate to the cloud', at: 0, tone: 'flow', text: (c) => `Protection policies replicate the VMs to an NC2 cluster in ${c}, the same way they would to a second data center. While it only holds copies, the cloud cluster can stay small.` },
       { k: 'The data center goes down', at: 4.2, tone: 'bad', text: () => 'Everything running there stops. Recent copies of the VMs are already in the cloud.' },
-      { k: 'VMs fail over', at: 5.8, tone: 'warn', text: (c) => `The recovery plan powers the VMs on in ${c}. The NC2 cluster can be expanded now, depending on cloud and configuration.` },
+      { k: 'An admin runs the recovery plan', at: 5.8, tone: 'warn', text: (c) => `An admin runs the recovery plan; a person starts it, it is not automatic. It powers the VMs on in ${c} in the stages it sets: the database, then the apps, then the web tier. The NC2 cluster can be expanded now, depending on cloud and configuration.` },
       { k: 'VMs run in the cloud', at: 9.2, tone: 'ok', text: (c) => `The VMs run in ${c} on the same AHV, with the same Prism Central tools and policies, until you fail back.` },
     ],
   },
@@ -62,7 +62,7 @@ const LEGEND: Record<Use, { color: string; label: string; dashed?: boolean }[]> 
     { color: 'var(--ink)', label: 'Running VM' },
     { color: 'var(--flow)', label: 'Replica waiting in the cloud' },
     { color: 'var(--flow)', label: 'Replication' },
-    { color: 'var(--bad)', label: 'Stopped VM' },
+    { color: 'var(--line-2)', label: 'Stopped VM (site down)' },
   ],
   burst: [
     { color: 'var(--ink)', label: 'Running VM' },
@@ -75,6 +75,16 @@ const LEGEND: Record<Use, { color: string; label: string; dashed?: boolean }[]> 
 };
 
 const VMS = 8;
+/** The disaster-recovery story uses four named VMs, with the recovery plan's stage for each. */
+const DR_VMS = [
+  { name: 'db01', stage: 0 },
+  { name: 'app01', stage: 1 },
+  { name: 'app02', stage: 1 },
+  { name: 'web01', stage: 2 },
+];
+const STAGES = ['Database', 'App', 'Web'];
+const STAGE_GAP = 0.7;
+const drOnAt = (use: Use, s: number) => USES[use].phases[2].at + 1.2 + DR_VMS[s].stage * STAGE_GAP;
 const BASE_NODES = 3;
 const WAVE = 1.5;
 
@@ -90,9 +100,9 @@ function sceneAt(use: Use, t: number) {
   if (use === 'dr') {
     dcDown = t >= at(1);
     nodes += 2 * prog(t, at(2), at(2) + 1);
-    for (let s = 0; s < VMS; s++) {
+    for (let s = 0; s < DR_VMS.length; s++) {
       vms.push({ s, where: 'dc', f: 0, state: dcDown ? 'off' : 'on' });
-      if (t >= 0.4 + s * 0.42) vms.push({ s, where: 'cloud', f: 1, state: t >= at(2) + 1.2 + s * 0.25 ? 'on' : 'replica' });
+      if (t >= 0.4 + s * 0.6) vms.push({ s, where: 'cloud', f: 1, state: t >= drOnAt(use, s) ? 'on' : 'replica' });
     }
   } else if (use === 'burst') {
     used = 0.7 + 0.24 * ease(prog(t, 0.3, at(1) - 0.3));
@@ -120,7 +130,7 @@ export default function Cloud() {
   const steps = paced(
     U.phases.map((p) => p.at),
     U.phases.map((p, k) => [p.k, p.text(P.short), k === 0 ? P.status : '']),
-  );
+  ).map((st, k) => ({ ...st, label: U.phases[k].k }));
   const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[2].at + 2.6, steps });
   useRestartOn(clock, [prov, use]);
   const t = clock.t;
@@ -192,6 +202,8 @@ function along(pts: { x: number; y: number }[], f: number) {
   return pts[pts.length - 1];
 }
 
+const vmName = (use: Use, s: number) => (use === 'dr' ? DR_VMS[s].name : `VM ${s + 1}`);
+
 function Vm({ x, y, label, cls }: { x: number; y: number; label: string; cls: string }) {
   return (
     <g>
@@ -249,11 +261,7 @@ function Scene({ prov, use, t, sc }: { prov: Prov; use: Use; t: number; sc: Retu
         <text x={DC_X + 20} y={PANEL.y + 48} class="cld-xs muted">
           Nutanix cluster · AOS + AHV
         </text>
-        {sc.dcDown && (
-          <text x={DC_X + PANEL.w - 20} y={PANEL.y + 28} text-anchor="end" class="cld-s bad-fill">
-            ✕ site down
-          </text>
-        )}
+
         {use === 'burst' && (
           <g>
             <rect x={DC_X + 20} y={176} width={PANEL.w - 40} height={10} class="bg3" />
@@ -266,10 +274,18 @@ function Scene({ prov, use, t, sc }: { prov: Prov; use: Use; t: number; sc: Retu
         )}
         {sc.vms.map((v) => {
           const p = slot(DC_X, v.s);
-          if (v.where === 'dc') return <Vm key={v.s} x={p.x} y={p.y} label={v.state === 'off' ? '✕ off' : `VM ${v.s + 1}`} cls={v.state === 'off' ? 'vm failed' : 'vm hl'} />;
+          if (v.where === 'dc') return <Vm key={v.s} x={p.x} y={p.y} label={vmName(use, v.s)} cls={v.state === 'off' ? 'vm cld-off' : 'vm hl'} />;
           return use === 'exit' ? <rect key={v.s} x={p.x} y={p.y} width={VW} height={VH} rx={3} class="cld-gone" /> : null;
         })}
         <Nodes x0={DC_X} n={4} down={sc.dcDown} />
+        {sc.dcDown && (
+          <g>
+            <rect x={DC_X + 20} y={128} width={PANEL.w - 40} height={30} rx={3} class="cld-banner" />
+            <text x={DC_X + PANEL.w / 2} y={148} text-anchor="middle" class="d-label bad-fill" style={{ fontWeight: 600 }}>
+              ✕ Site down: every VM here has stopped
+            </text>
+          </g>
+        )}
         {sc.dcGone > 0.5 && (
           <text x={DC_X + PANEL.w / 2} y={190} text-anchor="middle" class="cld-t muted">
             Data center retired
@@ -279,24 +295,58 @@ function Scene({ prov, use, t, sc }: { prov: Prov; use: Use; t: number; sc: Retu
 
       {/* the link */}
       <line x1={DC_X + PANEL.w} x2={CL_X} y1={LINK_Y} y2={LINK_Y} class={flowing ? 'xfer' : 'line'} stroke-width={2} stroke-dasharray="6 6" stroke-dashoffset={flowing ? -t * 30 : 0} />
-      <text x={(DC_X + PANEL.w + CL_X) / 2} y={LINK_Y - 12} text-anchor="middle" class="cld-xs muted">
-        {U.link}
-      </text>
+      {use === 'dr' ? (
+        <g>
+          <rect x={DC_X + PANEL.w + 8} y={LINK_Y - 66} width={CL_X - DC_X - PANEL.w - 16} height={48} rx={3} class="cld-card" />
+          <text x={(DC_X + PANEL.w + CL_X) / 2} y={LINK_Y - 47} text-anchor="middle" class="d-sub" style={{ fontWeight: 600 }}>
+            Protection policy
+          </text>
+          <text x={(DC_X + PANEL.w + CL_X) / 2} y={LINK_Y - 30} text-anchor="middle" class="d-fine muted">
+            schedule · retention
+          </text>
+        </g>
+      ) : (
+        <text x={(DC_X + PANEL.w + CL_X) / 2} y={LINK_Y - 12} text-anchor="middle" class="cld-xs muted">
+          {U.link}
+        </text>
+      )}
       {use === 'dr' && !sc.dcDown && flowDots(t, CL_X - DC_X - PANEL.w, 3).map((f, k) => <circle key={k} cx={DC_X + PANEL.w + f * (CL_X - DC_X - PANEL.w)} cy={LINK_Y} r={4.5} class="flow-fill" />)}
 
       {/* cloud */}
       <rect x={CL_X} y={PANEL.y} width={PANEL.w} height={PANEL.h} class="cld-cloud" />
       <text x={CL_X + 20} y={PANEL.y + 28} class="cld-t">
-        {P.name}
+        NC2 on {P.short}
       </text>
       <text x={CL_X + 20} y={PANEL.y + 48} class="cld-xs muted">
-        NC2 · the same AOS + AHV on bare-metal instances
+        the same AOS + AHV on bare-metal instances
       </text>
+      {use === 'dr' && (
+        <g>
+          <rect x={CL_X + 20} y={128} width={PANEL.w - 40} height={62} rx={3} class={`cld-card${t >= U.phases[2].at ? ' on' : ''}`} />
+          <text x={CL_X + 32} y={146} class="d-sub" style={{ fontWeight: 600 }}>
+            Recovery plan
+          </text>
+          <text x={CL_X + PANEL.w - 32} y={146} text-anchor="end" class="d-fine muted">
+            {t >= U.phases[2].at ? 'run by an admin' : 'waiting'}
+          </text>
+          <text x={CL_X + 32} y={162} class="d-fine muted">
+            Stages in this recovery plan:
+          </text>
+          {STAGES.map((st, k) => {
+            const done = DR_VMS.some((v, s) => v.stage === k && t >= drOnAt(use, s));
+            return (
+              <text key={st} x={CL_X + 32 + k * 112} y={180} class={`d-fine${done ? ' ok-fill' : ''}`} style={{ fontWeight: done ? 600 : 400 }}>
+                {done ? '✓' : `${k + 1}`} {st}
+              </text>
+            );
+          })}
+        </g>
+      )}
       {sc.vms
         .filter((v) => v.where === 'cloud')
         .map((v) => {
           const p = slot(CL_X, v.s);
-          return <Vm key={v.s} x={p.x} y={p.y} label={v.state === 'replica' ? 'replica' : v.state === 'new' ? 'new VM' : `VM ${v.s + 1}`} cls={v.state === 'replica' ? 'cld-replica' : 'vm hl'} />;
+          return <Vm key={v.s} x={p.x} y={p.y} label={v.state === 'new' ? 'new VM' : vmName(use, v.s)} cls={v.state === 'replica' ? 'cld-replica' : 'vm hl'} />;
         })}
       <Nodes x0={CL_X} n={sc.nodes} down={false} />
       <text x={CL_X + 20} y={278} class="cld-xs muted">
