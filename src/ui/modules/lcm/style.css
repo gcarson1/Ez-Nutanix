@@ -1,9 +1,5 @@
-/* LCM Rolling Upgrade module (prefix lcm-) */
-.lcm-dia .lcm-cap { font-size: 13px; }
-.lcm-dia .lcm-small { font-size: 15px; }
-.lcm-dia .lcm-node-name { font-size: 15px; font-weight: 650; }
+/* LCM Rolling Upgrade module (prefix lcm-). Text sizes come from the shared .d-* type scale. */
 .lcm-dia .lcm-on-ink { fill: #fff; }
-.lcm-dia .lcm-on-warn { fill: #16161b; }
 .lcm-dia .lcm-tick { stroke: var(--line-2); stroke-width: 1; }
 .lcm-dia .lcm-done { fill: var(--ink); opacity: 0.85; }
 .lcm-dia .lcm-now { fill: var(--flow); }
@@ -14,3 +10,6 @@
 .lcm-dia text.flow-fill { fill: var(--flow); }
 .lcm-dia text.warn-fill { fill: var(--warn); }
 .lcm-dia text.ok-fill { fill: var(--ok); }
+.lcm-dia .ver rect { fill: var(--bg); stroke: var(--line-2); stroke-width: 1; }
+.lcm-dia .ver.now rect { stroke: var(--flow); stroke-width: 2; }
+.lcm-dia .ver.new rect { fill: var(--ok-bg); stroke: var(--ok); }

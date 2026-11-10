@@ -8,6 +8,7 @@ import { useEnum } from '../../../state/route';
 import { stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, fmtDur, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, Tabs } from '../../components/show';
+import { CvmBox, VmBox } from '../../components/parts';
 import { K8sUpgrade } from './k8s';
 import { COMP, DEFAULT_MINUTES, HA_RESTART_SEC, lcmStateAt, simulateLcm, type BatchId, type CompId, type LcmConfig, type LcmSim, type LcmView, type Resil } from '../../../engine/lcm';
 
@@ -145,10 +146,26 @@ function ClusterUpgrade() {
   );
 }
 
+const STAGES = ['Inventory and framework update', 'Pre-checks', 'Download and stage', 'Upgrade'];
+const STAGE_W = [270, 130, 200, 140];
+
+/** A part's version as a small tag: the installed version, then old to new while it updates, then the new one. */
+function VerTag({ x, y, w, name, from, to, done, now }: { x: number; y: number; w: number; name: string; from: string; to: string; done: boolean; now: boolean }) {
+  return (
+    <g class={`ver${done ? ' new' : now ? ' now' : ''}`}>
+      <rect x={x} y={y} width={w} height={22} rx={4} />
+      <text x={x + 8} y={y + 15} class="d-fine">
+        {done ? `✓ ${name} ${to}` : now ? `${from} → ${to}` : `${name} ${from}`}
+      </text>
+    </g>
+  );
+}
+
 function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: LcmView }) {
   const W = 820;
   const n = sim.cfg.nodes;
-  const railY = 40;
+  const stripY = 20;
+  const railY = 88;
   const railH = 34;
   // Until a node fails the rail shows LCM's plan, so nothing gives the failure away. From the
   // failure on it shows the new plan, with LCM holding.
@@ -158,30 +175,35 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
   const end = rail.end || 1;
   const X = (t: number) => 10 + (Math.min(t, end) / end) * (W - 20);
 
+  // Stages before the rolling part. The simulation starts at the pre-checks, so Inventory is already done.
+  const preEnd = sim.csegs[0].end;
+  const stageEnd = sim.csegs.find((c) => c.kind === 'stage')?.end ?? preEnd;
+  const stageNow = view.done ? 5 : view.t < preEnd ? 2 : view.t < stageEnd ? 3 : 4;
+
   const perRow = n <= 4 ? n : n <= 16 ? 4 : 8;
   const rows = Math.ceil(n / perRow);
   const gap = 14;
   const nodeW = Math.min(240, (W - 20 - gap * (perRow - 1)) / perRow);
-  const compact = nodeW < 150;
   const rowW = perRow * nodeW + (perRow - 1) * gap;
   const x0 = (W - rowW) / 2;
-  const vmSize = compact ? 11 : 16;
-  const vmGap = compact ? 4 : 6;
-  const vmCols = Math.max(1, Math.floor((nodeW - 20 + vmGap) / (vmSize + vmGap)));
+  const vmW = 38;
+  const vmH = 20;
+  const vmGap = 4;
+  const vmCols = Math.max(1, Math.floor((nodeW - 20 + vmGap) / (vmW + vmGap)));
   const maxVmRows = Math.max(1, ...Array.from({ length: n }, (_, i) => Math.ceil(view.vms.filter((v) => v.node === i).length / vmCols)));
-  const nodeH = (compact ? 70 : 122) + Math.min(4, maxVmRows) * (vmSize + vmGap) + 6;
+  const vmTop = 108;
+  const nodeH = vmTop + Math.min(4, maxVmRows) * (vmH + vmGap) + 6;
   const top = railY + railH + 54;
   const H = top + rows * (nodeH + gap) + 22;
   const nodePos = (i: number) => ({ x: x0 + (i % perRow) * (nodeW + gap), y: top + Math.floor(i / perRow) * (nodeH + gap) });
 
   // VM slots per node
-  const vmTop = compact ? 64 : 116;
   const slotOf = new Map<number, { x: number; y: number }>();
   for (let i = 0; i < n; i++) {
     const here = view.vms.filter((v) => v.node === i);
     const p = nodePos(i);
     here.forEach((v, k) => {
-      slotOf.set(v.id, { x: p.x + 10 + (k % vmCols) * (vmSize + vmGap), y: p.y + vmTop + Math.min(3, Math.floor(k / vmCols)) * (vmSize + vmGap) });
+      slotOf.set(v.id, { x: p.x + 10 + (k % vmCols) * (vmW + vmGap), y: p.y + vmTop + Math.min(3, Math.floor(k / vmCols)) * (vmH + vmGap) });
     });
   }
 
@@ -194,10 +216,31 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
     return { b, a: Math.min(...segs.map((s) => s.start)), z: Math.max(...segs.map((s) => s.end)) };
   });
 
+  let sx = 10;
   return (
     <svg class="diagram lcm-dia" viewBox={`0 0 ${W} ${H}`} style={{ maxWidth: `${W}px` }} role="img" aria-label={`Rolling upgrade of ${n} nodes. ${view.resiliency.text}`}>
-      <text x={10} y={13} class="muted lcm-cap">
-        One node at a time
+      <text x={10} y={13} class="d-sub muted">
+        Stages of an LCM run
+      </text>
+      {STAGES.map((name, i) => {
+        const x = sx;
+        sx += STAGE_W[i] + 20;
+        const st = i + 1 < stageNow ? 'lcm-done' : i + 1 === stageNow ? 'lcm-now' : 'lcm-todo';
+        return (
+          <g key={name}>
+            <rect x={x} y={stripY} width={STAGE_W[i]} height={30} rx={4} class={st} />
+            <text x={x + 10} y={stripY + 19} class={`d-sub ${st === 'lcm-todo' ? '' : 'lcm-on-ink'}`}>
+              {st === 'lcm-done' ? '✓ ' : `${i + 1} · `}
+              {name}
+            </text>
+          </g>
+        );
+      })}
+      <text x={10} y={railY - 22} class="d-sub muted">
+        The Upgrade stage, one node at a time
+      </text>
+      <text x={W - 10} y={railY - 22} text-anchor="end" class="d-fine muted">
+        Component order follows dependencies; AOS then AHV is this example
       </text>
       {/* batch labels */}
       {batchSpans.map(
@@ -206,7 +249,7 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
             <g key={s.b.id}>
               <line x1={X(s.a)} x2={X(s.a)} y1={railY - 6} y2={railY + railH + 4} class="lcm-tick" />
               {X(s.z) - X(s.a) > 46 && (
-                <text x={X(s.a) + 4} y={railY - 4} class="lcm-small">
+                <text x={X(s.a) + 4} y={railY - 4} class="d-sub">
                   {BATCH_SHORT[s.b.id]}
                 </text>
               )}
@@ -224,7 +267,7 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
           <g key={`c${i}`}>
             <rect x={a} y={railY + 1} width={Math.max(2, z - a)} height={railH - 2} class="lcm-wait" />
             {z - a > 70 && (
-              <text x={a + 6} y={railY + railH / 2 + 5} class="lcm-small warn-fill">
+              <text x={a + 6} y={railY + railH / 2 + 4} class="d-sub warn-fill">
                 LCM holds
               </text>
             )}
@@ -239,7 +282,7 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
           <g key={`v${i}`}>
             <rect x={a + 0.5} y={railY + 1} width={Math.max(1, z - a - 1)} height={railH - 2} class={st} />
             {z - a > 22 && (
-              <text x={(a + z) / 2} y={railY + railH / 2 + 5} text-anchor="middle" class={`lcm-small ${st === 'lcm-todo' ? '' : 'lcm-on-ink'}`}>
+              <text x={(a + z) / 2} y={railY + railH / 2 + 4} text-anchor="middle" class={`d-sub ${st === 'lcm-todo' ? '' : 'lcm-on-ink'}`}>
                 N{v.node + 1}
               </text>
             )}
@@ -254,7 +297,7 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
       {failX !== null && (
         <g>
           <line x1={failX} x2={failX} y1={railY - 8} y2={railY + railH + 18} class="bad-stroke" stroke-width={2} />
-          <text x={Math.min(failX + 4, W - 120)} y={railY + railH + 16} class="lcm-small bad-fill">
+          <text x={Math.min(failX + 4, W - 120)} y={railY + railH + 16} class="d-sub bad-fill">
             ✕ N{(sim.failNode ?? 0) + 1} failed
           </text>
         </g>
@@ -262,16 +305,16 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
       {repairX !== null && (
         <g>
           <line x1={repairX} x2={repairX} y1={railY - 8} y2={railY + railH + 18} class="ok-stroke" stroke-width={2} />
-          <text x={Math.min(repairX + 4, W - 120)} y={railY + railH + 16} class="lcm-small ok-fill">
+          <text x={Math.min(repairX + 4, W - 120)} y={railY + railH + 16} class="d-sub ok-fill">
             ✓ N{(sim.failNode ?? 0) + 1} repaired
           </text>
         </g>
       )}
       <line x1={playX} x2={playX} y1={railY - 10} y2={railY + railH + 6} stroke="var(--text)" stroke-width={2} />
-      <text x={10} y={railY + railH + 20} class="lcm-small muted">
+      <text x={10} y={railY + railH + 20} class="d-fine muted">
         0:00
       </text>
-      <text x={W - 10} y={railY + railH + 20} text-anchor="end" class="lcm-small muted">
+      <text x={W - 10} y={railY + railH + 20} text-anchor="end" class="d-fine muted">
         {fmtDur(rail.end / 3600)}
         {rail.pausedAt !== null ? ' (paused)' : ''}
       </text>
@@ -279,56 +322,42 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
       {/* nodes */}
       {view.nodes.map((nd) => {
         const p = nodePos(nd.id);
-        const ahvDone = nd.done.includes('ahv');
-        const aosDone = nd.done.includes('aos');
-        const fwDone = nd.done.includes('fw');
         const hasAhv = sim.batches.some((b) => b.id === 'ahv');
         const hasAos = sim.batches.some((b) => b.id === 'aos');
         const hasFw = sim.batches.some((b) => b.id === 'fw');
-        const cvmState = nd.failed ? 'down' : nd.out ? 'warn' : '';
+        const fwDone = nd.done.includes('fw');
+        const cvmState = nd.failed ? 'down' : nd.out ? 'warn' : undefined;
         const word = nd.failed ? 'FAILED' : nd.phase === 'idle' ? 'In service' : phaseWord(nd.phase);
         const boxCls = nd.failed ? 'down' : nd.out ? 'warn' : nd.phase !== 'idle' ? 'sel' : '';
         const busy = nd.phase !== 'idle';
         const statusCls = nd.failed ? 'bad-fill' : nd.out ? 'warn-fill' : busy ? 'flow-fill' : 'muted';
         const mark = nd.failed ? '✕ ' : nd.out ? '⚠ ' : busy ? '→ ' : '';
-        const cvmTxt = compact ? 'CVM' : `CVM${hasAos ? ` · AOS ${aosDone ? COMP.aos.to : COMP.aos.from}` : ''}${nd.failed || nd.out ? ' · down' : ''}`;
-        const hostTxt = compact
-          ? hasAhv ? `AHV ${ahvDone ? COMP.ahv.to : COMP.ahv.from}` : 'AHV'
-          : `${hasAhv ? `AHV ${ahvDone ? COMP.ahv.to : COMP.ahv.from}` : 'AHV host'}${nodeW >= 220 && (nd.phase === 'enter-mm' || nd.phase === 'update' || nd.phase === 'exit-mm') ? (sim.cfg.nodes === 1 ? ' · rebooting' : ' · maintenance') : ''}`;
         const cvmIo = nd.phase === 'cvm-down' || nd.phase === 'cvm-reboot' || nd.phase === 'cvm-up';
+        const rolling = view.current && view.current.node === nd.id ? view.current.batch : null;
+        const tagX = p.x + 72;
+        const tagW = nodeW - 82;
         return (
           <g key={nd.id}>
             <rect x={p.x} y={p.y} width={nodeW} height={nodeH} class={`node-box ${boxCls}`} />
-            <text x={p.x + 10} y={p.y + 22} class="lcm-node-name">
+            <text x={p.x + 10} y={p.y + 22} class="d-title">
               {nd.name}
             </text>
-            <text x={p.x + 10} y={p.y + (compact ? 38 : 42)} class={`lcm-small ${statusCls}`}>
+            <text x={p.x + 10} y={p.y + 40} class={`d-sub ${statusCls}`}>
               {mark}
               {word}
             </text>
-            {!compact && (
-              <>
-                <rect x={p.x + 10} y={p.y + 52} width={nodeW - 20} height={26} class={`cvm ${cvmState}`} />
-                <text x={p.x + 18} y={p.y + 70} class={`lcm-small ${cvmState === 'warn' ? 'lcm-on-warn' : 'lcm-on-ink'}`}>
-                  {cvmTxt}
-                </text>
-                <rect x={p.x + 10} y={p.y + 82} width={nodeW - 20} height={24} class="bg3" stroke="var(--line-2)" />
-                <text x={p.x + 18} y={p.y + 99} class="lcm-small">
-                  {hostTxt}
-                </text>
-              </>
-            )}
-            {compact && (
-              <>
-                <rect x={p.x + 10} y={p.y + 46} width={(nodeW - 24) / 2} height={12} class={`cvm ${cvmState}`} />
-                <rect x={p.x + 14 + (nodeW - 24) / 2} y={p.y + 46} width={(nodeW - 24) / 2} height={12} class="bg3" stroke="var(--line-2)" />
-              </>
-            )}
-            {!compact && (hasFw || cvmIo) && (
-              <text x={p.x + nodeW - 10} y={p.y + 22} text-anchor="end" class={`lcm-small ${cvmIo && sim.cfg.nodes > 1 ? 'flow-fill' : 'muted'}`}>
+            {(hasFw || cvmIo) && (
+              <text x={p.x + nodeW - 10} y={p.y + 22} text-anchor="end" class={`d-fine ${cvmIo && sim.cfg.nodes > 1 ? 'flow-fill' : 'muted'}`}>
                 {cvmIo && sim.cfg.nodes > 1 ? 'I/O → other CVMs' : fwDone ? '✓ firmware' : 'firmware pending'}
               </text>
             )}
+            <CvmBox x={p.x + 10} y={p.y + 50} w={56} h={22} state={cvmState} />
+            {hasAos && <VerTag x={tagX} y={p.y + 50} w={tagW} name="AOS" from={COMP.aos.from} to={COMP.aos.to} done={nd.done.includes('aos')} now={rolling === 'aos'} />}
+            <rect x={p.x + 10} y={p.y + 78} width={56} height={22} rx={4} class="bg3" stroke="var(--line-2)" />
+            <text x={p.x + 38} y={p.y + 93} text-anchor="middle" class="d-fine">
+              AHV host
+            </text>
+            {hasAhv && <VerTag x={tagX} y={p.y + 78} w={tagW} name="AHV" from={COMP.ahv.from} to={COMP.ahv.to} done={nd.done.includes('ahv')} now={rolling === 'ahv'} />}
           </g>
         );
       })}
@@ -348,14 +377,13 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
         let { x, y } = dest;
         if (v.moving) {
           const f = nodePos(v.moving.from);
-          const fx = f.x + nodeW / 2 - vmSize / 2;
+          const fx = f.x + nodeW / 2 - vmW / 2;
           const fy = f.y + vmTop + 4;
           const p = v.moving.kind === 'restart' ? 1 : v.moving.p;
           x = fx + (dest.x - fx) * p;
           y = fy + (dest.y - fy) * p;
         }
-        const cls = v.state === 'off' ? 'vm failed' : v.state === 'restarting' ? 'vm restart' : v.moving ? 'vm hl' : 'vm';
-        return <rect key={v.id} x={x} y={y} width={vmSize} height={vmSize} class={cls} />;
+        return <VmBox key={v.id} x={x} y={y} w={vmW} h={vmH} name={`VM${v.id + 1}`} state={v.state === 'off' ? 'down' : v.state === 'restarting' ? 'warn' : undefined} hl={!!v.moving && v.state === 'running'} />;
       })}
       {view.vms
         .filter((v) => v.moving && v.moving.kind === 'migrate')
@@ -363,7 +391,7 @@ function UpgradeDiagram({ sim, plan, view }: { sim: LcmSim; plan: LcmSim; view: 
         .map((v) => {
           const f = nodePos(v.moving!.from);
           const d = slotOf.get(v.id)!;
-          return <line key={`m${v.id}`} x1={f.x + nodeW / 2} y1={f.y + vmTop + 10} x2={d.x + vmSize / 2} y2={d.y + vmSize / 2} class="xfer" stroke-dasharray="4 3" />;
+          return <line key={`m${v.id}`} x1={f.x + nodeW / 2} y1={f.y + vmTop + 10} x2={d.x + vmW / 2} y2={d.y + vmH / 2} class="xfer" stroke-dasharray="4 3" />;
         })}
     </svg>
   );
