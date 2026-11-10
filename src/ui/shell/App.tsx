@@ -425,9 +425,9 @@ export function App() {
       else if (k === 'j' || k === 'J') setDialog((d) => (d === 'jump' ? null : 'jump'));
       else if (s.dialog) return;
       else if (k === '/') openSearch();
-      // Space pauses unless it would press a button, but a preset, tab or step that is already selected
+      // Space pauses unless it would press a button, but a choice, tab, Edge table cell or step that is already selected
       // has nothing left to press, so presenters can click one and hold or resume a frame with Space.
-      else if (k === ' ' && (t.tagName !== 'BUTTON' || t.closest('.seg [aria-pressed="true"], [role="tab"][aria-selected="true"], [aria-current="step"]')) && simKey('toggle')) e.preventDefault();
+      else if (k === ' ' && (t.tagName !== 'BUTTON' || t.closest('.seg [aria-pressed="true"], .edge-cell[aria-pressed="true"], [role="tab"][aria-selected="true"], [aria-current="step"]')) && simKey('toggle')) e.preventDefault();
       else if (k === '<' || k === '>') stepSpeed(k === '>' ? 1 : -1);
       // On the scrub bar itself the arrows keep their own finer steps.
       else if ((k === 'ArrowLeft' || k === 'ArrowRight') && !(t.tagName === 'INPUT' && (t as HTMLInputElement).type === 'range') && simKey(k === 'ArrowRight' ? 'forward' : 'back', e.shiftKey)) e.preventDefault();

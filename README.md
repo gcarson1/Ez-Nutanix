@@ -1,6 +1,6 @@
 # Nutanix Architecture Explorer
 
-An interactive, single-file explainer of the Nutanix platform for live customer presentations. The landing page is a live version of the "One Platform For All Apps, Data & AI Anywhere" slide: every pane opens a module that shows how that part of the platform works, with short looping animations and a few presets per module, plus one full lab you can change and break on the spot.
+An interactive, single-file explainer of the Nutanix platform for live customer presentations. The home page lays the platform out as a labeled stack (Manage, Data and AI services, Infrastructure, Runs on): every card opens a module that shows how that part of the platform works, with short looping animations and a few choices per module, plus one full lab you can change and break on the spot. Every module uses one layout: controls and the picture on the left; the steps (click one to jump there), the caption, key numbers and the module summary on the right.
 
 The build is one `index.html` with all code, styles and fonts inlined. It makes no network calls, so it works offline, on locked-down customer networks and as an email attachment.
 
@@ -29,27 +29,23 @@ Send `dist/index.html` to customers as is. It opens from disk in any current bro
 
 Tips:
 
-- Start with the **Guided tour** on the landing page. It walks the panes bottom-up: infrastructure, then services, then Nutanix Central.
+- Start with **Take the tour** on the home page. It walks the panes bottom-up: infrastructure, then services, then Nutanix Central.
 - Animations start on their own and loop without stopping between steps. A step whose caption needs more time plays slower, with at least 0.3 seconds per word, and the speed eases in and out. Drag the scrub bar to pause on a moment; press Play (or Space) to carry on.
 - The **1x** button next to Play sets the playback speed for every animation, from 0.25x to 2x (or press `<` and `>`).
 - The **Left** and **Right** arrow keys pause and scrub the animation a step at a time (a fortieth of the loop); with **Shift** they jump to the previous or next caption.
-- Each module has one or two preset choices above its picture. The **Cluster & DSF Lab** is one fixed 4-node cluster with five scenarios (data placement, live migration, planned shutdown, VM failover, drive failure) and a right-hand pane that explains the chosen one.
-- Under the slide, **Don’t want the full stack?** opens two partial starting points: Nutanix with external storage (AHV on the customer’s own array) and ESXi on Nutanix (stay on vSphere, or convert to AHV later). Each leads with why customers choose it.
-- On Protection & Capacity, use **Presets** in the top bar to load a cluster size that matches the customer into Protection & Capacity (3-node edge, 4-node starter, 8-node production, 12-node RF3). Its other tabs show erasure coding and block and rack awareness.
+- Each module has one or two choices above its picture. The **Cluster & DSF Lab** is one fixed 4-node cluster with six scenarios (data placement, live migration, planned shutdown, VM failover, drive failure, CVM fails), and the right-hand column explains the chosen one.
+- On the home page, **Start smaller** opens two partial starting points: Nutanix with external storage (AHV on the customer’s own array) and ESXi on Nutanix (stay on vSphere, or convert to AHV later). Each leads with why customers choose it.
+- On Protection & Capacity, the Copies tab's **Copies** and **Nodes** choices set the cluster to match the customer (RF2 or RF3, 3 to 12 nodes). Its other tabs show erasure coding and block and rack awareness.
 - Everything you change is kept in the address bar, so the page's link points to exactly the scenario you showed.
 - Anything simplified carries an **Illustrative** tag; hover it to see what was simplified.
 
-## Changing the presenter details
+## Changing the credits
 
 Edit `src/config.json`:
 
 ```json
 {
   "title": "Nutanix Architecture Explorer",
-  "presenterName": "Your Name",
-  "presenterRole": "Systems Engineer",
-  "organization": "Your Company",
-  "contact": "you@example.com",
   "credit": "Built by",
   "authors": [
     { "name": "Alex Besaw", "handle": "@Besaw" },
@@ -60,7 +56,7 @@ Edit `src/config.json`:
 }
 ```
 
-The footer shows the credit as a small label, then each author with their Slack handle under the name in purple and "on Slack" after the last one (and the presenter line, if set), with the version and About on the right, above the disclaimer. Rebuild after editing.
+The footer is one line: the version, About this explorer (the disclaimer shows when you hover it, and in full inside About), then the credit and each author with their Slack handle in purple and "on Slack" after the last one. Rebuild after editing.
 
 ## Editing content
 
@@ -78,7 +74,7 @@ src/
   engine/        pure, deterministic TypeScript: cluster model, placement, failures and
                  rebuild, status, capacity math, platform rules, LCM, data path, DR, Flow
   state/         URL-hash routing and the shared cluster scenario
-  ui/shell/      landing slide, top bar, presenter panel, glossary, dialogs, transitions
+  ui/shell/      home page, top bar, presenter panel, glossary, dialogs, transitions
   ui/modules/    one folder per module (content.ts + index.tsx)
   ui/components/ shared controls, the simulation clock, icons
   styles/        tokens, design-system base, app layer
@@ -92,6 +88,6 @@ Platform rules (minimum node counts, erasure-coding strip sizes, failure-domain 
 ## Known limitations
 
 - Data is a representative sample of a few hundred items, not real extents; timings and throughput are illustrative assumptions you can adjust, not measurements.
-- Behavior, limits and requirements vary by AOS version, hypervisor, hardware and license. The footer disclaimer says so on every view.
-- The reference slide screenshot is not in the repository, so the slide colors were not re-sampled from it (see `docs/design-tokens.md`).
+- Behavior, limits and requirements vary by AOS version, hypervisor, hardware and license. The About dialog says so, and its summary shows when you hover About in the footer.
+- At 1280 px wide the pictures scale to about 87% to keep the right column beside them (decision 53).
 - Presenter notes open in a side panel; there is no separate presenter window yet.

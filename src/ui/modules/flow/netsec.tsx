@@ -306,7 +306,7 @@ function PolicyTable({ row, mode, verdict }: { row: number | null; mode: Mode; v
           ))}
         </tbody>
       </table>
-      <p class="fl-pol-note" aria-live="polite">
+      <p class="fl-pol-note">
         <b>{row === null ? '' : '▶ Being checked. '}</b>
         {note}
       </p>

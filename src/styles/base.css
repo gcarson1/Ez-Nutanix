@@ -41,7 +41,7 @@ button, input, select, textarea { font: inherit; color: inherit; letter-spacing:
 button { cursor: pointer; }
 h1, h2, h3, h4 { margin: 0; font-family: var(--font-head); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
 /* Montserrat for controls and labels; Arial stays for running text */
-button, .btn, .seg button, [role='tab'], .kpi .v, .kpi .k, .choice-l, .pane .pt, .partial-head .pt { font-family: var(--font-head); }
+button, .btn, .seg button, [role='tab'], .kpi .v, .kpi .k, .choice-l { font-family: var(--font-head); }
 h1 { font-size: var(--fs-28); letter-spacing: -0.015em; }
 h2 { font-size: var(--fs-18); }
 h3 { font-size: var(--fs-15); letter-spacing: -0.01em; }

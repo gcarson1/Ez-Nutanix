@@ -185,7 +185,7 @@ function CopiesView() {
       <div class="diagram-scroll">
         <Spread nodes={nodes} rf={rf} t={t} tl={tl} />
       </div>
-      <div class="cp-share" role="img" aria-label={`Raw capacity of ${nodes} example nodes, ${rawTB} TB: ${tb(share.data)} TB your data, ${tb(share.copies)} TB extra copies, ${tb(share.reserve)} TB kept free for a rebuild`}>
+      <div class="cp-share" role="img" aria-label={`Raw capacity of ${nodes} example nodes, ${Math.round(rawTB)} TB: ${tb(share.data)} TB your data, ${tb(share.copies)} TB extra copies, ${tb(share.reserve)} TB kept free for a rebuild`}>
         <div class="cp-share-h">
           Raw capacity, {nodes} example nodes of {NODE_TB.toFixed(1)} TB = {Math.round(rawTB)} TB (example sizes)
         </div>
