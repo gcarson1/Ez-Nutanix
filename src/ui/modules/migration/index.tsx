@@ -74,12 +74,17 @@ export default function Migration() {
 
   return (
     <Show clock={clock}
+      side={
+        <section>
+          <h2 class="side-sec-h">Good to know</h2>
+          <p>{NOTE}</p>
+        </section>
+      }
       top={<Names label="Source platforms" items={SOURCES} />}
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>
             <p>{cap.text}</p>
-            <p class="rest">{NOTE}</p>
           </Follow>
           <Kpis
             items={[

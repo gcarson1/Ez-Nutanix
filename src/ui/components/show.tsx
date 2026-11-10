@@ -1,11 +1,12 @@
 // The one module layout (Nutanix 2.0, N2-010). On the left: the controls row, the picture, its
-// legend and the play bar. On the right: the steps (click one to jump there), the current
-// caption and key numbers (`foot`), anything else the module adds (`side`), and the module's
-// own summary. Below 1100 px wide the right column drops under the picture.
-import { createContext, type ComponentChildren } from 'preact';
+// legend and the play bar, and under them the steps (click one to jump there) and the current
+// caption (the `Follow` in `foot`). On the right: the rest of `foot` (key numbers), anything else
+// the module adds (`side`), and the module's own summary. Below 1100 px wide the right column
+// drops under the left one.
+import { createContext, Fragment, toChildArray, type ComponentChildren, type VNode } from 'preact';
 import { useContext, useEffect, useId, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Clock } from './clock';
-import { Seg, Tip, type SegOption, type Tone } from './controls';
+import { Follow, Seg, Tip, type SegOption, type Tone } from './controls';
 import { Icon } from './Icon';
 
 /** The open module's summary, set by the shell, shown at the foot of the right column. */
@@ -16,18 +17,37 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
   const root = useRef<HTMLDivElement>(null);
   const main = useRef<HTMLDivElement>(null);
   const aside = useRef<HTMLElement>(null);
+  // `foot` is usually <><Follow/><Kpis/></>: the caption goes under the picture, the rest to the right.
+  const parts = toChildArray(foot).flatMap((c) => ((c as VNode).type === Fragment ? toChildArray((c as VNode<{ children?: ComponentChildren }>).props.children) : [c]));
+  const isCaption = (c: unknown) => (c as VNode | null)?.type === Follow;
+  const caption = parts.filter(isCaption);
+  const rest = parts.filter((c) => !isCaption(c));
+  const steps = clock && <StepList clock={clock} />;
   // Each picture's viewBox width, for the phone rule in app.css that keeps 11 px diagram text from
   // rendering under 10 px (N2-014). Cheap enough to run after every render; viewBoxes can change.
+  // Also mark the pictures that are one SVG straight in the stage: on wide screens those shrink to
+  // fit the screen, but not below a readable size set from their height (.fits in app.css);
+  // anything else keeps its natural height.
   useLayoutEffect(() => {
-    main.current?.querySelectorAll<SVGSVGElement>('.diagram-scroll > svg.diagram').forEach((svg) => {
+    const m = main.current;
+    if (!m) return;
+    let fits = false;
+    m.querySelectorAll<SVGSVGElement>('.diagram-scroll > svg.diagram').forEach((svg) => {
       const w = String(Math.round(svg.viewBox.baseVal?.width ?? 0));
       if (svg.style.getPropertyValue('--vbw') !== w) svg.style.setProperty('--vbw', w);
+      const box = svg.parentElement!;
+      const fit = box.parentElement?.classList.contains('show-stage') === true && box.childElementCount === 1;
+      box.classList.toggle('fit', fit);
+      const h = String(Math.round(svg.viewBox.baseVal?.height ?? 0));
+      if (box.style.getPropertyValue('--vbh') !== h) box.style.setProperty('--vbh', h);
+      fits ||= fit;
     });
+    m.classList.toggle('fits', fits);
   });
-  // The right column scrolls on its own when it is taller than the screen, so the picture on the
-  // left never has to move (see .show-side in app.css). Measure where the layout starts on the
-  // page, and mark the column while it scrolls: a fade at the bottom until the end is reached,
-  // and a tab stop so the keyboard can scroll it.
+  // On wide screens both columns fit the screen (see .show in app.css): the left one is exactly as
+  // tall as the space under the top bar and its picture shrinks to fit, and the right one scrolls
+  // inside itself when it is longer. Measure where the layout starts on the page, and mark the
+  // right column while it scrolls: a fade at the bottom until the end, and a tab stop for the keyboard.
   useLayoutEffect(() => syncSide(root.current, aside.current));
   useEffect(() => {
     const sync = () => syncSide(root.current, aside.current);
@@ -39,10 +59,15 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
       <div class="show-main" ref={main}>
         {top && <div class="show-top">{top}</div>}
         <div class="show-stage">{children}</div>
+        {(caption.length > 0 || steps) && (
+          <div class="show-under">
+            {steps}
+            {caption}
+          </div>
+        )}
       </div>
-      <aside class="show-side" aria-label="What happens" ref={aside} onScroll={() => syncSide(root.current, aside.current)}>
-        {clock && <StepList clock={clock} />}
-        {foot && <div class="show-foot">{foot}</div>}
+      <aside class="show-side" aria-label="Details" ref={aside} onScroll={() => syncSide(root.current, aside.current)}>
+        {rest.length > 0 && <div class="show-foot">{rest}</div>}
         {side}
         {info && (
           <section class="side-about">
@@ -57,11 +82,20 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
 
 function syncSide(root: HTMLElement | null, side: HTMLElement | null) {
   if (!root || !side) return;
-  const r = root.getBoundingClientRect();
-  const doc = document.documentElement;
-  // Where the layout starts on the page, and how much page (padding, footer) follows it.
-  const top = `${Math.round(r.top + window.scrollY)}px`;
-  const below = `${Math.max(0, Math.round(doc.scrollHeight - (r.bottom + window.scrollY)))}px`;
+  // Where the layout starts on the page, and how much page (padding, footer) follows it. Count the
+  // paddings and the blocks after it, not the stretch the shell adds to keep its footer at the
+  // bottom of a short page, or the layout would shrink to leave that gap empty.
+  const top = `${Math.round(root.getBoundingClientRect().top + window.scrollY)}px`;
+  let after = 0;
+  for (let el: Element = root; el.parentElement && el !== document.body; el = el.parentElement) {
+    const cs = getComputedStyle(el.parentElement);
+    after += parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);
+    for (let sib = el.nextElementSibling; sib; sib = sib.nextElementSibling) {
+      const pos = getComputedStyle(sib).position;
+      if (pos !== 'absolute' && pos !== 'fixed') after += sib.getBoundingClientRect().height;
+    }
+  }
+  const below = `${Math.round(after)}px`;
   if (root.style.getPropertyValue('--show-top') !== top) root.style.setProperty('--show-top', top);
   if (root.style.getPropertyValue('--show-below') !== below) root.style.setProperty('--show-below', below);
   const scrolls = side.scrollHeight > side.clientHeight + 1;

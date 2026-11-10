@@ -162,15 +162,20 @@ test('OEM of your choice opens the hardware page with every vendor', async ({ pa
   expect(errors).toEqual([]);
 });
 
-test('failure gauntlet: failure buttons sit above the picture, steps beside it; RF choice only for two nodes', async ({ page }) => {
+test('failure gauntlet: failure buttons sit above the picture, steps and caption below it, all on one screen; RF choice only for two nodes', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/nci/failures`);
   const pick = page.getByRole('group', { name: 'What fails' });
   for (const name of ['Drive', 'Controller VM', 'Node', 'Block', 'Two nodes', 'Nearly full']) await expect(pick.getByRole('button', { name, exact: true })).toBeVisible();
   const steps = page.getByRole('list', { name: 'Steps' });
   expect((await pick.boundingBox())!.y).toBeLessThan((await page.locator('.gx-dia').boundingBox())!.y);
-  await expect(page.locator('.show-side').getByRole('list', { name: 'Steps' })).toBeVisible();
-  expect((await steps.boundingBox())!.x).toBeGreaterThan((await page.locator('.gx-dia').boundingBox())!.x);
+  await expect(page.locator('.show-main').getByRole('list', { name: 'Steps' })).toBeVisible();
+  await expect(page.locator('.show-main .follow')).toBeVisible();
+  await expect(page.locator('.show-side .follow')).toHaveCount(0);
+  const dia = (await page.locator('.gx-dia').boundingBox())!;
+  expect((await steps.boundingBox())!.y).toBeGreaterThan(dia.y + dia.height);
+  // The left column fits the screen: the page itself does not scroll.
+  expect(await page.evaluate(() => document.documentElement.scrollHeight - innerHeight)).toBeLessThanOrEqual(0);
   await expect(page.getByRole('group', { name: 'Copies' })).toHaveCount(0);
   await pick.getByRole('button', { name: 'Two nodes', exact: true }).click();
   await expect.poll(() => page.url()).toContain('sc=double');

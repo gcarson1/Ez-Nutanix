@@ -145,6 +145,12 @@ export default function Cloud() {
 
   return (
     <Show clock={clock}
+      side={
+        <section>
+          <h2 class="side-sec-h">Availability</h2>
+          <p>{P.status}</p>
+        </section>
+      }
       top={
         <>
           <Choice<Prov> label="Cloud" value={prov} onChange={setProv} options={PROV_IDS.map((p) => ({ value: p, label: PROV[p].short }))} />
@@ -155,7 +161,6 @@ export default function Cloud() {
         <>
           <Follow tone={ph.tone} k={ph.k}>
             <p>{ph.text(P.short)}</p>
-            <p class="rest">{P.status}</p>
           </Follow>
           <Kpis
             items={[

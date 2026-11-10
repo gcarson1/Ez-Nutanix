@@ -130,6 +130,8 @@ body { min-height: 100vh; }
 }
 .tip-pop.up { top: auto; bottom: calc(100% + 0.375rem); }
 .tip-pop.right { left: auto; right: 0; }
+/* the caption sits at the foot of the screen, so its tips open upward */
+.show-under .tip-pop { top: auto; bottom: calc(100% + 0.375rem); }
 .tip-pop .tbtn { height: auto; padding: var(--sp-2) 0 0; font-size: var(--fs-12); }
 .tip-pop .detail { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); color: var(--muted); }
 
@@ -171,23 +173,53 @@ body { min-height: 100vh; }
 /* the theme button's menu opens below it, aligned to the right edge of the top bar */
 .theme-menu .speed-menu { left: auto; right: 0; top: calc(100% + var(--sp-1)); bottom: auto; min-width: 13rem; }
 
-/* showcase layout: presets on top, one big picture, caption + key numbers */
-/* the one module layout (N2-010): picture on the left, steps and numbers on the right */
+/* the one module layout (N2-010): picture, caption and steps on the left; numbers and notes on the right */
 .show { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; gap: var(--sp-6) var(--sp-8); align-items: start; }
 .show-main { min-width: 0; }
 .show-side { position: sticky; top: calc(var(--bar-h) + var(--sp-4)); display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
-/* Two columns: the right column never grows past the screen; when its content is longer it scrolls
-   inside itself (without carrying the page along), so the picture stays where it is. */
+/* Two columns: both fit the screen. The left one is exactly the height left under the top bar and
+   its picture shrinks to fit, so the page never scrolls the animation away; the right one scrolls
+   inside itself (without carrying the page along) when its content is longer. */
 @media (min-width: 1101px) {
-  .show-side { max-height: max(20rem, calc(100dvh - var(--show-top, 10rem) - var(--show-below, 6rem))); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: var(--sp-1); }
+  .show { --show-h: max(30rem, calc(100dvh - var(--show-top, 10rem) - var(--show-below, 6rem))); }
+  .show-side { max-height: var(--show-h); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: var(--sp-1); }
   .show-side > * { flex-shrink: 0; }
   .show-side.scrolls:not(.at-end) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent); }
   .show-side:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* The picture takes whatever height is left, but never draws smaller than 85% (11 px diagram
+     text stays above 9 px); on a short screen where it can't fit, the page scrolls a little instead. */
+  .show-main.fits { min-height: var(--show-h); display: flex; flex-direction: column; }
+  .show-main.fits > * { flex-shrink: 0; }
+  .show-main.fits > .show-stage { flex: 1 1 0; display: flex; flex-direction: column; }
+  .fits > .show-stage > * { flex-shrink: 0; }
+  .fits > .show-stage > .diagram-scroll.fit { flex: 1 1 0; min-height: calc(var(--vbh, 300) * 0.85px + 2 * var(--sp-2) + 2px); position: relative; overflow: hidden; }
+  .fits > .show-stage > .diagram-scroll.fit > svg.diagram { position: absolute; inset: var(--sp-2); width: calc(100% - 2 * var(--sp-2)); height: calc(100% - 2 * var(--sp-2)); max-width: none; margin: 0; }
+  /* The caption box has one height whatever it says, so the picture keeps one size while the
+     captions change. It does not clip, so the info tips in a caption open outside it. */
+  .mod { padding-bottom: var(--sp-6); }
+  .fits > .show-under { gap: var(--sp-2); }
+  .fits .playbar { padding: var(--sp-2) 0; }
+  .fits > .show-under > .follow { height: clamp(5.75rem, 11dvh, 6.75rem); contain: size; }
+  .steps button { white-space: nowrap; }
 }
+/* Laptop-height screens: a smaller caption so the picture keeps its room. */
+@media (min-width: 1101px) and (max-height: 880px) {
+  .fits > .show-under > .follow { height: 5.25rem; }
+  .fits .playbar { padding: var(--sp-1h) 0; }
+  .fits > .show-under .follow p, .fits > .show-under .follow-k { font-size: var(--fs-14); }
+}
+/* under the play bar: the steps as a row of chips, then the current caption */
+.show-under { display: flex; flex-direction: column; gap: var(--sp-3); }
+.show-under > .follow { margin: 0; max-width: 60rem; }
+.show-under .follow p { font-size: var(--fs-15); line-height: 1.5; }
+/* the caption's heading runs into its first sentence (the step chips above already name the step) */
+.show-under .follow-k { display: inline; margin-right: 0.4em; font-size: var(--fs-15); line-height: 1.5; }
+.show-under .follow-k + p { display: inline; margin: 0; }
+.show-under .follow-k + p + p { margin-top: var(--sp-2); }
+.show-under .follow p.rest { font-size: var(--fs-13); }
 .show-side .show-foot { display: flex; flex-direction: column; gap: var(--sp-5); margin: 0; }
+.show-side > .show-foot:first-child > .kpis:first-child { padding-top: 0; border-top: 0; }
 .show-side .follow { margin: 0; max-width: none; }
-.show-side .follow p { font-size: var(--fs-15); line-height: 1.5; }
-.show-side .follow p.rest { font-size: var(--fs-13); }
 .show-side .points ol { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
 .show-side .points li { padding: var(--sp-2) var(--sp-3); opacity: 1; }
 .side-about { padding-top: var(--sp-4); border-top: 1px solid var(--line); }
@@ -205,15 +237,14 @@ body { min-height: 100vh; }
   .show-side { position: static; }
 }
 /* the step list */
-.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--bg-2); overflow: hidden; }
-.steps li { margin: 0; }
-.steps li + li { border-top: 1px solid var(--line); }
-.steps button { width: 100%; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-1h) var(--sp-3); border: 0; background: none; color: var(--muted); font: 500 var(--fs-13) / 1.35 var(--font-head); text-align: left; cursor: pointer; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-1h); }
+.steps li { margin: 0; display: flex; max-width: 100%; }
+.steps button { display: flex; align-items: center; gap: var(--sp-2); padding: 3px var(--sp-2); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); color: var(--muted); font: 500 var(--fs-13) / 1.35 var(--font-head); text-align: left; cursor: pointer; }
 .steps button:hover { color: var(--text); background: var(--bg-3); }
 .steps .n { flex: none; display: inline-grid; place-items: center; width: 1.25rem; height: 1.25rem; border: 1px solid var(--line-2); border-radius: 50%; font: 600 var(--fs-11) / 1 var(--font-head); font-variant-numeric: tabular-nums; }
 .steps .n svg { width: 0.7rem; height: 0.7rem; }
 .steps li.done .n { border-color: var(--ok); color: var(--ok); }
-.steps li.now button { color: var(--text); font-weight: 600; background: var(--sel); box-shadow: inset 2px 0 0 var(--accent); }
+.steps li.now button { color: var(--text); background: var(--sel); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .steps li.now .n { background: var(--accent); border-color: var(--accent); color: var(--ink-text); }
 .show-top { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); align-items: flex-start; margin-bottom: var(--sp-2); }
 .choice { display: flex; flex-direction: column; gap: var(--sp-1); max-width: 100%; }
@@ -221,9 +252,7 @@ body { min-height: 100vh; }
 .choice .seg { flex-wrap: wrap; align-self: flex-start; }
 .choice-why { font-size: var(--fs-12); color: var(--warn); max-width: 22rem; }
 .show-stage { min-width: 0; }
-.show-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-4) var(--sp-8); align-items: start; margin-top: var(--sp-2); }
 .show-side .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3) var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--line); }
-.show-foot .follow { margin-top: 0; }
 .kpis { display: flex; gap: var(--sp-4) var(--sp-8); flex-wrap: wrap; }
 .kpi { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 7rem; }
 .kpi .k { font-size: var(--fs-12); color: var(--muted); }
@@ -231,7 +260,6 @@ body { min-height: 100vh; }
 .kpi-st { display: inline-grid; flex: none; }
 .kpi-st svg { width: 0.875rem; height: 0.875rem; }
 .kpi .s { font-size: var(--fs-12); color: var(--faint); }
-@media (max-width: 900px) { .show-foot { grid-template-columns: minmax(0, 1fr); } }
 /* numbered cards that light up with the animation */
 .points { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
 .show-top > .choice + .points, .show-top > .names + .points { flex: 1 1 36rem; width: auto; }

@@ -89,5 +89,5 @@ Platform rules (minimum node counts, erasure-coding strip sizes, failure-domain 
 
 - Data is a representative sample of a few hundred items, not real extents; timings and throughput are illustrative assumptions you can adjust, not measurements.
 - Behavior, limits and requirements vary by AOS version, hypervisor, hardware and license. The About dialog says so, and its summary shows when you hover About in the footer.
-- At 1280 px wide the pictures scale to about 87% to keep the right column beside them (decision 53).
+- On wide screens the left column (picture, steps, caption) fits the window and the picture shrinks to fit, but never below 85% of its size; on a window shorter than about 860 px (for example 1280x720) the page scrolls a little instead (decision 55).
 - Presenter notes open in a side panel; there is no separate presenter window yet.
