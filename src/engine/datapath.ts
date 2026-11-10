@@ -195,26 +195,26 @@ export function readSequence(o: { source: ReadSource; seed?: number }): DpStep[]
     ...base,
     id: 'issue',
     title: 'The VM issues a read',
-    text: 'The read goes to the local CVM’s Stargate, which finds the data in the content cache, the OpLog or the extent store.',
+    text: 'The read goes to the local CVM’s Stargate, which finds the data in the Unified Cache, the OpLog or the extent store.',
     active: [vm, sg(0)],
     hops: [{ from: vm, to: sg(0), kind: 'io' }],
     misses: [],
   });
   const place: Record<ReadSource, Place> = { cache: ca(0), oplog: op(0), local: ex(0), remote: ex(remote) };
   const hitText: Record<ReadSource, string> = {
-    cache: 'Hit in the content cache in CVM memory, the fastest answer. Data read once enters the single-touch pool and is promoted to the multi-touch pool, where it stays cached longer, when read again.',
+    cache: 'Hit in the Unified Cache in CVM memory, the fastest answer. Data read once enters the single-touch pool and is promoted to the multi-touch pool, where it stays cached longer, when read again.',
     oplog: 'The data was written recently and has not drained yet, so the OpLog serves it. Reads always see the latest write.',
     local: 'Read from the extent store on this node’s own drives. No network hop is needed, which is the point of data locality.',
     remote: `No local copy exists, for example just after the VM moved, so Stargate reads the replica on Node ${remote + 1} over the network. This works but adds a network round trip.`,
   };
   const missText: Record<ReadSource, string> = {
-    cache: 'Not in the content cache.',
+    cache: 'Not in the Unified Cache.',
     oplog: 'Not in the OpLog: this data drained to the extent store earlier.',
     local: 'No copy in this node’s extent store.',
     remote: '',
   };
   const titles: Record<ReadSource, string> = {
-    cache: 'Content cache',
+    cache: 'Unified Cache',
     oplog: 'OpLog',
     local: 'Local extent store',
     remote: 'Remote replica',
@@ -252,7 +252,7 @@ export function readSequence(o: { source: ReadSource; seed?: number }): DpStep[]
  * the absolute values depend on media, network and load.
  */
 export const LATENCY_LADDER: { source: ReadSource; label: string; units: number }[] = [
-  { source: 'cache', label: 'Content cache (memory)', units: 1 },
+  { source: 'cache', label: 'Unified Cache (memory)', units: 1 },
   { source: 'oplog', label: 'OpLog (fast flash)', units: 8 },
   { source: 'local', label: 'Local extent store', units: 10 },
   { source: 'remote', label: 'Remote replica (network hop)', units: 18 },

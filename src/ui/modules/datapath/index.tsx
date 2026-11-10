@@ -6,6 +6,7 @@ import { useEnum } from '../../../state/route';
 import { brisk, paced, readSecs, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, Tip } from '../../components/controls';
 import { Choice, Kpis, Show } from '../../components/show';
+import { CvmBox } from '../../components/parts';
 import {
   DP_NODES,
   localitySequence,
@@ -104,10 +105,20 @@ const HOP_CLS: Record<Hop['kind'], string> = {
   tier: 'dp-hop drain',
 };
 
+/** Nodes whose CVM takes part in this step: an active place or the end of an arrow. */
+function takingPart(step: DpStep, vmNode: number): Set<number> {
+  const s = new Set<number>();
+  const add = (p: Place) => s.add('node' in p ? p.node : vmNode);
+  step.active.forEach(add);
+  step.hops.forEach((h) => (add(h.from), add(h.to)));
+  return s;
+}
+
 const isAt = (list: Place[], p: Place) => list.some((q) => q.at === p.at && ('node' in q ? q.node : -1) === ('node' in p ? p.node : -1));
 
 function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: number; rf: RF; mode: Mode; cache: CacheState }) {
   const vmNode = 0;
+  const part = takingPart(step, vmNode);
   const label = mode === 'rd' ? 'Read path' : mode === 'ws' ? 'Sequential write path' : 'Random write path';
   const missed = (s: ReadSource, n: number) => n === 0 && step.misses?.includes(s);
   const served = (s: ReadSource) => step.servedFrom === s;
@@ -145,9 +156,10 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
         };
         const hasOp = step.oplogCopies.includes(n);
         const hasEx = step.extentCopies.includes(n);
+        const full = part.has(n);
         return (
           <g key={n}>
-            <rect x={x} y={8} width={NW} height={NET_Y - 30} class="node-box" />
+            <rect x={x} y={8} width={NW} height={full ? NET_Y - 30 : Y.sg + 34} class="node-box" />
             <text class="d-title" x={x + 10} y={27} style={{ fontWeight: 600 }}>
               Node {n + 1}
             </text>
@@ -179,12 +191,20 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
                 other VMs
               </text>
             )}
+            {!full && (
+              <g>
+                <CvmBox x={x + 10} y={Y.sg} w={NW - 20} h={26} />
+                {(hasOp || hasEx) && <CopyTile x={x + NW - 40} y={Y.sg + 4} n={(hasEx ? step.extentCopies : step.oplogCopies).indexOf(n) + 1} />}
+              </g>
+            )}
+            {full && (
+              <g>
             <rect x={x + 4} y={Y.sg - 14} width={NW - 8} height={Y.extent + BOX_H.extent - Y.sg + 22} class="dp-cvm" />
             <text x={x + NW - 10} y={Y.sg - 3} text-anchor="end" class="ink-text dp-cvm-l d-fine" style={{ fontWeight: 600 }}>
               CVM
             </text>
             {box('sg', { at: 'stargate', node: n }, 'Stargate', 'serves all I/O')}
-            {box('cache', { at: 'cache', node: n }, 'Content cache', mode === 'rd' && n === 0 ? `single ${cache.single.length} · multi ${cache.multi.length}` : 'memory', missed('cache', n) ? 'miss' : served('cache') && n === 0 ? 'hit' : '')}
+            {box('cache', { at: 'cache', node: n }, 'Unified Cache', mode === 'rd' && n === 0 ? `single ${cache.single.length} · multi ${cache.multi.length}` : 'memory', missed('cache', n) ? 'miss' : served('cache') && n === 0 ? 'hit' : '')}
             {box('oplog', { at: 'oplog', node: n }, 'OpLog', mode === 'ws' ? 'bypassed' : 'fast write buffer', `${mode === 'ws' ? 'dim' : ''} ${missed('oplog', n) ? 'miss' : served('oplog') && n === 0 ? 'hit' : ''}`)}
             {box('extent', { at: 'extent', node: n }, 'Extent store', 'long-term storage', `${missed('local', n) ? 'miss' : (served('local') && n === 0) || (served('remote') && n === remoteNode) ? 'hit' : ''}`)}
             {hasOp && <CopyTile x={x + NW - 40} y={Y.oplog + 10} n={step.oplogCopies.indexOf(n) + 1} />}
@@ -193,6 +213,8 @@ function PathDiagram({ step, frac, rf, mode, cache }: { step: DpStep; frac: numb
               <text x={BX(n) + 8} y={Y.extent + 52} class="flow-fill d-fine" style={{ fontWeight: 600 }}>
                 ILM: hot → fast tier
               </text>
+            )}
+              </g>
             )}
           </g>
         );
@@ -293,7 +315,7 @@ function locWord(f: LocalityFrame): string {
   return f.phase === 'before' ? 'Reads stay local' : f.phase === 'migrate' ? 'VM live-migrates' : f.readRemote ? 'Remote read, then copied' : 'Reads local again';
 }
 
-const SRC_WORD: Record<ReadSource, string> = { cache: 'Content cache', oplog: 'OpLog', local: 'Local drive', remote: 'Another node' };
+const SRC_WORD: Record<ReadSource, string> = { cache: 'Unified Cache', oplog: 'OpLog', local: 'Local drive', remote: 'Another node' };
 
 /** The marks the chosen view draws, and no others. */
 function legendFor(mode: Mode) {
