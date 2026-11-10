@@ -17,6 +17,8 @@ const HEAT: Heat[] = Array.from({ length: N }, (_, i) => (i % 7 === 0 || i % 5 =
 const COUNT = { hot: HEAT.filter((h) => h === 'hot').length, warm: HEAT.filter((h) => h === 'warm').length, cold: HEAT.filter((h) => h === 'cold').length };
 const COLD = HEAT.map((h, i) => (h === 'cold' ? i : -1)).filter((i) => i >= 0);
 const RATE: Record<Heat, number> = { hot: 0.9, warm: 0.22, cold: 0 };
+/** Days since each file was last opened, for the small age label in its cell (example values in each band). */
+const DAYS = HEAT.map((h, i) => (h === 'hot' ? 1 + ((i * 7) % 20) : h === 'warm' ? 30 + ((i * 11) % 55) : 95 + ((i * 37) % 280)));
 const AGE: Record<Heat, string> = { hot: 'read or written this month', warm: '30 to 90 days', cold: 'over 90 days' };
 const USED0 = 82;
 const USED1 = 46;
@@ -117,9 +119,9 @@ function TierDiagram({ t }: { t: number }) {
         return (
           <g key={i}>
             <rect x={c.x} y={c.y} width={CW} height={CH} rx={3} class={`${colored > 0.5 ? heatCls(h) : 'dt-cell'}${stub ? ' stub' : ''}${hit || read ? ' hit' : ''}`} />
-            {stub && (
-              <text x={c.x + CW / 2} y={c.y + 17} text-anchor="middle" class="muted d-fine">
-                stub
+            {(stub || colored > 0.5) && (
+              <text x={c.x + CW / 2} y={c.y + 17} text-anchor="middle" class={`d-fine${stub ? ' muted' : ''}`}>
+                {stub ? 'stub' : `${DAYS[i]}d`}
               </text>
             )}
           </g>
@@ -132,7 +134,7 @@ function TierDiagram({ t }: { t: number }) {
         Data Lens
       </text>
       <text x={DL.x + 12} y={DL.y + 40} class="muted d-sub">
-        {ph === 0 ? 'watching reads and writes' : 'data age explorer'}
+        {ph === 0 ? 'watching reads and writes' : 'example thresholds you set'}
       </text>
       {(['hot', 'warm', 'cold'] as Heat[]).map((h, r) => (
         <g key={h} style={{ opacity: colored }}>
