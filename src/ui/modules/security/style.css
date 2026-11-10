@@ -16,3 +16,10 @@
 .sc-dia .sc-cipher { stroke: var(--s2); stroke-width: 1; }
 .sc-dia .sc-hatch-bg { fill: var(--bg-3); }
 .sc-dia .sc-hatch-l { stroke: var(--s2); stroke-width: 2; }
+
+.sc-chain { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }
+.sc-chain li { display: grid; grid-template-columns: 3rem 1fr; gap: 0 var(--sp-2); padding: var(--sp-1) var(--sp-2); border: 1px solid var(--line-2); border-left: 3px solid var(--line-2); border-radius: 4px; font-size: var(--fs-12); color: var(--muted); }
+.sc-chain li b { grid-row: span 2; align-self: center; font-size: var(--fs-13, 13px); }
+.sc-chain li em { font-style: normal; }
+.sc-chain li.on { color: var(--fg); border-color: var(--ink-line); border-left-color: var(--ink); background: var(--ink-soft); }
+.sc-chain-note, .sc-chain-none { font-size: var(--fs-12); color: var(--muted); margin-top: var(--sp-1); }

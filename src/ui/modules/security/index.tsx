@@ -257,6 +257,47 @@ function TheftDiagram({ enc, t }: { enc: Enc; t: number }) {
   );
 }
 
+/** Key chain as a side section: the path lights one level at a time as the first block is written. */
+function KeyChain({ enc, t }: { enc: Enc; t: number }) {
+  if (enc === 'off') {
+    return (
+      <section>
+        <h2 class="side-sec-h">Key hierarchy</h2>
+        <p class="sc-chain-none">Encryption is off, so there are no keys.</p>
+      </section>
+    );
+  }
+  const rows =
+    enc === 'native'
+      ? [
+          { k: 'DEK', text: 'Data encryption key', held: 'Wrapped by the KEK' },
+          { k: 'KEK', text: 'Key encryption key', held: 'Wrapped by the master key' },
+          { k: 'MEK', text: 'Master key', held: 'Held by the cluster' },
+        ]
+      : [
+          { k: 'DEK', text: 'Data encryption key', held: 'Wrapped by the KEK' },
+          { k: 'KEK', text: 'Key encryption key', held: 'Held by the external key server' },
+        ];
+  return (
+    <section>
+      <h2 class="side-sec-h">Key hierarchy</h2>
+      <ol class="sc-chain" aria-label={enc === 'native' ? 'DEK wrapped by KEK, wrapped by the master key held by the cluster' : 'DEK wrapped by a KEK held by the external key server'}>
+        {rows.map((r, i) => {
+          const lit = t >= W0 + 0.3 + i * 0.5;
+          return (
+            <li key={r.k} class={lit ? 'on' : ''}>
+              <b>{r.k}</b>
+              <span>{r.text}</span>
+              <em>{lit ? r.held : '…'}</em>
+            </li>
+          );
+        })}
+      </ol>
+      <p class="sc-chain-note">Each block is written under the data key; that key is wrapped, level by level, up to the {enc === 'native' ? 'master key' : 'key server'}.</p>
+    </section>
+  );
+}
+
 const CARDS: Point[] = ACTS.map((enc, i) => ({
   at: ACT_AT[i],
   tone: verdict(enc).tone === 'bad' ? 'bad' : 'ok',
@@ -286,7 +327,12 @@ export default function Security() {
 
   return (
     <Show clock={clock}
-      side={<Points label="The same stolen drive, three ways" items={CARDS} t={t} />}
+      side={
+        <>
+          <Points label="The same stolen drive, three ways" items={CARDS} t={t} />
+          <KeyChain enc={enc} t={t - ACT_AT[act]} />
+        </>
+      }
       foot={
         <>
           <Follow tone={caption.tone} k={caption.k}>
