@@ -132,9 +132,9 @@
   --wide: 92rem; /* one frame for the top bar, pages, the home slide and the footer */
 
   /* motion */
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --t-fast: 120ms;
-  --t-med: 220ms;
+  --ease: cubic-bezier(0, 0, 0.2, 1); /* ease-out (N2-050) */
+  --t-fast: 160ms;
+  --t-med: 160ms;
   --t-slow: 420ms;
 
   color-scheme: dark;

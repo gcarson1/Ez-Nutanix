@@ -366,8 +366,7 @@ body { min-height: 100vh; }
 .diagram .tile-dim { opacity: 0.18; }
 .diagram .xfer { stroke: var(--flow); stroke-width: 1.5; fill: none; opacity: 0.8; }
 .diagram .xfer.balance { stroke: var(--s2); stroke-dasharray: 3 3; }
-.diagram .beat { animation: beat 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes beat { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+/* .beat dots are static (N2-050): only data that is actually moving animates. */
 .diagram .vm { fill: var(--bg); stroke: var(--line-2); }
 .diagram .vm.hl { stroke: var(--ink); stroke-width: 2; fill: var(--ink-soft); }
 .diagram .vm.restart { stroke: var(--warn); }
@@ -389,9 +388,6 @@ body { min-height: 100vh; }
   .diagram-scroll > .diagram { min-width: 36rem; }
   .drawer { width: 100vw; }
   .bar-div { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .diagram .beat { animation: none; }
 }
 @media print {
   .bar, .foot-bar, .playbar, .drawer { display: none !important; }
