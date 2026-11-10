@@ -3,7 +3,7 @@
 // caption and key numbers (`foot`), anything else the module adds (`side`), and the module's
 // own summary. Below 1100 px wide the right column drops under the picture.
 import { createContext, type ComponentChildren } from 'preact';
-import { useContext, useId, useLayoutEffect, useRef } from 'preact/hooks';
+import { useContext, useEffect, useId, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Clock } from './clock';
 import { Seg, Tip, type SegOption, type Tone } from './controls';
 import { Icon } from './Icon';
@@ -13,7 +13,9 @@ export const ModuleInfo = createContext<{ summary: string } | null>(null);
 
 export function Show({ top, children, foot, side, clock }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren; side?: ComponentChildren; clock?: Clock }) {
   const info = useContext(ModuleInfo);
+  const root = useRef<HTMLDivElement>(null);
   const main = useRef<HTMLDivElement>(null);
+  const aside = useRef<HTMLElement>(null);
   // Each picture's viewBox width, for the phone rule in app.css that keeps 11 px diagram text from
   // rendering under 10 px (N2-014). Cheap enough to run after every render; viewBoxes can change.
   useLayoutEffect(() => {
@@ -22,13 +24,23 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
       if (svg.style.getPropertyValue('--vbw') !== w) svg.style.setProperty('--vbw', w);
     });
   });
+  // The right column scrolls on its own when it is taller than the screen, so the picture on the
+  // left never has to move (see .show-side in app.css). Measure where the layout starts on the
+  // page, and mark the column while it scrolls: a fade at the bottom until the end is reached,
+  // and a tab stop so the keyboard can scroll it.
+  useLayoutEffect(() => syncSide(root.current, aside.current));
+  useEffect(() => {
+    const sync = () => syncSide(root.current, aside.current);
+    window.addEventListener('resize', sync);
+    return () => window.removeEventListener('resize', sync);
+  }, []);
   return (
-    <div class="show">
+    <div class="show" ref={root}>
       <div class="show-main" ref={main}>
         {top && <div class="show-top">{top}</div>}
         <div class="show-stage">{children}</div>
       </div>
-      <aside class="show-side" aria-label="What happens">
+      <aside class="show-side" aria-label="What happens" ref={aside} onScroll={() => syncSide(root.current, aside.current)}>
         {clock && <StepList clock={clock} />}
         {foot && <div class="show-foot">{foot}</div>}
         {side}
@@ -41,6 +53,22 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
       </aside>
     </div>
   );
+}
+
+function syncSide(root: HTMLElement | null, side: HTMLElement | null) {
+  if (!root || !side) return;
+  const r = root.getBoundingClientRect();
+  const doc = document.documentElement;
+  // Where the layout starts on the page, and how much page (padding, footer) follows it.
+  const top = `${Math.round(r.top + window.scrollY)}px`;
+  const below = `${Math.max(0, Math.round(doc.scrollHeight - (r.bottom + window.scrollY)))}px`;
+  if (root.style.getPropertyValue('--show-top') !== top) root.style.setProperty('--show-top', top);
+  if (root.style.getPropertyValue('--show-below') !== below) root.style.setProperty('--show-below', below);
+  const scrolls = side.scrollHeight > side.clientHeight + 1;
+  side.classList.toggle('scrolls', scrolls);
+  side.classList.toggle('at-end', !scrolls || side.scrollTop + side.clientHeight >= side.scrollHeight - 2);
+  if (scrolls) side.tabIndex = 0;
+  else side.removeAttribute('tabindex');
 }
 
 /** The animation's steps as a numbered list: done ones ticked, the current one marked. Click one to pause and jump there. */

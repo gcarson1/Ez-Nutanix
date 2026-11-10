@@ -176,6 +176,14 @@ body { min-height: 100vh; }
 .show { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; gap: var(--sp-6) var(--sp-8); align-items: start; }
 .show-main { min-width: 0; }
 .show-side { position: sticky; top: calc(var(--bar-h) + var(--sp-4)); display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+/* Two columns: the right column never grows past the screen; when its content is longer it scrolls
+   inside itself (without carrying the page along), so the picture stays where it is. */
+@media (min-width: 1101px) {
+  .show-side { max-height: max(20rem, calc(100dvh - var(--show-top, 10rem) - var(--show-below, 6rem))); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: var(--sp-1); }
+  .show-side > * { flex-shrink: 0; }
+  .show-side.scrolls:not(.at-end) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent); }
+  .show-side:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
 .show-side .show-foot { display: flex; flex-direction: column; gap: var(--sp-5); margin: 0; }
 .show-side .follow { margin: 0; max-width: none; }
 .show-side .follow p { font-size: var(--fs-15); line-height: 1.5; }
