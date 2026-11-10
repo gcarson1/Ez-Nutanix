@@ -22,16 +22,20 @@ const DURATION: Record<LinkFail, number> = { none: 7.2, one: 12 };
 // ── geometry ──
 const W = 960;
 const H = 380;
-const SRC = { x: 32, w: 150, h: 52 };
+// Three columns: the host (VMs, CVM, bridge br0, bond br0-up), the two NICs, the two switches.
+const COLS = { host: { x: 12, w: 428 }, nic: { x: 464, w: 162 }, sw: { x: 680, w: 268 } };
+const SRC = { x: 28, w: 150, h: 52 };
 const srcY = (i: number) => 74 + i * 68;
 const srcCY = (i: number) => srcY(i) + SRC.h / 2;
-const BR = { x: 228, y: 64, w: 120, h: 276 };
+const BR = { x: 214, y: 64, w: 58, h: 276 };
 const BX = BR.x + BR.w / 2;
-const BOND = { x: 384, y: 64, w: 176, h: 276 };
-const NIC = { x: 400, w: 144, h: 64 };
+const BOND = { x: 316, y: 64, w: 108, h: 276 };
+const NIC = { x: 480, w: 130, h: 64 };
 const nicY = (u: Uplink) => (u === 0 ? 100 : 228);
 const nicCY = (u: Uplink) => nicY(u) + NIC.h / 2;
-const SW = { x: 700, w: 230, h: 64 };
+const SW = { x: 696, w: 236, h: 64 };
+/** Example VLANs on the VM vNICs; the CVM is untagged. */
+const VLAN = ['VLAN 10', 'VLAN 10', 'VLAN 20', 'untagged'];
 const FIRST_LEG = BX - (SRC.x + SRC.w);
 
 function route(src: number, u: Uplink): [number, number][] {
@@ -124,22 +128,27 @@ function HostDiagram({ bond, fail, t, pkts }: { bond: BondMode; fail: LinkFail; 
       role="img"
       aria-label={`One AHV host: VM 1 to 3 and the CVM send through the virtual switch and a ${BONDS[bond].short} bond of two links to switches A and B.${fail === 'one' ? ' Partway through, NIC A loses its link and all traffic moves to NIC B.' : ''}`}
     >
-      {/* host */}
-      <rect x={12} y={12} width={564} height={356} class="frame" />
-      <text x={28} y={40} class="net-t">
+      {/* columns */}
+      <rect x={COLS.host.x} y={12} width={COLS.host.w} height={356} class="frame" />
+      <rect x={COLS.nic.x} y={12} width={COLS.nic.w} height={356} class="frame" />
+      <rect x={COLS.sw.x} y={12} width={COLS.sw.w} height={356} class="frame" />
+      <text x={SRC.x} y={40} class="d-title">
         One AHV host
       </text>
-      <text x={BX} y={40} text-anchor="middle" class="net-t">
-        Virtual switch
+      <text x={BX} y={56} text-anchor="middle" class="d-sub muted">
+        bridge
       </text>
-      <text x={BX} y={56} text-anchor="middle" class="net-xs muted">
-        Open vSwitch
+      <text x={BOND.x + BOND.w / 2} y={40} text-anchor="middle" class="d-title mono">
+        br0-up
       </text>
-      <text x={BOND.x + BOND.w / 2} y={40} text-anchor="middle" class="net-t">
-        Bond
+      <text x={BOND.x + BOND.w / 2} y={56} text-anchor="middle" class="d-sub muted">
+        bond · tags VLANs
       </text>
-      <text x={BOND.x + BOND.w / 2} y={56} text-anchor="middle" class="net-xs muted">
-        two links act as one
+      <text x={COLS.nic.x + COLS.nic.w / 2} y={40} text-anchor="middle" class="d-title">
+        Physical NICs
+      </text>
+      <text x={COLS.sw.x + COLS.sw.w / 2} y={40} text-anchor="middle" class="d-title">
+        Top-of-rack switches
       </text>
 
       {/* VMs and CVM */}
@@ -150,26 +159,28 @@ function HostDiagram({ bond, fail, t, pkts }: { bond: BondMode; fail: LinkFail; 
             <line x1={SRC.x + SRC.w} y1={srcCY(i)} x2={BR.x} y2={srcCY(i)} class="net-link" />
             <rect x={SRC.x} y={srcY(i)} width={SRC.w} height={SRC.h} class={cvm ? 'cvm' : 'vm'} />
             <Mark kind={i} x={SRC.x + 24} y={srcCY(i)} r={7} cls="net-pkt" />
-            <text x={SRC.x + 44} y={srcCY(i) + (cvm ? -2 : 5)} class="net-t" style={cvm ? { fill: '#fff' } : undefined}>
+            <text x={SRC.x + 44} y={srcCY(i) - 2} class="d-title" style={cvm ? { fill: '#fff' } : undefined}>
               {name}
             </text>
-            {cvm && (
-              <text x={SRC.x + 44} y={srcCY(i) + 14} class="net-xs" style={{ fill: 'rgba(255,255,255,.85)' }}>
-                runs the storage
-              </text>
-            )}
+            <text x={SRC.x + 44} y={srcCY(i) + 15} class="d-sub" style={cvm ? { fill: 'rgba(255,255,255,.9)' } : undefined}>
+              {cvm ? 'storage · ' : 'vNIC · '}
+              {VLAN[i]}
+            </text>
           </g>
         );
       })}
       <rect x={BR.x} y={BR.y} width={BR.w} height={BR.h} class="net-br" />
+      <text x={BX} y={40} text-anchor="middle" class="d-title mono">
+        br0
+      </text>
 
       {/* bond, links and switches */}
       <rect x={BOND.x} y={BOND.y} width={BOND.w} height={BOND.h} class="frame" />
       {bond === 'lacp' && (
         <g>
-          <rect x={SW.x - 14} y={nicY(0) - 18} width={SW.w + 28} height={nicY(1) + NIC.h - nicY(0) + 36} class="net-lag" />
-          <text x={SW.x + SW.w / 2} y={nicY(1) + NIC.h + 40} text-anchor="middle" class="net-s ink-text-fill">
-            Both switches set up as one link group (LAG)
+          <rect x={SW.x - 12} y={nicY(0) - 18} width={SW.w + 24} height={nicY(1) + NIC.h - nicY(0) + 36} class="net-lag" />
+          <text x={SW.x + SW.w / 2} y={nicY(1) + NIC.h + 40} text-anchor="middle" class="d-label ink-text-fill">
+            Switches set up as one LAG
           </text>
         </g>
       )}
@@ -184,23 +195,23 @@ function HostDiagram({ bond, fail, t, pkts }: { bond: BondMode; fail: LinkFail; 
             <line x1={BR.x + BR.w} y1={y} x2={NIC.x} y2={y} class="net-link" />
             <line x1={NIC.x + NIC.w} y1={y} x2={SW.x} y2={y} class={`net-wire ${down ? 'down' : busy ? 'on' : 'wait'}`} />
             {down && (
-              <text x={(NIC.x + NIC.w + SW.x) / 2} y={y - 12} text-anchor="middle" class="net-s bad-fill halo" style={{ fontWeight: 600 }}>
+              <text x={(NIC.x + NIC.w + SW.x) / 2} y={y - 12} text-anchor="middle" class="d-label bad-fill halo" style={{ fontWeight: 600 }}>
                 ✕ link lost
               </text>
             )}
             <rect x={NIC.x} y={nicY(u)} width={NIC.w} height={NIC.h} class={down ? 'node-box down' : 'bg2'} stroke={down ? undefined : 'var(--line-2)'} />
-            <text x={NIC.x + NIC.w / 2} y={nicY(u) + 19} text-anchor="middle" class="net-s" style={{ fontWeight: 600 }}>
+            <text x={NIC.x + NIC.w / 2} y={nicY(u) + 19} text-anchor="middle" class="d-label" style={{ fontWeight: 600 }}>
               NIC {letter} · 10 Gb/s
             </text>
-            <text x={NIC.x + NIC.w / 2} y={nicY(u) + 55} text-anchor="middle" class={`net-xs ${down ? 'bad-fill' : busy ? 'ok-text-fill' : 'muted'}`} style={{ fontWeight: 600 }}>
+            <text x={NIC.x + NIC.w / 2} y={nicY(u) + 55} text-anchor="middle" class={`d-sub ${down ? 'bad-fill' : busy ? 'ok-text-fill' : 'muted'}`} style={{ fontWeight: 600 }}>
               {ROLE_WORD[r]}
             </text>
             <rect x={SW.x} y={y - SW.h / 2} width={SW.w} height={SW.h} class="bg3" stroke="var(--line-2)" />
-            <text x={SW.x + SW.w / 2} y={y - 4} text-anchor="middle" class="net-t">
+            <text x={SW.x + SW.w / 2} y={y - 4} text-anchor="middle" class="d-title">
               Switch {letter}
             </text>
-            <text x={SW.x + SW.w / 2} y={y + 16} text-anchor="middle" class="net-xs muted">
-              top of rack
+            <text x={SW.x + SW.w / 2} y={y + 16} text-anchor="middle" class="d-sub muted">
+              trunk · VLANs 10, 20
             </text>
           </g>
         );
@@ -244,22 +255,28 @@ export default function Network() {
   const [bond, setBond] = useEnum<BondMode>('bond', 'ab', BOND_ORDER);
   const [fail, setFail] = useEnum<LinkFail>('lf', 'none', ['none', 'one']);
   const pkts = useMemo(() => plan(bond, fail), [bond, fail]);
-  const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
-    { tone: 'ink' as const, ...STEADY[bond] },
-    { tone: 'bad' as const, k: 'NIC A loses its link', text: 'NIC A loses its link to switch A. The few packets on it are lost and sent again, and the bond stops using NIC A at once.' },
-    { tone: 'ok' as const, k: 'Traffic moves to NIC B', text: MOVED[bond] },
-  ];
-  // With both links up the loop is seamless, so its one caption needs no slowing down.
-  const starts = [0, FAIL_AT, MOVED_AT];
-  // With no failure there is one steady step: the readout says "Step 1 of 1" like every module, and
-  // read 0 keeps the loop at its own pace.
-  const steps = fail === 'none' ? [{ at: 0, read: 0 }] : paced(starts, captions.map((c) => [c.k, c.text]));
+  // Both views are a walk-through. With no failure: send, pick a link, arrive. With a failure:
+  // traffic flows, a link fails, traffic moves.
+  const captions: { tone: Tone | 'ink'; k: string; text: string }[] =
+    fail === 'none'
+      ? [
+          { tone: 'ink', k: 'VMs and the CVM send', text: 'Each VM sends ordinary frames from its vNIC. The VLAN is a setting on the vNIC; the CVM is untagged. All of it enters bridge br0.' },
+          { tone: 'ink', ...STEADY[bond] },
+          { tone: 'ink', k: 'Switches receive it', text: `Bond br0-up tags each frame with its VLAN, and the trunk ports on the switches carry it on. Switch setup needed: ${BONDS[bond].switchSetup === 'None' ? 'nothing special' : 'dynamic LACP and a link group'}.` },
+        ]
+      : [
+          { tone: 'ink', ...STEADY[bond] },
+          { tone: 'bad', k: 'NIC A loses its link', text: 'NIC A loses its link to switch A. The few packets on it are lost and sent again, and the bond stops using NIC A at once.' },
+          { tone: 'ok', k: 'Traffic moves to NIC B', text: MOVED[bond] },
+        ];
+  const starts = fail === 'none' ? [0, 2.4, 4.8] : [0, FAIL_AT, MOVED_AT];
+  const steps = paced(starts, captions.map((c) => [c.k, c.text]));
   const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3, steps });
   useRestartOn(clock, [bond, fail]);
   const t = clock.t;
 
-  const phase = fail === 'none' ? 0 : phaseAt(starts, t);
-  const now: LinkFail = phase > 0 ? 'one' : 'none';
+  const phase = phaseAt(starts, t);
+  const now: LinkFail = fail === 'one' && phase > 0 ? 'one' : 'none';
   const lim = limits(bond, now);
   const inUse = ([0, 1] as Uplink[]).filter((u) => ['active', 'carrying'].includes(uplinkRole(bond, u, now, N))).length;
   const caption = captions[phase];
@@ -317,7 +334,7 @@ export default function Network() {
       <PlayBar
         clock={clock}
         label="Network traffic animation"
-        extra={<Illus why="One host shown; every host in the cluster is cabled the same way. Packets are few and slow so you can follow them. Which link a VM or connection gets is a simplified hash: real Open vSwitch hashes by MAC address or by connection and rebalances by load. Bond behavior follows AHV 11.2 guidance and can differ by release and switch setup." />}
+        extra={<Illus why="One host shown; every host in the cluster is cabled the same way. VLAN numbers are examples. Packets are few and slow so you can follow them. Which link a VM or connection gets is a simplified hash: real Open vSwitch hashes by MAC address or by connection and rebalances by load. Bond behavior follows AHV 11.2 guidance and can differ by release and switch setup." />}
       />
     </Show>
   );

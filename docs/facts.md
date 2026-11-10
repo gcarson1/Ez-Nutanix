@@ -397,6 +397,12 @@ Changes from the owner's list of 13 fixes. Rows marked "owner-supplied" are the 
 
 ---
 
+## 19. AHV Networking page (N2-028)
+
+| ID | Claim | Source |
+|---|---|---|
+| NET-1 | The host's OVS bridge is br0 and its uplink bond is br0-up (default virtual switch vs0). A VM's vNIC on a VLAN-backed subnet sees untagged frames and OVS tags them on the uplink bond; the switch ports are trunks carrying the VLANs in use. The CVM and host default to VLAN 0, untagged. VLAN numbers on the page (10, 20) are examples. No Geneve here: that is overlay networking (Flow Virtual Networking). | docs/research/C-lcm-networking.md rows 10, 11, 13, 14: "vs0 ... aggregates br0 and its br0-up uplink on every node"; "An access-mode vNIC sees untagged frames, and OVS tags them on the uplink bond"; "The CVM and host default to VLAN 0, meaning untagged". |
+
 ## Changes needed in the app
 
 Each item lists the file, what it says now, what it should say, and the source.
