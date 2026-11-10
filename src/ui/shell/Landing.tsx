@@ -2,7 +2,8 @@
 // it, the data and AI services, the infrastructure, and where it runs, with "Start smaller" as a
 // separate strip. Every card opens its module and says what you will see there; the clicked card
 // grows into the module header (View Transitions where the browser supports them).
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { prefersReducedMotion } from '../components/clock';
 import { Icon } from '../components/Icon';
 import awsLogo from '../../assets/logos/aws.svg';
 import azureLogo from '../../assets/logos/azure.svg';
@@ -66,6 +67,30 @@ const TOUR: TourStep[] = [
   { sel: 'central', title: 'One control plane across everything', text: 'Nutanix Central sits above many clusters and sites: fleet management, operations, Kubernetes and data security from one place.' },
 ];
 
+const EDGE = 24; // the card's distance from the screen edge or the top bar
+const GAP = 16; // room kept between the card and the part it describes
+
+/**
+ * Where the tour card goes and where the page scrolls to, so the card covers as little of the
+ * spotlit part as possible: the bottom of the screen unless the top hides less (the part sits at
+ * the end of the page, say). A part too tall to fit shows its top, where its heading is.
+ */
+function placeCard(spot: DOMRect, cardH: number, barH: number) {
+  const h = innerHeight;
+  const top = spot.top + scrollY;
+  const max = Math.max(0, document.documentElement.scrollHeight - h);
+  const options = [
+    { cardTop: h - EDGE - cardH, lo: barH + GAP, hi: h - EDGE - cardH - GAP },
+    { cardTop: barH + EDGE, lo: barH + EDGE + cardH + GAP, hi: h - GAP },
+  ].map((o) => {
+    const room = o.hi - o.lo;
+    const scroll = Math.round(Math.max(0, Math.min(max, top - o.lo - Math.max(0, (room - spot.height) / 2))));
+    const shown = top - scroll;
+    return { cardTop: Math.round(o.cardTop), scroll, hidden: Math.max(0, o.lo - shown) + Math.max(0, shown + spot.height - o.hi) };
+  });
+  return options[1].hidden < options[0].hidden ? options[1] : options[0];
+}
+
 function CardBtn({ c, tour, children }: { c: Card; tour?: string; children?: preact.ComponentChildren }) {
   const icon = findModule(c.path)?.icon ?? 'layers';
   return (
@@ -95,17 +120,35 @@ function Band({ label, tour, children, cls }: { label: string; tour?: string; ch
 export function Landing() {
   const [tour, setTour] = useState<number | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
+  const card = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Before paint, so the card never shows over the part it is about to describe.
+  useLayoutEffect(() => {
     const root = wrap.current;
     if (!root) return;
     root.querySelectorAll('.spot').forEach((el) => el.classList.remove('spot'));
     if (tour === null) return;
     const el = root.querySelector(`[data-tour="${TOUR[tour].sel}"]`) as HTMLElement | null;
-    if (el) {
-      el.classList.add('spot');
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
+    if (!el) return;
+    el.classList.add('spot');
+    const place = (behavior: ScrollBehavior, scroll = true) => {
+      const c = card.current;
+      if (!c) return;
+      const at = placeCard(el.getBoundingClientRect(), c.offsetHeight, document.querySelector('.bar')?.getBoundingClientRect().bottom ?? 0);
+      c.style.top = `${at.cardTop}px`;
+      c.style.bottom = 'auto';
+      if (scroll) window.scrollTo({ top: at.scroll, behavior });
+    };
+    place(prefersReducedMotion() ? 'auto' : 'smooth');
+    // Phones resize the window as the address bar hides and shows while the visitor scrolls, so only a
+    // width change scrolls the page back to the part; the card always moves to fit the new height.
+    let width = innerWidth;
+    const onResize = () => {
+      place('auto', innerWidth !== width);
+      width = innerWidth;
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, [tour]);
 
   useEffect(() => {
@@ -197,7 +240,7 @@ export function Landing() {
       </div>
 
       {step && tour !== null && (
-        <div class="tour-card" role="dialog" aria-label="Guided tour" aria-live="polite">
+        <div class="tour-card" ref={card} role="dialog" aria-label="Guided tour" aria-live="polite">
           <div class="eyebrow">
             Guided tour <span class="n">{tour + 1} / {TOUR.length}</span>
           </div>

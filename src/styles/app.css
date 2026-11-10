@@ -55,9 +55,9 @@ body { min-height: 100vh; }
 /* tour spotlight */
 .tour-on .hm-card { transition: none; }
 .spot { position: relative; z-index: 60; box-shadow: 0 0 0 0.25rem #fff, 0 0 0 100vmax rgba(3, 3, 6, 0.72) !important; transform: none !important; }
-/* Guided tour: a round button fixed to the bottom right of the home page */
+/* Guided tour card: Landing.tsx sets its top each step so it sits clear of the spotlit part */
 .tour-card {
-  position: fixed; z-index: 70; left: 50%; bottom: var(--sp-8); transform: translateX(-50%);
+  position: fixed; z-index: 70; left: 50%; bottom: var(--sp-8); transform: translateX(-50%); transition: top 0.3s ease;
   width: min(34rem, calc(100vw - 2rem)); background: var(--bg); color: var(--text); border: 1px solid var(--line-2); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: var(--sp-5) var(--sp-6);
 }

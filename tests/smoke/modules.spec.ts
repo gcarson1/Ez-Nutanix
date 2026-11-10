@@ -37,13 +37,31 @@ test('landing page renders every pane and opens a module', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('guided tour walks the panes', async ({ page }) => {
-  await page.goto(FILE);
-  await page.getByRole('button', { name: 'Take the tour' }).click();
-  const card = page.getByRole('dialog', { name: 'Guided tour' });
-  await expect(card).toBeVisible();
-  for (let i = 0; i < 5; i++) await card.getByRole('button', { name: 'Next' }).click();
-  await expect(card.getByRole('button', { name: 'Open Nutanix Cloud Infrastructure' })).toBeVisible();
+test('guided tour walks the panes, and its card never covers the part it describes', async ({ page }) => {
+  for (const size of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 768, height: 1024 }]) {
+    await page.setViewportSize(size);
+    await page.goto(FILE);
+    await page.getByRole('button', { name: 'Take the tour' }).click();
+    const card = page.getByRole('dialog', { name: 'Guided tour' });
+    await expect(card).toBeVisible();
+    for (let i = 0; i < 6; i++) {
+      if (i) await card.getByRole('button', { name: 'Next' }).click();
+      // Wait for the scroll to settle, then the spotlit part and the card must not overlap and both must be on screen.
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const a = document.querySelector('.spot')!.getBoundingClientRect();
+            const c = document.querySelector('.tour-card')!.getBoundingClientRect();
+            const bar = document.querySelector('.bar')!.getBoundingClientRect().bottom;
+            const apart = a.bottom <= c.top || c.bottom <= a.top;
+            return apart && a.top >= bar && a.bottom <= innerHeight && c.top >= bar && c.bottom <= innerHeight;
+          }),
+          { message: `${size.width}x${size.height} step ${i + 1}` },
+        )
+        .toBe(true);
+    }
+    await expect(card.getByRole('button', { name: 'Open Nutanix Cloud Infrastructure' })).toBeVisible();
+  }
 });
 
 test('the theme button opens a menu with dark and light', async ({ page }) => {
