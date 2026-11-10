@@ -53,8 +53,8 @@ const WORD: Record<PhaseKind, string> = { seed: 'Seed copy', idle: 'In sync', sy
 const fmtMin = (m: number) => fmtDur(m / 60);
 
 function caption(kind: PhaseKind): { tone: Tone | 'ink'; k: string; text: string } {
-  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy running', text: 'Move copies the whole VM to AHV while it keeps running on the source platform. Users notice nothing.' };
-  if (kind === 'idle' || kind === 'sync') return { tone: 'flow', k: 'Keeping in sync', text: `Each sync sends only the blocks that changed since the last one, about ${Math.round((BASE.changeGBPerHour * BASE.syncEveryMin) / 60)} GB here. The target stays close behind until you pick a window.` };
+  if (kind === 'seed') return { tone: 'flow', k: 'Seed copy running', text: 'Move takes a snapshot of the VM on the source hypervisor and copies the whole VM from it to AHV, while the VM keeps running. Users notice nothing.' };
+  if (kind === 'idle' || kind === 'sync') return { tone: 'flow', k: 'Keeping in sync', text: `Changed block tracking on the source records what the VM writes, so each sync sends only the blocks that changed since the last one, about ${Math.round((BASE.changeGBPerHour * BASE.syncEveryMin) / 60)} GB here. The target stays close behind until you pick a window.` };
   if (kind === 'final') return { tone: 'warn', k: 'Cutover starts', text: 'In the window you chose, the source VM shuts down so nothing changes, and the last few changes are copied.' };
   if (kind === 'boot') return { tone: 'warn', k: 'VM powering on', text: 'The VM powers on in AHV. Downtime is only this final sync plus the power-on.' };
   return { tone: 'ok', k: 'Running on AHV', text: 'Users now work on the AHV copy. The source VM stays powered off until the app owner signs off.' };
@@ -190,6 +190,11 @@ function MoveDiagram({ kind, t }: { kind: PhaseKind; t: number }) {
         <text x={x + 26} y={GRID_Y + 3 * (BS + BG) + 12} class="mig-xs muted">
           {isSrc ? 'its disk' : 'the copy of its disk'}
         </text>
+        {isSrc && kind !== 'boot' && kind !== 'done' && (
+          <text x={x + BOX.w - 26} y={GRID_Y + 3 * (BS + BG) + 12} text-anchor="end" class="mig-xs flow-fill" style={{ fontWeight: 600 }}>
+            {kind === 'seed' ? 'read from a snapshot' : 'changed blocks tracked'}
+          </text>
+        )}
       </g>
     );
   };
@@ -223,7 +228,7 @@ function MoveDiagram({ kind, t }: { kind: PhaseKind; t: number }) {
       })}
       <rect x={380} y={LANE_Y - 36} width={200} height={72} class="ink-fill" />
       <text x={480} y={LANE_Y - 6} text-anchor="middle" class="mig-t" style={{ fill: '#fff' }}>
-        Nutanix Move
+        Move appliance
       </text>
       <text x={480} y={LANE_Y + 16} text-anchor="middle" class="mig-xs" style={{ fill: 'rgba(255,255,255,.85)' }}>
         {kind === 'seed' ? 'copying everything' : kind === 'final' ? 'copying the last changes' : kind === 'boot' || kind === 'done' ? 'copy complete' : 'sending only changes'}
