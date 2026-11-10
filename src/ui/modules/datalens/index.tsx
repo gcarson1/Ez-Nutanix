@@ -217,7 +217,7 @@ function Ransomware() {
       order.map((ph) => [caption(tl, ph).k, caption(tl, ph).text]),
     );
   }, [tl]);
-  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.stopAt + 1, steps });
+  const clock = useClock({ rate: 1.2, duration: tl.end, keys: true, poster: tl.end - 1, steps });
   const s = attackState(tl, clock.t);
   const cap = caption(tl, s.phase);
 

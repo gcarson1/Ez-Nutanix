@@ -271,7 +271,7 @@ export default function Network() {
         ];
   const starts = fail === 'none' ? [0, 2.4, 4.8] : [0, FAIL_AT, MOVED_AT];
   const steps = paced(starts, captions.map((c) => [c.k, c.text]));
-  const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : 3, steps });
+  const clock = useClock({ rate: 1, duration: DURATION[fail], hold: fail === 'none' ? 0 : undefined, keys: true, poster: fail === 'one' ? MOVED_AT + 3 : DURATION[fail] - 0.5, steps });
   useRestartOn(clock, [bond, fail]);
   const t = clock.t;
 

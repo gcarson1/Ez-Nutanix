@@ -131,7 +131,7 @@ export default function Cloud() {
     U.phases.map((p) => p.at),
     U.phases.map((p, k) => [p.k, p.text(P.short), k === 0 ? P.status : '']),
   ).map((st, k) => ({ ...st, label: U.phases[k].k }));
-  const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[2].at + 2.6, steps });
+  const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[3].at + 1.5, steps });
   useRestartOn(clock, [prov, use]);
   const t = clock.t;
   const i = phaseAt(

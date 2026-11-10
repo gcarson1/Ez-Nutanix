@@ -203,7 +203,7 @@ function TierDiagram({ t }: { t: number }) {
 }
 
 export function Tiering() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: P[2] + 3, steps: STEPS });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 1, steps: STEPS });
   const t = clock.t;
   const ph = phaseAt(P, t);
   const line = LINES[ph];

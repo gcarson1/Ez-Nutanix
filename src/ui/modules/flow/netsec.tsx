@@ -345,7 +345,7 @@ export function NetSec() {
     starts,
     starts.map((_, p) => [captionAt(p).k, captionAt(p).text]),
   );
-  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: PHASE + TRY_AT[0] + TRY_FLIGHT + 0.6, steps });
+  const clock = useClock({ rate: 1, duration: LOOP, keys: true, poster: LOOP - 0.5, steps });
   useRestartOn(clock, [mode, quar]);
   const t = clock.t;
   const phase = phaseAt(starts, t);

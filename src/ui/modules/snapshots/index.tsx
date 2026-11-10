@@ -156,7 +156,7 @@ function SnapDiagram({ t }: { t: number }) {
 }
 
 function Story() {
-  const clock = useClock({ rate: 1, duration: END, keys: true, poster: S[5] + 3.5, steps: STEPS });
+  const clock = useClock({ rate: 1, duration: END, keys: true, poster: END - 1, steps: STEPS });
   const t = clock.t;
   const s = stateAt(t);
   const scene = SCENES[s.sc];

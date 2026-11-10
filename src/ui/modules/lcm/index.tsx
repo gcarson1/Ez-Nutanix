@@ -93,7 +93,7 @@ function ClusterUpgrade() {
   const end = sim.end + sim.end / 22;
   const steps = useMemo(() => stepsFrom(end, (t) => caption(sim, lcmStateAt(sim, t))), [sim, end]);
   // With reduced motion the still frame is the second batch, or LCM holding after the failure.
-  const poster = sim.unhealthy ? sim.unhealthy[0] + HA_RESTART_SEC + 600 : (sim.visits[NODES]?.start ?? 0) + 400;
+  const poster = sim.unhealthy ? sim.unhealthy[0] + HA_RESTART_SEC + 600 : end - sim.end / 110;
   const clock = useClock({ rate: sim.end / 22, duration: end, keys: true, poster, steps });
   useRestartOn(clock, [sc]);
   const view = lcmStateAt(sim, clock.t);
