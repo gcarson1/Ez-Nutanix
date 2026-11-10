@@ -308,14 +308,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
             as one unit
           </text>
         </g>
-      ) : (
-        <g>
-          <rect x={PAD} y={SNAP_Y} width={CW - 2 * PAD} height={SNAP_H} class="frame-dash" />
-          <text x={PAD + 14} y={SNAP_Y + 26} class="faint d-sub">
-            app snapshots
-          </text>
-        </g>
-      )}
+      ) : null}
 
       {/* DR sites */}
       <DrBox y={DC_Y} k={dc} warn={metal} head="Your data center" sub="NKP on Nutanix (AHV)" foot={s.dcLine} />
