@@ -73,7 +73,8 @@ test('presenter, glossary and shortcuts open from the keyboard', async ({ page }
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
 });
 
-// Nutanix 2.0 layout: at 1440x900 the picture starts high and the play bar is on screen without scrolling.
+// Nutanix 2.0 layout: at 1440x900 the picture starts high, the caption sits under it (not in the
+// right column), and on animation pages the left column fits the window, so the page never scrolls.
 for (const m of MODULES) {
   test(`module ${m.content.path} fits the first screen`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -86,6 +87,9 @@ for (const m of MODULES) {
       const b = (await bar.boundingBox())!;
       expect(b.y + b.height, 'play bar bottom').toBeLessThanOrEqual(900);
     }
+    await expect(page.locator('.show-side .follow'), 'caption in the right column').toHaveCount(0);
+    // Pages with a fitted picture (not hubs like NCI, which list tiles below) never scroll.
+    if (await page.locator('.show-main.fits').count()) expect(await page.evaluate(() => document.documentElement.scrollHeight - innerHeight), 'page scroll').toBeLessThanOrEqual(0);
   });
 }
 

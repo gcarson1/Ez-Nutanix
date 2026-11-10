@@ -40,6 +40,7 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
       box.classList.toggle('fit', fit);
       const h = String(Math.round(svg.viewBox.baseVal?.height ?? 0));
       if (box.style.getPropertyValue('--vbh') !== h) box.style.setProperty('--vbh', h);
+      if (box.style.getPropertyValue('--vbw') !== w) box.style.setProperty('--vbw', w);
       fits ||= fit;
     });
     m.classList.toggle('fits', fits);

@@ -192,7 +192,9 @@ body { min-height: 100vh; }
   .show-main.fits > * { flex-shrink: 0; }
   .show-main.fits > .show-stage { flex: 1 1 0; display: flex; flex-direction: column; }
   .fits > .show-stage > * { flex-shrink: 0; }
-  .fits > .show-stage > .diagram-scroll.fit { flex: 1 1 0; min-height: calc(var(--vbh, 300) * 0.85px + 2 * var(--sp-2) + 2px); position: relative; overflow: hidden; }
+  /* The floor never asks for more height than the column's width lets the picture use. */
+  .show-main.fits > .show-stage { container-type: inline-size; }
+  .fits > .show-stage > .diagram-scroll.fit { flex: 1 1 0; min-height: calc(min(var(--vbh, 300) * 0.85px, (100cqw - 2 * var(--sp-2) - 2px) * var(--vbh, 300) / var(--vbw, 960)) + 2 * var(--sp-2) + 2px); position: relative; overflow: hidden; }
   .fits > .show-stage > .diagram-scroll.fit > svg.diagram { position: absolute; inset: var(--sp-2); width: calc(100% - 2 * var(--sp-2)); height: calc(100% - 2 * var(--sp-2)); max-width: none; margin: 0; }
   /* The caption box has one height whatever it says, so the picture keeps one size while the
      captions change. It does not clip, so the info tips in a caption open outside it. */
@@ -219,7 +221,6 @@ body { min-height: 100vh; }
 .show-under .follow p.rest { font-size: var(--fs-13); }
 .show-side .show-foot { display: flex; flex-direction: column; gap: var(--sp-5); margin: 0; }
 .show-side > .show-foot:first-child > .kpis:first-child { padding-top: 0; border-top: 0; }
-.show-side .follow { margin: 0; max-width: none; }
 .show-side .points ol { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
 .show-side .points li { padding: var(--sp-2) var(--sp-3); opacity: 1; }
 .side-about { padding-top: var(--sp-4); border-top: 1px solid var(--line); }
