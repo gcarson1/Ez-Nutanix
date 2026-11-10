@@ -3,7 +3,7 @@
 // caption and key numbers (`foot`), anything else the module adds (`side`), and the module's
 // own summary. Below 1100 px wide the right column drops under the picture.
 import { createContext, type ComponentChildren } from 'preact';
-import { useContext, useId } from 'preact/hooks';
+import { useContext, useId, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Clock } from './clock';
 import { Seg, Tip, type SegOption, type Tone } from './controls';
 import { Icon } from './Icon';
@@ -13,9 +13,18 @@ export const ModuleInfo = createContext<{ summary: string } | null>(null);
 
 export function Show({ top, children, foot, side, clock }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren; side?: ComponentChildren; clock?: Clock }) {
   const info = useContext(ModuleInfo);
+  const main = useRef<HTMLDivElement>(null);
+  // Each picture's viewBox width, for the phone rule in app.css that keeps 11 px diagram text from
+  // rendering under 10 px (N2-014). Cheap enough to run after every render; viewBoxes can change.
+  useLayoutEffect(() => {
+    main.current?.querySelectorAll<SVGSVGElement>('.diagram-scroll > svg.diagram').forEach((svg) => {
+      const w = String(Math.round(svg.viewBox.baseVal?.width ?? 0));
+      if (svg.style.getPropertyValue('--vbw') !== w) svg.style.setProperty('--vbw', w);
+    });
+  });
   return (
     <div class="show">
-      <div class="show-main">
+      <div class="show-main" ref={main}>
         {top && <div class="show-top">{top}</div>}
         <div class="show-stage">{children}</div>
       </div>

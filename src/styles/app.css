@@ -555,3 +555,9 @@ body { min-height: 100vh; }
 .logo-plate img { display: block; height: calc(var(--h) * var(--s, 1)); width: auto; max-width: 7.5rem; }
 .logo-plate.table img { max-width: 5rem; }
 .logo-text { font: 700 calc(var(--h) * 0.8) / var(--h) var(--font-head); color: #1b1b1f; white-space: nowrap; }
+
+/* ── phone (N2-014): diagrams keep a readable scale and pan sideways, with a fade on the right ── */
+@media (max-width: 700px) {
+  .show-main .diagram-scroll > svg.diagram[style*='--vbw'] { min-width: calc(var(--vbw) * 0.91px); }
+  .show-main .diagram-scroll { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent); }
+}
