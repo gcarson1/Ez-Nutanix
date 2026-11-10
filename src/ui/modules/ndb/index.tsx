@@ -3,7 +3,7 @@
 // patching moves a fleet to a new software profile. Recovery math and patch behavior come from
 // src/engine/ndb.ts.
 import { useEnum } from '../../../state/route';
-import { lastCaptured, patchDowntime, planRecovery, snapshots, type DbServer, type TmPolicy } from '../../../engine/ndb';
+import { lastCaptured, logCatchups, patchDowntime, planRecovery, snapshots, type DbServer, type TmPolicy } from '../../../engine/ndb';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog, Tabs } from '../../components/show';
@@ -136,6 +136,10 @@ function TimeMachine() {
               </text>
             </g>
           ))}
+          <line x1={l} x2={W - l} y1={176} y2={176} class="ndb-axis" />
+          <text x={l} y={24} class="muted d-sub">
+            Time: the 7-day retention window →
+          </text>
           <text x={l + 4} y={50} class="muted d-sub">
             Daily snapshots
           </text>
@@ -143,9 +147,11 @@ function TimeMachine() {
             <rect key={s} x={sx(s) - 6} y={58} width={12} height={22} class={replay !== null && s === BASE ? 'ndb-snap on' : 'ndb-snap'} />
           ))}
           <text x={l + 4} y={106} class="muted d-sub">
-            Transaction log, copied every 30 min
+            Transaction log: one tick per copy, every 30 min
           </text>
           {logTo > 0 && <rect x={sx(0)} y={113} width={sx(logTo) - sx(0)} height={14} class="ndb-log" />}
+          {/* one tick per log catch-up: each is a copy of the log into Time Machine */}
+          <path d={logCatchups(POLICY, now).map((c) => `M${sx(c).toFixed(1)} 113v14`).join('')} class="ndb-tick" />
           {replay !== null && replay > BASE && <rect x={sx(BASE)} y={134} width={sx(replay) - sx(BASE)} height={10} class="ndb-replay" />}
           {t < SWEEP[1] + 0.05 && (
             <g>
