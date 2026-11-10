@@ -6,6 +6,7 @@ import { useEnum } from '../../../state/route';
 import { useMemo } from 'preact/hooks';
 import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
 import { paced, useClock, useRestartOn } from '../../components/clock';
+import { NodeFrame } from '../../components/parts';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, Tabs, ease, phaseAt, prog } from '../../components/show';
 import GatewayView from './gateway';
@@ -14,27 +15,33 @@ import './style.css';
 type Pt = [number, number];
 
 const W = 960;
-const H = 352;
-const CY = 204;
+const H = 416;
+const CY = 197;
 const BX = 208;
 const APPS = { x: 16, y: CY - 36, w: 176, h: 72 };
 const EP = { x: 244, y: CY - 52, w: 184, h: 104 };
 const EP_CX = EP.x + EP.w / 2;
 const ELBOW = 520;
-const RX = 580;
-const RW = 340;
-const RH = 54;
-const RG = 10;
-const BAR = { x0: 130, x1: 244 };
-const GPU = { dx: 290, dy: 8, s: 38 };
+const RX = 560;
+const RW = 370;
+const RH = 58;
+const RG = 6;
+/** Inside a node frame (offsets from the frame): the pod, its work bar, and the GPU chip. */
+const POD = { dx: 10, dy: 24, w: 116, h: 28 };
+const BAR = { x0: 18, x1: 118 };
+const CHIP = { dx: 134, dy: 24, w: 226, h: 28 };
+/** Example sizes, not a spec: a 48 GB GPU; the big model takes all of it, the small one a 12 GB MIG slice. */
+const GPU_GB = 48;
+const SLICE_GB = 12;
+const SMALL_Y = 344;
 const LOAD = { start: 0.3, flight: 1.5 };
 /** Model copies travel along the top of the site and down its right-hand gutter. */
-const LOAD_Y = 66;
-const GUTTER = 937;
+const LOAD_Y = 58;
+const GUTTER = 940;
 const T = SERVE_TIMES;
 
 const repY = (r: number, n: number) => CY - (n * RH + (n - 1) * RG) / 2 + r * (RH + RG);
-const modelBox = (online: boolean) => (online ? { x: 16, y: 40, w: 176, h: 88 } : { x: 244, y: 56, w: 184, h: 84 });
+const modelBox = (online: boolean) => (online ? { x: 16, y: 40, w: 176, h: 88 } : { x: 244, y: 46, w: 184, h: 84 });
 
 function along(pts: Pt[], f: number): Pt {
   const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
@@ -51,17 +58,26 @@ function along(pts: Pt[], f: number): Pt {
 
 /** Endpoint to a replica's work bar. */
 function fan(r: number, n: number): Pt[] {
-  const y = repY(r, n) + RH / 2;
+  const y = repY(r, n) + POD.dy + 21;
   return [[EP_CX, CY], [ELBOW, CY], [ELBOW, y], [RX + BAR.x0, y]];
 }
 const IN: Pt[] = [[APPS.x + APPS.w, CY], [EP_CX, CY]];
 
-function Hex({ x, y, r, cls }: { x: number; y: number; r: number; cls: string }) {
-  const pts = Array.from({ length: 6 }, (_, i) => {
-    const a = (i * Math.PI) / 3;
-    return `${(x + r * Math.cos(a)).toFixed(1)},${(y + r * Math.sin(a)).toFixed(1)}`;
-  }).join(' ');
-  return <polygon class={cls} points={pts} />;
+/** A GPU chip: whole GPU or MIG slice, with the GPU memory allocated against its capacity. */
+function GpuChip({ x, y, kind, used, cap, off }: { x: number; y: number; kind: string; used: number; cap: number; off?: boolean }) {
+  return (
+    <g style={{ opacity: off ? 0.4 : 1 }}>
+      <rect class="ai-gchip" x={x} y={y} width={CHIP.w} height={CHIP.h} rx={4} />
+      <text class="d-fine" x={x + 8} y={y + 13} style={{ fontWeight: 600 }}>
+        {kind}
+      </text>
+      <text class="d-fine muted" x={x + CHIP.w - 8} y={y + 13} text-anchor="end">
+        {Math.round(used)} GB of {cap} GB
+      </text>
+      <rect class="ai-bar" x={x + 8} y={y + 19} width={CHIP.w - 16} height={5} />
+      <rect class="ai-mem" x={x + 8} y={y + 19} width={(CHIP.w - 16) * (used / GPU_GB)} height={5} />
+    </g>
+  );
 }
 
 /** Where a request (or its answer) is at time t, or null when it is not on screen. */
@@ -71,7 +87,7 @@ function dotAt(j: Job, t: number, n: number): { p: Pt; answer: boolean } | null 
   if (t < j.dispatch) return null; // waiting: drawn in the endpoint's queue
   const path = fan(j.replica, n);
   if (t < j.begin) return { p: along(path, prog(t, j.dispatch, j.begin)), answer: false };
-  const y = repY(j.replica, n) + RH / 2;
+  const y = repY(j.replica, n) + POD.dy + 21;
   if (t < j.done) return { p: [RX + BAR.x0 + (BAR.x1 - BAR.x0) * prog(t, j.begin, j.done), y], answer: false };
   const home = j.done + T.hop;
   if (t < home) return { p: along([[RX + BAR.x1, y], ...path.slice().reverse()], prog(t, j.done, home)), answer: true };
@@ -86,10 +102,10 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
   const loaded = LOAD.start + LOAD.flight;
   const stopped = (r: number) => r === stop.replica && t >= stop.from && t < stop.to;
   const waiting = plan.jobs.filter((j) => t >= j.arrive && t < j.dispatch);
-  const gpuC = (r: number): Pt => [RX + GPU.dx + GPU.s / 2, repY(r, n) + GPU.dy + GPU.s / 2];
+  const gpuC = (r: number): Pt => [RX + CHIP.dx + CHIP.w / 2, repY(r, n) + CHIP.dy + CHIP.h / 2];
   const loadPath = (r: number): Pt[] => {
     const [gx, gy] = gpuC(r);
-    return [[mb.x + mb.w, LOAD_Y], [GUTTER, LOAD_Y], [GUTTER, gy], [gx + GPU.s / 2, gy]];
+    return [[mb.x + mb.w, LOAD_Y], [GUTTER, LOAD_Y], [GUTTER, gy], [gx + CHIP.w / 2, gy]];
   };
 
   return (
@@ -172,33 +188,39 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
         const job = plan.jobs.find((j) => j.replica === r && t >= j.begin && t < j.done);
         const ready = t >= LOAD.start + LOAD.flight + r * 0.08;
         const state = off ? '✕ stopped' : !ready ? 'loading the model' : job ? 'answering' : 'ready';
-        const [gx, gy] = gpuC(r);
+        const a = LOAD.start + r * 0.08 + LOAD.flight;
+        const used = GPU_GB * ease(prog(t, a, a + 0.5));
         return (
-          <g key={r}>
-            <rect class={`node-box${off ? ' down' : ''}`} x={RX} y={y} width={RW} height={RH} />
-            <text class="d-title" x={RX + 14} y={y + 22} style={{ fontWeight: 600 }}>
-              Replica {r + 1}
+          <NodeFrame key={r} x={RX} y={y} w={RW} h={RH} title={`gpu-node-${r + 1}`} status={state} tone={off ? 'bad' : undefined}>
+            <rect class="ai-pod" x={RX + POD.dx} y={y + POD.dy} width={POD.w} height={POD.h} rx={4} style={{ opacity: off ? 0.4 : 1 }} />
+            <text class="d-sub" x={RX + POD.dx + 8} y={y + POD.dy + 13}>
+              Pod · Replica {r + 1}
             </text>
-            <text x={RX + 14} y={y + 43} class={`${off ? 'bad-fill' : 'muted'} d-sub`} style={{ fontWeight: off ? 600 : 400 }}>
-              {state}
-            </text>
-            <rect class="ai-bar" x={RX + BAR.x0} y={y + RH / 2 - 4} width={BAR.x1 - BAR.x0} height={8} />
-            {job && <rect class="ai-bar-on" x={RX + BAR.x0} y={y + RH / 2 - 4} width={(BAR.x1 - BAR.x0) * prog(t, job.begin, job.done)} height={8} />}
-            <rect class="ai-gpu" x={RX + GPU.dx} y={y + GPU.dy} width={GPU.s} height={GPU.s} style={{ opacity: off ? 0.4 : 1 }} />
-            <text x={RX + GPU.dx - 8} y={y + RH / 2 + 4} text-anchor="end" class="muted d-fine">
-              GPU
-            </text>
-            {ready && <Hex x={gx} y={gy} r={12} cls={off ? 'ai-model off' : 'ai-model'} />}
-          </g>
+            <rect class="ai-bar" x={RX + BAR.x0} y={y + POD.dy + 19} width={BAR.x1 - BAR.x0} height={4} />
+            {job && <rect class="ai-bar-on" x={RX + BAR.x0} y={y + POD.dy + 19} width={(BAR.x1 - BAR.x0) * prog(t, job.begin, job.done)} height={4} />}
+            <GpuChip x={RX + CHIP.dx} y={y + CHIP.dy} kind="Whole GPU" used={used} cap={GPU_GB} off={off} />
+          </NodeFrame>
         );
       })}
+
+      {/* another endpoint: a small model on a MIG slice of a GPU */}
+      <text class="muted d-fine" x={RX} y={SMALL_Y - 6}>
+        Another endpoint: a small model that does not need a full GPU
+      </text>
+      <NodeFrame x={RX} y={SMALL_Y} w={RW} h={RH} title={`gpu-node-${n + 1}`} status={t >= loaded ? 'ready' : 'loading the model'}>
+        <rect class="ai-pod" x={RX + POD.dx} y={SMALL_Y + POD.dy} width={POD.w} height={POD.h} rx={4} />
+        <text class="d-sub" x={RX + POD.dx + 8} y={SMALL_Y + POD.dy + 13}>
+          Pod · Embedding
+        </text>
+        <GpuChip x={RX + CHIP.dx} y={SMALL_Y + CHIP.dy} kind="MIG slice" used={SLICE_GB * ease(prog(t, loaded, loaded + 0.5))} cap={GPU_GB} />
+      </NodeFrame>
 
       {/* the model copies flying in */}
       {Array.from({ length: n }, (_, r) => {
         const a = LOAD.start + r * 0.08;
         if (t < a || t >= a + LOAD.flight) return null;
         const [x, y] = along([...loadPath(r), gpuC(r)], ease(prog(t, a, a + LOAD.flight)));
-        return <Hex key={r} x={x} y={y} r={11} cls="ai-model" />;
+        return <rect key={r} class="ai-model" x={x - 9} y={y - 9} width={18} height={18} rx={3} />;
       })}
 
       {/* requests and answers */}
@@ -218,7 +240,7 @@ function EndpointView() {
   const site = SITE[where];
   const load =
     (n === 1 ? 'The replica loads the model' : `Each of the ${n} replicas loads its own copy of the model`) +
-    (site.online ? ', downloaded from NVIDIA Inference Microservices (NIM) or Hugging Face, or uploaded by you.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later.');
+    (site.online ? ', downloaded from NVIDIA Inference Microservices (NIM) or Hugging Face, or uploaded by you, and takes its share of the GPU\u2019s memory.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later. A model that does not need a whole GPU can take a slice instead.');
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, k: 'The model loads', text: load },
     n === 1
@@ -276,14 +298,14 @@ function EndpointView() {
         items={[
           { color: 'var(--flow)', label: 'Request' },
           { color: 'var(--ok)', label: 'Answer' },
-          { color: 'var(--ink)', label: 'Copy of the model on a GPU' },
+          { color: 'var(--ink)', label: 'GPU memory allocated' },
           { color: 'var(--bad)', label: 'Stopped replica' },
         ]}
       />
       <PlayBar
         clock={clock}
         label="Model endpoint animation"
-        extra={<Illus why="Simplified and compressed: real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. The point is how one endpoint spreads requests over replicas." />}
+        extra={<Illus why="Simplified and compressed: real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. GPU sizes and memory figures are examples: a model needs more GPU memory at run time than its file size, and a MIG slice (or vGPU) is how a small model shares a GPU. The point is how one endpoint spreads requests over replicas." />}
       />
     </Show>
   );

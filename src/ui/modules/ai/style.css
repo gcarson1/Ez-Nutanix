@@ -12,17 +12,19 @@
 .diagram .ai-load { fill: none; stroke: var(--ink-line); stroke-width: 1.25; stroke-dasharray: 4 4; }
 .diagram .ai-bar { fill: var(--bg-3); }
 .diagram .ai-bar-on { fill: var(--flow); opacity: 0.45; }
-.diagram .ai-gpu { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .ai-pod { fill: var(--bg); stroke: var(--line-2); }
+.diagram .ai-gchip { fill: var(--bg); stroke: var(--line-2); }
+.diagram .ai-mem { fill: var(--ink); }
 .diagram .ai-model { fill: var(--ink); }
 .diagram .ai-model.off { opacity: 0.35; }
 .diagram .ai-req { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .ai-ans { fill: var(--ok); stroke: var(--bg); stroke-width: 1.5; }
 /* Agent Gateway tab */
-.diagram .ai-chip { fill: var(--bg-2); stroke: var(--line-2); }
-.diagram .ai-chip.on.flow { fill: var(--flow-bg); stroke: var(--flow); }
-.diagram .ai-chip.on.warn { fill: var(--warn-bg); stroke: var(--warn); }
-.diagram .ai-chip.on.bad { fill: var(--bad-bg); stroke: var(--bad); }
-.diagram .ai-chip.on.ok { fill: var(--ok-bg); stroke: var(--ok); }
+.diagram .ai-dot { fill: none; stroke: var(--line-2); stroke-width: 1.5; }
+.diagram .ai-dot.on.flow { fill: var(--flow); stroke: var(--flow); }
+.diagram .ai-dot.on.warn { fill: var(--warn); stroke: var(--warn); }
+.diagram .ai-dot.on.bad { fill: var(--bad); stroke: var(--bad); }
+.diagram .ai-dot.on.ok { fill: var(--ok); stroke: var(--ok); }
 .diagram .gw-down { stroke: var(--bad); }
 .diagram .gw-tool { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .gw-x { fill: none; stroke: var(--bad); stroke-width: 2.5; stroke-linecap: round; }

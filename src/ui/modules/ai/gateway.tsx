@@ -26,7 +26,7 @@ const H = 352;
 const AGENTS = ['Support agent', 'Finance app', 'Coding agent'];
 const agentY = (i: number) => 56 + i * 92;
 const agentCy = (i: number) => agentY(i) + 28;
-const GW = { x: 300, y: 24, w: 280, h: 316 };
+const GW = { x: 290, y: 24, w: 300, h: 316 };
 const UE_Y = 116; // the unified endpoint's lane
 const MCP_Y = 284; // the MCP Gateway's lane, clear of the agents' own wires
 const PROVIDERS = [
@@ -117,13 +117,12 @@ function Box({ x, y, w, h, t, s, cls = 'ai-box', sub }: { x: number; y: number; 
   );
 }
 
-/** A small label inside the gateway that lights up when that capability is at work. */
-function Chip({ x, y, label, on, tone = 'flow' }: { x: number; y: number; label: string; on: boolean; tone?: 'flow' | 'warn' | 'bad' | 'ok' }) {
-  const w = label.length * 6.4 + 18;
+/** One capability in a two-column list inside the gateway; it lights up when it is at work. */
+function Item({ x, y, label, on, tone = 'flow' }: { x: number; y: number; label: string; on: boolean; tone?: 'flow' | 'warn' | 'bad' | 'ok' }) {
   return (
     <g>
-      <rect x={x} y={y} width={w} height={20} rx={3} class={on ? `ai-chip on ${tone}` : 'ai-chip'} />
-      <text x={x + 9} y={y + 14} class={`${on ? undefined : 'muted'} d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
+      <circle cx={x + 5} cy={y + 8} r={4.5} class={on ? `ai-dot on ${tone}` : 'ai-dot'} />
+      <text x={x + 16} y={y + 12} class={`${on ? undefined : 'muted'} d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
         {label}
       </text>
     </g>
@@ -176,17 +175,17 @@ function GatewayDiagram({ t }: { t: number }) {
       <text x={GW.x + 14} y={82} class="muted d-sub">
         one standard API for every model
       </text>
-      <Chip x={GW.x + 14} y={128} label="Semantic routing" on={phase === 1} />
-      <Chip x={GW.x + 144} y={128} label="Fallback" on={down} tone="warn" />
-      <Chip x={GW.x + 14} y={154} label="Rate limit per client" on={denyNow} tone="bad" />
+      <Item x={GW.x + 14} y={116} label="Semantic routing" on={phase === 1} />
+      <Item x={GW.x + 148} y={116} label="Fallback" on={down} tone="warn" />
+      <Item x={GW.x + 14} y={140} label="Rate limit per client" on={denyNow} tone="bad" />
       <text class="d-label" x={GW.x + 14} y={208} style={{ fontWeight: 600 }}>
         MCP Gateway
       </text>
       <text x={GW.x + 14} y={224} class="muted d-sub">
         tools and data for agents
       </text>
-      <Chip x={GW.x + 14} y={236} label="API keys added here" on={keyNow} tone="ok" />
-      <Chip x={GW.x + 150} y={236} label="Tool permissions" on={permNow} tone="bad" />
+      <Item x={GW.x + 14} y={236} label="API keys added here" on={keyNow} tone="ok" />
+      <Item x={GW.x + 148} y={236} label="Tool permissions" on={permNow} tone="bad" />
       {logged.map(({ tr, k }, row) => (
         <text key={k} x={GW.x + 14} y={306 + row * 13} class={`${tr.deny ? 'mono bad-fill' : 'mono muted'} d-fine`} style={{ opacity: prog(t, doneAt(k), doneAt(k) + 0.3) }}>
           {tr.log}
