@@ -184,6 +184,13 @@ body { min-height: 100vh; }
 .show-side .points li { padding: var(--sp-2) var(--sp-3); opacity: 1; }
 .side-about { padding-top: var(--sp-4); border-top: 1px solid var(--line); }
 .side-about h2, .side-sec-h { font-size: var(--fs-12); font-weight: 600; color: var(--muted); margin-bottom: var(--sp-1); }
+.outcomes { list-style: none; padding: 0; margin: var(--sp-3) 0 0; display: grid; gap: var(--sp-3); }
+.outcomes li { display: grid; grid-template-columns: 1.125rem minmax(0, 1fr); gap: var(--sp-2); align-items: start; font-size: var(--fs-14); line-height: 1.45; color: var(--text-2); margin: 0; }
+.outcomes li svg { width: 1.125rem; height: 1.125rem; margin-top: 0.05rem; }
+.outcomes li.ok svg { color: var(--ok); }
+.outcomes li.warn svg { color: var(--warn); }
+.outcomes li.bad svg { color: var(--bad); }
+.outcomes li.bad { color: var(--text); font-weight: 600; }
 .side-about p { font-size: var(--fs-13); color: var(--muted); line-height: 1.5; }
 @media (max-width: 1100px) {
   .show { grid-template-columns: minmax(0, 1fr); }

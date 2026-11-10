@@ -154,6 +154,28 @@ export function Kpis({ items }: { items: KpiItem[] }) {
   );
 }
 
+export interface Outcome {
+  tone: 'ok' | 'warn' | 'bad';
+  text: string;
+}
+
+/** The result of a failure story as a side section: a heading and one row per outcome, icon + text (never color alone). */
+export function Outcomes({ items, title = 'Outcome' }: { items: Outcome[]; title?: string }) {
+  return (
+    <section>
+      <h2 class="side-sec-h">{title}</h2>
+      <ul class="outcomes">
+        {items.map((o) => (
+          <li key={o.text} class={o.tone}>
+            <Icon name={o.tone} />
+            {o.text}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export interface Point {
   k: string;
   /** Which product or component does it, shown under the heading. */

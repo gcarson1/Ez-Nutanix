@@ -6,6 +6,7 @@ import type { JSX } from 'preact';
 import { DRIVE_SLOTS, FULL_AT, G_DRIVES, G_NODES, PER_BLOCK, type GAnchor, type GArcF, type GFrame, type GNodeLook, type GTileF, type GVmF } from './scenarios';
 import type { Slot } from '../cluster-lab/story';
 import { flowDots, pathLength } from '../../components/show';
+import { NodeFrame } from '../../components/parts';
 
 const W = 1000;
 const PAD = 6;
@@ -32,7 +33,7 @@ const TP = 14;
 const TCOLS = 2;
 const NH = DISK_Y + DH + 8;
 const BOTTOM = CARD_Y + NH;
-const H = BOTTOM + 44;
+const H = BOTTOM + 64;
 
 const blockW = PER_BLOCK * NW + (PER_BLOCK - 1) * NODE_GAP + FP * 2;
 const blockX = (g: number) => PAD + g * (blockW + BLOCK_GAP);
@@ -71,6 +72,23 @@ function arcGeom(arc: GArcF, i: number) {
   return { d: `M${a.x} ${a.y} Q${c.x} ${c.y} ${b.x} ${b.y}`, at: (p: number) => quad(a, c, b, p) };
 }
 
+// Draw at most MAX_ARCS arcs; the rest travel together as one thick "N more" arc.
+const MAX_ARCS = 6;
+
+function bundleGeom(rest: GArcF[]) {
+  const avg = (side: 'from' | 'to') => rest.reduce((sum, a) => sum + anchor(a[side]).x, 0) / rest.length;
+  let ax = avg('from');
+  let bx = avg('to');
+  if (Math.abs(ax - bx) < 80) {
+    ax -= 40;
+    bx += 40;
+  }
+  const a = { x: ax, y: BOTTOM };
+  const b = { x: bx, y: BOTTOM };
+  const c = { x: (ax + bx) / 2, y: BOTTOM + 70 };
+  return { d: `M${a.x} ${a.y} Q${c.x} ${c.y} ${b.x} ${b.y}`, at: (p: number) => quad(a, c, b, p), mid: quad(a, c, b, 0.5) };
+}
+
 const WORD: Record<GNodeLook, string> = { up: '', down: 'Down', cvm: 'CVM down' };
 
 function Node({ n, look, tiles, failed }: { n: number; look: GNodeLook; tiles: Map<string, GTileF[]>; failed: string[] }) {
@@ -79,15 +97,7 @@ function Node({ n, look, tiles, failed }: { n: number; look: GNodeLook; tiles: M
   const cvmX = x + NW - 8 - CVM_W;
   return (
     <g class={`gx-node ${look}`}>
-      <rect class="gx-card" x={x} y={y} width={NW} height={NH} />
-      <text class="gx-name" x={x + 8} y={y + 17}>
-        N{n + 1}
-      </text>
-      {look !== 'up' && (
-        <text class={`gx-word ${look}`} x={x + NW - 8} y={y + 17} text-anchor="end">
-          {WORD[look]}
-        </text>
-      )}
+      <NodeFrame x={x} y={y} w={NW} h={NH} title={`N${n + 1}`} status={WORD[look] || undefined} tone={look === 'down' ? 'bad' : look === 'cvm' ? 'warn' : undefined} />
       <g class={`gx-cvm${look === 'down' ? ' down' : look === 'cvm' ? ' stopped' : ''}`}>
         <rect x={cvmX} y={y + VM_Y} width={CVM_W} height={CVM_H} />
         <text x={cvmX + CVM_W / 2} y={y + VM_Y + 14} text-anchor="middle">
@@ -160,7 +170,10 @@ function Vm({ vm }: { vm: GVmF }) {
 }
 
 export function GauntletDiagram({ frame, label }: { frame: GFrame; label: string }) {
-  const arcs = frame.arcs.map((a, i) => ({ a, g: arcGeom(a, i) }));
+  const crowded = frame.arcs.length > MAX_ARCS;
+  const shown = crowded ? frame.arcs.slice(0, MAX_ARCS - 1) : frame.arcs;
+  const rest = crowded ? frame.arcs.slice(MAX_ARCS - 1) : [];
+  const arcs = shown.map((a, i) => ({ a, g: arcGeom(a, i) }));
   const vms = frame.vms.slice().sort((a, b) => Number(!!a.to) - Number(!!b.to));
   const lines: JSX.Element[] = arcs.map(({ a, g }) => <path key={`l-${a.id}`} class={`gx-arc ${a.kind}`} d={g.d} />);
   const dots: JSX.Element[] = [];
@@ -170,6 +183,22 @@ export function GauntletDiagram({ frame, label }: { frame: GFrame; label: string
       dots.push(<circle key={`d-${a.id}-${k}`} class={`gx-dot ${a.kind}`} cx={pt.x} cy={pt.y} r={4} />);
     }),
   );
+  let more: JSX.Element | null = null;
+  if (rest.length) {
+    const g = bundleGeom(rest);
+    lines.push(<path key="l-more" class="gx-arc rebuild more" d={g.d} />);
+    rest.forEach((a) =>
+      a.dots.forEach((p, k) => {
+        const pt = g.at(p);
+        dots.push(<circle key={`d-more-${a.id}-${k}`} class="gx-dot rebuild" cx={pt.x} cy={pt.y} r={4} />);
+      }),
+    );
+    more = (
+      <text class="gx-more d-sub" x={g.mid.x} y={g.mid.y + 17} text-anchor="middle">
+        {rest.length} more
+      </text>
+    );
+  }
   return (
     <svg class="diagram gx-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
       {Array.from({ length: BLOCKS }, (_, g) => {
@@ -192,6 +221,7 @@ export function GauntletDiagram({ frame, label }: { frame: GFrame; label: string
         <Vm key={vm.id} vm={vm} />
       ))}
       <g aria-hidden="true">{dots}</g>
+      {more}
     </svg>
   );
 }

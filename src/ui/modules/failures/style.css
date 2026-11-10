@@ -2,14 +2,6 @@
 .gx > .stage { padding-top: var(--sp-5); }
 
 
-/* outcome pane */
-.gx-outcome { list-style: none; padding: 0; margin: var(--sp-3) 0 0; display: grid; gap: var(--sp-3); }
-.gx-outcome li { display: grid; grid-template-columns: 1.125rem minmax(0, 1fr); gap: var(--sp-2); align-items: start; font-size: var(--fs-14); line-height: 1.45; color: var(--text-2); margin: 0; }
-.gx-outcome li svg { width: 1.125rem; height: 1.125rem; margin-top: 0.05rem; }
-.gx-outcome li.ok svg { color: var(--ok); }
-.gx-outcome li.warn svg { color: var(--warn); }
-.gx-outcome li.bad svg { color: var(--bad); }
-.gx-outcome li.bad { color: var(--text); font-weight: 600; }
 .gx-rail .gx-why { margin-top: var(--sp-2); font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
 .gx-rail .gx-setup { margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--muted); line-height: 1.5; }
 
@@ -22,13 +14,6 @@
 .gx-dia .gx-block { fill: none; stroke: var(--line-2); }
 .gx-dia .gx-block.down { fill: var(--bad-bg); stroke: var(--bad); }
 .gx-dia .gx-blabel { font-size: 11px; font-weight: 600; fill: var(--faint); }
-.gx-dia .gx-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; rx: 6px; transition: fill var(--t-med), stroke var(--t-med); }
-.gx-dia .gx-node.down .gx-card { fill: var(--bad-bg); stroke: var(--bad); }
-.gx-dia .gx-node.cvm .gx-card { stroke: var(--warn); stroke-width: 1.75; }
-.gx-dia .gx-name { font-size: 13px; font-weight: 700; }
-.gx-dia .gx-word { font-size: 11px; font-weight: 600; }
-.gx-dia .gx-word.down { fill: var(--bad); }
-.gx-dia .gx-word.cvm { fill: var(--warn); }
 .gx-dia .gx-cvm rect { fill: var(--ink); }
 .gx-dia .gx-cvm text { fill: #fff; font-size: 11px; font-weight: 700; }
 .gx-dia .gx-cvm.down rect { fill: var(--bad-bg); stroke: var(--bad); }
@@ -61,12 +46,13 @@
 /* data in motion */
 .gx-arc { fill: none; stroke-width: 1.6; stroke-linecap: round; }
 .gx-arc.rebuild { stroke: var(--flow); }
+.gx-arc.more { stroke-width: 4.5; opacity: 0.8; }
+.gx-dia .gx-more { font-weight: 600; fill: var(--flow); }
 .gx-arc.redirect { stroke: var(--flow); stroke-dasharray: 4 3; }
 .gx-dot { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 
 @media (prefers-reduced-motion: reduce) {
   .gx-dia .beat { animation: none; }
-  .gx-dia .gx-card { transition: none; }
 }
 @media (max-width: 900px) {
 }

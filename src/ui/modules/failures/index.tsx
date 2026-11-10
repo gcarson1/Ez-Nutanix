@@ -6,7 +6,7 @@ import './style.css';
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, PlayBar } from '../../components/controls';
-import { Choice, Show } from '../../components/show';
+import { Choice, Outcomes, Show } from '../../components/show';
 import { Icon } from '../../components/Icon';
 import { GauntletDiagram, GauntletLegend } from './GauntletDiagram';
 import { IDS, defFor, frameAt, stepIndex, G_NODES, VMS_PER_NODE, type Copies, type GId } from './scenarios';
@@ -19,8 +19,6 @@ const PICKS: Record<GId, { label: string; icon: string }> = {
   double: { label: 'Two nodes', icon: 'zap' },
   full: { label: 'Nearly full', icon: 'gauge' },
 };
-
-const OUTCOME_ICON = { ok: 'ok', warn: 'warn', bad: 'bad' } as const;
 
 export default function Failures() {
   const [sc, setSc] = useEnum<GId>('sc', 'node', IDS);
@@ -72,17 +70,7 @@ export default function Failures() {
       }
       side={
         <>
-          <section>
-            <h2 class="side-sec-h">Outcome</h2>
-            <ul class="gx-outcome">
-              {def.outcome.map((o) => (
-                <li key={o.text} class={o.tone}>
-                  <Icon name={OUTCOME_ICON[o.tone]} />
-                  {o.text}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <Outcomes items={def.outcome} />
           <section>
             <h2 class="side-sec-h">Why it matters</h2>
             <p class="gx-why">{def.why}</p>
