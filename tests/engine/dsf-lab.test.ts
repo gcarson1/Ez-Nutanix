@@ -189,5 +189,15 @@ describe('every node takes part in a rebuild', () => {
   it('after a drive fails, all four nodes rebuild, its own node included', () => {
     expect(atOnce('drive', 5.7, 11)).toEqual([0, 1, 2, 3]);
   });
+
+  it('CVM failure: the CVM is down, every VM keeps running, I/O is redirected, and all is back at the end', () => {
+    const mid = frameAt('cvm', 8);
+    expect(mid.nodes[1]).toBe('cvmdown');
+    expect(mid.vms.every((v) => v.look === 'run')).toBe(true);
+    expect(mid.arcs.some((a) => a.kind === 'redirect')).toBe(true);
+    const end = frameAt('cvm', SCENARIOS.cvm.duration);
+    expect(end.nodes.every((n) => n === 'up')).toBe(true);
+    for (const tiles of end.tiles.values()) for (const t of tiles) expect(t.look).toBe('copy');
+  });
 });
 

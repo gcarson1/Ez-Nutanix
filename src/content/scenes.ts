@@ -64,6 +64,7 @@ export const SCENES: Scene[] = [
   { path: 'nci/cluster', params: { sc: 'maint' }, group: 'What happens', label: 'Planned shutdown', words: 'maintenance mode host down' },
   { path: 'nci/cluster', params: { sc: 'failover' }, group: 'What happens', label: 'VM failover', words: 'ha high availability restart node failure' },
   { path: 'nci/cluster', params: { sc: 'drive' }, group: 'What happens', label: 'Drive failure', words: 'disk failure rebuild' },
+  { path: 'nci/cluster', params: { sc: 'cvm' }, group: 'What happens', label: 'CVM fails', words: 'controller vm failure iscsi redirection storage controller' },
 
   // ── Cloud Native AOS ──
   { path: 'cnaos', group: 'Kubernetes runs on', label: 'Amazon EKS', words: 'aws kubernetes' },

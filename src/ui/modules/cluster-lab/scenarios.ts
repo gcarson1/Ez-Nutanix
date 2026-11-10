@@ -1,4 +1,4 @@
-// Cluster & DSF Lab: one fixed cluster (4 nodes, 4 VMs and 3 drives per node, RF2) and five
+// Cluster & DSF Lab: one fixed cluster (4 nodes, 4 VMs and 3 drives per node, RF2) and six
 // short, looping stories. The engine decides the data layout, which node HA restarts each VM
 // on, and where every re-created copy lands; this file only paces those results into frames.
 // Pure (no DOM), so the frames are unit tested.
@@ -14,8 +14,8 @@ export const VMS_PER_NODE = 4;
 export const DRIVES = 3;
 /** VM slots drawn per node: 4 home VMs plus room for VMs that arrive. */
 export const SLOTS = 6;
-/** Data tiles a drive can show (4 columns x 5 rows in the diagram). */
-export const TILE_CAP = 20;
+/** Data tiles a drive can show (4 columns x 3 rows in the diagram). */
+export const TILE_CAP = 12;
 
 export const LAB_CFG: Partial<ClusterConfig> = {
   nodes: NODES,
@@ -43,12 +43,12 @@ export const LAB_CFG: Partial<ClusterConfig> = {
 
 // ── frame model ──────────────────────────────────────────────────────────────
 
-export type ScenarioId = 'place' | 'migrate' | 'maint' | 'failover' | 'drive';
-export type NodeLook = 'up' | 'off' | 'entering' | 'maint' | 'returning';
+export type ScenarioId = 'place' | 'migrate' | 'maint' | 'failover' | 'drive' | 'cvm';
+export type NodeLook = 'up' | 'off' | 'entering' | 'maint' | 'returning' | 'cvmdown';
 export type VmLook = 'run' | 'moving' | 'stopped' | 'restarting';
 /** local = copy on the node where its VM runs; copy = any other copy (or every copy, when local isn't the point). */
 export type TileLook = 'local' | 'copy' | 'single' | 'new' | 'off' | 'lost';
-export type ArcKind = 'write' | 'copy' | 'rebuild' | 'localize' | 'read' | 'resync';
+export type ArcKind = 'write' | 'copy' | 'rebuild' | 'localize' | 'read' | 'resync' | 'redirect';
 
 /** Endpoints for arcs. `lane` is the bottom of a node's card, where network traffic arrives. */
 export type Anchor = { k: 'vm'; at: Slot } | { k: 'cvm'; node: number } | { k: 'disk'; disk: string } | { k: 'lane'; node: number };
@@ -56,7 +56,8 @@ export type Anchor = { k: 'vm'; at: Slot } | { k: 'cvm'; node: number } | { k: '
 export interface TileF {
   id: string;
   look: TileLook;
-  dim?: boolean;
+  /** Engine id of the VM whose data this is; the drawing labels it with that VM's number. */
+  vm: number;
 }
 
 export interface VmF {
@@ -67,7 +68,6 @@ export interface VmF {
   to?: Slot;
   p?: number;
   look: VmLook;
-  hl?: boolean;
 }
 
 export interface ArcF {
@@ -90,6 +90,8 @@ export interface Frame {
   arcs: ArcF[];
   /** Show the "one storage pool" bracket under the drives. */
   pool: boolean;
+  /** The VM the story is about right now: it and its data tiles stay bright, everything else dims. */
+  focus?: number;
   /** Short confirmation shown in a node's header in place of its state. */
   tag?: { node: number; text: string };
   /** Nodes sending or receiving a re-created copy right now, marked in their header. */
@@ -111,7 +113,7 @@ export interface Step {
 }
 
 export interface LegendItem {
-  look: TileLook | 'arc-rebuild' | 'arc-localize' | 'arc-read' | 'arc-write';
+  look: TileLook | 'arc-rebuild' | 'arc-localize' | 'arc-read' | 'arc-write' | 'arc-redirect';
   label: string;
 }
 
@@ -184,7 +186,8 @@ export function lab(): Lab {
 }
 
 /** Group visible tiles by drive, keeping a stable bottom-up order (initial copies first, new ones on top). */
-function group(recs: Rec[], t: number, look: (r: Rec) => TileLook | null, dim?: (r: Rec) => boolean): Map<string, TileF[]> {
+function group(recs: Rec[], t: number, look: (r: Rec) => TileLook | null): Map<string, TileF[]> {
+  const items = lab().s0.items;
   const out = new Map<string, TileF[]>();
   for (let n = 0; n < NODES; n++) for (let d = 0; d < DRIVES; d++) out.set(`${n}.${d}`, []);
   for (const r of recs) {
@@ -192,7 +195,7 @@ function group(recs: Rec[], t: number, look: (r: Rec) => TileLook | null, dim?: 
     if (r.goneAt !== undefined && t >= r.goneAt) continue;
     const l = look(r);
     if (!l) continue;
-    out.get(r.disk)!.push({ id: r.id, look: l, dim: dim ? dim(r) : false });
+    out.get(r.disk)!.push({ id: r.id, look: l, vm: items[r.item].vm });
   }
   return out;
 }
@@ -200,8 +203,8 @@ function group(recs: Rec[], t: number, look: (r: Rec) => TileLook | null, dim?: 
 /** Slots that VMs arriving at a node take, in arrival order (after the home slots). */
 const arrivalSlots = (moves: { vm: number; to: number }[]) => arrive(moves, VMS_PER_NODE);
 
-function homeVms(L: Lab, look: (id: number) => VmLook = () => 'run', hl?: number): VmF[] {
-  return L.s0.vms.map((v) => ({ id: v.id, label: L.labels.get(v.id)!, at: L.home.get(v.id)!, look: look(v.id), hl: v.id === hl }));
+function homeVms(L: Lab, look: (id: number) => VmLook = () => 'run'): VmF[] {
+  return L.s0.vms.map((v) => ({ id: v.id, label: L.labels.get(v.id)!, at: L.home.get(v.id)!, look: look(v.id) }));
 }
 
 // ── 1. Data placement ────────────────────────────────────────────────────────
@@ -218,16 +221,11 @@ function placeFrame(t: number): Frame {
   const flashLocal = t >= PLACE.w2[1] && t < PLACE.w2[1] + 1.1;
   const flashRemote = t >= PLACE.copy[1] && t < PLACE.copy[1] + 1.1;
   const vmNode = (it: number) => L.s0.vms[L.s0.items[it].vm].node;
-  const tiles = group(
-    L.recs,
-    t,
-    (r) => {
-      if (r.item === item.id && r.disk === local.disk && flashLocal) return 'new';
-      if (r.item === item.id && r.disk === remote.disk && flashRemote) return 'new';
-      return r.node === vmNode(r.item) ? 'local' : 'copy';
-    },
-    (r) => focus && r.item !== item.id,
-  );
+  const tiles = group(L.recs, t, (r) => {
+    if (r.item === item.id && r.disk === local.disk && flashLocal) return 'new';
+    if (r.item === item.id && r.disk === remote.disk && flashRemote) return 'new';
+    return r.node === vmNode(r.item) ? 'local' : 'copy';
+  });
   const at = L.home.get(vm)!;
   const arcs: ArcF[] = [];
   if (t >= PLACE.w1[0] && t < PLACE.w1[1]) arcs.push({ id: 'w1', kind: 'write', from: { k: 'vm', at }, to: { k: 'cvm', node: at.node }, dots: [prog(t, PLACE.w1[0], PLACE.w1[1])] });
@@ -236,10 +234,11 @@ function placeFrame(t: number): Frame {
     arcs.push({ id: 'cp', kind: 'copy', from: { k: 'disk', disk: local.disk }, to: { k: 'disk', disk: remote.disk }, dots: t < PLACE.copy[1] ? [prog(t, PLACE.copy[0], PLACE.copy[1])] : [] });
   return {
     nodes: Array(NODES).fill('up'),
-    vms: homeVms(L, () => 'run', focus ? vm : undefined),
+    vms: homeVms(L),
     tiles,
     failedDisks: [],
     arcs,
+    focus: focus ? vm : undefined,
     pool: t < 3.5 || t >= 10.5,
     tag: t >= PLACE.ok[0] && t < PLACE.ok[1] ? { node: at.node, text: 'Write confirmed' } : undefined,
   };
@@ -297,21 +296,15 @@ function migrateFrame(t: number): Frame {
   const home = L.home.get(vm)!;
   const arrived = t >= MIG.fly[1];
   const vmNodeNow = arrived ? MIG.to : home.node;
-  const mine = (r: Rec) => L.s0.items[r.item].vm === vm;
   const born = new Map(P.moves.map((m) => [`${m.item}.m`, m.end]));
-  const tiles = group(
-    P.recs,
-    t,
-    (r) => {
-      const b = born.get(r.id);
-      if (b !== undefined && t - b < 1.1) return 'new';
-      const owner = L.s0.items[r.item].vm;
-      const ownerNode = owner === vm ? vmNodeNow : L.s0.vms[owner].node;
-      return r.node === ownerNode ? 'local' : 'copy';
-    },
-    (r) => !mine(r),
-  );
-  const vms = homeVms(L, () => 'run', vm).map((v) => {
+  const tiles = group(P.recs, t, (r) => {
+    const b = born.get(r.id);
+    if (b !== undefined && t - b < 1.1) return 'new';
+    const owner = L.s0.items[r.item].vm;
+    const ownerNode = owner === vm ? vmNodeNow : L.s0.vms[owner].node;
+    return r.node === ownerNode ? 'local' : 'copy';
+  });
+  const vms = homeVms(L).map((v) => {
     if (v.id !== vm) return v;
     if (t < MIG.fly[0]) return v;
     if (!arrived) return { ...v, to: P.dest, p: ease(prog(t, MIG.fly[0], MIG.fly[1])), look: 'moving' as VmLook };
@@ -346,7 +339,7 @@ function migrateFrame(t: number): Frame {
       if (disk) arcs.push({ id: `rl2${it.id}`, kind: 'read', from: { k: 'disk', disk }, to: { k: 'vm', at }, dots: [], flow: t + it.id * 0.9 });
     }
   }
-  return { nodes: Array(NODES).fill('up'), vms, tiles, failedDisks: [], arcs, pool: false };
+  return { nodes: Array(NODES).fill('up'), vms, tiles, failedDisks: [], arcs, pool: false, focus: vm };
 }
 
 // ── 3. Planned shutdown (maintenance) ────────────────────────────────────────
@@ -543,6 +536,26 @@ function driveFrame(t: number): Frame {
   return { nodes: Array(NODES).fill('up'), vms: homeVms(L), tiles, failedDisks: failed ? [DRIVE.disk] : [], arcs, pool: false, rebuilding: rebuildingNodes(P.rebuilds, t) };
 }
 
+// ── 6. CVM failure ───────────────────────────────────────────────────────────
+
+const CVMF = { node: 1, serve: 2, at: 2, redirect: 5, back: 13.5 } as const;
+
+function cvmFrame(t: number): Frame {
+  const L = lab();
+  const down = t >= CVMF.at && t < CVMF.back;
+  const nodes: NodeLook[] = Array.from({ length: NODES }, (_, n) => (n === CVMF.node && down ? 'cvmdown' : 'up'));
+  // The host's VMs keep running, but its CVM owns the drives: copies on them are offline while it is down.
+  const partners = new Set(L.s0.items.filter((it) => it.members.some((m) => m.node === CVMF.node)).map((it) => it.id));
+  const tiles = group(L.recs, t, (r) => {
+    if (!down) return 'copy';
+    if (r.node === CVMF.node) return 'off';
+    return partners.has(r.item) ? 'single' : 'copy';
+  });
+  const redirected = t >= CVMF.redirect && t < CVMF.back;
+  const arcs: ArcF[] = redirected ? [{ id: 'rd', kind: 'redirect', from: { k: 'lane', node: CVMF.node }, to: { k: 'cvm', node: CVMF.serve }, dots: [], flow: t }] : [];
+  return { nodes, vms: homeVms(L), tiles, failedDisks: [], arcs, pool: false, tag: redirected ? { node: CVMF.serve, text: 'Serving Node 2’s I/O' } : undefined };
+}
+
 // ── scenario copy ────────────────────────────────────────────────────────────
 
 
@@ -660,9 +673,32 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     duration: 15,
     poster: 8,
   },
+  cvm: {
+    id: 'cvm',
+    label: 'CVM fails',
+    icon: 'server',
+    title: 'CVM failure',
+    lede: 'A Controller VM stops but its host does not. The host’s storage I/O is redirected to another node’s CVM and the VMs keep running.',
+    steps: [
+      { at: 0, label: 'Cluster healthy', text: 'A healthy cluster: each host sends its VMs’ storage I/O to the CVM on its own node.' },
+      { at: 2, label: 'Node 2’s CVM fails', text: 'The CVM on Node 2 stops. The host and its 4 VMs keep running. The copies on Node 2’s drives go offline with their CVM.' },
+      { at: 5, label: 'I/O is redirected', text: 'On AHV, iSCSI redirection sends the host’s I/O to another CVM. Here Node 3’s CVM serves Node 2’s VMs over the network, with some extra latency.' },
+      { at: 10, label: 'VMs keep running', text: 'No VM restarts and nobody steps in. Every piece of data is still readable from its other copy.' },
+      { at: 13.5, label: 'CVM returns', text: 'When Node 2’s CVM is healthy again, the host’s storage sessions move back to it.' },
+    ],
+    why: 'Losing a Controller VM is not losing a host: the VMs on it keep running, and their storage requests are answered by a CVM elsewhere in the cluster.',
+    legend: [
+      { look: 'copy', label: 'Copy of a piece of data' },
+      { look: 'single', label: 'Only one copy online' },
+      { look: 'off', label: 'Offline copy' },
+      { look: 'arc-redirect', label: 'Host I/O redirected to another CVM' },
+    ],
+    duration: 17,
+    poster: 8,
+  },
 };
 
-export const ORDER: ScenarioId[] = ['place', 'migrate', 'maint', 'failover', 'drive'];
+export const ORDER: ScenarioId[] = ['place', 'migrate', 'maint', 'failover', 'drive', 'cvm'];
 
 export function frameAt(id: ScenarioId, t: number): Frame {
   switch (id) {
@@ -676,5 +712,7 @@ export function frameAt(id: ScenarioId, t: number): Frame {
       return failoverFrame(t);
     case 'drive':
       return driveFrame(t);
+    case 'cvm':
+      return cvmFrame(t);
   }
 }

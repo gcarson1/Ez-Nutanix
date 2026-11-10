@@ -1,4 +1,4 @@
-// Cluster & DSF Lab: one fixed 4-node cluster and five stories, picked from the buttons above
+// Cluster & DSF Lab: one fixed 4-node cluster and six stories, picked from the buttons above
 // the picture. Each story plays on a loop, slowing down in steps with more to read, with pause
 // and scrub; the steps, caption and why-it-matters sit in the right-hand column.
 import { useMemo } from 'preact/hooks';
@@ -10,6 +10,9 @@ import { Choice, Show } from '../../components/show';
 import { Icon } from '../../components/Icon';
 import { LabDiagram, LabLegend } from './LabDiagram';
 import { DRIVES, NODES, ORDER, SCENARIOS, VMS_PER_NODE, frameAt, stepAt, type ScenarioId } from './scenarios';
+
+const FINE = 'Time is compressed so each story plays in seconds. In a real cluster, HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Each block stands for a slice of the data of the VM whose number it shows.';
+const CVM_FINE = ' The mechanism depends on the hypervisor: this lab is AHV, which uses iSCSI redirection. ESXi and Hyper-V do the same job with CVM autopathing.';
 
 export default function ClusterLab() {
   const [sc, setSc] = useEnum<ScenarioId>('sc', 'place', ORDER);
@@ -65,7 +68,7 @@ export default function ClusterLab() {
       <PlayBar
         clock={clock}
         label={`${def.title} animation`}
-        extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
+        extra={<Illus why={FINE + (sc === 'cvm' ? CVM_FINE : '')} />}
       />
     </Show>
   );

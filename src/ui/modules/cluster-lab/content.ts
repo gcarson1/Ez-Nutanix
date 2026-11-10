@@ -4,13 +4,14 @@ export const content: ModuleContent = {
   path: 'nci/cluster',
   title: 'Cluster & DSF Lab',
   tag: 'Nutanix Cloud Infrastructure',
-  summary: 'The Distributed Storage Fabric (DSF) keeps VMs running and data protected through five everyday events on one 4-node cluster.',
+  summary: 'The Distributed Storage Fabric (DSF) keeps VMs running and data protected through six everyday events on one 4-node cluster.',
   priority: 'P0',
   talk: [
     'Start with Data placement. Each node is a server running the hypervisor, the user VMs and one Controller VM (CVM). The CVMs pool every drive into one storage fabric, so there is no separate array.',
     'Every write is saved twice before it is confirmed: one copy on the VM’s own node, one on another node. That is RF2 (replication factor 2), the default.',
     'Live migration: the VM keeps running on its new node, its first reads cross the network, and the data it reads is copied to the new node (data locality).',
     'Planned shutdown: VMs move off live, the node is serviced, and data stays available from its other copy. This is what LCM does for each node during an upgrade.',
+    'CVM failure: the host and its VMs keep running. On AHV, iSCSI redirection sends the host’s I/O to another CVM until its own CVM is back.',
     'VM failover and drive failure: high availability (HA) restarts VMs on the other nodes, as far as the HA settings and free memory allow, and every surviving node re-creates the missing copies at once. Nobody has to step in.',
   ],
   numbers: [
@@ -41,6 +42,7 @@ export const content: ModuleContent = {
     'Planned shutdown: VMs move live, then Node 3 catches up when it returns.',
     'VM failover: HA restarts Node 2’s VMs while every node re-creates the missing copies.',
     'Drive failure: the rebuild is shared by every node, not funneled into one spare.',
+    'CVM failure: Node 2’s VMs keep running while Node 3’s CVM answers their I/O.',
     'Then open Failure Gauntlet for RF3, block and nearly-full cases.',
   ],
   then: ['nci/failures'],

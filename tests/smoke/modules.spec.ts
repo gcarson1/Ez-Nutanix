@@ -110,7 +110,7 @@ test('cluster lab: scenario buttons sit above the picture and switch the story',
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/nci/cluster`);
   const pick = page.getByRole('group', { name: 'What happens' });
-  for (const name of ['Data placement', 'Live migration', 'Planned shutdown', 'VM failover', 'Drive failure']) {
+  for (const name of ['Data placement', 'Live migration', 'Planned shutdown', 'VM failover', 'Drive failure', 'CVM fails']) {
     await expect(pick.getByRole('button', { name })).toBeVisible();
   }
   const pickBox = await pick.boundingBox();
