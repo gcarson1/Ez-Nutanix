@@ -2,8 +2,7 @@
 // panel, glossary, shortcuts and about dialogs, toasts and global keyboard shortcuts.
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { useRoute, getRoute, replaceParams, replacePath } from '../../state/route';
-import { KEYS, PRESETS, clearedScenario, scenarioParams } from '../../state/scenario';
+import { useRoute, getRoute, replacePath } from '../../state/route';
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
@@ -108,8 +107,7 @@ const LANDING_NOTES = {
   talk: [
     'One platform for every workload: VMs, containers, databases, files and objects, and AI, on premises, at the edge and in public cloud.',
     'Talk bottom-up: the infrastructure (NCI) first, then the services that run on it, then the management layer above many clusters.',
-    'Every pane opens a module that shows how that part works, with one or two presets and a short looping animation.',
-    'On Protection & Capacity, the Presets menu in the top bar loads a cluster size that matches the customer.',
+    'Every pane opens a module that shows how that part works, with one or two choices and a short looping animation.',
   ],
   qa: [
     { q: 'Is this all one product?', a: 'It is one platform with separately licensed products. The infrastructure layer (NCI) is the foundation; the services and management products build on it and on each other.' },
@@ -357,21 +355,7 @@ function crumbsFor(def: ModuleDef | undefined): { label: string; path: string }[
   return out;
 }
 
-/** Modules that read the shared cluster size, where the top bar shows Presets. */
-const PRESET_PATHS = ['nci/capacity'];
 const authors = CONFIG.authors ?? [];
-
-function applyPreset(id: string) {
-  const p = PRESETS.find((x) => x.id === id);
-  if (!p) return;
-  // Presets show only on Protection & Capacity, so the preset rewrites this page's params in one step,
-  // landing on the Copies tab where a cluster size applies (no history entry, no scroll). The node count
-  // is written even when it equals the default, because Protection & Capacity opens on 3 nodes otherwise.
-  const params: Record<string, string | null | undefined> = { ...getRoute().params, ...clearedScenario(), ...scenarioParams(p.cfg), tab: undefined, aw: undefined };
-  if (p.cfg.nodes !== undefined) params[KEYS.nodes] = String(p.cfg.nodes);
-  replaceParams(Object.fromEntries(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === 'string' && e[1] !== '')));
-  toast(`Preset: ${p.label}`);
-}
 
 type Panel = 'presenter' | 'glossary' | null;
 type Dialog = 'keys' | 'about' | 'jump' | null;
@@ -494,32 +478,6 @@ export function App() {
                 <Icon name="back" />
                 <span class="lbl">{def.parent ? 'Back' : 'Back to platform'}</span>
               </button>
-            )}
-            {/* Presets size the shared cluster, so they show only on the modules that use it. */}
-            {def && PRESET_PATHS.includes(def.content.path) && (
-              <>
-                <label class="sr-only" for="preset">
-                  Scenario preset
-                </label>
-                <select
-                  id="preset"
-                  class="input preset"
-                  value=""
-                  onChange={(e) => {
-                    const v = (e.target as HTMLSelectElement).value;
-                    (e.target as HTMLSelectElement).value = '';
-                    if (v) applyPreset(v);
-                  }}
-                >
-                  <option value="">Presets…</option>
-                  {PRESETS.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-                <span class="bar-div" />
-              </>
             )}
             <button type="button" class={`tbtn${panel === 'presenter' ? ' on' : ''}`} onClick={() => setPanel(panel === 'presenter' ? null : 'presenter')} title="Presenter notes (P)" aria-pressed={panel === 'presenter'}>
               <Icon name="podium" />

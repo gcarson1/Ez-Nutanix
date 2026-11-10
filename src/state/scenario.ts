@@ -95,20 +95,3 @@ export function setScenario(patch: Partial<ClusterConfig>) {
   setParams(scenarioParams(patch));
 }
 
-export interface Preset {
-  id: string;
-  label: string;
-  cfg: Partial<ClusterConfig>;
-}
-
-export const PRESETS: Preset[] = [
-  { id: 'edge3', label: '3-node edge (RF2)', cfg: { nodes: 3, nodesPerBlock: 1, rf: 2, ft: 2, vms: 12, drivesPerNode: 4 } },
-  { id: 'start4', label: '4-node starter (RF2)', cfg: { nodes: 4, nodesPerBlock: 4, rf: 2, ft: 2, vms: 16 } },
-  { id: 'prod8', label: '8-node production (RF2)', cfg: { nodes: 8, nodesPerBlock: 2, rf: 2, ft: 2, vms: 32 } },
-  { id: 'rf3ec12', label: '12-node RF3', cfg: { nodes: 12, nodesPerBlock: 2, rf: 3, ft: 3, vms: 48 } },
-];
-
-/** Every cluster key, mapped to null: used by Reset and before applying a preset. */
-export function clearedScenario(): Record<string, null> {
-  return Object.fromEntries(Object.values(KEYS).map((k) => [k, null]));
-}

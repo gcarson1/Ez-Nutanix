@@ -529,7 +529,6 @@ body { min-height: 100vh; }
 
 /* ── shell additions ──────────────────────────────────────────────── */
 .bar-r { gap: var(--sp-1); }
-.input.preset { height: var(--h-sm); width: auto; max-width: 13rem; padding: 0 var(--sp-6) 0 var(--sp-2); font-size: var(--fs-13); }
 ::view-transition-old(hero), ::view-transition-new(hero) { animation-duration: var(--t-slow); animation-timing-function: var(--ease); height: 100%; object-fit: cover; }
 ::view-transition-group(hero) { animation-duration: var(--t-slow); animation-timing-function: var(--ease); }
 .tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-14); }
@@ -540,7 +539,6 @@ body { min-height: 100vh; }
 .sec-h { font-size: var(--fs-18); margin: var(--sp-8) 0 var(--sp-3); }
 .sec-h:first-child { margin-top: 0; }
 .lede { color: var(--text-2); font-size: var(--fs-16); max-width: var(--measure); }
-@media (max-width: 600px) { .input.preset { max-width: 8rem; } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
 .btn svg, .tbtn svg { width: 1rem; height: 1rem; flex: none; }
 .btn { gap: var(--sp-2); }

@@ -27,7 +27,6 @@ test('landing page renders every pane and opens a module', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(FILE);
   await expect(page.getByRole('heading', { name: /One Platform For All Apps/ })).toBeVisible();
-  await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
   for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'AWS', 'Azure', 'Google Cloud', 'OEM of your choice']) {
     await expect(page.getByRole('button', { name: new RegExp(name) }).first()).toBeVisible();
   }
@@ -163,16 +162,6 @@ test('OEM of your choice opens the hardware page with every vendor', async ({ pa
   expect(errors).toEqual([]);
 });
 
-test('Presets show only on the modules that use the shared cluster', async ({ page }) => {
-  await page.goto(`${FILE}#/nci/capacity`);
-  await expect(page.getByLabel('Scenario preset')).toBeVisible();
-  for (const path of ['nkp', 'nci/failures']) {
-    await page.goto(`${FILE}#/${path}`);
-    await expect(page.locator('.mod-head h1')).toBeVisible();
-    await expect(page.getByLabel('Scenario preset')).toHaveCount(0);
-  }
-});
-
 test('failure gauntlet: failure buttons and steps sit above the picture; RF choice only for two nodes', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/nci/failures`);
@@ -206,8 +195,8 @@ test('scenario state round-trips through the URL', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();
   expect(page.url()).toContain('nodes=12');
-  await page.getByLabel('Scenario preset').selectOption({ label: '4-node starter (RF2)' });
-  await expect.poll(() => page.url()).toContain('nodes=4');
+  await page.getByRole('group', { name: 'Nodes' }).getByRole('button', { name: '8', exact: true }).click();
+  await expect.poll(() => page.url()).toContain('nodes=8');
 });
 
 test('playback speed: the 1x button picks a speed every animation shares', async ({ page }) => {
