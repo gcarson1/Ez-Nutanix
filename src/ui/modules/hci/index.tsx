@@ -6,14 +6,15 @@
 import './style.css';
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { NodeFrame } from '../../components/parts';
 import { Kpis, Points, Show, ease, flowDots, pathLength, phaseAt, prog, type Point } from '../../components/show';
 
 const P = [0, 3.4, 6.8, 10.6, 14.0, 17.4, 21.2, 24.0, 26.4, 29.6];
 const END = 32.8;
 
-const PHASES = ['Three tiers', 'A console per tier', 'Adding a host', 'Three tiers, one node', 'Inside a node', 'Three nodes, one cluster', 'Adding a node', 'Data rebalances', 'Growing node by node', 'Controllers grow with it'];
+const PHASES = ['A typical three-tier design', 'A console per tier', 'Adding a host', 'Three tiers, one node', 'Inside a node', 'Three nodes, one cluster', 'Adding a node', 'Data rebalances', 'Growing node by node', 'Controllers grow with it'];
 const CAPTIONS = [
-  'A traditional design runs three tiers: servers for compute on top-of-rack Ethernet switches, a separate storage network of two Fibre Channel switches, and a storage array with two controllers, LUNs and shelves of drives.',
+  'A typical three-tier design runs three tiers (legacy designs differ by vendor): servers for compute on top-of-rack Ethernet switches, a separate storage network of two Fibre Channel switches, and a storage array with two controllers, LUNs and shelves of drives.',
   'Each tier is run on its own: a server console for hosts and VMs, a SAN console for the switches, and an array console for LUNs. Fibre Channel takes specialist skills.',
   'Adding a host touches every tier: cable its HBAs to both switches, zone it on each fabric, mask the array’s LUNs to it, then rescan its storage.',
   'Hyperconverged infrastructure folds the tiers into each server: the array’s controllers become software, the Controller VM (CVM), the drives move inside and three consoles become one, Prism.',
@@ -74,6 +75,8 @@ const W = 720;
 const H = 364;
 /** Room left of the drawing for the 3-tier labels (COMPUTE, NETWORKING, STORAGE). */
 const GUT = 170;
+/** Height once the 3-tier parts are gone: the cluster and its pool labels only. */
+const H_HCI = 290;
 type R = { x: number; y: number; w: number; h: number };
 type Pt = [number, number];
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
@@ -91,6 +94,7 @@ const CON = [
 ];
 /** The tier each console runs, outlined as the console arrives and labeled on the left. */
 const TIER_L = ['Compute', 'Networking', 'Storage'];
+const TIER_M = ['Cabling, rescans', 'Zoning, per fabric', 'LUN masking'];
 const TIER: R[] = [
   { x: 1, y: 78, w: W - 2, h: 96 },
   { x: 34, y: 192, w: 652, h: 36 },
@@ -152,6 +156,8 @@ const nx = (i: number) => i * (NW + 12);
 const UP = NW - 5;
 /** Where a host's or node's uplink to the top-of-rack switches leaves its frame. */
 const upX = (r: R) => r.x + r.w * (UP / NW);
+/** The storage pool band runs from just inside the first drive to just past the last drive of the last node. */
+const DRV_END = 10 + 3 * 29.6 + 24 + 6;
 const BIG = { x: 96, y: NODE_Y, s: 1.6 }; // the one node, before the cluster
 
 /** Every part of a node at (ox, oy), scaled by s; the morph, the big node and the cluster all use it. */
@@ -301,14 +307,14 @@ function NodeBody({ g, n, sel, vms = 1, fold }: { g: NodeGeom; n: number; sel?: 
   const ahvAt = g.pt(18, 93);
   return (
     <>
-      <rect {...box(frame)} class={`node-box${sel ? ' sel' : ''}`} />
+      {fold ? <rect {...box(frame)} class={`node-box${sel ? ' sel' : ''}`} /> : <NodeFrame x={frame.x} y={frame.y} w={frame.w} h={frame.h} title={`Node ${n}`} tone={sel ? 'flow' : undefined} />}
       {fold && fold.san > 0 && (
         <g style={{ opacity: fold.san }}>
           <Hba g={fold.src} />
         </g>
       )}
       {fold && fadeOut(kh) > 0 && <HostHead r={frame} i={0} o={fadeOut(kh)} />}
-      {fadeIn(kh) > 0 && (
+      {fold && fadeIn(kh) > 0 && (
         <text x={head[0]} y={head[1]} style={{ fontSize: `${g.fs(13)}px`, fontWeight: 600, opacity: fadeIn(kh) }}>
           Node {n}
         </text>
@@ -363,37 +369,12 @@ function Drives({ g, fold, label = 1, used }: { g: NodeGeom; fold?: number; labe
   );
 }
 
-/** Storage controllers side by side: one CVM per node in the cluster, against the array's fixed pair. */
-function Controllers({ n, o, hl }: { n: number; o: number; hl: boolean }) {
-  const y = 318;
-  const row = (dy: number, label: string, count: number, note: string) => (
-    <g>
-      <text x={2} y={y + dy + 11} class={`${hl ? undefined : 'muted'} d-sub`} style={{ fontWeight: hl ? 600 : undefined }}>
-        {label}
-      </text>
-      {Array.from({ length: count }, (_, k) => (
-        <rect key={k} x={118 + k * 20} y={y + dy} width={14} height={14} class="cvm" />
-      ))}
-      <text x={118 + count * 20 + 6} y={y + dy + 11} class="mono d-sub">
-        {count} <tspan class="muted">{note}</tspan>
-      </text>
-    </g>
-  );
-  return (
-    <g style={{ opacity: o }}>
-      <text x={2} y={y - 8} class="muted d-fine">
-        Storage controllers
-      </text>
-      {row(0, 'Nutanix cluster', n, 'one CVM per node')}
-      {row(20, '3-tier array', 2, 'however many hosts share them')}
-    </g>
-  );
-}
-
 function HciDiagram({ t }: { t: number }) {
   const phase = phaseAt(P, t);
   const tiers = t < FOLD; // before the fold, host 1, the controllers and the shelf drives belong to the 3-tier scene
   const out = (a: number, len: number) => 1 - prog(t, a, a + len);
+  // room on the left for the tier labels only while they show; after the fold the cluster is centered
+  const gut = GUT * out(FOLD - 0.2, 0.8);
   // the fold: 3-tier parts fade or fly into the node
   const sanOut = out(FOLD, 0.8);
   const hostOut = out(FOLD, 0.6);
@@ -425,14 +406,13 @@ function HciDiagram({ t }: { t: number }) {
   const passOut = out(P[5], 0.4);
   const slots = prog(t, 18.6, 19.0);
   const firstEmpty = nodes.findIndex((n, i) => i >= 3 && n.k <= 0);
-  const net = ease(prog(t, 19.4, 20.0));
   const tor = ease(prog(t, 0, 0.5));
   // host 1's uplink stays with it as it folds into the node; hosts 2-4 fade with their tier
   const upK = HOST_IN.map((a) => ease(prog(t, a + 0.5, a + 0.9)));
   const frame1 = tiers ? hosts[0].frame : fold ? lerpR(fold.src.frame, nodes[0].g.frame, ease(fold.host)) : nodes[0].g.frame;
   // the pool stretches over to each node as it joins: 3 nodes first, then 4 and 5
   let pool = 0;
-  for (const [i, nd] of [[2, NODES[0]], [3, NODES[3]], [4, NODES[4]]] as const) pool += (nx(i) + NW - pool) * ease(prog(t, nd.pool, nd.pool + 0.8));
+  for (const [i, nd] of [[2, NODES[0]], [3, NODES[3]], [4, NODES[4]]] as const) pool += (nx(i) + DRV_END - pool) * ease(prog(t, nd.pool, nd.pool + 0.8));
   const inPool = NODES.filter((nd) => t >= nd.pool).length;
   const linked = NODES.filter((nd) => t >= nd.link).length;
   const copies = COPY_AT.filter((a) => t >= a).length;
@@ -441,7 +421,7 @@ function HciDiagram({ t }: { t: number }) {
   return (
     <svg
       class="diagram hci-dia"
-      viewBox={`${-GUT} 0 ${W + GUT} ${H}`}
+      viewBox={`${-GUT / 2 - gut / 2} 0 ${W + GUT} ${lerp(H_HCI, H, out(17.6, 1.0))}`}
       role="img"
       aria-label={
         phase < 3
@@ -458,6 +438,18 @@ function HciDiagram({ t }: { t: number }) {
           o > 0 && (
             <text key={j} x={-20} y={r.y + r.h / 2 + 7} text-anchor="end" class="hci-tier-l" style={{ opacity: o }}>
               {TIER_L[j]}
+            </text>
+          )
+        );
+      })}
+
+      {/* what each tier makes you manage: a short list that empties as the tiers fold */}
+      {TIER.map((r, j) => {
+        const o = prog(t, [0, 1.0, 1.3][j] + 0.3, [0, 1.0, 1.3][j] + 0.8) * out(FOLD, 0.6);
+        return (
+          o > 0 && (
+            <text key={j} x={-20} y={r.y + r.h / 2 + 25} text-anchor="end" class="muted d-fine" style={{ opacity: o }}>
+              {TIER_M[j]}
             </text>
           )
         );
@@ -520,7 +512,7 @@ function HciDiagram({ t }: { t: number }) {
             <g key={f}>
               <rect x={x} y={SW_Y} width={SW_W} height={SW_H} rx={3} class="hci-sw" />
               <text class="d-sub" x={x + 12} y={SW_Y + 16}>
-                SAN switch · fabric {f ? 'B' : 'A'}
+                FC switch {f ? 'B' : 'A'} · SAN
               </text>
               <text x={x + SW_W - 12} y={SW_Y + 16} text-anchor="end" class={`${zoning ? 'mono' : 'mono muted'} d-fine`} style={{ fontWeight: zoning ? 600 : undefined }}>
                 {t >= TASK[1].at ? 'zone: host 4' : 'FC'}
@@ -545,8 +537,13 @@ function HciDiagram({ t }: { t: number }) {
             <rect key={j} {...box(s)} rx={2} class="hci-shelf" />
           ))}
           {SHELF.map((_, s) => Array.from({ length: 10 }, (_, k) => (tiers || k > 1) && <rect key={`${s}-${k}`} {...box(shelfDrive(s, k))} class="disk" />))}
-          <text x={54} y={354} class="muted d-sub">
-            Storage array · 2 controllers · LUNs · drive shelves
+          {SHELF.map((s, j) => (
+            <text key={j} x={s.x} y={s.y + 30} class="muted d-fine">
+              Disk shelf {j + 1}
+            </text>
+          ))}
+          <text x={ARR.x + ARR.w - 14} y={SHELF[0].y + 30} text-anchor="end" class="muted d-fine">
+            Storage array
           </text>
         </g>
       )}
@@ -694,7 +691,7 @@ function HciDiagram({ t }: { t: number }) {
               </g>
             );
           })}
-          {pool > 0 && <rect x={0} y={NODE_Y + 102} width={pool} height={26} rx={3} class="ink-soft" stroke="var(--ink-line)" />}
+          {pool > 0 && <rect x={4} y={NODE_Y + 102} width={pool - 4} height={26} rx={3} class="ink-soft" stroke="var(--ink-line)" />}
           {nodes.map(
             ({ k, g }, i) =>
               k > 0 && (
@@ -750,7 +747,6 @@ function HciDiagram({ t }: { t: number }) {
           each write kept on two nodes (RF2)
         </text>
       )}
-      {!tiers && net > 0 && <Controllers n={linked} o={net} hl={phase === PHASES.length - 1} />}
     </svg>
   );
 }
@@ -777,7 +773,7 @@ export default function Hci() {
             items={[
               { k: 'Tiers to run', v: hci ? 1 : 3, tone: hci ? 'ok' : undefined, sub: hci ? 'nodes on Ethernet' : 'servers · SAN · array', tip: 'A tier is hardware run on its own: servers, storage network, array. Servers in both designs also connect to Ethernet switches.' },
               { k: 'Consoles', v: hci ? 1 : 3, tone: hci ? 'ok' : undefined, sub: hci ? 'Prism' : phase === 2 ? '3 touched to add a host' : 'one per tier' },
-              { k: 'Storage controllers', v: hci ? nodes : 2, tone: hci && nodes > 2 ? 'ok' : undefined, sub: hci ? 'one CVM per node' : 'the array’s pair, shared by every host', tip: 'Each CVM reserves some of its node’s CPU and memory; how much depends on the features you enable and the node size, so take it from Nutanix sizing.' },
+              { k: 'Storage controllers', v: hci ? nodes : 2, tone: hci && nodes > 2 ? 'ok' : undefined, sub: hci ? (phase >= 5 ? 'one CVM per node; a 3-tier array keeps 2' : 'one CVM per node') : 'the array’s pair, shared by every host', tip: 'Each CVM reserves some of its node’s CPU and memory; how much depends on the features you enable and the node size, so take it from Nutanix sizing.' },
               hci
                 ? { k: 'Nodes', v: nodes, sub: phase < 5 ? 'the building block' : phase === 5 ? 'smallest standard cluster' : 'one cluster, one storage pool', tip: 'Three nodes is the smallest standard cluster, with each write on two of them (RF2). One- and two-node clusters exist for edge sites.' }
                 : { k: 'Hosts', v: t >= HOST_IN[3] ? 4 : 3, sub: 'plus a SAN and an array' },
