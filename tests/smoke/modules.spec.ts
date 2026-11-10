@@ -217,23 +217,20 @@ test('playback speed: the 1x button picks a speed every animation shares', async
   expect(errors).toEqual([]);
 });
 
-test('edge: nodes lose contact on two and three nodes, and adding a node on every size', async ({ page }) => {
+test('edge: the outcomes table picks size and event; nodes lose contact needs two nodes', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/nci/edge`);
-  const size = page.getByRole('group', { name: 'Site size' });
-  const ev = page.getByRole('group', { name: 'What happens' });
-  for (const [s, peer] of [['1 node', false], ['2 nodes + Witness', true], ['3 nodes', true]] as const) {
-    await size.getByRole('button', { name: s }).click();
-    if (peer) await expect(ev.getByRole('button', { name: 'Nodes lose contact' })).toBeEnabled();
-    else await expect(ev.getByRole('button', { name: 'Nodes lose contact' })).toBeDisabled();
-    await expect(ev.getByRole('button', { name: 'Add a node' })).toBeEnabled();
-  }
-  await ev.getByRole('button', { name: 'Nodes lose contact' }).click();
-  await expect(ev.getByRole('button', { name: 'Nodes lose contact' })).toHaveAttribute('aria-pressed', 'true');
+  const table = page.locator('.edge-matrix');
+  const cell = (size: string, ev: string) => table.locator('tbody tr', { has: page.locator('th', { hasText: size }) }).locator('td').nth(['Drive fails', 'Node fails', 'Nodes lose contact', 'Link to the data center drops', 'Planned upgrade', 'Add a node'].indexOf(ev)).getByRole('button');
+  await expect(cell('1 node', 'Nodes lose contact')).toBeDisabled();
+  await expect(cell('2 nodes + Witness', 'Nodes lose contact')).toBeEnabled();
+  await expect(cell('3 nodes', 'Nodes lose contact')).toBeEnabled();
+  await cell('3 nodes', 'Nodes lose contact').click();
+  await expect(cell('3 nodes', 'Nodes lose contact')).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => page.url()).toContain('ev=peer');
-  await ev.getByRole('button', { name: 'Add a node' }).click();
+  await expect.poll(() => page.url()).toContain('sz=3');
+  await cell('1 node', 'Add a node').click();
   await expect.poll(() => page.url()).toContain('ev=expand');
-  await size.getByRole('button', { name: '1 node' }).click();
   await expect(page.locator('.kpi .v', { hasText: 'Not supported' })).toBeVisible();
   expect(errors).toEqual([]);
 });

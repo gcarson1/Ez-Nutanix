@@ -94,8 +94,8 @@ test('every option in the search list opens with that option picked', async ({ p
     const ok = await page
       .waitForFunction(
         ({ group, label }) =>
-          [...document.querySelectorAll<HTMLElement>('main [role="tab"][aria-selected="true"], main .seg button[aria-pressed="true"]')].some(
-            (b) => b.textContent?.trim() === label && (b.closest('[role="tablist"]') ?? b.closest('.seg'))?.getAttribute('aria-label') === group,
+          [...document.querySelectorAll<HTMLElement>('main [role="tab"][aria-selected="true"], main .seg button[aria-pressed="true"], main [data-group][aria-current="true"]')].some(
+            (b) => (b.dataset.label ?? b.textContent?.trim()) === label && (b.dataset.group ?? (b.closest('[role="tablist"]') ?? b.closest('.seg'))?.getAttribute('aria-label')) === group,
           ),
         { group: s.group, label: s.label },
         { timeout: 2000 },
@@ -119,9 +119,9 @@ test('every tab and choice on every page is in the search list', async ({ page }
     await page.waitForTimeout(60);
     const path = h.slice(2).split('?')[0];
     const controls = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>('main [role="tab"], main .seg button')].map((b) => ({
-        group: (b.closest('[role="tablist"]') ?? b.closest('.seg'))?.getAttribute('aria-label') ?? '',
-        label: b.textContent?.trim() ?? '',
+      [...document.querySelectorAll<HTMLElement>('main [role="tab"], main .seg button, main [data-group]')].map((b) => ({
+        group: b.dataset.group ?? (b.closest('[role="tablist"]') ?? b.closest('.seg'))?.getAttribute('aria-label') ?? '',
+        label: b.dataset.label ?? b.textContent?.trim() ?? '',
       })),
     );
     for (const c of controls) if (!known.has(`${path}|${c.group}|${c.label}`)) missing.add(`{ path: '${path}', group: '${c.group}', label: '${c.label}' }`);

@@ -1,9 +1,17 @@
 /* Edge & ROBO module (prefix edge-) */
-.edge-matrix { min-width: 40rem; }
-.edge-matrix th.on, .edge-matrix td.on { background: var(--ink-soft); }
-.edge-matrix tr.on td:first-child { font-weight: 600; box-shadow: inset 2px 0 0 var(--ink); padding-left: var(--sp-2); }
-.edge-matrix th, .edge-matrix td { padding-left: var(--sp-2); }
-.edge-cell { margin-top: var(--sp-1); color: var(--text-2); }
+.edge-pick { width: 100%; overflow-x: auto; }
+.edge-matrix { width: 100%; min-width: 46rem; border-collapse: collapse; font-size: var(--fs-13); }
+.edge-matrix caption { text-align: left; caption-side: top; padding-bottom: var(--sp-2); }
+.edge-matrix th { font-weight: 600; text-align: left; white-space: nowrap; padding: var(--sp-1) var(--sp-2); color: var(--muted); border-bottom: 1px solid var(--line); }
+.edge-matrix tbody th { color: var(--text); }
+.edge-matrix th.on, .edge-matrix tr.on th { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.edge-matrix tr.on th { box-shadow: inset 2px 0 0 var(--accent); }
+.edge-matrix td { padding: 1px 2px; border-bottom: 1px solid var(--line); }
+.edge-cell { width: 100%; display: flex; align-items: center; gap: var(--sp-1); padding: 3px var(--sp-2); border: 1px solid transparent; border-radius: var(--radius-sm); background: none; font-weight: 600; text-align: left; white-space: nowrap; cursor: pointer; }
+.edge-cell svg { flex: none; width: 14px; height: 14px; }
+.edge-cell:hover:not(:disabled) { border-color: var(--line-2); background: var(--bg-2); }
+.edge-cell[aria-pressed='true'] { border-color: var(--accent); background: var(--sel); box-shadow: inset 0 0 0 1px var(--accent); }
+.edge-cell.na { color: var(--faint); font-weight: 400; cursor: default; }
 .edge-dia .edge-cap { font-size: 12px; }
 .edge-dia .edge-t { font-size: 15px; font-weight: 600; }
 .edge-dia .edge-s { font-size: 13px; }

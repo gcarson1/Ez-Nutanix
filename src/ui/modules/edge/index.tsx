@@ -1,12 +1,13 @@
-// Edge & ROBO: pick a site size (1 node, 2 nodes with a Witness, 3 nodes) and something that
-// happens, and watch the site respond on a loop. The table underneath compares what each size
-// survives. Scenario moments live in data.ts.
+// Edge & ROBO: the outcomes table at the top is the control. Each cell is a site size (1 node,
+// 2 nodes with a Witness, 3 nodes) and something that happens; pick one and watch the site respond
+// on a loop. Scenario moments live in data.ts.
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
 import { paced, readSecs, useClock, useRestartOn } from '../../components/clock';
-import { Chip, Follow, Illus, Legend, PlayBar, type Tone as ChipTone } from '../../components/controls';
-import { Choice, Kpis, Show, ease, flowDots, pathLength, phaseAt, prog } from '../../components/show';
+import { Icon } from '../../components/Icon';
+import { Follow, Illus, Legend, PlayBar, type Tone as ChipTone } from '../../components/controls';
+import { Kpis, Show, ease, flowDots, pathLength, phaseAt, prog } from '../../components/show';
 import { EVENTS, MATRIX, SIZES, applies, stepsFor, type EventId, type Size, type Step } from './data';
 
 const SIZE_IDS = SIZES.map((s) => s.id);
@@ -45,7 +46,6 @@ function marksUsed(nodes: number, steps: Step[]) {
   return m;
 }
 
-const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 
 export default function Edge() {
   const [size, setSize] = useEnum<Size>('sz', '2', SIZE_IDS);
@@ -69,32 +69,14 @@ export default function Edge() {
   const cell = MATRIX.find((r) => r.ev === ev)!.cells[size];
   const tone = (n: number, of: number): ChipTone => (n === of ? 'ok' : n === 0 ? 'bad' : 'warn');
   const marks = marksUsed(nodes, tl.steps);
-  const off = EVENTS.filter((e) => !applies(size, e.id));
-  const why = off.length ? off.map((e) => `“${e.label}” is unavailable: ${lowerFirst(MATRIX.find((r) => r.ev === e.id)!.cells[size].text)}.`).join(' ') : null;
+  const pick = (s: Size, e: EventId) => {
+    setSize(s);
+    setEv(e);
+  };
 
   return (
-    <>
-      <Show clock={clock}
-        top={
-          <>
-            <Choice<Size>
-              label="Site size"
-              value={size}
-              onChange={(s) => {
-                setSize(s);
-                if (!applies(s, evRaw)) setEv('node');
-              }}
-              options={SIZES.map((s) => ({ value: s.id, label: s.label }))}
-            />
-            <Choice<EventId>
-              label="What happens"
-              value={ev}
-              onChange={setEv}
-              options={EVENTS.map((e) => ({ value: e.id, label: e.label, disabled: !applies(size, e.id), title: applies(size, e.id) ? e.tip : MATRIX.find((r) => r.ev === e.id)?.cells[size].text }))}
-              why={why}
-            />
-          </>
-        }
+    <Show clock={clock}
+        top={<EdgeMatrix size={size} ev={ev} pick={pick} />}
         foot={
           <>
             <Follow tone={step.tone} k={step.k}>
@@ -128,48 +110,61 @@ export default function Edge() {
           label="Site animation"
           extra={<Illus why="Time is compressed: a resync that takes hours is drawn in seconds. Each node is drawn with a few VMs and four drives; real sites vary. The timings in the captions (30 to 60 seconds, about 15 minutes, hours) are typical, not guaranteed." />}
         />
-      </Show>
-
-      <h2 class="sec-h">What each size survives</h2>
-      <div class="diagram-scroll">
-        <table class="tbl edge-matrix">
-          <thead>
-            <tr>
-              <th>Event</th>
-              {SIZES.map((s) => (
-                <th key={s.id} class={s.id === size ? 'on' : ''}>
-                  {s.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {MATRIX.map((r) => (
-              <tr key={r.row} class={r.ev === ev ? 'on' : ''}>
-                <td>{r.row}</td>
-                {SIZES.map((s) => {
-                  const c = r.cells[s.id];
-                  return (
-                    <td key={s.id} class={s.id === size ? 'on' : ''}>
-                      {c.tone === 'na' ? (
-                        <span class="muted">{c.text}</span>
-                      ) : (
-                        <>
-                          <Chip tone={c.tone}>{c.word ?? TONE_WORD[c.tone]}</Chip>
-                          <div class="small edge-cell">{c.text}</div>
-                        </>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    </Show>
   );
 }
+
+const SHORT: Partial<Record<EventId, string>> = { wan: 'Link to DC drops' };
+
+/** The outcomes table is the control (N2-031): rows are site sizes, columns are events, and each
+ *  cell plays that size and event. Status is an icon plus a word, never color alone. */
+function EdgeMatrix({ size, ev, pick }: { size: Size; ev: EventId; pick: (s: Size, e: EventId) => void }) {
+  return (
+    <div class="edge-pick">
+      <table class="edge-matrix">
+        <caption class="sr-only">What each size survives: pick a cell to play it</caption>
+        <thead>
+          <tr>
+            <th scope="col">What each size survives</th>
+            {EVENTS.map((e) => (
+              <th key={e.id} scope="col" class={e.id === ev ? 'on' : ''} data-group="What happens" data-label={e.label} aria-current={e.id === ev ? 'true' : undefined} title={e.tip}>
+                {SHORT[e.id] ?? e.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {SIZES.map((s) => (
+            <tr key={s.id} class={s.id === size ? 'on' : ''}>
+              <th scope="row" data-group="Site size" data-label={s.label} aria-current={s.id === size ? 'true' : undefined}>
+                {s.label}
+              </th>
+              {EVENTS.map((e) => {
+                const r = MATRIX.find((x) => x.ev === e.id)!;
+                const c = r.cells[s.id];
+                const on = s.id === size && r.ev === ev;
+                const na = c.tone === 'na';
+                return (
+                  <td key={r.ev} class={on ? 'on' : ''}>
+                    <button type="button" class={`edge-cell ${na ? 'na' : `${c.tone}-text`}`} disabled={na} aria-pressed={on} title={c.text} onClick={() => pick(s.id, r.ev)}>
+                      {!na && <Icon name={CELL_ICON[c.tone]} />}
+                      {na ? 'n/a' : c.word ?? TONE_WORD[c.tone]}
+                      <span class="sr-only">
+                        : {s.label}, {r.row}. {c.text}
+                      </span>
+                    </button>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const CELL_ICON = { ok: 'ok', warn: 'warn', bad: 'bad', na: 'info' } as const;
 
 // ── geometry ──
 const W = 960;
