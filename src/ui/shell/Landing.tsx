@@ -1,45 +1,50 @@
-// The landing page: a live version of the "One Platform For All Apps, Data & AI Anywhere"
-// slide. Every pane is a button that opens its module; the clicked pane grows into the
-// module header (View Transitions where the browser supports them).
+// The home page (Nutanix 2.0, N2-020): the platform as a labeled stack, top to bottom: what manages
+// it, the data and AI services, the infrastructure, and where it runs, with "Start smaller" as a
+// separate strip. Every card opens its module and says what you will see there; the clicked card
+// grows into the module header (View Transitions where the browser supports them).
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from '../components/Icon';
 import awsLogo from '../../assets/logos/aws.svg';
 import azureLogo from '../../assets/logos/azure.svg';
 import googleCloudLogo from '../../assets/logos/google-cloud-icon.svg';
+import { findModule } from '../modules/registry';
 import { go } from './nav';
 
-interface PaneDef {
+interface Card {
   id: string;
   title: string;
-  sub?: string;
+  /** What you will see when you open it. */
+  see: string;
   path: string;
   params?: Record<string, string>;
+  tag?: string;
 }
 
-const CENTRAL: PaneDef[] = [
-  { id: 'fed', title: 'Prism Federation', sub: 'API | Alerts | LCM | IAM', path: 'central', params: { tab: 'fed' } },
-  { id: 'ncm', title: 'Cloud Manager', sub: 'AIOps | Self-Service | Cost | SecOps', path: 'ncm' },
-  { id: 'nkp', title: 'Kubernetes Platform', sub: 'Fleet Management | Security | GitOps', path: 'nkp' },
-  { id: 'lens', title: 'Data Lens', sub: 'Security | Privacy', path: 'datalens' },
+const MANAGE: Card[] = [
+  { id: 'fed', title: 'Prism Federation', see: 'Many clusters and regions in one console', path: 'central', params: { tab: 'fed' } },
+  { id: 'ncm', title: 'Cloud Manager', see: 'Anomalies, self-service, cost and compliance', path: 'ncm' },
+  { id: 'nkp', title: 'Kubernetes Platform', see: 'Kubernetes clusters run one consistent way', path: 'nkp' },
+  { id: 'lens', title: 'Data Lens', see: 'Ransomware stopped on file shares; cold data tiered', path: 'datalens' },
 ];
 
-const SERVICES: PaneDef[] = [
-  { id: 'files', title: 'Files, Objects', path: 'storage' },
-  { id: 'cnaos', title: 'Cloud Native AOS', path: 'cnaos' },
-  { id: 'ndb', title: 'Database Service', path: 'ndb' },
-  { id: 'ai', title: 'Enterprise AI', path: 'ai' },
+const SERVICES: Card[] = [
+  { id: 'files', title: 'Files, Objects', see: 'Files, volumes and S3 objects on the same cluster', path: 'storage' },
+  { id: 'cnaos', title: 'Cloud Native AOS', see: 'Nutanix storage inside Kubernetes, no hypervisor', path: 'cnaos' },
+  { id: 'ndb', title: 'Database Service', see: 'Databases built, cloned and recovered to the minute', path: 'ndb' },
+  { id: 'ai', title: 'Enterprise AI', see: 'Private model endpoints and an agent gateway', path: 'ai' },
+  { id: 'beacon', title: 'Project Beacon', see: 'The run-anywhere direction behind these services', path: 'beacon', tag: 'Vision' },
+];
+
+const CLOUDS = [
+  { id: 'aws', title: 'AWS', src: awsLogo, path: 'cloud', params: { c: 'aws' } },
+  { id: 'azure', title: 'Azure', src: azureLogo, path: 'cloud', params: { c: 'azure' } },
+  { id: 'gcp', title: 'Google Cloud', src: googleCloudLogo, path: 'cloud', params: { c: 'gcp' } },
 ];
 
 // For customers who want part of the platform: AHV with their own array, or Nutanix HCI under ESXi.
-const PARTIAL: PaneDef[] = [
-  { id: 'ext', title: 'Nutanix with external storage', sub: 'AHV and Prism on your own storage array', path: 'partial', params: { tab: 'ext' } },
-  { id: 'esxi', title: 'ESXi on Nutanix', sub: 'Keep vSphere and vCenter, run them on Nutanix', path: 'partial', params: { tab: 'esxi' } },
-];
-
-const CLOUDS: PaneDef[] = [
-  { id: 'aws', title: 'AWS', path: 'cloud', params: { c: 'aws' } },
-  { id: 'azure', title: 'Azure', path: 'cloud', params: { c: 'azure' } },
-  { id: 'gcp', title: 'Google Cloud', path: 'cloud', params: { c: 'gcp' } },
+const PARTIAL: Card[] = [
+  { id: 'ext', title: 'Nutanix with external storage', see: 'AHV and Prism on the storage array you own', path: 'partial', params: { tab: 'ext' } },
+  { id: 'esxi', title: 'ESXi on Nutanix', see: 'Keep vSphere and vCenter, run them on Nutanix', path: 'partial', params: { tab: 'esxi' } },
 ];
 
 interface TourStep {
@@ -58,27 +63,29 @@ const TOUR: TourStep[] = [
   { sel: 'central', title: 'One control plane across everything', text: 'Nutanix Central sits above many clusters and sites: fleet management, operations, Kubernetes and data security from one place.' },
 ];
 
-function Pane({ p, cls, tour, children }: { p: PaneDef; cls?: string; tour?: string; children?: preact.ComponentChildren }) {
+function CardBtn({ c, tour }: { c: Card; tour?: string }) {
+  const icon = findModule(c.path)?.icon ?? 'layers';
   return (
-    <button type="button" class={`pane${cls ? ` ${cls}` : ''}`} data-tour={tour} data-pane={p.id} data-path={p.path} onClick={(e) => go(p.path, p.params, e.currentTarget as HTMLElement)}>
-      {children ?? (
-        <>
-          <span class="pt">{p.title}</span>
-          {p.sub && <span class="ps">{p.sub}</span>}
-        </>
-      )}
-      <span class="pmore" aria-hidden="true">
-        Open →
+    <button type="button" class="hm-card" data-tour={tour} data-pane={c.id} data-path={c.path} onClick={(e) => go(c.path, c.params, e.currentTarget as HTMLElement)}>
+      <span class="hm-ic" aria-hidden="true">
+        <Icon name={icon} />
       </span>
+      <span class="hm-t">
+        {c.title}
+        {c.tag && <span class="hm-tag">{c.tag}</span>}
+      </span>
+      <span class="hm-see">{c.see}</span>
     </button>
   );
 }
 
-/** The providers' own marks, as on the original slide: logos only, no names (alt text names them). */
-function CloudLogo({ id }: { id: string }) {
-  if (id === 'aws') return <img class="cloud-logo aws" src={awsLogo} alt="AWS" />;
-  if (id === 'gcp') return <img class="cloud-logo gcp" src={googleCloudLogo} alt="Google Cloud" />;
-  return <img class="cloud-logo azure" src={azureLogo} alt="Azure" />;
+function Band({ label, tour, children, cls }: { label: string; tour?: string; children: preact.ComponentChildren; cls?: string }) {
+  return (
+    <section class={`hm-band${cls ? ` ${cls}` : ''}`} data-tour={tour} aria-label={label}>
+      <h2 class="hm-label">{label}</h2>
+      <div class="hm-row">{children}</div>
+    </section>
+  );
 }
 
 export function Landing() {
@@ -114,9 +121,9 @@ export function Landing() {
   const step = tour !== null ? TOUR[tour] : null;
   return (
     <div class={`slide-wrap${tour !== null ? ' tour-on' : ''}`} ref={wrap}>
-      <div class="slide">
-        <div class="slide-head">
-          <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
+      <div class="hm">
+        <div class="hm-head">
+          <h1 class="hm-title">One platform for all apps, data and AI, anywhere</h1>
           {tour === null && (
             <button type="button" class="btn tour-btn" onClick={() => setTour(0)}>
               <Icon name="compass" />
@@ -125,61 +132,59 @@ export function Landing() {
           )}
         </div>
 
-        <section class="band central" data-tour="central" aria-label="Nutanix Central">
-          <button type="button" class="central-head" data-pane="central" data-path="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
-            Nutanix Central
-          </button>
-          <div class="central-grid">
-            {CENTRAL.map((p) => (
-              <Pane key={p.id} p={p} />
+        <div class="hm-stack">
+          <Band label="Manage" tour="central">
+            <div class="hm-grid four">
+              {MANAGE.map((c) => (
+                <CardBtn key={c.id} c={c} />
+              ))}
+            </div>
+            <button type="button" class="hm-more" data-pane="central" data-path="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
+              Nutanix Central runs these across every cluster →
+            </button>
+          </Band>
+          <Band label="Data and AI services" tour="services">
+            <div class="hm-grid five">
+              {SERVICES.map((c) => (
+                <CardBtn key={c.id} c={c} />
+              ))}
+            </div>
+          </Band>
+          <Band label="Infrastructure">
+            <div class="hm-grid one">
+              <CardBtn c={{ id: 'nci', title: 'Nutanix Cloud Infrastructure', see: 'AOS, AHV, Flow and DR: watch a node fail and the cluster heal itself', path: 'nci' }} tour="nci" />
+            </div>
+          </Band>
+          <Band label="Runs on">
+            <div class="hm-grid two">
+              <div class="hm-card hm-clouds" data-tour="clouds">
+                <span class="hm-t">Public cloud · NC2</span>
+                <span class="hm-see">Nutanix Cloud Clusters in your cloud account</span>
+                <span class="hm-logos">
+                  {CLOUDS.map((c) => (
+                    <button key={c.id} type="button" class="hm-logo" data-pane={c.id} data-path={c.path} onClick={(e) => go(c.path, c.params, e.currentTarget as HTMLElement)}>
+                      <img src={c.src} alt={c.title} />
+                    </button>
+                  ))}
+                </span>
+              </div>
+              <CardBtn c={{ id: 'bare', title: 'OEM of your choice', see: 'Nutanix NX and six OEM hardware platforms', path: 'oem' }} tour="bare" />
+            </div>
+          </Band>
+        </div>
+
+        <Band label="Start smaller" tour="partial" cls="hm-partial">
+          <div class="hm-grid two">
+            {PARTIAL.map((c) => (
+              <CardBtn key={c.id} c={c} />
             ))}
           </div>
-        </section>
+        </Band>
 
-        <div class="flowline" aria-hidden="true" />
-
-        <section class="band svc-row" data-tour="services" aria-label="Platform services">
-          {SERVICES.map((p) => (
-            <Pane key={p.id} p={p} />
-          ))}
-          <button type="button" class="beacon" data-pane="beacon" data-path="beacon" onClick={(e) => go('beacon', undefined, e.currentTarget as HTMLElement)}>
-            <Icon name="beacon" />
-            Project Beacon
-          </button>
-        </section>
-
-        <div class="flowline" aria-hidden="true" />
-
-        <section class="band infra-row" aria-label="Infrastructure">
-          <Pane p={{ id: 'nci', title: 'Nutanix Cloud Infrastructure', sub: '(AOS, AHV, Flow, DR)', path: 'nci' }} cls="nci" tour="nci" />
-          <div class="gray clouds" data-tour="clouds">
-            {CLOUDS.map((p) => (
-              <Pane key={p.id} p={p}>
-                <CloudLogo id={p.id} />
-              </Pane>
-            ))}
-          </div>
-          <Pane p={{ id: 'bare', title: 'OEM of your choice', path: 'oem' }} cls="bare" tour="bare">
-            <Icon name="server" />
-            <span class="pt">OEM of your choice</span>
-          </Pane>
-        </section>
-
-        <section class="band partial" data-tour="partial" aria-label="Don’t want the full stack?">
-          <button type="button" class="partial-head" data-pane="partial" data-path="partial" onClick={(e) => go('partial', undefined, e.currentTarget as HTMLElement)}>
-            <span class="pt">Don’t want the full stack?</span>
-            <span class="ps">Start with the part you need</span>
-          </button>
-          {PARTIAL.map((p) => (
-            <Pane key={p.id} p={p} />
-          ))}
-        </section>
-
-        <p class="slide-hint">
-          Click any pane to see how it works. Press <kbd>?</kbd> for shortcuts and <kbd>P</kbd> for presenter notes.
+        <p class="hm-hint">
+          Click any card to see how it works. Press <kbd>?</kbd> for shortcuts and <kbd>P</kbd> for presenter notes.
         </p>
       </div>
-
 
       {step && tour !== null && (
         <div class="tour-card" role="dialog" aria-label="Guided tour" aria-live="polite">

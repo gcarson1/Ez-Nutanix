@@ -26,14 +26,14 @@ function watchErrors(page: Page) {
 test('landing page renders every pane and opens a module', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(FILE);
-  await expect(page.getByRole('heading', { name: /One Platform For All Apps/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /One platform for all apps/ })).toBeVisible();
   for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'AWS', 'Azure', 'Google Cloud', 'OEM of your choice']) {
     await expect(page.getByRole('button', { name: new RegExp(name) }).first()).toBeVisible();
   }
   await page.getByRole('button', { name: /Nutanix Cloud Infrastructure/ }).click();
   await expect(page.locator('.mod-head h1')).toHaveText('Nutanix Cloud Infrastructure');
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('heading', { name: /One Platform For All Apps/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /One platform for all apps/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
