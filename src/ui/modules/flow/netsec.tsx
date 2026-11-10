@@ -222,8 +222,12 @@ function VmBox({ id, mode, quar }: { id: string; mode: Mode; quar: boolean }) {
   const vm = VMS.find((v) => v.id === id)!;
   return (
     <g>
-      {(mode !== 'off' || quar) && <rect class={`fl-guard ${quar ? 'quar' : mode}`} x={b.x - 5} y={b.y - 5} width={b.w + 10} height={VM_H + 10} />}
-      <rect class={`fl-vm${quar ? ' quar' : ''}`} x={b.x} y={b.y} width={b.w} height={VM_H} />
+      <rect class={`fl-vm${quar ? ' quar' : mode === 'off' ? '' : ` ${mode}`}`} x={b.x} y={b.y} width={b.w} height={VM_H} />
+      {mode !== 'off' && !quar && (
+        <g transform={`translate(${b.x + b.w} ${b.y})`} aria-hidden="true">
+          <path class={`fl-shield ${mode}`} d="M0 -10 L8 -7 V-1 C8 4 4 7 0 9 C-4 7 -8 4 -8 -1 V-7 Z" />
+        </g>
+      )}
       <text class="d-title" x={b.x + 12} y={b.y + 23} style={{ fontWeight: 600 }}>
         {vm.name}
       </text>
@@ -236,6 +240,78 @@ function VmBox({ id, mode, quar }: { id: string; mode: Mode; quar: boolean }) {
         </text>
       )}
     </g>
+  );
+}
+
+/** The application policy's three rows, shortened to fit the side column (values of AppTier). */
+const ROWS = [
+  { dir: 'Inbound', src: 'Any', dst: 'Web', proto: 'TCP', port: '443' },
+  { dir: 'Inbound', src: 'Web', dst: 'App', proto: 'TCP', port: '8080' },
+  { dir: 'Inbound', src: 'App', dst: 'DB', proto: 'TCP', port: '5432' },
+];
+const ROW_OF_TIER: Record<string, number> = { Web: 0, App: 1, DB: 2 };
+
+/** Which row of the table is being checked: the row for the app lane in flight, or for the target tier of an unwanted try. */
+function rowNow(t: number, phase: number, v: Verdict | null, pol: Policies): number | null {
+  if (!pol.apps[0].enabled) return null;
+  if (phase > 0) {
+    if (!v || (flagged(v) && flagged(v)!.kind !== 'app' && flagged(v)!.kind !== 'none')) return null;
+    return ROW_OF_TIER[VMS.find((m) => m.id === TRIES[phase - 1].dst)!.cats.AppTier];
+  }
+  let best: { t0: number; row: number } | null = null;
+  for (const l of APP_LANES)
+    for (let t0 = l.off; t0 < LOOP; t0 += APP_EVERY)
+      if (t >= t0 && t < t0 + APP_FLIGHT + 0.4 && (!best || t0 > best.t0)) best = { t0, row: ROW_OF_TIER[VMS.find((m) => m.id === l.dst)!.cats.AppTier] };
+  return best?.row ?? null;
+}
+
+function PolicyTable({ row, mode, verdict }: { row: number | null; mode: Mode; verdict: Verdict | null }) {
+  const off = mode === 'off';
+  const note = off
+    ? 'No policy is applied, so no row is checked.'
+    : row === null
+      ? verdict && flagged(verdict)
+        ? 'A quarantine or isolation policy decides this one before the table is read.'
+        : 'Waiting for the next flow.'
+      : verdict
+        ? `Row ${row + 1} is the closest, but nothing matches, so the default is deny.`
+        : `Row ${row + 1} matches: allow.`;
+  return (
+    <section class="fl-pol">
+      <h2 class="side-sec-h">Application policy (example)</h2>
+      <table class={off ? 'off' : ''}>
+        <caption class="sr-only">Application policy (example): three allow rules</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="m"><span class="sr-only">Checked</span></th>
+            <th scope="col">Direction</th>
+            <th scope="col">Source category</th>
+            <th scope="col">Destination category</th>
+            <th scope="col">Protocol</th>
+            <th scope="col">Port</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ROWS.map((r, i) => (
+            <tr key={i} class={row === i ? 'now' : ''} aria-current={row === i ? 'true' : undefined}>
+              <td class="m" aria-hidden="true">{row === i ? '▶' : ''}</td>
+              <td>{r.dir}</td>
+              <td>{r.src}</td>
+              <td>{r.dst}</td>
+              <td>{r.proto}</td>
+              <td>{r.port}</td>
+              <td>✓ Allow</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="fl-pol-note" aria-live="polite">
+        <b>{row === null ? '' : '▶ Being checked. '}</b>
+        {note}
+      </p>
+      <p class="fl-pol-fine">Categories are values of AppTier. Anything not allowed is denied. This is one policy type; Flow also has isolation, quarantine, shared services and VDI policies, and their fields differ.</p>
+    </section>
   );
 }
 
@@ -288,6 +364,7 @@ export function NetSec() {
 
   return (
     <Show clock={clock}
+      side={<PolicyTable row={rowNow(t, phase, vNow, pol)} mode={mode} verdict={vNow} />}
       top={
         <>
           <Choice<Mode>
@@ -337,14 +414,14 @@ export function NetSec() {
           </text>
 
           <rect class="fl-env" x={168} y={28} width={776} height={240} />
-          <text x={184} y={50} class="fl-envlbl">
+          <text x={184} y={50} class="fl-envlbl d-sub">
             Environment: Production
           </text>
-          <text x={928} y={50} text-anchor="end" class={`fl-st ${mode}`}>
+          <text x={928} y={50} text-anchor="end" class={`fl-st d-label ${mode}`}>
             {MODE_WORD[mode]}
           </text>
           <rect class="fl-env dev" x={168} y={302} width={776} height={84} />
-          <text x={184} y={349} class="fl-envlbl">
+          <text x={184} y={349} class="fl-envlbl d-sub">
             Environment: Dev
           </text>
           {mode !== 'off' && (
@@ -365,7 +442,7 @@ export function NetSec() {
           ))}
           <Packets shots={shots} t={t} />
           {lbl && (
-            <text x={lbl.at.x} y={lbl.at.y} text-anchor={lbl.end ? 'end' : 'start'} class={`fl-out halo ${lbl.cls}`}>
+            <text x={lbl.at.x} y={lbl.at.y} text-anchor={lbl.end ? 'end' : 'start'} class={`fl-out d-label halo ${lbl.cls}`}>
               {lbl.text}
             </text>
           )}
@@ -377,7 +454,7 @@ export function NetSec() {
           { color: 'var(--bad)', label: 'Unwanted traffic' },
           ...(shots.some((s) => !s.v.allowed) ? [{ color: 'var(--ok)', label: 'Stopped by a policy' }] : []),
           ...(verdicts.some((v) => v.allowed && v.wouldDrop) ? [{ color: 'var(--warn)', label: 'Logged, but let through (Monitor)', dashed: true }] : []),
-          ...(mode === 'off' ? [] : [{ color: mode === 'monitor' ? 'var(--warn)' : 'var(--ink)', label: 'Outline: the policy, checked at each VM', dashed: true }]),
+          ...(mode === 'off' ? [] : [{ color: mode === 'monitor' ? 'var(--warn)' : 'var(--ink)', label: 'Shield: a policy is checked at this VM', dashed: mode === 'monitor' }]),
           ...(quar ? [{ color: 'var(--bad)', label: 'Outline: quarantined VM' }] : []),
         ]}
       />

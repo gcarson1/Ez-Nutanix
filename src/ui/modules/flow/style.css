@@ -2,8 +2,8 @@
 /* Network Security */
 .diagram .fl-env { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1; }
 .diagram .fl-env.dev { }
-.diagram .fl-envlbl { font-size: 12px; font-weight: 600; fill: var(--muted); }
-.diagram .fl-st { font-size: 13px; font-weight: 600; }
+.diagram .fl-envlbl { font-weight: 600; fill: var(--muted); }
+.diagram .fl-st { font-weight: 600; }
 .diagram .fl-st.off { fill: var(--muted); }
 .diagram .fl-st.monitor { fill: var(--warn); }
 .diagram .fl-st.enforce { fill: var(--ink-fg); }
@@ -12,9 +12,11 @@
 .diagram .fl-ext { fill: var(--bg-3); stroke: var(--line-2); }
 .diagram .fl-vm { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .fl-vm.quar { fill: var(--bad-bg); }
-.diagram .fl-guard { fill: none; stroke: var(--ink); stroke-width: 1.5; }
-.diagram .fl-guard.monitor { stroke: var(--warn); stroke-dasharray: 5 4; }
-.diagram .fl-guard.quar { stroke: var(--bad); stroke-width: 3; }
+.diagram .fl-vm.enforce { stroke: var(--ink); stroke-width: 2; }
+.diagram .fl-vm.monitor { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 4; }
+.diagram .fl-vm.quar { stroke: var(--bad); stroke-width: 3; }
+.diagram .fl-shield { fill: var(--bg); stroke: var(--ink); stroke-width: 1.75; stroke-linejoin: round; }
+.diagram .fl-shield.monitor { stroke: var(--warn); }
 .diagram .fl-lane { fill: none; stroke: var(--line-2); stroke-width: 1.5; }
 .diagram .fl-try { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 5 4; opacity: 0.6; }
 .diagram .fl-dot.app { fill: var(--flow); }
@@ -22,7 +24,7 @@
 .diagram .fl-stop circle { fill: var(--ok-bg); stroke: var(--ok); stroke-width: 2; }
 .diagram .fl-stop path { fill: none; stroke: var(--ok); stroke-width: 2.5; stroke-linecap: round; }
 .diagram .fl-logged { fill: none; stroke: var(--warn); stroke-width: 2.5; stroke-dasharray: 4 3; }
-.diagram .fl-out { font-size: 13px; font-weight: 700; }
+.diagram .fl-out { font-weight: 700; }
 
 /* Virtual Networking */
 .diagram .fl-vpc { fill: var(--bg); stroke-width: 2; }
@@ -39,4 +41,21 @@
 .diagram .fl-pkt.swap { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 2; }
 .diagram .fl-wrap { fill: var(--bg-3); stroke: var(--ink); stroke-width: 2; }
 .diagram .fl-wrap.b { stroke: var(--flow); }
-.diagram .fl-wrap-t { font-size: 11px; font-weight: 600; }
+.diagram .fl-wrap-t { font-weight: 600; }
+
+/* Policy table (right panel) */
+.fl-pol table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: var(--fs-12); }
+.fl-pol th, .fl-pol td { padding: 4px 3px; text-align: left; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.fl-pol th { overflow-wrap: normal; font-size: 11px; font-weight: 600; color: var(--muted); vertical-align: bottom; }
+.fl-pol .m { width: 14px; padding-left: 0; padding-right: 0; text-align: center; }
+.fl-pol tr.now td { background: var(--flow-bg, var(--bg-3)); font-weight: 700; }
+.fl-pol tr.now td.m { box-shadow: inset 3px 0 0 var(--flow); }
+.fl-pol table.off { opacity: 0.55; }
+.fl-pol-note { margin-top: var(--sp-2); }
+.fl-pol .fl-pol-fine { font-size: var(--fs-12); color: var(--muted); margin-top: var(--sp-2); }
+.fl-pol th:nth-child(2) { width: 58px; }
+.fl-pol th:nth-child(3) { width: 50px; }
+.fl-pol th:nth-child(4) { width: 66px; }
+.fl-pol th:nth-child(5) { width: 52px; }
+.fl-pol th:nth-child(6) { width: 38px; }
+.fl-pol th:nth-child(7) { width: 58px; }

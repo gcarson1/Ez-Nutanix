@@ -63,10 +63,10 @@ const PRESETS: Record<Preset, { label: string; poster: number; hops: Hop[] }> = 
     poster: 1,
     hops: [
       { k: 'Packet leaves A-1', text: 'A-1 in VPC A sends a packet to 10.1.1.20, an address in its own private network.', pts: out('a1'), addr: '10.1.1.10 → 10.1.1.20' },
-      { k: 'Host 1 wraps the packet', text: 'Host 1 wraps it in an envelope addressed to Host 2 and tagged VPC A. The physical network only sees Host 1 talking to Host 2.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Host 1 → Host 2 · VPC A' },
+      { k: 'Host 1 wraps the packet', text: 'Host 1 wraps it in an envelope addressed to Host 2 and tagged VPC A. The physical network only sees Host 1 talking to Host 2.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Geneve · Host 1 → Host 2 · VPC A' },
       { k: 'Packet reaches A-2', text: 'Host 2 unwraps it and hands the original packet to A-2. No switch or router was changed to build this network.', pts: into('a2'), addr: '10.1.1.10 → 10.1.1.20', to: 'a2' },
       { k: 'B-1 uses the same address', text: 'B-1 in VPC B has the very same address, 10.1.1.10, and also sends to 10.1.1.20.', pts: out('b1'), addr: '10.1.1.10 → 10.1.1.20' },
-      { k: 'Envelope says VPC B', text: 'This envelope says VPC B, so the two networks never mix even though their addresses match.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Host 1 → Host 2 · VPC B' },
+      { k: 'Envelope says VPC B', text: 'This envelope says VPC B, so the two networks never mix even though their addresses match.', pts: tunnel(0, 1), addr: '10.1.1.10 → 10.1.1.20', wrap: 'Geneve · Host 1 → Host 2 · VPC B' },
       { k: 'Only B-2 receives it', text: 'B-2 gets it and A-2 never sees it. Two teams can reuse the same range, such as a cloned copy of production.', pts: into('b2'), addr: '10.1.1.10 → 10.1.1.20', to: 'b2' },
     ],
   },
@@ -75,7 +75,7 @@ const PRESETS: Record<Preset, { label: string; poster: number; hops: Hop[] }> = 
     poster: 2,
     hops: [
       { k: 'Packet leaves A-1', text: 'A-1 sends a packet to a server on the internet. Its private address, 10.1.1.10, means nothing out there.', pts: out('a1'), addr: '10.1.1.10 → 198.51.100.7' },
-      { k: 'Packet crosses to Host 2', text: 'Host 1 wraps the packet and sends it to Host 2, a gateway host that handles internet traffic for VPC A.', pts: tunnel(0, 1), addr: '10.1.1.10 → 198.51.100.7', wrap: 'Host 1 → Host 2 · VPC A' },
+      { k: 'Packet crosses to Host 2', text: 'Host 1 wraps the packet and sends it to Host 2, a gateway host that handles internet traffic for VPC A.', pts: tunnel(0, 1), addr: '10.1.1.10 → 198.51.100.7', wrap: 'Geneve · Host 1 → Host 2 · VPC A' },
       { k: 'Host 2 swaps the address', text: 'Host 2 swaps the private source address for a public one from the external network, 203.0.113.10. This is source network address translation (NAT), and every VM in the VPC can share it.', pts: [hostC(1)], was: '10.1.1.10 → 198.51.100.7', addr: '203.0.113.10 → 198.51.100.7' },
       { k: 'Packet exits to the internet', text: 'It leaves on the external network as an ordinary packet. Replies come back the same way, but outsiders cannot start a connection to A-1.', pts: toNet, addr: '203.0.113.10 → 198.51.100.7', to: 'net' },
     ],
@@ -86,7 +86,7 @@ const PRESETS: Record<Preset, { label: string; poster: number; hops: Hop[] }> = 
     hops: [
       { k: 'A client connects', text: 'A client on the internet connects to 203.0.113.50, a floating IP: a public address reserved for one VM.', pts: [...toNet].reverse(), addr: '198.51.100.7 → 203.0.113.50' },
       { k: 'Host 2 swaps the address', text: 'Host 2 swaps the floating IP for A-1’s private address, 10.1.1.10. A-1 never needs to know its public address.', pts: [hostC(1)], was: '198.51.100.7 → 203.0.113.50', addr: '198.51.100.7 → 10.1.1.10' },
-      { k: 'Host 2 wraps the packet', text: 'The packet is wrapped, tagged VPC A and sent to Host 1, where A-1 runs.', pts: tunnel(1, 0), addr: '198.51.100.7 → 10.1.1.10', wrap: 'Host 2 → Host 1 · VPC A' },
+      { k: 'Host 2 wraps the packet', text: 'The packet is wrapped, tagged VPC A and sent to Host 1, where A-1 runs.', pts: tunnel(1, 0), addr: '198.51.100.7 → 10.1.1.10', wrap: 'Geneve · Host 2 → Host 1 · VPC A' },
       { k: 'A-1 receives the packet', text: 'Host 1 unwraps it and A-1 sees an ordinary packet. Outsiders can reach A-1, and only A-1, this way.', pts: into('a1'), addr: '198.51.100.7 → 10.1.1.10', to: 'a1' },
     ],
   },
@@ -134,12 +134,12 @@ function along(pts: Pt[], f: number): Pt {
 function Packet({ p, addr, wrap, swapped }: { p: Pt; addr: string; wrap?: string; swapped: boolean }) {
   const pw = addr.length * 6.9 + 18;
   if (wrap) {
-    const ew = Math.max(pw, wrap.length * 6.3) + 18;
+    const ew = Math.max(pw, wrap.length * 6.1) + 18;
     return (
       <g aria-hidden="true">
         <rect class="fl-pbg" x={p.x - ew / 2} y={p.y - 25} width={ew} height={50} />
         <rect class={`fl-wrap${wrap.endsWith('VPC B') ? ' b' : ''}`} x={p.x - ew / 2} y={p.y - 25} width={ew} height={50} />
-        <text x={p.x} y={p.y - 9} text-anchor="middle" class="fl-wrap-t">
+        <text x={p.x} y={p.y - 9} text-anchor="middle" class="fl-wrap-t d-fine">
           {wrap}
         </text>
         <rect class="fl-pkt" x={p.x - pw / 2} y={p.y - 1} width={pw} height={20} />
