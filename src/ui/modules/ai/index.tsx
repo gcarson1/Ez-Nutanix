@@ -232,6 +232,57 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
   );
 }
 
+// What else NAI 2.8 does, beyond the endpoint the picture shows (facts AI-1 to AI-10).
+const MORE: { group: string; items: { k: string; tp?: boolean; text: string }[] }[] = [
+  {
+    group: 'Serving',
+    items: [
+      { k: 'Multi-GPU serving', text: 'Tensor parallelism splits a supported model across several GPUs.' },
+      { k: 'Multi-node serving', tp: true, text: 'Pipeline parallelism spreads models of 100B+ parameters across GPU nodes.' },
+      { k: 'Batch inference', text: 'Enabled in NAI 2.8, alongside speculative decoding.' },
+      { k: 'Speculative decoding', text: 'A small draft model speeds up token generation, by up to 2.5x.' },
+      { k: 'KV-cache offload', tp: true, text: 'Moves the KV cache to host memory, so repeated or similar prompts get a fast first token.' },
+      { k: 'Endpoint hibernation', text: 'Frees an endpoint\u2019s GPUs but keeps its configuration, so it resumes later (from NAI 2.3).' },
+    ],
+  },
+  {
+    group: 'Customize and govern',
+    items: [
+      { k: 'Fine-tuning with LoRA', text: 'Generally available for supported models under 8B parameters; the tuned model imports straight into NAI.' },
+      { k: 'Custom IAM roles', text: 'Predefined or custom roles limit each user to chosen actions and resources.' },
+      { k: 'Model sharing', text: 'Give chosen users or groups selected models, not the whole catalog.' },
+      { k: 'Grounded answers', text: 'The Agent app answers from documents you upload, with citations back to the source.' },
+    ],
+  },
+];
+
+function MoreInNai() {
+  return (
+    <section class="ai-more">
+      <h2 class="side-sec-h">More in NAI 2.8</h2>
+      {MORE.map((g) => (
+        <div key={g.group}>
+          <h3>{g.group}</h3>
+          <ul>
+            {g.items.map((f) => (
+              <li key={f.k}>
+                <b>{f.k}</b>
+                {f.tp && (
+                  <>
+                    {' '}
+                    <span class="ai-tp">Tech preview</span>
+                  </>
+                )}
+                <p>{f.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function EndpointView() {
   const [where, setWhere] = useEnum<Where>('w', 'dc', WHERES);
   const [repS, setRep] = useEnum<'1' | '2' | '4'>('r', '2', ['1', '2', '4']);
@@ -264,6 +315,7 @@ function EndpointView() {
 
   return (
     <Show clock={clock}
+      side={<MoreInNai />}
       top={
         <>
           <Choice<Where>

@@ -18,8 +18,8 @@ export interface Scene {
 
 export const SCENES: Scene[] = [
   // ── Enterprise AI ──
-  { path: 'ai', group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu' },
-  { path: 'ai', params: { tab: 'gw' }, group: 'Enterprise AI topics', label: 'Agent Gateway', words: 'mcp model context protocol agents tools fallback rate limit api keys' },
+  { path: 'ai', group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu tensor parallelism multi-gpu batch speculative decoding kv cache offload hibernation hibernate lora fine-tuning iam roles model sharing rag grounding citations' },
+  { path: 'ai', params: { tab: 'gw' }, group: 'Enterprise AI topics', label: 'Agent Gateway', words: 'mcp model context protocol agents tools fallback rate limit api keys header-based audit' },
   { path: 'ai', group: 'Where it runs', label: 'Your data center', words: 'on premises on prem' },
   { path: 'ai', params: { w: 'cloud' }, group: 'Where it runs', label: 'Public cloud', words: 'aws azure eks aks' },
   { path: 'ai', params: { w: 'airgap' }, group: 'Where it runs', label: 'Air-gapped site', words: 'airgap dark site disconnected offline' },

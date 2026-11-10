@@ -19,6 +19,14 @@
 .diagram .ai-model.off { opacity: 0.35; }
 .diagram .ai-req { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .ai-ans { fill: var(--ok); stroke: var(--bg); stroke-width: 1.5; }
+/* More in NAI 2.8 (right column) */
+.ai-more h3 { font-size: var(--fs-12); font-weight: 600; color: var(--text-2); margin: var(--sp-3) 0 var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); }
+.ai-more > div:first-of-type h3 { border-top: 0; padding-top: 0; margin-top: var(--sp-2); }
+.ai-more ul { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-2); }
+.ai-more li { margin: 0; font-size: var(--fs-14); }
+.ai-more li b { font-weight: 600; color: var(--text); }
+.ai-more li p { margin: 0; }
+.ai-tp { margin-left: var(--sp-1); font: 600 var(--fs-11) / 1 var(--font-head); color: var(--muted); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 0.125rem 0.375rem; vertical-align: 0.1em; white-space: nowrap; }
 /* Agent Gateway tab */
 .diagram .ai-dot { fill: none; stroke: var(--line-2); stroke-width: 1.5; }
 .diagram .ai-dot.on.flow { fill: var(--flow); stroke: var(--flow); }

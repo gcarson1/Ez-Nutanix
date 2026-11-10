@@ -268,7 +268,7 @@ export default function GatewayView() {
       <PlayBar
         clock={clock}
         label="Agent Gateway animation"
-        extra={<Illus why="Example apps, providers, tools and log lines, with times compressed. Agent Gateway is licensed separately and its MCP Gateway is generally available; semantic routing is shown as planned for NAI 2.10. Rate limits can be global or set per client by API key or request header." />}
+        extra={<Illus why="Example apps, providers, tools and log lines, with times compressed. Agent Gateway is licensed separately and its MCP Gateway is generally available; semantic routing is shown as planned for NAI 2.10. Rate limits can be global or set per client by API key; per-client limits by request header are a tech preview." />}
       />
     </Show>
   );
