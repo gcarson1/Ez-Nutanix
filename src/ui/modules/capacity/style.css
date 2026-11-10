@@ -6,7 +6,10 @@
 .diagram .cp-lost .db-r { fill: none; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 3 2; }
 .diagram .cp-lost .db-t { fill: var(--bad); }
 .diagram .cp-lost { opacity: 0.75; }
-.cp-share { grid-column: 1 / -1; max-width: 44rem; margin-top: var(--sp-2); }
+.cp-share { margin-top: var(--sp-2); }
+.cp-share-h { font-size: var(--fs-13); font-weight: 600; color: var(--text-2); margin-bottom: var(--sp-2); }
+.diagram .cp-fill { fill: var(--bg); stroke: var(--line-2); }
+.diagram .cp-fill-i { fill: var(--ink); }
 .cp-share-bar { display: flex; height: 0.875rem; border: 1px solid var(--line-2); }
 .cp-share-bar i { display: block; height: 100%; }
 .cp-d { background: var(--ink); }
@@ -39,7 +42,7 @@
 .cp-ec-row .v small { font-family: var(--font); color: var(--faint); }
 
 /* blocks and racks tab */
-.diagram .cp-group { fill: none; stroke: var(--line-2); }
+.diagram .cp-group { fill: none; stroke: var(--text-2); stroke-width: 2; }
 .diagram .cp-group.down { fill: var(--bad-bg); stroke: var(--bad); }
 .diagram .cp-group-t { font-size: 12px; font-weight: 600; fill: var(--muted); }
 .diagram .cp-lost.gone { opacity: 1; }
@@ -59,3 +62,8 @@
 .diagram .cp-vm { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .cp-vm.off { fill: none; stroke: var(--bad); }
 .diagram .cp-vm.moved { fill: var(--ok-bg, var(--bg)); stroke: var(--ok); stroke-width: 1.75; }
+
+.diagram .cp-tie { fill: none; stroke: var(--flow); stroke-width: 1.5; }
+.diagram .cp-tie.lost { stroke: var(--bad); stroke-dasharray: 3 2; }
+.diagram .cp-slot { fill: none; stroke: var(--line-2); stroke-dasharray: 3 3; }
+.diagram .cp-strip-t { font-weight: 600; }

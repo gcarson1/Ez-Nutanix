@@ -6,6 +6,7 @@ import { useMemo } from 'preact/hooks';
 import { setParams, useEnum, useRoute } from '../../../state/route';
 import { KEYS, useScenario } from '../../../state/scenario';
 import { capacityShares, planSpread } from '../../../engine/spread';
+import { DEFAULT_CONFIG } from '../../../engine/cluster';
 import type { RF } from '../../../engine/rules';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
@@ -21,6 +22,8 @@ const PAD = 8;
 const TOP = 100;
 const FLIGHT = 0.7;
 const REBUILD_FLIGHT = 0.9;
+/** Example node size for the capacity bar, from the engine's default node (drives per node x drive size). */
+const NODE_TB = DEFAULT_CONFIG.drivesPerNode * DEFAULT_CONFIG.driveTB;
 
 function useTimeline(nodes: number, rf: RF) {
   return useMemo(() => {
@@ -50,7 +53,7 @@ function Spread({ nodes, rf, t, tl }: { nodes: number; rf: RF; t: number; tl: Re
   const cols = Math.max(2, Math.min(4, maxSlots, Math.floor((nW - 10) / 22)));
   const sz = Math.min(38, (nW - 10) / cols);
   const rows = Math.ceil(maxSlots / cols);
-  const nH = 34 + rows * sz + 10;
+  const nH = 34 + rows * sz + 24;
   const H = TOP + nH + 8;
   const down = new Set(plan.failed);
   const isDown = (n: number) => down.has(n) && t >= fail;
@@ -62,6 +65,9 @@ function Spread({ nodes, rf, t, tl }: { nodes: number; rf: RF; t: number; tl: Re
   };
   const src = { x: W / 2, y: 62 };
   const r = sz * 0.32;
+  // How full each node's drives are: copies it holds now, against a roomy illustrative capacity.
+  const cap = maxSlots + 2;
+  const held = (n: number) => plan.copies.filter((c) => c.node === n && t >= start.get(`${c.piece}:${c.node}`)!).length;
 
   return (
     <svg class="diagram cp-spread" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nodes} nodes with RF${rf}: each piece of data is kept as ${rf} copies on different nodes. When ${rf === 2 ? 'a node fails' : 'two nodes fail'}, the other nodes re-create the missing copies.`}>
@@ -80,6 +86,8 @@ function Spread({ nodes, rf, t, tl }: { nodes: number; rf: RF; t: number; tl: Re
               ✕ {nW > 90 ? 'down' : ''}
             </text>
           )}
+          <rect class="cp-fill" x={nodeX(n) + 10} y={TOP + nH - 13} width={nW - 20} height={6} />
+          <rect class="cp-fill-i" x={nodeX(n) + 10} y={TOP + nH - 13} width={isDown(n) ? 0 : ((nW - 20) * Math.min(held(n), cap)) / cap} height={6} />
         </g>
       ))}
       {plan.copies.map((c) => {
@@ -130,6 +138,8 @@ function CopiesView() {
   const phase = phaseAt(starts, t);
   const caption = captions[phase];
   const share = capacityShares(nodes, rf);
+  const rawTB = nodes * NODE_TB;
+  const tb = (x: number) => Math.round(x * rawTB);
   const opts = NODE_OPTS.includes(nodes) ? NODE_OPTS : [...NODE_OPTS, nodes].sort((a, b) => a - b);
 
   return (
@@ -169,33 +179,37 @@ function CopiesView() {
               { k: 'Usable', v: pct(share.data), sub: 'of raw after the reserve (estimate)', tip: `Raw divided by ${rf} copies, after keeping ${share.reserveNodes === 1 ? 'one node' : 'two nodes'} of free space so data can fully re-protect after a failure. With nodes of different sizes, keep the largest ${share.reserveNodes === 1 ? 'node' : 'two'} free. This is sizing guidance; the real figure depends on the design and data reduction.` },
             ]}
           />
-          <div class="cp-share" role="img" aria-label={`Raw capacity: ${pct(share.data)} your data, ${pct(share.copies)} extra copies, ${pct(share.reserve)} kept free for a rebuild`}>
-            <div class="cp-share-bar">
-              <i class="cp-d" style={{ width: pct(share.data) }} />
-              <i class="cp-c" style={{ width: pct(share.copies) }} />
-              <i class="cp-r" style={{ width: pct(share.reserve) }} />
-            </div>
-            <div class="cp-share-l">
-              <span>
-                <b class="cp-d" /> Your data {pct(share.data)}
-              </span>
-              <span>
-                <b class="cp-c" /> Extra copies {pct(share.copies)}
-              </span>
-              <span>
-                <b class="cp-r" /> Kept free for a rebuild {pct(share.reserve)}
-              </span>
-            </div>
-          </div>
         </>
       }
     >
       <div class="diagram-scroll">
         <Spread nodes={nodes} rf={rf} t={t} tl={tl} />
       </div>
+      <div class="cp-share" role="img" aria-label={`Raw capacity of ${nodes} example nodes, ${rawTB} TB: ${tb(share.data)} TB your data, ${tb(share.copies)} TB extra copies, ${tb(share.reserve)} TB kept free for a rebuild`}>
+        <div class="cp-share-h">
+          Raw capacity, {nodes} example nodes of {NODE_TB.toFixed(1)} TB = {Math.round(rawTB)} TB (example sizes)
+        </div>
+        <div class="cp-share-bar">
+          <i class="cp-d" style={{ width: pct(share.data) }} />
+          <i class="cp-c" style={{ width: pct(share.copies) }} />
+          <i class="cp-r" style={{ width: pct(share.reserve) }} />
+        </div>
+        <div class="cp-share-l">
+          <span>
+            <b class="cp-d" /> Your data {pct(share.data)} · {tb(share.data)} TB
+          </span>
+          <span>
+            <b class="cp-c" /> Extra copies {pct(share.copies)} · {tb(share.copies)} TB
+          </span>
+          <span>
+            <b class="cp-r" /> Kept free for a rebuild {pct(share.reserve)} · {tb(share.reserve)} TB
+          </span>
+        </div>
+      </div>
       <Legend
         items={[
           { color: 'var(--ink)', label: 'Copy of a piece of data' },
+          { color: 'var(--ink)', label: 'Bar in each node: how full its drives are' },
           { color: 'var(--flow)', label: 'Copy being re-created' },
           { color: 'var(--bad)', dashed: true, label: 'Copy lost with the failed node' },
         ]}
@@ -203,7 +217,7 @@ function CopiesView() {
       <PlayBar
         clock={clock}
         label="Data placement animation"
-        extra={<Illus why="A few pieces of data stand in for the whole data set, and the failure and rebuild are compressed into seconds. A real rebuild takes as long as the data to re-protect and the cluster’s load require." />}
+        extra={<Illus why="A few pieces of data stand in for the whole data set, the bars under each node are not measurements, the TB figures use one example node size, and the failure and rebuild are compressed into seconds. A real rebuild takes as long as the data to re-protect and the cluster’s load require." />}
       />
     </Show>
   );

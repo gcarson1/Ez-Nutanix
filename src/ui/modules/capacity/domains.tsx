@@ -10,6 +10,7 @@ import { planDomains, type Awareness, type DomainPlan } from '../../../engine/do
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
+import { NodeFrame, VmBox } from '../../components/parts';
 import { Shape } from './shapes';
 
 const W = 960;
@@ -21,7 +22,8 @@ const FP = 8; // frame padding
 const LABEL = 22; // group label height inside the frame
 const FLIGHT = 0.7;
 const VMS_PER_NODE = 2;
-const VM_ROW = 24; // the strip under each node's data where its VMs run
+const VM_H = 18;
+const VM_ROW = 3 * (VM_H + 3) + 4; // the area under each node's data where its VMs run (up to 3 stacked)
 
 function useDomainTimeline(plan: DomainPlan) {
   return useMemo(() => {
@@ -64,8 +66,8 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
   const down = new Set(plan.failedNodes);
   // Each node runs two VMs; the failed nodes' VMs restart round-robin on the surviving nodes.
   const up = Array.from({ length: nodes }, (_, n) => n).filter((n) => !down.has(n));
-  const vmW = Math.min(30, (nW - 16) / 4 - 4);
-  const vmAt = (n: number, k: number) => ({ x: nodeX(n) + 8 + k * (vmW + 4), y: nodeY + nH - VM_ROW + 4 });
+  const vmW = nW - 16;
+  const vmAt = (n: number, k: number) => ({ x: nodeX(n) + 8, y: nodeY + nH - VM_ROW + 2 + k * (VM_H + 3) });
   const vms = Array.from({ length: nodes * VMS_PER_NODE }, (_, v) => {
     const home = Math.floor(v / VMS_PER_NODE);
     const j = plan.failedNodes.indexOf(home) * VMS_PER_NODE + (v % VMS_PER_NODE);
@@ -106,10 +108,7 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
         const isDown = failed && down.has(n);
         return (
           <g key={n}>
-            <rect class={`node-box${isDown ? ' down' : ''}`} x={nodeX(n)} y={nodeY} width={nW} height={nH} />
-            <text x={nodeX(n) + 8} y={nodeY + 19} class={nW < 80 ? 'd-sub' : 'd-label'} style={{ fontWeight: 600 }}>
-              N{n + 1}
-            </text>
+            <NodeFrame x={nodeX(n)} y={nodeY} w={nW} h={nH} title={`N${n + 1}`} tone={isDown ? 'bad' : undefined} status={isDown ? (nW < 80 ? '✕' : '✕ down') : undefined} />
             {isBack && down.has(n) && t < tl.back + 1.6 && (
               <text x={nodeX(n) + nW - 6} y={nodeY + 19} text-anchor="end" class="ok-fill d-fine" style={{ fontWeight: 600 }}>
                 ✓ up
@@ -124,7 +123,10 @@ function Picture({ plan, tl, t }: { plan: DomainPlan; tl: ReturnType<typeof useD
         const b = vmAt(m.host, m.slot);
         const f = m.moved && t >= tl.vms ? move : 0;
         const off = m.moved && t >= tl.fail && t < tl.vms;
-        return <rect key={`vm${m.v}`} x={a.x + (b.x - a.x) * f} y={a.y} width={vmW} height={VM_ROW - 8} rx={2} class={`cp-vm${off ? ' off' : f >= 1 ? ' moved' : ''}`} />;
+        const x = a.x + (b.x - a.x) * f;
+        const y = a.y + (b.y - a.y) * f;
+        const state = off ? 'down' : m.moved && f > 0 && f < 1 ? 'moving' : f >= 1 ? 'new' : undefined;
+        return <VmBox key={`vm${m.v}`} x={x} y={y} w={vmW} h={VM_H} name={`vm${m.v + 1}`} state={state} />;
       })}
       {plan.copies.map((c) => {
         const start = tl.t0 + c.piece * tl.dt;
