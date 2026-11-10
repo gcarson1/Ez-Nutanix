@@ -1,26 +1,35 @@
-// NCI hub: the sub-modules first, then a "what's in a node" cutaway for reference.
+// NCI hub (N2-021): the intro beside a "what's in a node" cutaway, then the sub-modules in four
+// labeled groups.
 import { Icon } from '../../components/Icon';
 import './style.css';
 import { go } from '../../shell/nav';
 import { MODULES } from '../registry';
+import { content } from './content';
 
 // What each tile says. Its title and icon come from the registry, so a tile always matches the
-// module it opens, and the registry's order (basics first) is the hub's order.
-const TILES: Record<string, { s: string; pri: string }> = {
-  'nci/hci': { s: 'Three tiers fold into one node; the cluster then grows node by node, each with its own storage controller.', pri: 'Architecture' },
-  'nci/cluster': { s: 'One 4-node cluster: data placement, live migration, planned shutdown, VM failover and drive failure.', pri: 'Storage' },
-  'nci/datapath': { s: 'Follow a write or a read from the VM through the controller to its copies.', pri: 'Storage' },
-  'nci/capacity': { s: 'Copies, erasure coding and block or rack awareness: what protection costs and how it heals.', pri: 'Storage' },
-  'nci/snapshots': { s: 'A snapshot copies the map, not the data; clones share blocks until they change.', pri: 'Storage' },
-  'nci/failures': { s: 'Pick a failure, from one drive to two nodes at once, and watch the cluster heal.', pri: 'Resilience' },
-  'nci/lcm': { s: 'Updates one node at a time while workloads keep running.', pri: 'Operations' },
-  'nci/network': { s: 'How a node’s bonded uplinks carry traffic, and what happens when a link fails.', pri: 'Networking' },
-  'nci/flow': { s: 'Rules that follow each VM by its labels, and private networks (VPCs) built in software.', pri: 'Microsegmentation' },
-  'nci/security': { s: 'Encryption at rest and its keys, against a stolen drive or node.', pri: 'Encryption' },
-  'nci/dr': { s: 'Async, NearSync / Sync or Metro Availability between sites, and a failover.', pri: 'Protection' },
-  'nci/move': { s: 'VMs copied over, kept in sync, then cut over with minimal downtime.', pri: 'Adoption' },
-  'nci/edge': { s: '1-, 2- and 3-node sites, and what each survives.', pri: 'Edge' },
+// module it opens.
+const TILES: Record<string, string> = {
+  'nci/hci': 'Three tiers fold into one node; the cluster then grows node by node, each with its own storage controller.',
+  'nci/cluster': 'One 4-node cluster: data placement, live migration, planned shutdown, VM failover and drive failure.',
+  'nci/datapath': 'Follow a write or a read from the VM through the controller to its copies.',
+  'nci/capacity': 'Copies, erasure coding and block or rack awareness: what protection costs and how it heals.',
+  'nci/snapshots': 'A snapshot copies the map, not the data; clones share blocks until they change.',
+  'nci/failures': 'Pick a failure, from one drive to two nodes at once, and watch the cluster heal.',
+  'nci/lcm': 'Updates one node at a time while workloads keep running.',
+  'nci/network': 'How a node’s bonded uplinks carry traffic, and what happens when a link fails.',
+  'nci/flow': 'Rules that follow each VM by its labels, and private networks (VPCs) built in software.',
+  'nci/security': 'Encryption at rest and its keys, against a stolen drive or node.',
+  'nci/dr': 'Async, NearSync / Sync or Metro Availability between sites, and a failover.',
+  'nci/move': 'VMs copied over, kept in sync, then cut over with minimal downtime.',
+  'nci/edge': '1-, 2- and 3-node sites, and what each survives.',
 };
+
+const GROUPS: { label: string; paths: string[] }[] = [
+  { label: 'Foundations', paths: ['nci/hci', 'nci/cluster', 'nci/datapath'] },
+  { label: 'Protection', paths: ['nci/capacity', 'nci/snapshots', 'nci/failures', 'nci/dr', 'nci/security'] },
+  { label: 'Operations', paths: ['nci/lcm', 'nci/move', 'nci/edge'] },
+  { label: 'Networking', paths: ['nci/network', 'nci/flow'] },
+];
 
 function NodeCutaway() {
   // One node: hypervisor hosting user VMs and the CVM; CVM owns the local drives (passthrough).
@@ -43,7 +52,7 @@ function NodeCutaway() {
         Controller VM (CVM)
       </text>
       <text class="d-sub" x={400} y={83} text-anchor="middle" style={{ fill: 'rgba(255,255,255,.8)' }}>
-        AOS services · Stargate, Curator…
+        Stargate, Curator and more
       </text>
       <rect class="bg3" x={20} y={112} width={480} height={36} stroke="var(--line-2)" />
       <text class="d-label" x={260} y={135} text-anchor="middle" style={{ fontWeight: 600 }}>
@@ -56,7 +65,7 @@ function NodeCutaway() {
       {['NVMe', 'NVMe', 'SSD', 'SSD', 'SSD', 'SSD'].map((d, i) => (
         <g key={i}>
           <rect class="disk" x={34 + i * 56} y={198} width={48} height={34} />
-          <text x={58 + i * 56} y={219} text-anchor="middle" class="mono d-fine">
+          <text x={58 + i * 56} y={219} text-anchor="middle" class="d-fine">
             {d}
           </text>
         </g>
@@ -71,7 +80,7 @@ function NodeCutaway() {
       {[0, 1].map((i) => (
         <g key={i}>
           <rect x={380 + i * 56} y={244} width={44} height={26} fill="none" stroke="var(--line-2)" />
-          <text x={402 + i * 56} y={261} text-anchor="middle" class="mono d-fine">
+          <text x={402 + i * 56} y={261} text-anchor="middle" class="d-fine">
             NIC
           </text>
         </g>
@@ -81,28 +90,43 @@ function NodeCutaway() {
 }
 
 export default function NciHub() {
+  const byPath = new Map(MODULES.map((m) => [m.content.path, m]));
   return (
     <>
-      <h2 class="sec-h">Explore</h2>
-      <div class="subgrid">
-        {MODULES.filter((m) => m.parent === 'nci').map(({ content: c, icon }) => (
-          <button type="button" class="subtile" key={c.path} data-path={c.path} onClick={(e) => go(c.path, undefined, e.currentTarget as HTMLElement)}>
-            <span class="t">
-              <Icon name={icon} />
-              {c.title}
-            </span>
-            <span class="s">{TILES[c.path]?.s ?? c.summary}</span>
-            {TILES[c.path] && <span class="pri">{TILES[c.path].pri}</span>}
-          </button>
-        ))}
+      <div class="hub-top">
+        <div class="hub-intro">
+          <p class="hub-lede">{content.summary}</p>
+          <p class="field-note">Every node runs the hypervisor, the user VMs and one Controller VM (CVM). The CVM talks to the node’s drives directly, and all CVMs together form the cluster’s storage controller.</p>
+        </div>
+        <figure class="hub-node" aria-labelledby="hub-node-h">
+          <figcaption class="side-sec-h" id="hub-node-h">
+            What’s in a node
+          </figcaption>
+          <NodeCutaway />
+        </figure>
       </div>
-      <section class="hub-node" aria-labelledby="hub-node-h">
-        <h2 class="sec-h" id="hub-node-h">
-          What’s in a node
-        </h2>
-        <NodeCutaway />
-        <p class="field-note">Every node runs the hypervisor, the user VMs and one CVM. The CVM talks to the node’s drives directly, and all CVMs together form the cluster’s storage controller.</p>
-      </section>
+      {GROUPS.map((g) => (
+        <section class="hub-group" key={g.label} aria-labelledby={`hub-${g.label}`}>
+          <h2 class="sec-h" id={`hub-${g.label}`}>
+            {g.label}
+          </h2>
+          <div class="subgrid">
+            {g.paths.map((p) => {
+              const m = byPath.get(p);
+              if (!m) return null;
+              return (
+                <button type="button" class="subtile" key={p} data-path={p} onClick={(e) => go(p, undefined, e.currentTarget as HTMLElement)}>
+                  <span class="t">
+                    <Icon name={m.icon} />
+                    {m.content.title}
+                  </span>
+                  <span class="s">{TILES[p] ?? m.content.summary}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </>
   );
 }

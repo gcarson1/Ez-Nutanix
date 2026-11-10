@@ -74,7 +74,7 @@ test('presenter, glossary and shortcuts open from the keyboard', async ({ page }
 });
 
 // Nutanix 2.0 layout: at 1440x900 the picture starts high and the play bar is on screen without scrolling.
-for (const m of MODULES.filter((x) => x.content.path !== 'nci')) {
+for (const m of MODULES) {
   test(`module ${m.content.path} fits the first screen`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${FILE}#/${m.content.path}`);
