@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon';
 import awsLogo from '../../assets/logos/aws.svg';
 import azureLogo from '../../assets/logos/azure.svg';
 import googleCloudLogo from '../../assets/logos/google-cloud-icon.svg';
+import { Logo, type Vendor } from '../components/logos';
 import { findModule } from '../modules/registry';
 import { go } from './nav';
 
@@ -34,6 +35,8 @@ const SERVICES: Card[] = [
   { id: 'ai', title: 'Enterprise AI', see: 'Private model endpoints and an agent gateway', path: 'ai' },
   { id: 'beacon', title: 'Project Beacon', see: 'The run-anywhere direction behind these services', path: 'beacon', tag: 'Vision' },
 ];
+
+const OEMS: Vendor[] = ['Nutanix', 'Dell', 'HPE', 'Lenovo', 'Cisco', 'Fujitsu', 'Supermicro'];
 
 const CLOUDS = [
   { id: 'aws', title: 'AWS', src: awsLogo, path: 'cloud', params: { c: 'aws' } },
@@ -63,7 +66,7 @@ const TOUR: TourStep[] = [
   { sel: 'central', title: 'One control plane across everything', text: 'Nutanix Central sits above many clusters and sites: fleet management, operations, Kubernetes and data security from one place.' },
 ];
 
-function CardBtn({ c, tour }: { c: Card; tour?: string }) {
+function CardBtn({ c, tour, children }: { c: Card; tour?: string; children?: preact.ComponentChildren }) {
   const icon = findModule(c.path)?.icon ?? 'layers';
   return (
     <button type="button" class="hm-card" data-tour={tour} data-pane={c.id} data-path={c.path} onClick={(e) => go(c.path, c.params, e.currentTarget as HTMLElement)}>
@@ -75,6 +78,7 @@ function CardBtn({ c, tour }: { c: Card; tour?: string }) {
         {c.tag && <span class="hm-tag">{c.tag}</span>}
       </span>
       <span class="hm-see">{c.see}</span>
+      {children}
     </button>
   );
 }
@@ -168,7 +172,13 @@ export function Landing() {
                   ))}
                 </span>
               </div>
-              <CardBtn c={{ id: 'bare', title: 'OEM of your choice', see: 'Nutanix NX and six OEM hardware platforms', path: 'oem' }} tour="bare" />
+              <CardBtn c={{ id: 'bare', title: 'OEM of your choice', see: 'Nutanix NX and six OEM hardware platforms', path: 'oem' }} tour="bare">
+                <span class="hm-marks">
+                  {OEMS.map((v) => (
+                    <Logo key={v} vendor={v} size="table" />
+                  ))}
+                </span>
+              </CardBtn>
             </div>
           </Band>
         </div>

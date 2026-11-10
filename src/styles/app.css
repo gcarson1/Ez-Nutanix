@@ -389,7 +389,8 @@ body { min-height: 100vh; }
   .diagram .beat { animation: none; }
 }
 @media print {
-  .bar, .foot-bar, .playbar, .drawer, }
+  .bar, .foot-bar, .playbar, .drawer { display: none !important; }
+}
 
 /* ── shell additions ──────────────────────────────────────────────── */
 .bar-r { gap: var(--sp-1); }
@@ -530,6 +531,7 @@ body { min-height: 100vh; }
 .hm-logo { display: inline-grid; place-items: center; height: 2.5rem; padding: 0 var(--sp-3); border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; cursor: pointer; }
 .hm-logo:hover, .hm-logo:focus-visible { border-color: var(--accent); }
 .hm-logo img { height: 1.375rem; width: auto; display: block; }
+.hm-marks { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--sp-1); }
 .hm-partial { border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--bg-2); }
 .hm-hint { color: var(--faint); font-size: var(--fs-13); }
 @media (max-width: 1100px) {
@@ -541,3 +543,10 @@ body { min-height: 100vh; }
   .hm-label { padding-top: 0; }
   .hm-grid.two, .hm-grid.four, .hm-grid.five { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── vendor logos (N2-044): white plate, equal optical height ───────── */
+.logo-plate { --h: 20px; box-sizing: border-box; height: calc(var(--h) * 1.5 + 14px); display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); line-height: 1; }
+.logo-plate.table { --h: 14px; height: calc(var(--h) * 1.5 + 10px); padding: 4px 8px; }
+.logo-plate img { display: block; height: calc(var(--h) * var(--s, 1)); width: auto; max-width: 7.5rem; }
+.logo-plate.table img { max-width: 5rem; }
+.logo-text { font: 700 calc(var(--h) * 0.8) / var(--h) var(--font-head); color: #1b1b1f; white-space: nowrap; }

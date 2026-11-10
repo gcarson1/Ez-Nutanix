@@ -22,3 +22,13 @@
 @media (max-width: 600px) {
   .diagram-scroll > .xs-dia, .diagram-scroll > .es-dia { min-width: 44rem; }
 }
+.xs-arrays { display: flex; flex-direction: column; gap: var(--sp-2); }
+.xs-table { width: 100%; border-collapse: collapse; font-size: var(--fs-13); }
+.xs-table th { text-align: left; font-weight: 600; color: var(--muted); padding: 0 var(--sp-2) var(--sp-1); border-bottom: 1px solid var(--line); }
+.xs-table td { padding: var(--sp-2); border-bottom: 1px solid var(--line); vertical-align: middle; }
+.xs-table td:first-child { padding-left: 0; }
+.xs-table b { display: block; font-family: var(--font-head); }
+.xs-by { display: block; color: var(--muted); font-size: var(--fs-12); }
+.xs-table td:last-child { white-space: nowrap; font-weight: 600; }
+.xs-table td:last-child svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; }
+.xs-table .logo-plate { width: 5.5rem; }

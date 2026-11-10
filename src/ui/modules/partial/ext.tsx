@@ -7,15 +7,56 @@
 // volume and snapshot lines are worded for the generally available arrays.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Icon } from '../../components/Icon';
+import { Logo, type Vendor } from '../../components/logos';
 import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 
 /** The supported arrays, each with the technology Nutanix uses to reach it (EXT-1 to EXT-3, EXT-6, EXT-15). */
-const ARRAYS: Point[] = [
-  { k: 'Everpure FlashArray', by: 'NVMe/TCP · FlashArray APIs', text: 'Each VM disk is a FlashArray volume; Nutanix takes snapshots and clones through FlashArray’s own APIs.', tone: 'ink', at: 0 },
-  { k: 'Dell PowerStore', by: 'NVMe/TCP · PowerStore APIs', text: 'Generally available from AOS 7.6; snapshots and clones go through PowerStore’s own APIs.', tone: 'ink', at: 0 },
-  { k: 'Dell PowerFlex', by: 'Dell SDC in the CVM', text: 'No NVMe/TCP: Dell’s own storage client (SDC) runs inside each CVM and talks to PowerFlex directly.', tone: 'ink', at: 0 },
-  { k: 'NetApp ONTAP', by: 'NFS · ONTAP APIs', text: 'Announced, not yet generally available: AFF and select FAS systems over NFS, driven through ONTAP’s APIs.', tone: 'warn', at: 0 },
+const ARRAYS: { vendor: Vendor; k: string; by: string; ga: boolean }[] = [
+  { vendor: 'Everpure', k: 'Everpure FlashArray', by: 'NVMe/TCP · FlashArray APIs', ga: true },
+  { vendor: 'Dell', k: 'Dell PowerStore', by: 'NVMe/TCP · PowerStore APIs (AOS 7.6)', ga: true },
+  { vendor: 'Dell', k: 'Dell PowerFlex', by: 'Dell SDC in the CVM', ga: true },
+  { vendor: 'NetApp', k: 'NetApp ONTAP', by: 'NFS · ONTAP APIs (AFF, select FAS)', ga: false },
 ];
+
+function ArrayTable() {
+  return (
+    <section class="xs-arrays" aria-labelledby="xs-arrays-h">
+      <h3 class="side-sec-h" id="xs-arrays-h">
+        Works with
+      </h3>
+      <table class="xs-table">
+        <thead>
+          <tr>
+            <th scope="col">
+              <span class="sr-only">Logo</span>
+            </th>
+            <th scope="col">Array</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ARRAYS.map((a) => (
+            <tr key={a.k}>
+              <td>
+                <Logo vendor={a.vendor} size="table" />
+              </td>
+              <td>
+                <b>{a.k}</b>
+                <span class="xs-by">{a.by}</span>
+              </td>
+              <td class={a.ga ? 'ok-text' : 'warn-text'}>
+                <Icon name={a.ga ? 'ok' : 'info'} />
+                {a.ga ? 'Available' : 'Announced'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p class="muted small">Supported models are on the hardware compatibility list.</p>
+    </section>
+  );
+}
 
 const P = [0, 3.2, 6.6, 10.4, 13.8];
 const END = 17.2;
@@ -236,7 +277,7 @@ export default function ExtStorage() {
     <Show clock={clock}
       side={
         <>
-          <Points label="Works with" items={ARRAYS} t={0} until={-1} />
+          <ArrayTable />
           <Points label="Why customers choose it" items={POINTS} t={t} />
         </>
       }

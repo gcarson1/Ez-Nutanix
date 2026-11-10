@@ -302,7 +302,7 @@ function About({ onClose }: { onClose: () => void }) {
       </div>
       <div class="modal-sec">
         <p class="muted small">
-          Version {VERSION.slice(1)}. Facts checked on {CONFIG.factsCheckedOn}. Product names are used descriptively. {CONFIG.disclaimer}
+          Version {VERSION.slice(1)}. Facts checked on {CONFIG.factsCheckedOn}. Product names are used descriptively. Vendor names and logos are trademarks of their owners, used only to name supported platforms. {CONFIG.disclaimer}
         </p>
         <details class="credits">
           <summary class="muted small">Icons: Lucide, ISC license</summary>

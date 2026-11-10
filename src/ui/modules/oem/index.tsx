@@ -4,9 +4,10 @@
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Names, Show, ease, phaseAt, prog } from '../../components/show';
+import { LOGOS, LOGO_SCALE, type Vendor } from '../../components/logos';
 import './style.css';
 
-const VENDORS = [
+const VENDORS: { name: Vendor; sub: string[] }[] = [
   { name: 'Nutanix', sub: ['NX nodes'] },
   { name: 'Dell', sub: ['XC Family'] },
   { name: 'HPE', sub: ['DX Series'] },
@@ -78,16 +79,12 @@ function OemDiagram({ t }: { t: number }) {
         return (
           <g key={v.name} style={{ opacity: tilesIn(i) * (ph === 2 && !inEstate ? 0.45 : 1) }}>
             <rect x={x} y={TILE.y} width={TW} height={TILE.h} class={`oe-srv${on || inEstate ? ' on' : ''}`} />
-            <text x={x + 12} y={TILE.y + 24} class="oe-name">
-              {v.name}
-            </text>
+            <rect x={x + 8} y={TILE.y + 8} width={TW - 16} height={40} rx={3} class="oe-plate" />
+            <image href={LOGOS[v.name] ?? undefined} x={x + 16} y={TILE.y + 28 - 10 * LOGO_SCALE[v.name]} width={TW - 32} height={20 * LOGO_SCALE[v.name]} preserveAspectRatio="xMidYMid meet" />
             {v.sub.map((s, k) => (
-              <text key={s} x={x + 12} y={TILE.y + 42 + k * 15} class="muted d-sub">
+              <text key={s} x={x + 12} y={TILE.y + 66 + k * 15} class="d-label" style={{ fontWeight: 600 }}>
                 {s}
               </text>
-            ))}
-            {[0, 1].map((r) => (
-              <line key={r} x1={x + 12} x2={x + TW - 12} y1={TILE.y + 74 + r * 8} y2={TILE.y + 74 + r * 8} class="oe-ru" />
             ))}
             <text x={x + 12} y={TILE.y + TILE.h - 8} class={`${on ? 'ok-fill' : 'faint'} d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
               {on ? '✓ runs Nutanix' : i === 0 ? 'Nutanix hardware' : 'OEM platform'}
