@@ -337,9 +337,11 @@ body { min-height: 100vh; }
 .kpis { display: flex; gap: var(--sp-4) var(--sp-8); flex-wrap: wrap; }
 .kpi { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 7rem; }
 .kpi .k { font-size: var(--fs-12); color: var(--muted); }
-.kpi .v { font: 600 var(--fs-24) / 1.1 var(--font-head); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.kpi .v { display: inline-flex; align-items: center; gap: var(--sp-1h); font: 600 var(--fs-18) / 1.25 var(--font-head); font-variant-numeric: tabular-nums; color: var(--text); }
+.kpi-st { display: inline-grid; flex: none; }
+.kpi-st svg { width: 0.875rem; height: 0.875rem; }
 .kpi .s { font-size: var(--fs-12); color: var(--faint); }
-@media (max-width: 900px) { .show-foot { grid-template-columns: minmax(0, 1fr); } .kpi .v { font-size: var(--fs-20); } }
+@media (max-width: 900px) { .show-foot { grid-template-columns: minmax(0, 1fr); } }
 /* numbered cards that light up with the animation */
 .points { display: flex; flex-direction: column; gap: var(--sp-2); width: 100%; }
 .show-top > .choice + .points, .show-top > .names + .points { flex: 1 1 36rem; width: auto; }

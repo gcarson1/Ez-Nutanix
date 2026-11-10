@@ -127,17 +127,29 @@ export interface KpiItem {
   sub?: ComponentChildren;
 }
 
-/** A row of big key numbers. */
+const KPI_ICON: Partial<Record<Tone, string>> = { ok: 'ok', warn: 'warn', bad: 'bad', flow: 'flow' };
+
+/** Key numbers: a muted label, the value in plain text, and status as a small colored icon before it. */
 export function Kpis({ items }: { items: KpiItem[] }) {
   return (
     <div class="kpis">
-      {items.map((i) => (
-        <div class="kpi" key={i.k}>
-          <span class="k">{i.tip ? <Tip text={i.tip}>{i.k}</Tip> : i.k}</span>
-          <span class={`v${i.tone && i.tone !== 'neutral' ? ` ${i.tone}-text` : ''}`}>{i.v}</span>
-          {i.sub && <span class="s">{i.sub}</span>}
-        </div>
-      ))}
+      {items.map((i) => {
+        const icon = i.tone ? KPI_ICON[i.tone] : undefined;
+        return (
+          <div class="kpi" key={i.k}>
+            <span class="k">{i.tip ? <Tip text={i.tip}>{i.k}</Tip> : i.k}</span>
+            <span class="v">
+              {icon && (
+                <span class={`kpi-st ${i.tone}-text`} aria-hidden="true">
+                  <Icon name={icon} />
+                </span>
+              )}
+              {i.v}
+            </span>
+            {i.sub && <span class="s">{i.sub}</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
