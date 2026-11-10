@@ -32,3 +32,13 @@
 .diagram .dr-dot.ok { fill: var(--ok); }
 .diagram .dr-dim > * { opacity: 0.6; }
 .diagram .dr-dim > .node-box { opacity: 1; }
+.diagram .dr-card { fill: var(--bg); stroke: var(--line-2); }
+.diagram .dr-card.on { stroke: var(--ink); stroke-width: 1.5; }
+.diagram .dr-axis { stroke: var(--line-2); stroke-width: 2; }
+.diagram .dr-axis.sync { stroke: var(--ok); }
+.diagram .dr-tick { stroke-width: 3; }
+.diagram .dr-tick.got { stroke: var(--ink); }
+.diagram .dr-tick.wait { stroke: var(--flow); }
+.diagram .dr-tick.lost { stroke: var(--bad); stroke-dasharray: 3 2; }
+.diagram .dr-gap { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1.25; }
+.diagram .dr-fail { stroke: var(--bad); stroke-width: 2.5; }
