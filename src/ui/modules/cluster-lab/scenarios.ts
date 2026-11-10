@@ -185,6 +185,11 @@ export function lab(): Lab {
   return LAB;
 }
 
+/** The number a VM is shown with (VM5 -> 5), which its data blocks repeat. VMs are numbered per node, not by engine id. */
+export function vmNumber(id: number): number {
+  return Number(lab().labels.get(id)!.slice(2));
+}
+
 /** Group visible tiles by drive, keeping a stable bottom-up order (initial copies first, new ones on top). */
 function group(recs: Rec[], t: number, look: (r: Rec) => TileLook | null): Map<string, TileF[]> {
   const items = lab().s0.items;

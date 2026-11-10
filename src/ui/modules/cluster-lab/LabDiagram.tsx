@@ -4,7 +4,7 @@
 // node is a short straight line. Renders a Frame only.
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
-import { DRIVES, NODES, TILE_CAP, type Anchor, type ArcF, type Frame, type NodeLook, type Slot, type TileF, type VmF } from './scenarios';
+import { DRIVES, NODES, TILE_CAP, vmNumber, type Anchor, type ArcF, type Frame, type NodeLook, type Slot, type TileF, type VmF } from './scenarios';
 import { flowDots, pathLength } from '../../components/show';
 import { DataBlock, Drive, VmBox } from '../../components/parts';
 
@@ -159,7 +159,7 @@ function Node({ n, look, tiles, failed, tag, rebuilding, dim, hover }: { n: numb
                 <DataBlock
                   x={dx + 2 + ((i % TCOLS) + 0.5) * pitchX}
                   y={dy + DRIVE_Y + 5 + (Math.floor(i / TCOLS) + 0.5) * pitchY}
-                  letter={String(tl.vm + 1)}
+                  letter={String(vmNumber(tl.vm))}
                   tint={tl.vm}
                   size={TS}
                   cls={`t-${tl.look}`}

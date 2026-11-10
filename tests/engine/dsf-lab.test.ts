@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   lab,
   frameAt,
+  vmNumber,
   stepAt,
   failPlan,
   drivePlan,
@@ -201,3 +202,12 @@ describe('every node takes part in a rebuild', () => {
   });
 });
 
+describe('data block numbers', () => {
+  it('every block repeats the number shown on its VM', () => {
+    for (const id of ORDER) {
+      const f = frameAt(id, 0);
+      const shown = new Map(f.vms.map((v) => [v.id, Number(v.label.slice(2))]));
+      for (const tiles of f.tiles.values()) for (const tl of tiles) expect(vmNumber(tl.vm)).toBe(shown.get(tl.vm));
+    }
+  });
+});
