@@ -13,6 +13,9 @@
 .diagram .nk-band.on { fill: var(--ink); stroke: var(--ink); }
 .diagram text.nk-band-t { font-size: 12px; font-weight: 600; }
 .diagram text.nk-band-t.on { fill: #fff; }
+.diagram text.nk-comp { fill: var(--muted); }
+.diagram text.nk-comp.on { fill: #fff; }
+.diagram .nk-tick { fill: var(--line-2); }
 .diagram .nk-link { stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .diagram .nk-dot { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
 .diagram .nk-dot.req { fill: var(--flow); }

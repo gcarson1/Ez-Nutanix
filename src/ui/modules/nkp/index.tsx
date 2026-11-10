@@ -24,33 +24,25 @@ const STEPS = paced(S, SCENES.map((s) => [s.k, s.text]));
 const TOOLS_GONE = S[2] + 2.2;
 
 const W = 960;
-const H = 392;
+const H = 424;
 const IW = 225;
 const IG = 20;
 const islX = (i: number) => i * (IW + IG);
-const ISL = { y: 240, h: 146 };
-const LAYER = { y: 104, h: 96 };
+const ISL = { y: 262, h: 156 };
+const LAYER = { y: 104, h: 128 };
 const ENVS = [
-  { name: 'Nutanix (AHV)', sub: 'private cloud', nkp: true, shape: 0, color: 'var(--text)' },
-  { name: 'VMware vSphere', sub: 'on-premises', nkp: true, shape: 1, color: 'var(--muted)' },
-  { name: 'AWS', sub: 'NKP cluster in your account', nkp: true, shape: 2, color: 'var(--s2)' },
-  { name: 'Azure', sub: 'existing AKS, attached', nkp: false, shape: 3, color: 'var(--faint)' },
+  { name: 'Nutanix (AHV)', sub: 'private cloud', nkp: true, tools: ['upgrade script v3', 'Prometheus', 'infra ticket queue'] },
+  { name: 'VMware vSphere', sub: 'on-premises', nkp: true, tools: ['runbook upgrades', 'vendor monitor', 'email alerts'] },
+  { name: 'AWS', sub: 'NKP cluster in your account', nkp: true, tools: ['console upgrades', 'CloudWatch', 'cloud support cases'] },
+  { name: 'Azure', sub: 'existing AKS, attached', nkp: false, tools: ['portal upgrades', 'Azure Monitor', 'separate ticket queue'] },
 ];
-const TOOLS = ['upgrades', 'monitoring', 'security', 'tickets'];
 const WORK = ['Provisioning', 'Upgrades', 'Security policies', 'Observability', 'Storage and data protection', 'Developer access', 'Troubleshooting'];
 const BANDS = ['Provision and upgrade', 'Govern and secure', 'Observe and troubleshoot', 'Deliver with GitOps', 'Protect data and apps', 'Manage the fleet'];
+/** Example components under each band; a band with no sourced component stays empty (facts NKP-5 to NKP-9). */
+const COMPS = ['Cluster API', '', 'Prometheus, Grafana', 'Flux', 'Velero', ''];
 const BW = (W - 24 - 5 * 8) / 6;
 const bandX = (i: number) => 12 + i * (BW + 8);
 const ATTACH = ['storage', 'network', 'observability', 'policy'];
-
-/** One tool drawn in the island's own shape and gray, kept off the legend's colors: every environment looks different. */
-function Tool({ shape, color, x, y }: { shape: number; color: string; x: number; y: number }) {
-  const r = 7;
-  if (shape === 0) return <circle cx={x} cy={y} r={r} fill={color} />;
-  if (shape === 1) return <rect x={x - r} y={y - r} width={2 * r} height={2 * r} fill={color} />;
-  if (shape === 2) return <polygon points={`${x},${y - r - 1} ${x + r + 1},${y + r} ${x - r - 1},${y + r}`} fill={color} />;
-  return <polygon points={`${x},${y - r - 1} ${x + r + 1},${y} ${x},${y + r + 1} ${x - r - 1},${y}`} fill={color} />;
-}
 
 function NkpDiagram({ t }: { t: number }) {
   const sc = phaseAt(S, t);
@@ -107,7 +99,6 @@ function NkpDiagram({ t }: { t: number }) {
               <text class="d-sub" x={islX(i) + 18} y={55 + row * 27}>
                 {w}
               </text>
-              <Tool shape={ENVS[i].shape} color={ENVS[i].color} x={islX(i) + IW - 22} y={51 + row * 27} />
             </g>
           )),
         )}
@@ -152,16 +143,22 @@ function NkpDiagram({ t }: { t: number }) {
             const [l1, l2] = b.split(/ (?=and |with )/);
             return (
               <g key={b}>
-                <rect x={bandX(k)} y={LAYER.y + 34} width={BW} height={52} rx={4} class={`nk-band${on ? ' on' : ''}`} />
+                <rect x={bandX(k)} y={LAYER.y + 34} width={BW} height={68} rx={4} class={`nk-band${on ? ' on' : ''}`} />
                 <text x={bandX(k) + 10} y={LAYER.y + 56} class={`nk-band-t${on ? ' on' : ''}`}>
                   {l1}
                 </text>
                 <text x={bandX(k) + 10} y={LAYER.y + 72} class={`nk-band-t${on ? ' on' : ''}`} style={{ fontWeight: 400 }}>
                   {l2}
                 </text>
+                <text x={bandX(k) + 10} y={LAYER.y + 92} class={`d-fine nk-comp${on ? ' on' : ''}`}>
+                  {COMPS[k]}
+                </text>
               </g>
             );
           })}
+          <text x={12} y={LAYER.y + 119} class="muted d-fine">
+            <tspan style={{ fontWeight: 600 }}>Example components.</tspan> What is included and on by default depends on the NKP release and edition.
+          </text>
         </g>
       )}
       {ENVS.map((_, i) => linkIn(i) > 0 && <line key={i} x1={cx(i)} x2={cx(i)} y1={LAYER.y + LAYER.h} y2={LAYER.y + LAYER.h + (ISL.y - LAYER.y - LAYER.h) * linkIn(i)} class="nk-link" />)}
@@ -173,10 +170,9 @@ function NkpDiagram({ t }: { t: number }) {
       {ENVS.map((e, i) => {
         const x = islX(i);
         const k = islandsIn(i);
-        const bob = sc < 2 ? Math.sin(t * 1.3 + i * 1.7) * 3 : 0;
         const ver = upgraded(i) ? '1.36' : '1.35';
         return (
-          <g key={e.name} style={{ opacity: k, transform: `translateY(${bob + (1 - k) * 14}px)` }}>
+          <g key={e.name} style={{ opacity: k, transform: `translateY(${(1 - k) * 14}px)` }}>
             <rect x={x} y={ISL.y} width={IW} height={ISL.h} rx={sc < 2 ? 14 : 4} class={`nk-isl${sc < 2 ? ' loose' : ''}`} />
             <text class="d-label" x={x + 12} y={ISL.y + 20} style={{ fontWeight: 600 }}>
               {e.name}
@@ -208,13 +204,12 @@ function NkpDiagram({ t }: { t: number }) {
 
             {/* scenes 1–2: each island's own tools; later, one shared status language */}
             {toolsOut > 0 &&
-              TOOLS.map((tool, n) => (
+              e.tools.map((tool, n) => (
                 <g key={tool} style={{ opacity: toolsOut * ease(prog(t, 1 + i * 0.3 + n * 0.15, 1.5 + i * 0.3 + n * 0.15)) }}>
-                  <Tool shape={e.shape} color={e.color} x={x + 32 + n * 54} y={ISL.y + 118} />
-                  <text x={x + 32 + n * 54} y={ISL.y + 138} text-anchor="middle" class="muted d-fine">
+                  {t >= 3 + i * 0.4 + n * 0.3 ? <circle cx={x + 20} cy={ISL.y + 115 + n * 14} r={4} class="nk-warn" /> : <circle cx={x + 20} cy={ISL.y + 115 + n * 14} r={2} class="nk-tick" />}
+                  <text x={x + 32} y={ISL.y + 119 + n * 14} class="muted d-fine">
                     {tool}
                   </text>
-                  {t >= 3 + i * 0.4 + n * 0.3 && <circle cx={x + 40 + n * 54} cy={ISL.y + 110} r={4} class="nk-warn" />}
                 </g>
               ))}
             {sc >= 3 && (
@@ -273,7 +268,7 @@ export default function Nkp() {
         items={
           t < TOOLS_GONE
             ? [
-                { color: 'var(--muted)', label: 'Each environment’s own tools, a different shape and gray on each' },
+                { color: 'var(--muted)', label: 'Each environment’s own tools, listed by name' },
                 { color: 'var(--warn)', label: 'An issue in one of them' },
               ]
             : [
