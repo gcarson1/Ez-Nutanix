@@ -27,6 +27,7 @@ import {
 } from '../../../engine/ncm';
 import { paced, stepsFrom, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
+import { Icon } from '../../components/Icon';
 import { Choice, Kpis, Points, Show, ease, phaseAt, prog, type Point, Tabs } from '../../components/show';
 import './style.css';
 
@@ -38,6 +39,10 @@ const TIER_TIP = {
 } as const;
 
 const W = 960;
+
+/** Fact scope: the release every tab is drawn for, and why it may differ from a real deployment. */
+const SHOWN = { k: 'Shown', v: 'NCM 2.1', sub: 'release 2.1, Aug 2026' } as const;
+const REPLATFORM = ' NCM is being re-platformed, and its services are not all deployed the same way, so check what your release runs and where.';
 
 // ───────────────────────── AIOps ─────────────────────────
 const DAYS = 21;
@@ -73,11 +78,11 @@ function useWeek() {
 
 function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; t: number }) {
   const { pts, flagged, fixed } = wk;
-  const H = 290;
-  const l = 48;
+  const H = 340;
+  const l = 68;
   const r = 16;
-  const top = 18;
-  const b = 34;
+  const top = 64;
+  const b = 56;
   const n = pts.length;
   const sx = (i: number) => l + (i / (n - 1)) * (W - l - r);
   const sy = (v: number) => top + (1 - v / 100) * (H - top - b);
@@ -100,17 +105,23 @@ function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; 
     <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`CPU over one week with the learned normal band and a fixed ${FIXED}% alarm line. Spikes ${SPIKES[0].when} and ${SPIKES[1].when} are both flagged as unusual; the fixed alarm fires only for the one ${SPIKES[1].when}.`}>
       {[0, 25, 50, 75, 100].map((v) => (
         <g key={v}>
-          <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
+          <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} class={v ? 'ncm-grid' : 'line'} />
           <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted d-fine">
             {v}%
           </text>
         </g>
       ))}
       {WEEKDAYS.map((d, i) => (
-        <text key={d} x={sx(i * 24 + 12)} y={H - 10} text-anchor="middle" class="muted d-sub">
+        <text key={d} x={sx(i * 24 + 12)} y={H - 30} text-anchor="middle" class="muted d-sub">
           {d}
         </text>
       ))}
+      <text x={(l + W - r) / 2} y={H - 8} text-anchor="middle" class="muted d-sub">
+        Time, hour by hour over one week
+      </text>
+      <text transform={`translate(16 ${(top + H - b) / 2}) rotate(-90)`} text-anchor="middle" class="muted d-sub">
+        CPU %
+      </text>
       <path d={`${hi} ${lo} Z`} class="ncm-band" style={{ opacity: prog(t, 0, DRAW_FROM) }} />
       <line x1={l} x2={W - r} y1={sy(FIXED)} y2={sy(FIXED)} class="ncm-fixed" />
       <text x={W - r} y={sy(FIXED) - 6} text-anchor="end" class="muted halo d-sub">
@@ -123,21 +134,22 @@ function WeekChart({ wk, hc, t }: { wk: ReturnType<typeof useWeek>; hc: number; 
         const k = seg.reduce((m, p, i) => (p.v > seg[m].v ? i : m), 0);
         const x = sx(s.start + k);
         const y = sy(seg[k].v);
-        const right = x < W / 2;
+        const lx = Math.max(l + 100, Math.min(W - r - 120, x));
+        const al = alarmed(s);
+        // labels sit in the band above the plot; a leader line drops from the label to the spike
         return (
           <g key={s.start}>
+            <polyline points={`${x},${y - 8} ${x},${top - 12} ${lx},${top - 12}`} fill="none" class="ncm-leader" />
             <circle cx={x} cy={y} r={7} class="bad-fill" stroke="var(--bg)" stroke-width={2} />
-            <text x={right ? x + 14 : x - 14} y={y + 5} text-anchor={right ? 'start' : 'end'} class="bad-fill halo d-label" style={{ fontWeight: 600 }}>
+            <text x={lx} y={top - 34} text-anchor="middle" class="bad-fill d-label" style={{ fontWeight: 600 }}>
               ✕ Unusual for this hour
+            </text>
+            <text x={lx} y={top - 18} text-anchor="middle" class={`${al ? 'muted' : 'warn-fill'} d-sub`} style={{ fontWeight: 600 }}>
+              {al ? `Over ${FIXED}%: the fixed alarm fires too` : `Under ${FIXED}%: the fixed alarm stays silent`}
             </text>
           </g>
         );
       })}
-      {shown.map((s) => (
-        <text key={`fx${s.start}`} x={sx(s.start) + 14} y={alarmed(s) ? sy(FIXED) - 22 : sy(FIXED) + 18} class={`${`${alarmed(s) ? 'muted' : 'warn-fill'} halo`} d-label`} style={{ fontWeight: 600 }}>
-          {alarmed(s) ? `Over ${FIXED}%: the fixed alarm fires too` : `Under ${FIXED}%: the fixed alarm stays silent`}
-        </text>
-      ))}
     </svg>
   );
 }
@@ -171,6 +183,7 @@ function AiOps() {
               { k: 'Flagged as unusual', v: flaggedNow, tone: flaggedNow ? 'bad' : 'neutral' },
               { k: `Fixed ${FIXED}% alarm fired`, v: firedNow, tone: firedNow < flaggedNow ? 'warn' : 'neutral', sub: firedNow < flaggedNow ? 'missed the 3 a.m. spike' : undefined },
               { k: 'Learned from', v: '2 weeks', sub: 'of history, per hour' },
+              SHOWN,
             ]}
           />
         </>
@@ -191,7 +204,7 @@ function AiOps() {
         clock={clock}
         label="Anomaly detection animation"
         fmt={() => (t < DRAW_FROM ? 'Learning' : hc >= wk.pts.length - 1 ? 'Week done' : `${WEEKDAYS[Math.min(6, Math.floor(hc / 24))]} ${hour12(Math.floor(hc) % 24)}`)}
-        extra={<Illus why="Example data. The band here is learned per hour of day (weekday or weekend) from the previous two weeks. Intelligent Operations uses its own machine-learned baselines, and also forecasts capacity runway and suggests right-sizing." />}
+        extra={<Illus why={"Example data. The band here is learned per hour of day (weekday or weekend) from the previous two weeks. Intelligent Operations uses its own machine-learned baselines, and also forecasts capacity runway and suggests right-sizing." + REPLATFORM} />}
       />
     </Show>
   );
@@ -204,12 +217,12 @@ function AiOps() {
 // test keeps their outcomes matched to these cards.
 const APP_ROLES = ['Balancer', 'Web', 'App', 'Database'];
 
-/** How each request's card and App team box name it, in SS_REQUESTS order. */
-const SS_TEXT: { card: Omit<Point, 'at'>; order: string }[] = [
-  { order: 'orders: Linux VM', card: { tone: 'ok', k: 'Linux VM', by: 'Fits · no approval', text: 'Under the approval limit, so it goes straight to the cluster.' } },
-  { order: 'orders: 3-tier web app', card: { tone: 'warn', k: '3-tier web app', by: 'Approval policy', text: 'Over the approval limit, so an admin approves it first.' } },
-  { order: 'orders: a second app', card: { tone: 'bad', k: 'A second app', by: 'Over the quota', text: 'Sent back with the reason before anything is created.' } },
-  { order: 're-orders it at size S', card: { tone: 'ok', k: 'Same app, size S', by: 'The fix', text: 'Half the vCPU per VM fits the quota, so it is created.' } },
+/** How each request's App team box names it, in SS_REQUESTS order. */
+const SS_TEXT: { order: string }[] = [
+  { order: 'orders: Linux VM' },
+  { order: 'orders: 3-tier web app' },
+  { order: 'orders: a second app' },
+  { order: 're-orders it at size S' },
 ];
 
 /** Each request with the project as it stands when that request arrives, and its steps on the shared timeline. */
@@ -224,7 +237,6 @@ const RUN = (() => {
 })();
 type Run = (typeof RUN)[number];
 const SS_END = RUN[RUN.length - 1].end;
-const SS_CARDS: Point[] = RUN.map((r) => ({ ...r.card, at: r.at }));
 
 const BOX = { req: { x: 12, w: 176 }, chk: { x: 258, w: 176 } } as const;
 const BY = 112;
@@ -442,7 +454,6 @@ function SelfService() {
   const checked = t - r.at >= r.steps[0].dur;
   return (
     <Show clock={clock}
-      side={<Points label="Four requests from one project" items={SS_CARDS} t={t} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -457,6 +468,7 @@ function SelfService() {
                   : { k: 'Project vCPU left', v: `${left} of ${r.p.quota.vcpu}`, tone: 'bad', sub: `needs ${r.d.vcpu}` },
               { k: 'Approval', v: !checked ? '…' : !r.v.ok ? '—' : r.v.needsApproval ? 'Needed' : 'Not needed', sub: checked && r.v.ok && r.v.needsApproval ? `over ${r.p.approvalAbove} vCPU` : 'optional policy' },
               { k: 'License', v: r.item.multiVm ? 'NCM Ultimate' : 'NCM Pro', tip: r.item.multiVm ? TIER_TIP.Ultimate : TIER_TIP.Pro },
+              SHOWN,
             ]}
           />
         </>
@@ -476,7 +488,7 @@ function SelfService() {
       <PlayBar
         clock={clock}
         label="Self-service requests animation"
-        extra={<Illus why="Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Approval is a policy you choose to add; requests at or under its limit, or in projects without it, skip it. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." />}
+        extra={<Illus why={"Durations are compressed, and the quota bar shows vCPU only; the check also covers memory and storage. Approval is a policy you choose to add; requests at or under its limit, or in projects without it, skip it. Real provisioning time depends on the blueprint, image size and configuration tasks. Self-Service was formerly called Calm." + REPLATFORM} />}
       />
     </Show>
   );
@@ -511,11 +523,11 @@ const GUARDS: Point[] = [
 ];
 
 function SpendChart({ t }: { t: number }) {
-  const H = 300;
-  const l = 56;
+  const H = 350;
+  const l = 76;
   const r = 132;
-  const top = 18;
-  const b = 34;
+  const top = 50;
+  const b = 56;
   const day = Math.min(MONTH, t);
   const sx = (d: number) => l + (d / MONTH) * (W - l - r);
   const sy = (v: number) => top + (1 - v / Y_MAX) * (H - top - b);
@@ -537,17 +549,23 @@ function SpendChart({ t }: { t: number }) {
     >
       {[0, 1000, 2000, 3000, 4000, 5000, 6000, 7000].map((v) => (
         <g key={v}>
-          <line x1={l} x2={sx(MONTH)} y1={sy(v)} y2={sy(v)} class="line" stroke-dasharray={v ? '2 4' : undefined} />
+          <line x1={l} x2={sx(MONTH)} y1={sy(v)} y2={sy(v)} class={v ? 'ncm-grid' : 'line'} />
           <text x={l - 8} y={sy(v) + 4} text-anchor="end" class="mono muted d-fine">
             {v ? `$${v / 1000}k` : '$0'}
           </text>
         </g>
       ))}
       {[1, 5, 10, 15, 20, 25, 30].map((d) => (
-        <text key={d} x={sx(d)} y={H - 10} text-anchor="middle" class="muted d-sub">
+        <text key={d} x={sx(d)} y={H - 30} text-anchor="middle" class="muted d-sub">
           Day {d}
         </text>
       ))}
+      <text x={(l + sx(MONTH)) / 2} y={H - 8} text-anchor="middle" class="muted d-sub">
+        Day of the month
+      </text>
+      <text transform={`translate(16 ${(top + H - b) / 2}) rotate(-90)`} text-anchor="middle" class="muted d-sub">
+        Spend
+      </text>
       {t < MONTH && <line x1={sx(day)} x2={sx(day)} y1={top} y2={H - b} class="ncm-cursor" />}
       <line x1={l} x2={sx(MONTH)} y1={sy(DEV.budget)} y2={sy(DEV.budget)} class="ss-limit" />
       <text x={l + 8} y={sy(DEV.budget) - 7} class="halo d-label" style={{ fontWeight: 600 }}>
@@ -568,7 +586,8 @@ function SpendChart({ t }: { t: number }) {
             {usd(ALONE_END)}
           </text>
           <circle cx={hot.x} cy={hot.y} r={6} class="bad-fill" stroke="var(--bg)" stroke-width={2} />
-          <text x={hot.x + 12} y={hot.y + 20} class="bad-fill halo d-label" style={{ fontWeight: 600 }}>
+          <polyline points={`${hot.x},${hot.y - 8} ${hot.x},${top - 14}`} fill="none" class="ncm-leader" />
+          <text x={hot.x} y={top - 22} text-anchor="middle" class="bad-fill d-label" style={{ fontWeight: 600 }}>
             Runs hot from day {HOT.from}
           </text>
         </g>
@@ -628,6 +647,7 @@ function Cost() {
               { k: 'dev-test spend', v: usd(spent), tone: st === 'over' ? 'bad' : t > MONTH ? 'ok' : st === 'warn' ? 'warn' : 'neutral', sub: `of ${usd(DEV.budget)} budget` },
               { k: 'Month-end at this pace', v: usd(pace), tone: pace > DEV.budget ? 'bad' : 'ok', sub: pace > DEV.budget ? `${Math.round((pace / DEV.budget - 1) * 100)}% over budget` : 'under budget' },
               { k: 'License', v: 'NCM Pro', sub: 'approvals, schedules: Ultimate', tip: `${TIER_TIP.Pro} Approval and scheduler policies need NCM Ultimate.` },
+              SHOWN,
             ]}
           />
         </>
@@ -647,7 +667,7 @@ function Cost() {
         label="dev-test spend animation"
         fmt={(x) => (x > MONTH ? 'Month closed' : `Day ${Math.max(1, Math.ceil(x))} of ${MONTH}`)}
         extra={
-          <Illus why={`Rates (${usd(RATES.vcpuMonth)} per vCPU, ${usd(RATES.memGBMonth)} per GB of memory, ${usd(RATES.tbMonth)} per TB a month), usage, the budget, the ${ALERT_AT * 100}% alert threshold and the savings are example figures. Cost Governance (formerly Beam) meters actual consumption at the rates you configure.`} />
+          <Illus why={`Rates (${usd(RATES.vcpuMonth)} per vCPU, ${usd(RATES.memGBMonth)} per GB of memory, ${usd(RATES.tbMonth)} per TB a month), usage, the budget, the ${ALERT_AT * 100}% alert threshold and the savings are example figures. Cost Governance (formerly Beam) meters actual consumption at the rates you configure.${REPLATFORM}`} />
         }
       />
     </Show>
@@ -725,12 +745,27 @@ function tileState(base: Base, i: number, t: number, tl: ReturnType<typeof secTi
 const STATE_TEXT: Record<TileState, string> = {
   idle: 'Not scanned',
   scan: 'Scanning…',
-  pass: '✓ Pass',
-  fail: '✕ Fail',
-  fixing: '→ Fixing',
-  fixed: '✓ Fixed',
-  changed: '⚠ Changed by hand',
-  caught: '✕ Drift caught',
+  pass: 'Pass',
+  fail: 'Fail',
+  fixing: 'Fixing',
+  fixed: 'Fixed',
+  changed: 'Changed by hand',
+  caught: 'Drift caught',
+};
+const STATE_ICON: Record<TileState, { icon: string; cls: string }> = {
+  idle: { icon: 'gauge', cls: 'muted' },
+  scan: { icon: 'search', cls: 'ink-text' },
+  pass: { icon: 'ok', cls: 'ok-text' },
+  fail: { icon: 'bad', cls: 'bad-text' },
+  fixing: { icon: 'flow', cls: 'flow-text' },
+  fixed: { icon: 'ok', cls: 'ok-text' },
+  changed: { icon: 'warn', cls: 'warn-text' },
+  caught: { icon: 'bad', cls: 'bad-text' },
+};
+const SEV_ICON: Record<Check['sev'], { icon: string; cls: string }> = {
+  high: { icon: 'bad', cls: 'bad-text' },
+  medium: { icon: 'warn', cls: 'warn-text' },
+  low: { icon: 'info', cls: 'muted' },
 };
 
 function Compliance({ base, t, tl }: { base: Base; t: number; tl: ReturnType<typeof secTimeline> }) {
@@ -740,76 +775,88 @@ function Compliance({ base, t, tl }: { base: Base; t: number; tl: ReturnType<typ
   const scanned = t >= tl.scanEnd;
   const passing = (s: TileState) => s === 'pass' || s === 'fixed' || s === 'changed';
   const sc = score(B.checks.map((c, i) => ({ ...c, pass: passing(states[i]) })));
-  const cols = n > 4 ? 3 : 2;
-  const X0 = 290;
-  const gap = 16;
-  const tw = (W - X0 - 8 - gap * (cols - 1)) / cols;
-  const th = 104;
-  const H = 270;
-  const C = 2 * Math.PI * 92;
+  const C = 2 * Math.PI * 70;
   const tot = B.checks.reduce((a, c) => a + SEV_WEIGHT[c.sev], 0);
   const arcCls = (s: TileState, sev: Check['sev']) =>
     s === 'idle' || s === 'scan' ? 'sec-arc-idle' : passing(s) ? 'ok-stroke' : s === 'fixing' ? 'flow-stroke' : sev === 'high' ? 'bad-stroke' : 'warn-stroke';
-  const tileCls = (s: TileState, sev: Check['sev']) =>
-    s === 'scan' ? 'sec-tile scan' : s === 'fail' || s === 'caught' ? `sec-tile ${sev === 'high' ? 'bad' : 'warn'}` : s === 'fixing' ? 'sec-tile fix' : s === 'changed' ? 'sec-tile changed' : passing(s) ? 'sec-tile ok' : 'sec-tile';
-  const textCls = (s: TileState, sev: Check['sev']) =>
-    s === 'idle' ? 'muted' : s === 'changed' ? 'warn-fill' : s === 'scan' ? 'ncm-ink' : s === 'fixing' ? 'flow-fill' : passing(s) ? 'ok-fill' : sev === 'high' ? 'bad-fill' : 'warn-fill';
   let before = 0;
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Compliance scan against the ${B.name} baseline: ${n} checks, score ${scanned ? sc : 'not yet known'} of 100.`}>
-      <circle cx={130} cy={128} r={92} fill="none" stroke="var(--track)" stroke-width={18} />
-      {B.checks.map((c, i) => {
-        const w = SEV_WEIGHT[c.sev];
-        const off = before;
-        before += w;
-        return (
-          <circle
-            key={c.id}
-            cx={130}
-            cy={128}
-            r={92}
-            fill="none"
-            class={arcCls(states[i], c.sev)}
-            stroke-width={18}
-            stroke-dasharray={`${(w / tot) * C - 4} ${C}`}
-            stroke-dashoffset={-(off / tot) * C}
-            transform="rotate(-90 130 128)"
-          />
-        );
-      })}
-      <text x={130} y={140} text-anchor="middle" class="mono d-display" style={{ fontWeight: 600 }}>
-        {scanned ? sc : '—'}
-      </text>
-      <text x={130} y={164} text-anchor="middle" class="muted d-label">
-        score of 100
-      </text>
-      <text x={130} y={H - 8} text-anchor="middle" class="muted d-sub">
-        Each arc is one check, sized by severity
-      </text>
-      {B.checks.map((c, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const x = X0 + col * (tw + gap);
-        const y = 12 + row * (th + 16);
-        const s = states[i];
-        const scanF = s === 'scan' ? prog(t, SCAN0 + i * SCAN_EACH, SCAN0 + (i + 1) * SCAN_EACH) : 0;
-        return (
-          <g key={c.id}>
-            <rect class={tileCls(s, c.sev)} x={x} y={y} width={tw} height={th} />
-            <text class="d-title" x={x + 14} y={y + 28} style={{ fontWeight: 600 }}>
-              {c.short}
-            </text>
-            <text x={x + 14} y={y + 47} class="muted d-sub">
-              {c.sev} severity
-            </text>
-            <text x={x + 14} y={y + 80} class={`${textCls(s, c.sev)} d-label`} style={{ fontWeight: 600 }}>
-              {STATE_TEXT[s]}
-            </text>
-            {s === 'scan' && <rect x={x} y={y + th - 4} width={tw * scanF} height={4} class="ink-fill" />}
-          </g>
-        );
-      })}
-    </svg>
+    <div class="ncm-sec">
+      <div class="ncm-donut">
+        <svg class="diagram" viewBox="0 0 200 236" role="img" aria-label={`Compliance scan against the ${B.name} baseline: ${n} checks, score ${scanned ? sc : 'not yet known'} of 100.`}>
+          <circle cx={100} cy={100} r={70} fill="none" stroke="var(--track)" stroke-width={16} />
+          {B.checks.map((c, i) => {
+            const w = SEV_WEIGHT[c.sev];
+            const off = before;
+            before += w;
+            return (
+              <circle
+                key={c.id}
+                cx={100}
+                cy={100}
+                r={70}
+                fill="none"
+                class={arcCls(states[i], c.sev)}
+                stroke-width={16}
+                stroke-dasharray={`${(w / tot) * C - 4} ${C}`}
+                stroke-dashoffset={-(off / tot) * C}
+                transform="rotate(-90 100 100)"
+              />
+            );
+          })}
+          <text x={100} y={110} text-anchor="middle" class="mono d-display" style={{ fontWeight: 600 }}>
+            {scanned ? sc : '—'}
+          </text>
+          <text x={100} y={132} text-anchor="middle" class="muted d-sub">
+            score of 100
+          </text>
+          <text x={100} y={212} text-anchor="middle" class="muted d-fine">
+            Each arc is one check,
+          </text>
+          <text x={100} y={228} text-anchor="middle" class="muted d-fine">
+            sized by severity
+          </text>
+        </svg>
+      </div>
+      <div class="ncm-find">
+        <table class="tbl">
+          <caption>Example findings</caption>
+          <thead>
+            <tr>
+              <th scope="col">Check</th>
+              <th scope="col">Severity</th>
+              <th scope="col">Status</th>
+              <th scope="col">Fix</th>
+            </tr>
+          </thead>
+          <tbody>
+            {B.checks.map((c, i) => {
+              const s = states[i];
+              const st = STATE_ICON[s];
+              const sv = SEV_ICON[c.sev];
+              return (
+                <tr key={c.id} class={s === 'fail' || s === 'caught' ? 'ncm-row-open' : s === 'fixing' ? 'ncm-row-fix' : ''}>
+                  <th scope="row">{c.label}</th>
+                  <td>
+                    <span class={`ncm-ic ${sv.cls}`}>
+                      <Icon name={sv.icon} />
+                    </span>
+                    {c.sev[0].toUpperCase() + c.sev.slice(1)}
+                  </td>
+                  <td class={`ncm-st ${st.cls}`}>
+                    <span class="ncm-ic">
+                      <Icon name={st.icon} />
+                    </span>
+                    {STATE_TEXT[s]}
+                  </td>
+                  <td class={s === 'pass' || s === 'fixed' || s === 'idle' || s === 'scan' ? 'muted' : ''}>{c.fix}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -866,6 +913,7 @@ function Security() {
               { k: 'Score', v: t >= tl.scanEnd ? sc : '—', tone: t < tl.scanEnd ? 'neutral' : sc === 100 ? 'ok' : 'warn', sub: 'of 100' },
               { k: 'Open findings', v: t >= tl.scanEnd ? open : '—', tone: t < tl.scanEnd ? 'neutral' : open ? 'warn' : 'ok' },
               { k: 'License', v: 'NCM Ultimate', tip: TIER_TIP.Ultimate },
+              SHOWN,
             ]}
           />
         </>
@@ -886,7 +934,7 @@ function Security() {
       <PlayBar
         clock={clock}
         label="Compliance scan animation"
-        extra={<Illus why="Example checks. Security Compliance (formerly Security Central) ships its own checks and regulatory reports." />}
+        extra={<Illus why={"Example checks. Security Compliance (formerly Security Central) ships its own checks and regulatory reports." + REPLATFORM} />}
       />
     </Show>
   );

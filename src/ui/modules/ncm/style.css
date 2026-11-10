@@ -30,3 +30,23 @@
 .diagram .ncm-alone { fill: none; stroke: var(--bad); stroke-width: 1.75; stroke-dasharray: 6 5; }
 .diagram text.ncm-n { fill: var(--bg); font-size: 12px; font-weight: 700; }
 
+
+/* chart frame: light gridlines, leader lines for labels held above the plot */
+.diagram .ncm-grid { stroke: var(--line); stroke-width: 1; opacity: 0.55; }
+.diagram .ncm-leader { stroke: var(--muted); stroke-width: 1; }
+
+/* Security: a small donut summary beside the findings table */
+.ncm-sec { display: flex; gap: var(--sp-6); align-items: flex-start; }
+.ncm-donut { flex: none; width: 190px; }
+.ncm-find { flex: 1; min-width: 0; }
+.ncm-find caption { text-align: left; font-size: var(--fs-14); font-weight: 600; padding-bottom: var(--sp-2); }
+.ncm-find th[scope='row'] { text-align: left; font-weight: 600; font-size: var(--fs-14); }
+.ncm-find td, .ncm-find th[scope='row'] { padding-right: var(--sp-3); }
+.ncm-find td:nth-child(2), .ncm-find td:nth-child(3) { white-space: nowrap; }
+.ncm-ic { display: inline-flex; vertical-align: -3px; margin-right: 6px; }
+.ncm-ic svg { width: 16px; height: 16px; }
+.ncm-st { font-weight: 600; }
+.ncm-row-open td, .ncm-row-open th { background: var(--bad-bg); }
+.ncm-row-fix td, .ncm-row-fix th { background: var(--flow-bg); }
+@media (max-width: 700px) { .ncm-sec { flex-direction: column; } }
+.ncm-find td:nth-child(3) { padding-right: var(--sp-6); }
