@@ -39,7 +39,7 @@ test('landing page renders every pane and opens a module', async ({ page }) => {
 
 test('guided tour walks the panes', async ({ page }) => {
   await page.goto(FILE);
-  await page.getByRole('button', { name: 'Guided tour' }).click();
+  await page.getByRole('button', { name: 'Take the tour' }).click();
   const card = page.getByRole('dialog', { name: 'Guided tour' });
   await expect(card).toBeVisible();
   for (let i = 0; i < 5; i++) await card.getByRole('button', { name: 'Next' }).click();

@@ -115,7 +115,15 @@ export function Landing() {
   return (
     <div class={`slide-wrap${tour !== null ? ' tour-on' : ''}`} ref={wrap}>
       <div class="slide">
-        <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
+        <div class="slide-head">
+          <h1 class="slide-title">One Platform For All Apps, Data &amp; AI Anywhere</h1>
+          {tour === null && (
+            <button type="button" class="btn tour-btn" onClick={() => setTour(0)}>
+              <Icon name="compass" />
+              Take the tour
+            </button>
+          )}
+        </div>
 
         <section class="band central" data-tour="central" aria-label="Nutanix Central">
           <button type="button" class="central-head" data-pane="central" data-path="central" onClick={(e) => go('central', undefined, e.currentTarget as HTMLElement)}>
@@ -172,11 +180,6 @@ export function Landing() {
         </p>
       </div>
 
-      {tour === null && (
-        <button type="button" class="tour-fab" onClick={() => setTour(0)} aria-label="Guided tour" title="Guided tour">
-          <Icon name="compass" />
-        </button>
-      )}
 
       {step && tour !== null && (
         <div class="tour-card" role="dialog" aria-label="Guided tour" aria-live="polite">

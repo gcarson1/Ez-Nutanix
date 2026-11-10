@@ -481,14 +481,15 @@ export function App() {
             )}
             <button type="button" class={`tbtn${panel === 'presenter' ? ' on' : ''}`} onClick={() => setPanel(panel === 'presenter' ? null : 'presenter')} title="Presenter notes (P)" aria-pressed={panel === 'presenter'}>
               <Icon name="podium" />
-              <span class="lbl wide-only">Presenter</span>
+              <span class="lbl wide-only">Notes</span>
             </button>
             <button type="button" class={`tbtn${panel === 'glossary' ? ' on' : ''}`} onClick={() => setPanel(panel === 'glossary' ? null : 'glossary')} title="Glossary (G)" aria-pressed={panel === 'glossary'}>
               <Icon name="book" />
               <span class="lbl wide-only">Glossary</span>
             </button>
-            <button type="button" class="icon-btn" onClick={() => setDialog('keys')} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+            <button type="button" class="tbtn" onClick={() => setDialog('keys')} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
               <Icon name="keyboard" />
+              <span class="lbl wide-only">Shortcuts</span>
             </button>
             <ThemeMenu theme={theme} onTheme={setTheme} />
           </div>
@@ -499,43 +500,32 @@ export function App() {
         {def ? <ModuleView def={def} key={def.content.path} /> : route.path ? <NotFound /> : <Landing />}
       </main>
 
-      <footer class={`foot-bar${route.path ? '' : ' fab-room'}`}>
-        <div class="in foot-cols">
-          <div class="foot-col">
-            {(CONFIG.credit || authors.length > 0) && (
-              <span class="credit">
-                {CONFIG.credit && <span class="by">{CONFIG.credit}</span>}
-                {authors.length > 0 && (
-                  <span class="authors">
-                    {authors.map((a, i) => (
-                      <span class="author" key={a.name}>
-                        {a.name}
-                        {a.handle && (
-                          <span class="handle">
-                            {a.handle}
-                            {i === authors.length - 1 && <span class="on"> on Slack</span>}
-                          </span>
-                        )}
+      <footer class="foot-bar">
+        <div class="in foot-line">
+          <span class="ver">{VERSION}</span>
+          <button type="button" class="tbtn" onClick={() => setDialog('about')} title={CONFIG.disclaimer}>
+            About this explorer
+          </button>
+          {authors.length > 0 && (
+            <span class="credit">
+              {CONFIG.credit ?? 'Built by'}{' '}
+              {authors.map((a, i) => (
+                <span class="author" key={a.name}>
+                  {i > 0 && (i === authors.length - 1 ? ' and ' : ', ')}
+                  {a.name}
+                  {a.handle && (
+                    <>
+                      {' '}
+                      <span class="handle">
+                        {a.handle}
+                        {i === authors.length - 1 && <span class="on"> on Slack</span>}
                       </span>
-                    ))}
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
-          <div class="foot-col">
-            {(CONFIG.presenterName || CONFIG.organization) && (
-              <span class="who">
-                {[CONFIG.presenterName, CONFIG.presenterRole, CONFIG.organization].filter(Boolean).join(' · ')}
-                {CONFIG.contact ? ` · ${CONFIG.contact}` : ''}
-              </span>
-            )}
-            <span class="ver">{VERSION}</span>
-            <button type="button" class="tbtn" onClick={() => setDialog('about')}>
-              About this explorer
-            </button>
-          </div>
-          <p class="foot-col disclaimer">{CONFIG.disclaimer}</p>
+                    </>
+                  )}
+                </span>
+              ))}
+            </span>
+          )}
         </div>
       </footer>
 
