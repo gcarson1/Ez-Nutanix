@@ -278,7 +278,7 @@ export default function ExtStorage() {
       side={
         <>
           <ArrayTable />
-          <Points label="Why customers choose it" items={POINTS} t={t} />
+          <Points label="Why it matters" items={POINTS} t={t} />
         </>
       }
       foot={
