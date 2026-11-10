@@ -296,7 +296,7 @@ export default function Dr() {
     : { v: 'Minutes', sub: event === 'planned' ? 'a move you schedule' : s.decision === 'witness' ? 'restarts on its own' : 'after someone declares a disaster' };
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<Tier>

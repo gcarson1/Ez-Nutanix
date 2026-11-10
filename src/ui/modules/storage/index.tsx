@@ -109,7 +109,7 @@ function Files() {
   const H = FS_Y + FS_H + 94;
   const DSF_Y = FS_Y + FS_H + 26;
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<'3' | '1'>
           label="File server"
@@ -284,7 +284,7 @@ function Volumes() {
 
   const H = VG_Y + 92;
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>
@@ -432,7 +432,7 @@ function Objects() {
   const H = BKT.y + BKT.h + 78;
   const DSF_Y = BKT.y + BKT.h + 16;
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>

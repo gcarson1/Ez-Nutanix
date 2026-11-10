@@ -82,6 +82,8 @@ export function prefersReducedMotion(): boolean {
 export interface Step {
   at: number;
   read: number;
+  /** Short heading shown in the step list beside the picture. */
+  label?: string;
 }
 
 /** Reading time the clock allows for every word of a step's caption. */
@@ -108,6 +110,14 @@ export function readSecs(...text: unknown[]): number {
   return SECS_PER_WORD * words(text);
 }
 
+/** A step's heading: the first part of a [heading, text] caption, or the caption up to its first colon or period. */
+function labelOf(x: unknown): string {
+  if (Array.isArray(x)) return x.length > 2 ? `${plain(x[0])} · ${plain(x[1])}` : plain(x[0]);
+  const p = plain(x).trim();
+  const cut = p.search(/[:.]/);
+  return cut > 0 && cut < 60 ? p.slice(0, cut) : p.slice(0, 60);
+}
+
 /**
  * Steps from their start times and each one's caption (a string, or several parts). A step
  * whose caption is the same as the one before it continues that step, so the reading time
@@ -118,7 +128,7 @@ export function paced(at: readonly number[], text: readonly unknown[]): Step[] {
   let prev: string | null = null;
   at.forEach((a, i) => {
     const p = plain(text[i]).replace(/\s+/g, ' ').trim();
-    if (p !== prev) out.push({ at: a, read: readSecs(p) });
+    if (p !== prev) out.push({ at: a, read: readSecs(p), label: labelOf(text[i]) });
     prev = p;
   });
   return out;
@@ -147,7 +157,7 @@ export function stepsFrom(duration: number, caption: (t: number) => { k: string;
       }
       at = hi;
     }
-    out.push({ at, read: readSecs(c.k, c.text) });
+    out.push({ at, read: readSecs(c.k, c.text), label: c.k });
     prev = c.k;
   }
   return out;
@@ -229,6 +239,8 @@ export interface Clock {
   reset: () => void;
   /** Which step the clock is in (1-based) and how many there are, when it has steps. */
   step?: { index: number; count: number };
+  /** The steps inside one loop, with their headings, for the step list. */
+  steps?: readonly Step[];
   /** Pause and move a fortieth of the loop, or to the previous or next step's start. */
   nudge: (dir: -1 | 1, toStep?: boolean) => void;
 }
@@ -283,6 +295,7 @@ export function useClock(opts: ClockOptions): Clock {
     playing,
     duration: opts.duration,
     step: ats.length ? { index: Math.max(1, ats.filter((a) => a <= t + 1e-9).length), count: ats.length } : undefined,
+    steps: (opts.steps ?? []).filter((x) => opts.duration === undefined || x.at < opts.duration),
     play: () => {
       const d = ref.current.opts.duration;
       if (d !== undefined && ref.current.t >= d) set(0);

@@ -214,7 +214,7 @@ export function DomainsView() {
         : { k: 'Minimum blocks for awareness', v: '3 · 5', sub: 'RF2 · RF3 (4 · 6 with EC-X)', tip: 'From current Nutanix documentation. Confirm it for the AOS version and design.' };
 
   return (
-    <Show
+    <Show clock={clock}
       top={<Choice<Awareness> label="Keep copies apart by" value={aw} onChange={setAw} options={OPTIONS} />}
       foot={
         <>

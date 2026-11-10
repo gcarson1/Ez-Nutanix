@@ -74,6 +74,22 @@ test('presenter, glossary and shortcuts open from the keyboard', async ({ page }
   await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeVisible();
 });
 
+// Nutanix 2.0 layout: at 1440x900 the picture starts high and the play bar is on screen without scrolling.
+for (const m of MODULES.filter((x) => x.content.path !== 'nci')) {
+  test(`module ${m.content.path} fits the first screen`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`${FILE}#/${m.content.path}`);
+    const dia = page.locator('.mod svg.diagram').first();
+    await expect(dia).toBeVisible();
+    expect((await dia.boundingBox())!.y, 'diagram top').toBeLessThan(260);
+    const bar = page.locator('.playbar').first();
+    if (await bar.count()) {
+      const b = (await bar.boundingBox())!;
+      expect(b.y + b.height, 'play bar bottom').toBeLessThanOrEqual(900);
+    }
+  });
+}
+
 for (const m of MODULES) {
   test(`module ${m.content.path} renders`, async ({ page }) => {
     const errors = watchErrors(page);
@@ -104,7 +120,7 @@ test('cluster lab: scenario buttons sit above the picture and switch the story',
   await pick.getByRole('button', { name: 'VM failover' }).click();
   await expect(pick.getByRole('button', { name: 'VM failover' })).toHaveAttribute('aria-pressed', 'true');
   await expect.poll(() => page.url()).toContain('sc=failover');
-  await expect(page.getByRole('complementary', { name: /VM failover/ }).getByRole('heading', { name: 'VM failover' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Steps' })).toContainText('Node 2 fails');
   expect(errors).toEqual([]);
 });
 

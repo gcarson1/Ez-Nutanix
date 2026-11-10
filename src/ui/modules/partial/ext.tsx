@@ -233,8 +233,8 @@ export default function ExtStorage() {
   const tone: Tone | 'ink' = phase === 0 ? 'ink' : phase === 3 ? 'ok' : 'flow';
 
   return (
-    <Show
-      top={
+    <Show clock={clock}
+      side={
         <>
           <Points label="Works with" items={ARRAYS} t={0} until={-1} />
           <Points label="Why customers choose it" items={POINTS} t={t} />

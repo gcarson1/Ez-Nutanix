@@ -380,7 +380,8 @@ export default function Cnaos() {
   const tone: Tone | 'ink' = phase === 0 || phase === 3 ? 'ink' : phase === 2 ? 'ok' : phase === 4 && on === 'metal' ? 'warn' : 'flow';
 
   return (
-    <Show
+    <Show clock={clock}
+      side={<Points label="Why customers choose it" items={points(on)} t={t}  />}
       top={
         <>
           <Choice<On>
@@ -393,7 +394,6 @@ export default function Cnaos() {
               { value: 'metal', label: 'Bare metal (NKP Metal)' },
             ]}
           />
-          <Points label="Why customers choose it" items={points(on)} t={t} />
         </>
       }
       foot={

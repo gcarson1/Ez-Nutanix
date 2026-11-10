@@ -231,7 +231,8 @@ export default function EsxiOnNutanix() {
   const tone: Tone | 'ink' = phase === 0 ? 'ink' : conv ? (phase === 5 ? 'ok' : 'flow') : phase === 2 ? 'ok' : phase === 3 ? 'warn' : 'flow';
 
   return (
-    <Show
+    <Show clock={clock}
+      side={<Points label="Why customers choose it" items={POINTS[go]} t={t}  />}
       top={
         <>
           <Choice<Go>
@@ -244,7 +245,6 @@ export default function EsxiOnNutanix() {
               { value: 'conv', label: 'Convert to AHV later' },
             ]}
           />
-          <Points label="Why customers choose it" items={POINTS[go]} t={t} />
         </>
       }
       foot={

@@ -766,8 +766,8 @@ export default function Hci() {
   const nodes = phase < 5 ? 1 : 3 + NODES.slice(3).filter((n) => t >= n.link).length;
 
   return (
-    <Show
-      top={<Points label="Why customers choose it" items={POINTS} t={t} />}
+    <Show clock={clock}
+      side={<Points label="Why customers choose it" items={POINTS} t={t} />}
       foot={
         <>
           <Follow tone={tone} k={PHASES[phase]}>

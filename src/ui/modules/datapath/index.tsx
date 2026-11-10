@@ -362,7 +362,7 @@ export default function Datapath() {
   const text = mode === 'loc' ? f.text : step.text;
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<Mode>

@@ -226,7 +226,7 @@ export function K8sUpgrade() {
   const stopped = plan.haltAt !== null && t >= plan.haltAt;
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<Run>
           label="What happens"

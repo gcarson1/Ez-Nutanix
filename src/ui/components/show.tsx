@@ -1,16 +1,65 @@
-// Showcase layout for modules that should read at a glance: one or two preset choices on
-// top, one big picture, the play bar, then a caption and a few key numbers.
-import type { ComponentChildren } from 'preact';
-import { useId } from 'preact/hooks';
+// The one module layout (Nutanix 2.0, N2-010). On the left: the controls row, the picture, its
+// legend and the play bar. On the right: the steps (click one to jump there), the current
+// caption and key numbers (`foot`), anything else the module adds (`side`), and the module's
+// own summary. Below 1100 px wide the right column drops under the picture.
+import { createContext, type ComponentChildren } from 'preact';
+import { useContext, useId } from 'preact/hooks';
+import type { Clock } from './clock';
 import { Seg, Tip, type SegOption, type Tone } from './controls';
+import { Icon } from './Icon';
 
-export function Show({ top, children, foot }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren }) {
+/** The open module's summary, set by the shell, shown at the foot of the right column. */
+export const ModuleInfo = createContext<{ summary: string } | null>(null);
+
+export function Show({ top, children, foot, side, clock }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren; side?: ComponentChildren; clock?: Clock }) {
+  const info = useContext(ModuleInfo);
   return (
     <div class="show">
-      {top && <div class="show-top">{top}</div>}
-      <div class="show-stage">{children}</div>
-      {foot && <div class="show-foot">{foot}</div>}
+      <div class="show-main">
+        {top && <div class="show-top">{top}</div>}
+        <div class="show-stage">{children}</div>
+      </div>
+      <aside class="show-side" aria-label="What happens">
+        {clock && <StepList clock={clock} />}
+        {foot && <div class="show-foot">{foot}</div>}
+        {side}
+        {info && (
+          <section class="side-about">
+            <h2>About</h2>
+            <p>{info.summary}</p>
+          </section>
+        )}
+      </aside>
     </div>
+  );
+}
+
+/** The animation's steps as a numbered list: done ones ticked, the current one marked. Click one to pause and jump there. */
+export function StepList({ clock }: { clock: Clock }) {
+  const steps = (clock.steps ?? []).filter((s) => s.label);
+  if (steps.length < 2) return null;
+  const now = Math.min(steps.length, clock.step?.index ?? 1) - 1;
+  return (
+    <ol class="steps" aria-label="Steps">
+      {steps.map((s, k) => (
+        <li key={`${s.at}-${k}`} class={k < now ? 'done' : k === now ? 'now' : ''}>
+          <button
+            type="button"
+            aria-current={k === now ? 'step' : undefined}
+            title="Jump to this step"
+            onClick={() => {
+              clock.pause();
+              clock.seek(s.at + 0.01);
+            }}
+          >
+            <span class="n" aria-hidden="true">
+              {k < now ? <Icon name="check" /> : k + 1}
+            </span>
+            <span class="l">{s.label}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
   );
 }
 

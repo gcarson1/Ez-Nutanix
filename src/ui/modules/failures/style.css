@@ -1,10 +1,5 @@
 /* Failure Gauntlet (prefix gx-, tiles gt-) */
 .gx > .stage { padding-top: var(--sp-5); }
-.gx-top { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-8); align-items: flex-start; }
-.gx-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
-.gx-pick .seg { align-self: flex-start; }
-.gx-pick .seg button { height: calc(var(--h-lg) - 2px); padding: 0 var(--sp-4); font-size: var(--fs-15); gap: var(--sp-2); }
-.gx-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
 
 
 /* outcome pane */
@@ -74,5 +69,4 @@
   .gx-dia .gx-card { transition: none; }
 }
 @media (max-width: 900px) {
-  .gx-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
 }

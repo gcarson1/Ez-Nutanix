@@ -222,7 +222,7 @@ function Ransomware() {
   const cap = caption(tl, s.phase);
 
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={cap.tone} k={cap.k}>

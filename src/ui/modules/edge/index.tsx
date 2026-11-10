@@ -74,7 +74,7 @@ export default function Edge() {
 
   return (
     <>
-      <Show
+      <Show clock={clock}
         top={
           <>
             <Choice<Size>

@@ -156,7 +156,7 @@ export default function Oem() {
   const t = clock.t;
   const line = LINES[phaseAt(P, t)];
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Names label="Runs on" items={VENDORS.map((v) => (v.name === 'Nutanix' ? 'Nutanix NX' : v.name))} />

@@ -162,7 +162,7 @@ function Story() {
   const scene = SCENES[s.sc];
   const restorePoint = s.snap > 0.5;
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={scene.tone} k={scene.k}>

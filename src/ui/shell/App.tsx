@@ -7,6 +7,7 @@ import { KEYS, PRESETS, clearedScenario, scenarioParams } from '../../state/scen
 import { MODULES, findModule, type ModuleDef } from '../modules/registry';
 import { GLOSSARY } from '../../content/glossary';
 import { Icon } from '../components/Icon';
+import { ModuleInfo } from '../components/show';
 import lucideLicense from '../../assets/licenses/lucide.txt?raw';
 import montserratLicense from '../../assets/licenses/montserrat.txt?raw';
 import { simKey, stepSpeed } from '../components/clock';
@@ -337,10 +338,11 @@ function ModuleView({ def }: { def: ModuleDef }) {
           <h1 tabIndex={-1} ref={h1}>
             {c.title}
           </h1>
-          <p>{c.summary}</p>
         </div>
       </header>
-      <Component />
+      <ModuleInfo.Provider value={{ summary: c.summary }}>
+        <Component />
+      </ModuleInfo.Provider>
     </div>
   );
 }

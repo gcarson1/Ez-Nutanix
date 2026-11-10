@@ -207,7 +207,7 @@ export function Tiering() {
   const line = LINES[ph];
   const s = stateAt(t);
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>

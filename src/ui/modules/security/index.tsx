@@ -285,8 +285,8 @@ export default function Security() {
   const caption = LINES[phaseAt(STARTS, t)];
 
   return (
-    <Show
-      top={<Points label="The same stolen drive, three ways" items={CARDS} t={t} />}
+    <Show clock={clock}
+      side={<Points label="The same stolen drive, three ways" items={CARDS} t={t} />}
       foot={
         <>
           <Follow tone={caption.tone} k={caption.k}>

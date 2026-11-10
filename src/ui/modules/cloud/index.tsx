@@ -134,7 +134,7 @@ export default function Cloud() {
   const inCloud = sc.vms.filter((v) => v.where === 'cloud' && v.state !== 'replica').length;
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<Prov> label="Cloud" value={prov} onChange={setProv} options={PROV_IDS.map((p) => ({ value: p, label: PROV[p].short }))} />

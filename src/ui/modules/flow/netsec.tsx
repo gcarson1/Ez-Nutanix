@@ -287,7 +287,7 @@ export function NetSec() {
       : null;
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<Mode>

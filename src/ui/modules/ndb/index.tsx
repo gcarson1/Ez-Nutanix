@@ -99,7 +99,7 @@ function TimeMachine() {
     !clone && ph >= 4 ? { w: `✓ rolled back to ${fmtT(TARGET)} · table is back`, c: 'ok' } : !clone && ph === 3 ? { w: 'being rolled back…', c: 'warn' } : broken ? { w: 'running · a table is missing', c: 'bad' } : { w: '✓ running', c: 'ok' };
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<'clone' | 'restore'>
           label="Recover as"
@@ -260,7 +260,7 @@ function Provisioning() {
   const line = PV_LINES[ph];
 
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -418,7 +418,7 @@ function Patching() {
   const line = PT_LINES[ph];
 
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>

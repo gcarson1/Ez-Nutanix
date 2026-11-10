@@ -5,7 +5,7 @@
 // everywhere. Kubernetes version upgrades themselves are on LCM Rolling Upgrade's Kubernetes (NKP) tab.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
-import { Kpis, Points, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Kpis, Show, ease, phaseAt, prog, type Point } from '../../components/show';
 import './style.css';
 
 const S = [0, 8, 16, 24, 33, 42];
@@ -22,7 +22,6 @@ const SCENES: { tone: Point['tone']; k: string; label: string; text: string }[] 
 const STEPS = paced(S, SCENES.map((s) => [s.k, s.text]));
 /** When the islands' own tools have faded out after NKP arrives; the legend switches then. */
 const TOOLS_GONE = S[2] + 2.2;
-const CARDS: Point[] = SCENES.map((s, i) => ({ at: S[i], tone: s.tone, k: s.k, text: s.label }));
 
 const W = 960;
 const H = 392;
@@ -250,8 +249,7 @@ export default function Nkp() {
   const ways = sc < 2 ? 4 : 1;
   const policy = sc < 3 ? 0 : Math.min(4, Math.max(0, Math.floor((t - (S[3] + 2.7)) / 0.2) + 1));
   return (
-    <Show
-      top={<Points label="From islands to one operating model" items={CARDS} t={t} />}
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={scene.tone} k={scene.k}>

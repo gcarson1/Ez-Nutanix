@@ -217,7 +217,7 @@ export function EcView() {
   ];
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<RF>
           label="Copies"

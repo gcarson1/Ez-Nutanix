@@ -181,7 +181,7 @@ export function VNet() {
   const sw2 = preset === 'nat' ? 'Virtual switch · NAT for VPC A' : preset === 'fip' ? 'Virtual switch · floating IP for A-1' : 'Virtual switch';
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<Preset>
           label="Follow a packet"

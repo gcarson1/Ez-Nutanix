@@ -239,7 +239,7 @@ export default function GatewayView() {
   const stopped = TRIP_PATHS.filter(({ tr }, k) => tr.deny && tr.kind === 'model' && t >= doneAt(k)).length;
   const logged = TRIP_PATHS.filter(({ tr }, k) => tr.log && t >= doneAt(k)).length;
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={c.tone} k={c.k}>

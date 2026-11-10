@@ -148,7 +148,7 @@ export function Compare() {
   const made = RP_AT.filter((a) => t >= a + 0.5).length;
   const copied = RP_AT.filter((_, k) => t >= REP_AT(k) + 0.8).length;
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>

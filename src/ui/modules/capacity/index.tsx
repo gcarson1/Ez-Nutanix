@@ -133,7 +133,7 @@ function CopiesView() {
   const opts = NODE_OPTS.includes(nodes) ? NODE_OPTS : [...NODE_OPTS, nodes].sort((a, b) => a - b);
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<RF>

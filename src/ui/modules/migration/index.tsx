@@ -73,7 +73,7 @@ export default function Migration() {
   const cap = caption(seg.kind);
 
   return (
-    <Show
+    <Show clock={clock}
       top={<Names label="Source platforms" items={SOURCES} />}
       foot={
         <>

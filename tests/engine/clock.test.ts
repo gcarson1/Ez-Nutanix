@@ -13,16 +13,20 @@ describe('reading time', () => {
   });
   it('merges a step whose caption repeats the one before', () => {
     expect(paced([0, 2, 4, 6], ['a b', 'a  b', 'c', 'a b'])).toEqual([
-      { at: 0, read: 2 * SECS_PER_WORD },
-      { at: 4, read: SECS_PER_WORD },
-      { at: 6, read: 2 * SECS_PER_WORD },
+      { at: 0, read: 2 * SECS_PER_WORD, label: 'a b' },
+      { at: 4, read: SECS_PER_WORD, label: 'c' },
+      { at: 6, read: 2 * SECS_PER_WORD, label: 'a b' },
     ]);
+  });
+  it('labels a [heading, text] step with its heading', () => {
+    expect(paced([0, 3], [['Node fails', 'It goes down.'], ['VMs restart', 'HA restarts them.']]).map((x) => x.label)).toEqual(['Node fails', 'VMs restart']);
   });
   it('finds steps where a caption heading changes over time', () => {
     const cap = (t: number) => (t < 3.3 ? { k: 'First', text: 'one two' } : { k: 'Second', text: 'three' });
     const s = stepsFrom(10, cap);
     expect(s).toHaveLength(2);
-    expect(s[0]).toEqual({ at: 0, read: 3 * SECS_PER_WORD });
+    expect(s[0]).toEqual({ at: 0, read: 3 * SECS_PER_WORD, label: 'First' });
+    expect(s[1].label).toBe('Second');
     expect(s[1].at).toBeCloseTo(3.3, 3);
     expect(s[1].read).toBeCloseTo(2 * SECS_PER_WORD);
   });

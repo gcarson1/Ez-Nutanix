@@ -136,7 +136,7 @@ export default function Beacon() {
   const early = shown.filter((p) => p.tone === 'warn');
 
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={y.tone} k={`${y.year} · ${y.title}`}>

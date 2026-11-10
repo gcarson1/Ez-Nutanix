@@ -331,7 +331,7 @@ export default function Central() {
   ];
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<View>
           label="View from"

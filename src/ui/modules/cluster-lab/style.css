@@ -1,20 +1,9 @@
 /* ── Cluster & DSF Lab (prefix dl-) ─────────────────────────────────── */
 .dl > .stage { padding-top: var(--sp-5); }
-.dl-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
-.dl-pick .seg { align-self: flex-start; }
-.dl-pick .seg button { height: calc(var(--h-lg) - 2px); padding: 0 var(--sp-4); font-size: var(--fs-15); gap: var(--sp-2); }
-.dl-pick .seg button svg { width: 1.0625rem; height: 1.0625rem; flex: none; }
 
 /* one line saying what is happening now; fixed height so the picture never jumps */
 
 /* static explanation pane */
-.dl-rail .side-sec h2 { font-size: var(--fs-20); margin: var(--sp-2) 0 var(--sp-1); }
-.dl-rail .dl-lede { color: var(--muted); font-size: var(--fs-14); }
-.dl-rail ol { margin: var(--sp-4) 0 0; padding-left: 1.25rem; font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
-.dl-rail ol li::marker { color: var(--ink-fg); font-family: var(--mono); font-size: var(--fs-13); }
-.dl-rail ol li + li { margin-top: var(--sp-2); }
-.dl-rail .dl-why { margin-top: var(--sp-2); font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
-.dl-rail .dl-setup { margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--muted); line-height: 1.5; }
 
 .dl-legend { margin-top: var(--sp-2); }
 .dl-legend span { display: inline-flex; align-items: center; gap: var(--sp-1h); }
@@ -92,5 +81,4 @@
   .dl-dia .dl-card { transition: none; }
 }
 @media (max-width: 900px) {
-  .dl-pick .seg button { height: calc(var(--h-md) - 2px); padding: 0 var(--sp-3); font-size: var(--fs-14); }
 }

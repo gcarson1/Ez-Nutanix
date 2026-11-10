@@ -241,7 +241,7 @@ function EndpointView() {
   const caption = captions[phase];
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<Where>

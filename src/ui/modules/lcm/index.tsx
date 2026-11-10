@@ -102,7 +102,7 @@ function ClusterUpgrade() {
   const down = Math.round(view.impact.vmDownMin);
 
   return (
-    <Show
+    <Show clock={clock}
       top={<Choice<Scenario> label="What happens" value={sc} onChange={setSc} options={SCENARIOS} />}
       foot={
         <>

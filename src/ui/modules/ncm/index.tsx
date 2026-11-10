@@ -160,7 +160,7 @@ function AiOps() {
   const firedNow = wk.fixed.filter((s) => s.start <= hc).length;
   const line = lines[phase];
   return (
-    <Show
+    <Show clock={clock}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -441,8 +441,8 @@ function SelfService() {
   const left = r.p.quota.vcpu - r.p.used.vcpu;
   const checked = t - r.at >= r.steps[0].dur;
   return (
-    <Show
-      top={<Points label="Four requests from one project" items={SS_CARDS} t={t} />}
+    <Show clock={clock}
+      side={<Points label="Four requests from one project" items={SS_CARDS} t={t} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -616,8 +616,8 @@ function Cost() {
   const st = budgetState(spent, DEV.budget, ALERT_AT);
   const line = lines[phaseAt(COST_STARTS, t)];
   return (
-    <Show
-      top={<Points label="How NCM stops the overspend" items={GUARDS} t={t} until={MONTH} />}
+    <Show clock={clock}
+      side={<Points label="How NCM stops the overspend" items={GUARDS} t={t} until={MONTH} />}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -847,7 +847,7 @@ function Security() {
   const t = clock.t;
   const { open, sc, line } = secView(base, tl, t);
   return (
-    <Show
+    <Show clock={clock}
       top={
         <Choice<Base>
           label="Baseline"

@@ -258,7 +258,7 @@ export default function Network() {
   const caption = captions[phase];
 
   return (
-    <Show
+    <Show clock={clock}
       top={
         <>
           <Choice<BondMode>

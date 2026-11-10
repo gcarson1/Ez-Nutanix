@@ -1,14 +1,14 @@
 // Cluster & DSF Lab: one fixed 4-node cluster and five stories, picked from the buttons above
 // the picture. Each story plays on a loop, slowing down in steps with more to read, with pause
-// and scrub. The right-hand pane explains the chosen story and does not change while it plays.
+// and scrub; the steps, caption and why-it-matters sit in the right-hand column.
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Illus, PlayBar, Seg } from '../../components/controls';
+import { Follow, Illus, PlayBar } from '../../components/controls';
+import { Choice, Show } from '../../components/show';
 import { Icon } from '../../components/Icon';
 import { LabDiagram, LabLegend } from './LabDiagram';
-import { StepTracker } from '../../components/StepTracker';
 import { DRIVES, NODES, ORDER, SCENARIOS, VMS_PER_NODE, frameAt, stepAt, type ScenarioId } from './scenarios';
 
 export default function ClusterLab() {
@@ -20,62 +20,53 @@ export default function ClusterLab() {
   const step = stepAt(def, clock.t);
 
   return (
-    <div class="lab two dl">
-      <div class="stage">
-        <div class="dl-pick">
-          <span class="choice-l">What happens</span>
-          <Seg<ScenarioId>
-            label="What happens"
-            value={sc}
-            onChange={setSc}
-            options={ORDER.map((id) => ({
-              value: id,
-              label: (
-                <>
-                  <Icon name={SCENARIOS[id].icon} />
-                  {SCENARIOS[id].label}
-                </>
-              ),
-            }))}
-          />
-        </div>
-
-        <StepTracker steps={def.steps} step={step} clock={clock} />
-        <p class="lab-cap">{def.steps[step].text}</p>
-
-        <div class="diagram-scroll">
-          <LabDiagram frame={frame} label={`Four-node cluster. ${def.title}: ${def.lede}`} />
-        </div>
-        <LabLegend items={def.legend} />
-        <PlayBar
-          clock={clock}
-          label={`${def.title} animation`}
-          extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
+    <Show
+      clock={clock}
+      top={
+        <Choice<ScenarioId>
+          label="What happens"
+          value={sc}
+          onChange={setSc}
+          options={ORDER.map((id) => ({
+            value: id,
+            label: (
+              <>
+                <Icon name={SCENARIOS[id].icon} />
+                {SCENARIOS[id].label}
+              </>
+            ),
+          }))}
         />
+      }
+      foot={
+        <Follow tone="ink" k={def.steps[step].label}>
+          <p>{def.steps[step].text}</p>
+        </Follow>
+      }
+      side={
+        <>
+          <section>
+            <h2 class="side-sec-h">Why it matters</h2>
+            <p class="dl-why">{def.why}</p>
+          </section>
+          <section>
+            <h2 class="side-sec-h">This lab</h2>
+            <p class="dl-setup">
+              {NODES} nodes, each running {VMS_PER_NODE} VMs on {DRIVES} drives. Every piece of data is kept as two copies on different nodes (RF2).
+            </p>
+          </section>
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <LabDiagram frame={frame} label={`Four-node cluster. ${def.title}: ${def.lede}`} />
       </div>
-
-      <aside class="rail dl-rail" aria-label={`What happens: ${def.title}`}>
-        <section class="side-sec">
-          <div class="eyebrow">What happens</div>
-          <h2>{def.title}</h2>
-          <p class="dl-lede">{def.lede}</p>
-          <ol>
-            {def.steps.map((s) => (
-              <li key={s.at}>{s.text}</li>
-            ))}
-          </ol>
-        </section>
-        <section class="side-sec">
-          <div class="eyebrow">Why it matters</div>
-          <p class="dl-why">{def.why}</p>
-        </section>
-        <section class="side-sec">
-          <div class="eyebrow">This lab</div>
-          <p class="dl-setup">
-            {NODES} nodes, each running {VMS_PER_NODE} VMs on {DRIVES} drives. Every piece of data is kept as two copies on different nodes (RF2).
-          </p>
-        </section>
-      </aside>
-    </div>
+      <LabLegend items={def.legend} />
+      <PlayBar
+        clock={clock}
+        label={`${def.title} animation`}
+        extra={<Illus why="Time is compressed so each story plays in seconds. In a real cluster, HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Each tile stands for a slice of one VM’s data." />}
+      />
+    </Show>
   );
 }

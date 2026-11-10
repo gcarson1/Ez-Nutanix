@@ -1,14 +1,13 @@
 // Failure Gauntlet: pick what fails and watch one fixed 8-node cluster ride through it, step by
-// step. The steps sit above the picture (click one to jump there), the picture plays on a loop
-// slowly enough to read each step, and the right-hand pane states the outcome and does not
-// change while it plays. The story model lives in scenarios.ts.
+// step. The steps sit in the right-hand column (click one to jump there) with the outcome, and
+// the picture plays on a loop slowly enough to read each step. The story model lives in scenarios.ts.
 import { useMemo } from 'preact/hooks';
 import './style.css';
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
-import { Illus, PlayBar, Seg } from '../../components/controls';
+import { Follow, Illus, PlayBar } from '../../components/controls';
+import { Choice, Show } from '../../components/show';
 import { Icon } from '../../components/Icon';
-import { StepTracker } from '../../components/StepTracker';
 import { GauntletDiagram, GauntletLegend } from './GauntletDiagram';
 import { IDS, defFor, frameAt, stepIndex, G_NODES, VMS_PER_NODE, type Copies, type GId } from './scenarios';
 
@@ -35,79 +34,77 @@ export default function Failures() {
   const n = def.steps.length;
 
   return (
-    <div class="lab two gx">
-      <div class="stage">
-        <div class="gx-top">
-          <div class="gx-pick">
-            <span class="choice-l">What fails</span>
-            <Seg<GId>
-              label="What fails"
-              value={sc}
-              onChange={setSc}
-              options={IDS.map((id) => ({
-                value: id,
-                label: (
-                  <>
-                    <Icon name={PICKS[id].icon} />
-                    {PICKS[id].label}
-                  </>
-                ),
-              }))}
-            />
-          </div>
+    <Show
+      clock={clock}
+      top={
+        <>
+          <Choice<GId>
+            label="What fails"
+            value={sc}
+            onChange={setSc}
+            options={IDS.map((id) => ({
+              value: id,
+              label: (
+                <>
+                  <Icon name={PICKS[id].icon} />
+                  {PICKS[id].label}
+                </>
+              ),
+            }))}
+          />
           {sc === 'double' && (
-            <div class="gx-pick">
-              <span class="choice-l">Copies</span>
-              <Seg<'2' | '3'>
-                label="Copies"
-                value={cp}
-                onChange={setCp}
-                options={[
-                  { value: '2', label: 'RF2 · 2 copies' },
-                  { value: '3', label: 'RF3 · 3 copies' },
-                ]}
-              />
-            </div>
+            <Choice<'2' | '3'>
+              label="Copies"
+              value={cp}
+              onChange={setCp}
+              options={[
+                { value: '2', label: 'RF2 · 2 copies' },
+                { value: '3', label: 'RF3 · 3 copies' },
+              ]}
+            />
           )}
-        </div>
-
-        <StepTracker steps={def.steps} step={step} clock={clock} />
-        <p class="lab-cap">{def.steps[step].text}</p>
-
-        <div class="diagram-scroll">
-          <GauntletDiagram frame={frame} label={`Eight-node cluster in four blocks. ${PICKS[sc].label} failure: ${def.steps[n - 1].text}`} />
-        </div>
-        <GauntletLegend items={def.legend} />
-        <PlayBar
-          clock={clock}
-          label="Failure animation"
-          extra={<Illus why="Time is compressed so each failure plays in seconds, and timings are illustrative. In a real cluster HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left. Each tile is a tenth of a drive." />}
-        />
+        </>
+      }
+      foot={
+        <Follow tone="ink" k={def.steps[step].label}>
+          <p>{def.steps[step].text}</p>
+        </Follow>
+      }
+      side={
+        <>
+          <section>
+            <h2 class="side-sec-h">Outcome</h2>
+            <ul class="gx-outcome">
+              {def.outcome.map((o) => (
+                <li key={o.text} class={o.tone}>
+                  <Icon name={OUTCOME_ICON[o.tone]} />
+                  {o.text}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section>
+            <h2 class="side-sec-h">Why it matters</h2>
+            <p class="gx-why">{def.why}</p>
+          </section>
+          <section>
+            <h2 class="side-sec-h">This cluster</h2>
+            <p class="gx-setup">
+              {G_NODES} nodes in {G_NODES / 2} blocks of 2, each running {VMS_PER_NODE} VMs. Every piece of data is kept as {copies === 3 ? 'three copies (RF3)' : 'two copies (RF2)'}, on different nodes{copies === 2 ? ' and in different blocks' : ''}.
+            </p>
+          </section>
+        </>
+      }
+    >
+      <div class="diagram-scroll">
+        <GauntletDiagram frame={frame} label={`Eight-node cluster in four blocks. ${PICKS[sc].label} failure: ${def.steps[n - 1].text}`} />
       </div>
-
-      <aside class="rail gx-rail" aria-label="Outcome">
-        <section class="side-sec">
-          <div class="eyebrow">Outcome</div>
-          <ul class="gx-outcome">
-            {def.outcome.map((o) => (
-              <li key={o.text} class={o.tone}>
-                <Icon name={OUTCOME_ICON[o.tone]} />
-                {o.text}
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section class="side-sec">
-          <div class="eyebrow">Why it matters</div>
-          <p class="gx-why">{def.why}</p>
-        </section>
-        <section class="side-sec">
-          <div class="eyebrow">This cluster</div>
-          <p class="gx-setup">
-            {G_NODES} nodes in {G_NODES / 2} blocks of 2, each running {VMS_PER_NODE} VMs. Every piece of data is kept as {copies === 3 ? 'three copies (RF3)' : 'two copies (RF2)'}, on different nodes{copies === 2 ? ' and in different blocks' : ''}.
-          </p>
-        </section>
-      </aside>
-    </div>
+      <GauntletLegend items={def.legend} />
+      <PlayBar
+        clock={clock}
+        label="Failure animation"
+        extra={<Illus why="Time is compressed so each failure plays in seconds, and timings are illustrative. In a real cluster HA restarts VMs as soon as the host is declared failed, if there is free memory; how long each VM then takes is its guest OS booting. Re-creating copies takes longer, depending on how much data there is. Whether RF2 or RF3 survives a failure depends on which failure domains hold the copies and how much free space is left. Each tile is a tenth of a drive." />}
+      />
+    </Show>
   );
 }
