@@ -104,12 +104,12 @@ function plan(bond: BondMode, fail: LinkFail): Pkt[] {
 /** Each packet is a small labeled block naming its source (N2-009): VM1, VM2, VM3 or CVM. */
 const PKT_LABEL = ['VM1', 'VM2', 'VM3', 'CVM'];
 function Mark({ kind, x, y, cls, opacity }: { kind: number; x: number; y: number; r?: number; cls: string; opacity?: number }) {
-  const w = 30;
-  const h = 15;
+  const w = 34;
+  const h = 17;
   return (
     <g class={`${cls}${kind === 3 ? ' cvm' : ''}`} opacity={opacity}>
       <rect x={x - w / 2} y={y - h / 2} width={w} height={h} rx={3} />
-      <text x={x} y={y + 3.5} text-anchor="middle" class="net-pkt-t">
+      <text x={x} y={y + 4} text-anchor="middle" class="net-pkt-t">
         {PKT_LABEL[kind]}
       </text>
     </g>

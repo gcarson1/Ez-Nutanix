@@ -1,5 +1,5 @@
 /* NCI hub (N2-021): intro beside the node cutaway, then grouped tiles */
-.hub-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 30rem); gap: var(--sp-8); align-items: start; margin-bottom: var(--sp-6); }
+.hub-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 32.5rem); gap: var(--sp-8); align-items: start; margin-bottom: var(--sp-6); }
 .hub-lede { margin: 0 0 var(--sp-3); font: 500 var(--fs-18) / 1.45 var(--font-head); max-width: 36rem; }
 .hub-intro .field-note { margin: 0; max-width: 36rem; font-size: var(--fs-14); }
 .hub-node { margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
