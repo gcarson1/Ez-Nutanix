@@ -12,6 +12,13 @@ import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/cont
 import { Choice, Kpis, Show, ease, phaseAt, prog } from '../../components/show';
 import { Shape } from './shapes';
 
+/** The outline around a block that has joined an encoded strip, sized to the block Shape draws. */
+function Ring({ x, y, r }: { x: number; y: number; r: number }) {
+  const h = Math.max(14, r * 1.6) + 6;
+  const w = h * 1.3;
+  return <rect class="cp-ring" x={x - w / 2} y={y - h / 2} width={w} height={h} rx={5} />;
+}
+
 const W = 960;
 const PAD = 8;
 const TOP = 100;
@@ -123,7 +130,7 @@ function Picture({ plan, tl, t }: { plan: StripPlan; tl: ReturnType<typeof useEc
     const inStrip = tl.strip.has(`${w.piece}@${w.node}`) && t >= tl.encode;
     const cls = isDown(w.node) ? 'cp-lost' : fading ? 'cp-freed' : 'cp-copy';
     items.push(<Shape key={w.key} kind={w.piece} x={x} y={y} r={r} cls={cls} style={fading ? { opacity: 1 - prog(t, tl.free, tl.free + 0.9) } : undefined} />);
-    if (inStrip && !isDown(w.node)) items.push(<circle key={`ring${w.key}`} class="cp-ring" cx={to.x} cy={to.y} r={r + 4} />);
+    if (inStrip && !isDown(w.node)) items.push(<Ring key={`ring${w.key}`} x={to.x} y={to.y} r={r} />);
   }
   const parityTile = (key: string, c: { x: number; y: number }, cls: string) => (
     <g key={key} class={cls}>
@@ -141,7 +148,7 @@ function Picture({ plan, tl, t }: { plan: StripPlan; tl: ReturnType<typeof useEc
       if (m.parity) items.push(parityTile(m.key, c, fresh ? 'cp-par new' : 'cp-par'));
       else {
         items.push(<Shape key={m.key} kind={m.piece} x={c.x} y={c.y} r={r} cls={fresh ? 'cp-new' : 'cp-copy'} />);
-        items.push(<circle key={`ring${m.key}`} class="cp-ring" cx={c.x} cy={c.y} r={r + 4} />);
+        items.push(<Ring key={`ring${m.key}`} x={c.x} y={c.y} r={r} />);
       }
     }
   plan.recopy.forEach((rc, i) => {
@@ -197,7 +204,7 @@ export function EcView() {
 
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, k: 'Copies written', text: `New data is written as ${rf} copies on different nodes, like any other data.` },
-    { tone: 'flow' as const, k: 'Cold data encoded', text: `Data that has not been overwritten for a while is encoded in the background into a strip: ${data} data pieces (ringed) and ${parity} parity piece${parity === 1 ? '' : 's'} (P), each on a different node.` },
+    { tone: 'flow' as const, k: 'Cold data encoded', text: `Data that has not been overwritten for a while is encoded in the background into a strip: ${data} data pieces (outlined in blue) and ${parity} parity piece${parity === 1 ? '' : 's'} (P), each on a different node.` },
     { tone: 'ok' as const, k: 'Extra copies deleted', text: `The encoded data’s extra copies are deleted, so cold data uses ${x2(ec)} its size instead of ${rf}×. Hot data keeps its copies.` },
     { tone: 'bad' as const, k: rf === 2 ? 'A node fails' : 'Two nodes fail at once', text: `${names} ${rf === 2 ? 'goes' : 'go'} down. The strip loses ${lostPieces === 1 ? 'a piece' : `${lostPieces} pieces`} and some hot copies are gone, but nothing is lost.` },
     { tone: 'flow' as const, k: 'Lost pieces rebuilt', text: `A lost strip piece is recomputed by reading the rest of its strip, which takes more work than copying. Lost hot copies are simply copied again.` },
@@ -264,7 +271,7 @@ export function EcView() {
       <Legend
         items={[
           { color: 'var(--ink)', label: 'Copy of a piece of data' },
-          { color: 'var(--flow)', label: 'Encoded strip (ring, P) or re-created piece' },
+          { color: 'var(--flow)', label: 'Encoded strip (outline, P) or re-created piece' },
           { color: 'var(--bad)', dashed: true, label: 'Piece lost with the failed node' },
         ]}
       />

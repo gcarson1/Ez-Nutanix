@@ -44,6 +44,9 @@
   --part-cvm: #5b6ee1;
   --part-cvm-text: #ffffff;
   --part-data: #8a93a6;
+  /* data blocks: eight tints from neutral grey to blue, so copies of one piece can be matched */
+  --blk-0: #6b7385; --blk-1: #5f6f91; --blk-2: #546c9d; --blk-3: #4a68a9; --blk-4: #4064b5;
+  --blk-5: #3a5fc0; --blk-6: #3557b0; --blk-7: #2f4f9e;
 
   /* status (each paired with an icon + label in the UI) */
   --ok: #3fcf83;

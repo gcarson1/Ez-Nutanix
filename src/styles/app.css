@@ -579,3 +579,32 @@ body { min-height: 100vh; }
 
 .slide-head { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); flex-wrap: wrap; }
 .tour-btn svg { width: 1rem; height: 1rem; }
+
+/* shared diagram parts (N2-008, N2-009) */
+.diagram .pt-vm rect { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .pt-vm text { fill: var(--text-2); }
+.diagram .pt-vm.hl rect { stroke: var(--accent); stroke-width: 2; fill: var(--sel); }
+.diagram .pt-vm.down rect { stroke: var(--bad); fill: var(--bad-bg); }
+.diagram .pt-vm.warn rect, .diagram .pt-vm.moving rect { stroke: var(--warn); fill: var(--warn-bg); }
+.diagram .pt-vm.off { opacity: 0.45; }
+.diagram .pt-vm.new rect { stroke: var(--ok); fill: var(--ok-bg); }
+.diagram .pt-cvm rect { fill: var(--part-cvm); }
+.diagram .pt-cvm text { fill: var(--part-cvm-text, #fff); font-weight: 600; }
+.diagram .pt-cvm.down rect { fill: var(--bad-bg); stroke: var(--bad); }
+.diagram .pt-cvm.down text { fill: var(--bad); }
+.diagram .pt-cvm.warn rect { fill: var(--warn-bg); stroke: var(--warn); }
+.diagram .pt-cvm.warn text { fill: var(--warn); }
+.diagram .pt-drive rect { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .pt-drive .pt-drive-fill { fill: var(--part-data); stroke: none; }
+.diagram .pt-drive-notch { stroke: var(--line-2); }
+.diagram .pt-drive-t { font-size: 9px; fill: var(--muted); font-family: var(--font-alt); }
+.diagram .pt-drive.down rect { stroke: var(--bad); fill: var(--bad-bg); }
+.diagram .pt-node > rect { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .pt-node.bad > rect { fill: var(--bad-bg); stroke: var(--bad); }
+.diagram .pt-node.warn > rect { fill: var(--warn-bg); stroke: var(--warn); }
+.diagram .pt-node.flow > rect { stroke: var(--flow); }
+.diagram .pt-node-t { font-weight: 600; }
+.diagram .pt-switch > rect { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .pt-switch .pt-port { fill: var(--line-2); stroke: none; }
+.diagram .db .db-r { fill: var(--b, var(--blk-0)); }
+.diagram .db .db-t { fill: #fff; font-weight: 700; font-family: var(--font-head); }

@@ -97,12 +97,19 @@ function plan(bond: BondMode, fail: LinkFail): Pkt[] {
   return out;
 }
 
-/** The small shape that marks each source and its packets. */
-function Mark({ kind, x, y, r, cls, opacity }: { kind: number; x: number; y: number; r: number; cls: string; opacity?: number }) {
-  if (kind === 0) return <circle class={cls} cx={x} cy={y} r={r} opacity={opacity} />;
-  if (kind === 1) return <rect class={cls} x={x - r * 0.85} y={y - r * 0.85} width={r * 1.7} height={r * 1.7} opacity={opacity} />;
-  const pts = kind === 2 ? [[0, -1.15], [1.05, 0.75], [-1.05, 0.75]] : [[0, -1.2], [1.2, 0], [0, 1.2], [-1.2, 0]];
-  return <polygon class={cls} points={pts.map(([px, py]) => `${(x + px * r).toFixed(1)},${(y + py * r).toFixed(1)}`).join(' ')} opacity={opacity} />;
+/** Each packet is a small labeled block naming its source (N2-009): VM1, VM2, VM3 or CVM. */
+const PKT_LABEL = ['VM1', 'VM2', 'VM3', 'CVM'];
+function Mark({ kind, x, y, cls, opacity }: { kind: number; x: number; y: number; r?: number; cls: string; opacity?: number }) {
+  const w = 30;
+  const h = 15;
+  return (
+    <g class={`${cls}${kind === 3 ? ' cvm' : ''}`} opacity={opacity}>
+      <rect x={x - w / 2} y={y - h / 2} width={w} height={h} rx={3} />
+      <text x={x} y={y + 3.5} text-anchor="middle" class="net-pkt-t">
+        {PKT_LABEL[kind]}
+      </text>
+    </g>
+  );
 }
 
 const ROLE_WORD: Record<UplinkRole, string> = { active: 'active', standby: 'standby (backup)', carrying: 'in use', idle: 'idle', down: '✕ link down' };
@@ -300,7 +307,7 @@ export default function Network() {
       </div>
       <Legend
         items={[
-          { color: 'var(--flow)', label: 'Packet (shape matches its VM or the CVM)' },
+          { color: 'var(--flow)', label: 'Packet, labeled with its VM or the CVM' },
           { color: 'var(--s2)', label: 'Link in use' },
           ...(bond === 'ab' ? [{ color: 'var(--line-2)', dashed: true, label: 'Link waiting as the backup' }] : []),
           ...(bond === 'lacp' ? [{ color: 'var(--ink)', dashed: true, label: 'Link group (LAG) on the switches' }] : []),

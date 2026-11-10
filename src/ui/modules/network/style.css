@@ -9,7 +9,10 @@
 .net-dia .net-wire.wait { stroke: var(--line-2); stroke-width: 1.5; stroke-dasharray: 3 4; }
 .net-dia .net-wire.down { stroke: var(--bad); stroke-width: 2; stroke-dasharray: 5 4; }
 .net-dia .net-lag { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 6 4; }
-.net-dia .net-pkt { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
-.net-dia .net-pkt.lost { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 3 2; }
+.net-dia .net-pkt rect { fill: var(--flow); stroke: var(--bg); stroke-width: 1.5; }
+.net-dia .net-pkt.cvm rect { fill: var(--part-cvm); }
+.net-dia .net-pkt-t { fill: #fff; font: 700 9px var(--font-head); }
+.net-dia .net-pkt.lost rect { fill: none; stroke: var(--bad); stroke-width: 2; stroke-dasharray: 3 2; }
+.net-dia .net-pkt.lost .net-pkt-t { fill: var(--bad); }
 .net-dia .ink-text-fill { fill: var(--ink-fg); }
 .net-dia .ok-text-fill { fill: var(--ok); }
