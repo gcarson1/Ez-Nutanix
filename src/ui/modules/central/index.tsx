@@ -196,6 +196,8 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
 
   return (
     <svg class="diagram cen-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${CLUSTERS.length} clusters in ${DOMAINS.length} regions, each region with its own Prism Central, and Nutanix Central above both. ${frame.label}.`}>
+      {/* what this console sees: a tinted region behind everything else */}
+      <rect class={`cen-scope${t >= tl.view ? ' now' : ''}`} x={frame.x} y={frame.y} width={frame.w} height={frame.h} rx={6} />
       {/* links: Prism Central to Nutanix Central */}
       {DOMAINS.map((d, i) => (
         <polyline key={d.id} points={poly(fedPath(d.id))} class={`cen-link${view !== 'fed' ? ' off cen-out' : t >= fedArrive(tl, i) ? ' live' : ''}`} />
@@ -232,7 +234,7 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
         const hasWarn = d.id === WARNED.domain && t >= warnAtPc;
         return (
           <g key={d.id} class={on ? '' : 'cen-out'}>
-            <rect class={`cen-box${view === 'pc' && on ? ' on' : ''}`} x={p.a} y={PY} width={p.b - p.a} height={PH} />
+            <rect class={`cen-box${view !== 'pe' && on ? ' on' : ''}`} x={p.a} y={PY} width={p.b - p.a} height={PH} />
             <text x={p.mid} y={PY + 23} text-anchor="middle" class="cen-h">
               {d.name}
             </text>
@@ -302,8 +304,7 @@ function Fleet({ view, t, tl }: { view: View; t: number; tl: Timeline }) {
       })}
       {warnDot && <circle class="cen-warn-dot" cx={warnDot[0]} cy={warnDot[1]} r={7} />}
 
-      {/* what this console sees */}
-      <rect class={`cen-scope${t >= tl.view ? ' now' : ''}`} x={frame.x} y={frame.y} width={frame.w} height={frame.h} rx={6} />
+      {/* what this console sees: its label */}
       <text x={frame.x + 2} y={FRAME_BOTTOM + 24} class="cen-scope-t">
         {frame.label}
       </text>
