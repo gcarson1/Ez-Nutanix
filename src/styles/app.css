@@ -563,11 +563,9 @@ body { min-height: 100vh; }
 .hm-tag { font: 600 var(--fs-11) / 1 var(--font-head); color: var(--warn); border: 1px solid currentColor; border-radius: var(--radius-sm); padding: 0.125rem 0.375rem; }
 .hm-more { justify-self: start; border: 0; background: none; padding: 0; font-size: var(--fs-13); color: var(--ink-fg); cursor: pointer; text-align: left; }
 .hm-more:hover { text-decoration: underline; }
-.hm-clouds { cursor: default; grid-template-columns: minmax(0, 1fr); }
-.hm-clouds:hover { border-color: var(--line-2); background: var(--bg); }
+.hm-clouds { grid-template-columns: minmax(0, 1fr); }
 .hm-logos { display: flex; gap: var(--sp-2); margin-top: var(--sp-1); }
-.hm-logo { display: inline-grid; place-items: center; height: 2.5rem; padding: 0 var(--sp-3); border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; cursor: pointer; }
-.hm-logo:hover, .hm-logo:focus-visible { border-color: var(--accent); }
+.hm-logo { display: inline-grid; place-items: center; height: 2.5rem; padding: 0 var(--sp-3); border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; }
 .hm-logo img { height: 1.375rem; width: auto; display: block; }
 .hm-marks { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--sp-1); }
 .hm-partial { border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--bg-2); }

@@ -8,7 +8,7 @@ type VT = { ready: Promise<void>; updateCallbackDone: Promise<void>; finished: P
 type VTDoc = Document & { startViewTransition?: (cb: () => Promise<void> | void) => VT };
 
 // The tile or pane that opened each module, so going back up can return focus to it, not just to the
-// first tile with that path (three cloud tiles open the same module).
+// first tile with that path (the Prism Federation tile and the Nutanix Central link open the same module).
 const entered: Record<string, string> = {};
 
 export function go(path: string, params: Record<string, string> = {}, from?: HTMLElement | null) {

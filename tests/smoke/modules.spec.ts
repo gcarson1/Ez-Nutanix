@@ -27,9 +27,16 @@ test('landing page renders every pane and opens a module', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(FILE);
   await expect(page.getByRole('heading', { name: /One platform for all apps/ })).toBeVisible();
-  for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'AWS', 'Azure', 'Google Cloud', 'OEM of your choice']) {
+  for (const name of ['Prism Federation', 'Cloud Manager', 'Kubernetes Platform', 'Data Lens', 'Files, Objects', 'Cloud Native AOS', 'Database Service', 'Enterprise AI', 'Nutanix Cloud Infrastructure', 'Public cloud · NC2', 'OEM of your choice']) {
     await expect(page.getByRole('button', { name: new RegExp(name) }).first()).toBeVisible();
   }
+  // The clouds' logos are part of the NC2 card: the card is the button, and Esc returns focus to it.
+  await expect(page.getByRole('button', { name: 'AWS', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: /Public cloud · NC2/ }).click();
+  await expect(page.locator('.mod-head h1')).toHaveText('Hybrid & Public Cloud');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { name: /One platform for all apps/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Public cloud · NC2/ })).toBeFocused();
   await page.getByRole('button', { name: /Nutanix Cloud Infrastructure/ }).click();
   await expect(page.locator('.mod-head h1')).toHaveText('Nutanix Cloud Infrastructure');
   await page.keyboard.press('Escape');

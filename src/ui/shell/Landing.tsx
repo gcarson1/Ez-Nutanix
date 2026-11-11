@@ -40,9 +40,9 @@ const SERVICES: Card[] = [
 const OEMS: Vendor[] = ['Nutanix', 'Dell', 'HPE', 'Lenovo', 'Cisco', 'Fujitsu', 'Supermicro'];
 
 const CLOUDS = [
-  { id: 'aws', title: 'AWS', src: awsLogo, path: 'cloud', params: { c: 'aws' } },
-  { id: 'azure', title: 'Azure', src: azureLogo, path: 'cloud', params: { c: 'azure' } },
-  { id: 'gcp', title: 'Google Cloud', src: googleCloudLogo, path: 'cloud', params: { c: 'gcp' } },
+  { id: 'aws', title: 'AWS', src: awsLogo },
+  { id: 'azure', title: 'Azure', src: azureLogo },
+  { id: 'gcp', title: 'Google Cloud', src: googleCloudLogo },
 ];
 
 // For customers who want part of the platform: AHV with their own array, or Nutanix HCI under ESXi.
@@ -204,17 +204,17 @@ export function Landing() {
           </Band>
           <Band label="Runs on">
             <div class="hm-grid two">
-              <div class="hm-card hm-clouds" data-tour="clouds">
+              <button type="button" class="hm-card hm-clouds" data-tour="clouds" data-pane="clouds" data-path="cloud" onClick={(e) => go('cloud', undefined, e.currentTarget as HTMLElement)}>
                 <span class="hm-t">Public cloud · NC2</span>
                 <span class="hm-see">Nutanix Cloud Clusters in your cloud account</span>
                 <span class="hm-logos">
                   {CLOUDS.map((c) => (
-                    <button key={c.id} type="button" class="hm-logo" data-pane={c.id} data-path={c.path} onClick={(e) => go(c.path, c.params, e.currentTarget as HTMLElement)}>
+                    <span key={c.id} class="hm-logo">
                       <img src={c.src} alt={c.title} />
-                    </button>
+                    </span>
                   ))}
                 </span>
-              </div>
+              </button>
               <CardBtn c={{ id: 'bare', title: 'OEM of your choice', see: 'Nutanix NX and six OEM hardware platforms', path: 'oem' }} tour="bare">
                 <span class="hm-marks">
                   {OEMS.map((v) => (
