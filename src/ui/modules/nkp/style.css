@@ -1,6 +1,8 @@
 /* Kubernetes Platform module (prefix nk-) */
 .diagram .nk-isl { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .nk-isl.loose { }
+.diagram .nk-isl.ok { stroke: var(--ok); }
+.diagram .nk-isl.down { stroke: var(--bad); fill: var(--bad-bg); }
 .diagram .nk-cl { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .nk-cl.on { stroke: var(--ink); stroke-width: 2; }
 .diagram .nk-node { fill: var(--bg-3); stroke: var(--line-2); }
@@ -23,6 +25,27 @@
 .diagram .nk-chip.ok { stroke: var(--ok); fill: var(--ok-bg, var(--bg)); }
 .diagram .nk-card { fill: var(--bg-2); stroke: var(--line-2); stroke-width: 1.25; }
 .diagram .nk-ns { fill: var(--flow-bg); stroke: var(--flow); stroke-width: 1.5; }
+/* Detail tabs: workers, pods and cluster cards (parts.tsx) */
+.diagram .nk-wk { fill: var(--bg); stroke: var(--line-2); stroke-width: 1.25; }
+.diagram .nk-wk.new { stroke: var(--flow); stroke-dasharray: 5 4; }
+.diagram .nk-wk.bad { fill: var(--bad-bg); stroke: var(--bad); }
+.diagram .nk-wk.leaving { stroke-dasharray: 3 4; }
+.diagram .nk-slot { fill: none; stroke: var(--line-2); stroke-dasharray: 2 3; }
+.diagram .nk-pod.wait { fill: var(--warn); }
+.diagram .nk-cl.out { stroke-dasharray: 5 4; fill: none; }
+.diagram .nk-cl.ok { stroke: var(--ok); }
+.diagram .nk-cl.down { stroke: var(--bad); fill: var(--bad-bg); }
+.diagram .nk-ws { fill: none; stroke: var(--ink-line); stroke-width: 1.25; stroke-dasharray: 5 4; }
+.diagram .nk-ws.on { stroke: var(--ok); stroke-dasharray: none; stroke-width: 1.5; }
+.diagram .nk-spark { fill: none; stroke: var(--ink); stroke-width: 1.75; stroke-linejoin: round; }
+.diagram .nk-spark.hot { stroke: var(--warn); }
+.diagram .nk-vol { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .nk-copy { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
+.nk-also ul { list-style: none; padding: 0; margin: var(--sp-2) 0 0; display: grid; gap: var(--sp-2); }
+.nk-also li { margin: 0; }
+.nk-also li b { font-size: var(--fs-14); font-weight: 600; color: var(--text); }
+.nk-also li p { margin: 0; }
+.show-side section a.nk-link-a { color: var(--ink-fg); text-decoration: underline; text-underline-offset: 0.15em; }
 @media (max-width: 600px) {
   .diagram-scroll > .nk-svg { min-width: 54rem; }
 }

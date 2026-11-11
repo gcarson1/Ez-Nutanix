@@ -12,6 +12,9 @@ export const content: ModuleContent = {
     'Open Kubernetes, no lock-in: NKP is not a fork and adds no wrapper API. It is built from upstream CNCF projects that Nutanix integrates and validates as one production stack, so apps and automation written for it work on any CNCF-compliant Kubernetes distribution. Contrast that with EKS and AKS, each tied to one cloud, and OpenShift, tied to RHEL and the Red Hat ecosystem.',
     'One fleet: clusters on Nutanix, vSphere, bare metal and public cloud share one view and one policy, and existing EKS and AKS clusters can be attached. Attached clusters still take their Kubernetes upgrades from their cloud.',
     'Platform teams govern the road, developers use the road: the platform team sees fleet health, compliance and upgrades; developers get namespaces on approved clusters with storage, networking, observability and policy attached.',
+    'Cluster lifecycle tab: a cluster is declared, not scripted. Cluster API on the management cluster builds it, the built-in autoscaler adds and removes workers with demand, and a failed worker is replaced so the cluster matches its definition again.',
+    'Fleet tab: workspaces group clusters by team behind one sign-in, an existing EKS or AKS cluster can be attached without migrating anything, and with GitOps a change is a commit that every cluster follows, with manual drift put back.',
+    'Day-2 services tab: Prometheus, Thanos and Grafana give one view of every cluster, NKP Insights flags anomalies and AI Navigator helps with the fix. Velero backs applications up on a schedule, and NDK replicates a whole application to a second site.',
     'On Nutanix it connects to the rest of the platform: AHV, Unified Storage, Data Services for Kubernetes and Database Service. The Kubernetes upgrade rollout itself is on LCM Rolling Upgrade, under its Kubernetes (NKP) tab.',
   ],
   numbers: [
@@ -41,6 +44,8 @@ export const content: ModuleContent = {
     'Pause on NKP arrives: the layer sits above the clusters and connects to each, without replacing them.',
     'On One fleet, point at the policy reaching all four clusters and the upgrade reaching only the three NKP clusters, while AKS keeps Azure’s upgrades.',
     'On Two teams, one road, follow the developer’s request through the guardrails to the Nutanix cluster.',
+    'Open Cluster lifecycle: Create shows a definition becoming a cluster, Scale shows the autoscaler, Self-heal shows a failed worker replaced.',
+    'Open Fleet for Workspaces, Attach a cluster and GitOps, then Day-2 services for Observability and Backup and recovery.',
     'Then open LCM Rolling Upgrade and pick its Kubernetes (NKP) tab for the upgrade rollout, or open Cloud Native AOS for storage.',
   ],
   then: ['nci/lcm', 'cnaos'],

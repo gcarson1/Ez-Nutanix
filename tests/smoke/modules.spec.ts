@@ -354,6 +354,43 @@ test('Enterprise AI: the Agent Gateway tab routes, falls back, rate-limits and g
   expect(errors).toEqual([]);
 });
 
+test('Kubernetes Platform: the story is the Overview, and every part has its own animation', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/nkp`);
+  const tabs = page.getByRole('tablist', { name: 'Kubernetes Platform topics' });
+  await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.show-main .follow-k')).toHaveText(/Islands|Hidden work/);
+  await expect(page.locator('.show-side')).toContainText('Also in NKP 2.19');
+  const scenes: [tab: string, group: string, option: string, heading: RegExp][] = [
+    ['Cluster lifecycle', 'Lifecycle', 'Create', /Declare the cluster|Cluster API builds it|in minutes|everywhere/],
+    ['Cluster lifecycle', 'Lifecycle', 'Scale', /room to spare|Demand rises|autoscaler|Demand falls/],
+    ['Cluster lifecycle', 'Lifecycle', 'Self-heal', /healthy cluster|worker fails|restarts the pods|replaced/],
+    ['Fleet', 'Fleet', 'Workspaces', /Many clusters|Workspaces group|One sign-in|Tenants/],
+    ['Fleet', 'Fleet', 'Attach a cluster', /did not create|Attach it|One view|upgrades stay/],
+    ['Fleet', 'Fleet', 'GitOps', /lives in Git|a commit|Every cluster follows|Drift/],
+    ['Day-2 services', 'Service', 'Observability', /is measured|One place|Insights|AI Navigator/],
+    ['Day-2 services', 'Service', 'Backup and recovery', /more than its data|Velero|mistake|NDK|recovers/],
+  ];
+  for (const [tab, group, option, heading] of scenes) {
+    await tabs.getByRole('tab', { name: tab }).click();
+    await page.getByRole('group', { name: group }).getByRole('button', { name: option }).click();
+    await expect(page.locator('.show-main .follow-k'), option).toHaveText(heading);
+    await expect(page.locator('.show-main svg.diagram'), option).toHaveCount(1);
+    expect(await page.locator('.steps li').count(), option).toBeGreaterThanOrEqual(4);
+  }
+  // Each scene ends on its outcome: play the last one to the end.
+  await page.locator('.playbar input.scrub').evaluate((r: HTMLInputElement) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, r.max);
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('.kpis')).toContainText('Running at site B');
+  // The lifecycle tab points to the upgrade animation instead of repeating it.
+  await tabs.getByRole('tab', { name: 'Cluster lifecycle' }).click();
+  await page.getByRole('link', { name: /LCM Rolling Upgrade/ }).click();
+  await expect(page).toHaveURL(/#\/nci\/lcm\?tab=k8s$/);
+  expect(errors).toEqual([]);
+});
+
 test('Enterprise AI opens on the Overview, which ends with every team on one platform', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/ai`);

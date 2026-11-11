@@ -50,6 +50,7 @@ export function Story({
   why,
   legend,
   top,
+  side,
   kpis,
   children,
 }: {
@@ -64,6 +65,8 @@ export function Story({
   why: string;
   legend: { color: string; label: string; dashed?: boolean }[];
   top?: ComponentChildren;
+  /** Extra sections for the right column, under the key numbers. */
+  side?: ComponentChildren;
   kpis: (t: number, phase: number) => KpiItem[];
   children: (t: number, phase: number) => VNode;
 }) {
@@ -89,6 +92,7 @@ export function Story({
     <Show
       clock={clock}
       top={top}
+      side={side}
       foot={
         <>
           <Follow tone={c.tone} k={c.k}>

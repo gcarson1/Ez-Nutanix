@@ -17,6 +17,19 @@ export interface Scene {
 }
 
 export const SCENES: Scene[] = [
+  // ── Kubernetes Platform ──
+  { path: 'nkp', group: 'Kubernetes Platform topics', label: 'Overview', words: 'nkp kubernetes k8s operating model islands fleet d2iq' },
+  { path: 'nkp', params: { tab: 'life' }, group: 'Kubernetes Platform topics', label: 'Cluster lifecycle', words: 'cluster api capi provision create scale autoscaler self-healing node' },
+  { path: 'nkp', params: { tab: 'fleet' }, group: 'Kubernetes Platform topics', label: 'Fleet', words: 'fleet management workspaces projects multitenancy attach eks aks gitops flux kommander' },
+  { path: 'nkp', params: { tab: 'ops' }, group: 'Kubernetes Platform topics', label: 'Day-2 services', words: 'observability monitoring logging backup restore disaster recovery velero ndk insights' },
+  { path: 'nkp', params: { tab: 'life' }, group: 'Lifecycle', label: 'Create', words: 'cluster api capi provision deploy declarative management cluster workload cluster' },
+  { path: 'nkp', params: { tab: 'life', l: 'scale' }, group: 'Lifecycle', label: 'Scale', words: 'cluster autoscaler autoscaling scale out scale in pending pods worker node' },
+  { path: 'nkp', params: { tab: 'life', l: 'heal' }, group: 'Lifecycle', label: 'Self-heal', words: 'self-healing resiliency node failure machine health check replace' },
+  { path: 'nkp', params: { tab: 'fleet' }, group: 'Fleet', label: 'Workspaces', words: 'workspace project multitenancy rbac sso ldap saml oidc github tenants' },
+  { path: 'nkp', params: { tab: 'fleet', f: 'attach' }, group: 'Fleet', label: 'Attach a cluster', words: 'attached cluster eks aks existing third-party cloud kubernetes' },
+  { path: 'nkp', params: { tab: 'fleet', f: 'gitops' }, group: 'Fleet', label: 'GitOps', words: 'flux git repository continuous delivery drift commit rollout' },
+  { path: 'nkp', params: { tab: 'ops' }, group: 'Service', label: 'Observability', words: 'prometheus grafana thanos metrics dashboards insights anomaly ai navigator chatbot' },
+  { path: 'nkp', params: { tab: 'ops', s: 'protect' }, group: 'Service', label: 'Backup and recovery', words: 'velero backup restore ndk data services replication disaster recovery dr snapshot' },
   // ── Enterprise AI ──
   { path: 'ai', group: 'Enterprise AI topics', label: 'Overview', words: 'nai enterprise ai private ai how it works product overview teams governance gpt-in-a-box' },
   { path: 'ai', params: { tab: 'ep' }, group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu replicas batch inference' },

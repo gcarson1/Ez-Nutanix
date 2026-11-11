@@ -1,11 +1,16 @@
-// Kubernetes Platform (NKP): "from islands to one operating model", one loop in six scenes.
+// Kubernetes Platform (NKP), four tabs. Overview, below: "from islands to one operating model", one loop in six scenes.
+// Cluster lifecycle, Fleet and Day-2 services: lifecycle.tsx, fleet.tsx, services.tsx.
 // Four Kubernetes environments start as islands, each run its own way; the NKP layer arrives above
 // them without replacing them; one upgrade and one policy go out from it (the attached AKS cluster
 // keeps Azure's upgrades); the platform team and a developer use the same layer; apps run
 // everywhere. Kubernetes version upgrades themselves are on LCM Rolling Upgrade's Kubernetes (NKP) tab.
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
-import { Kpis, Show, ease, phaseAt, prog, type Point } from '../../components/show';
+import { Kpis, Show, Tabs, ease, phaseAt, prog, type Point } from '../../components/show';
+import { useEnum } from '../../../state/route';
+import FleetView from './fleet';
+import LifecycleView from './lifecycle';
+import ServicesView from './services';
 import './style.css';
 
 const S = [0, 8, 16, 24, 33, 42];
@@ -236,7 +241,32 @@ function NkpDiagram({ t }: { t: number }) {
   );
 }
 
-export default function Nkp() {
+// What NKP 2.19 also does that has no scene of its own (facts NKP-18).
+const ALSO = [
+  { k: 'Bare metal (NKP Metal)', text: 'Kubernetes directly on physical servers, imaged and registered through Foundation Central.' },
+  { k: 'VMs beside containers', text: 'AHV virtual machines, Linux and Windows, managed with Kubernetes APIs through VM Operator.' },
+  { k: 'AI and GPUs', text: 'Direct GPU access, and a curated AI catalog for Pro and Ultimate: Kubeflow Pipelines, JupyterHub, Milvus and more.' },
+  { k: 'Air-gapped sites', text: 'Production Kubernetes in isolated environments with no internet connection.' },
+  { k: 'Cost management', text: 'Part of NKP Ultimate, with fleet management, GitOps and multitenancy.' },
+];
+
+function Also() {
+  return (
+    <section class="nk-also">
+      <h2 class="side-sec-h">Also in NKP 2.19</h2>
+      <ul>
+        {ALSO.map((a) => (
+          <li key={a.k}>
+            <b>{a.k}</b>
+            <p>{a.text}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function OverviewView() {
   const clock = useClock({ rate: 1, duration: END, keys: true, poster: S[3] + 6.5, steps: STEPS });
   const t = clock.t;
   const sc = phaseAt(S, t);
@@ -245,6 +275,7 @@ export default function Nkp() {
   const policy = sc < 3 ? 0 : Math.min(4, Math.max(0, Math.floor((t - (S[3] + 2.7)) / 0.2) + 1));
   return (
     <Show clock={clock}
+      side={<Also />}
       foot={
         <>
           <Follow tone={scene.tone} k={scene.k}>
@@ -283,5 +314,25 @@ export default function Nkp() {
         extra={<Illus why="A simplified story. Fleet management, GitOps and multitenancy are in NKP Ultimate, and managing EKS or AKS needs a separate NKP Cloud Kubernetes SKU. Attached EKS and AKS clusters keep their cloud’s own Kubernetes upgrades. NKP also runs on bare metal. Versions are examples; the Kubernetes upgrade itself is shown on LCM Rolling Upgrade’s Kubernetes (NKP) tab." />}
       />
     </Show>
+  );
+}
+
+type TabId = 'ov' | 'life' | 'fleet' | 'ops';
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'ov', label: 'Overview' },
+  { id: 'life', label: 'Cluster lifecycle' },
+  { id: 'fleet', label: 'Fleet' },
+  { id: 'ops', label: 'Day-2 services' },
+];
+
+export default function Nkp() {
+  const [tab, setTab] = useEnum<TabId>('tab', 'ov', ['ov', 'life', 'fleet', 'ops']);
+  return (
+    <Tabs label="Kubernetes Platform topics" value={tab} tabs={TABS} onChange={setTab}>
+      {tab === 'ov' && <OverviewView />}
+      {tab === 'life' && <LifecycleView />}
+      {tab === 'fleet' && <FleetView />}
+      {tab === 'ops' && <ServicesView />}
+    </Tabs>
   );
 }
