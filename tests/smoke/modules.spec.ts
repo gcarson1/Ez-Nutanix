@@ -367,6 +367,13 @@ test('Enterprise AI opens on the Overview, which ends with every team on one pla
   await expect(page.locator('.show-main .follow-k')).toHaveText('One platform for every team');
   await expect(page.locator('.kpis')).toContainText('4 of 4');
   await expect(page.locator('.kpis')).toContainText('Your data center');
+  // A link from before the Overview still opens Model endpoint with its choice picked.
+  await page.goto(`${FILE}#/ai?w=cloud`);
+  await expect(page.getByRole('tablist', { name: 'Enterprise AI topics' }).getByRole('tab', { name: 'Model endpoint' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('group', { name: 'Where it runs' }).getByRole('button', { name: 'Public cloud' })).toHaveAttribute('aria-pressed', 'true');
+  // ...and its choice does not trap the page there: the Overview tab still opens the Overview.
+  await page.getByRole('tablist', { name: 'Enterprise AI topics' }).getByRole('tab', { name: 'Overview' }).click();
+  await expect(page.getByRole('tablist', { name: 'Enterprise AI topics' }).getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   expect(errors).toEqual([]);
 });
 

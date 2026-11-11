@@ -2,7 +2,7 @@
 // replicas it has, then watch the model load, apps' requests reach one endpoint and be spread over the
 // replicas, and one replica stop while the others carry on (scheduling in src/engine/ai-endpoint.ts).
 // GPUs, Faster answers, Models and data: gpus.tsx, speed.tsx, own.tsx. Agent Gateway: see gateway.tsx.
-import { afterNextRoute, buildHash, navigate, useEnum } from '../../../state/route';
+import { afterNextRoute, buildHash, navigate, setParams, useEnum, useRoute } from '../../../state/route';
 import { useMemo } from 'preact/hooks';
 import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
 import { paced, useClock, useRestartOn } from '../../components/clock';
@@ -344,9 +344,15 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 export default function Ai() {
-  const [tab, setTab] = useEnum<TabId>('tab', 'ov', ['ov', 'ep', 'gpu', 'fast', 'own', 'gw']);
+  // Links from before the Overview (#/ai?w=cloud, #/ai?r=4) pick a Model endpoint choice with no tab: keep opening Model endpoint.
+  const { params } = useRoute();
+  const choice = params.w !== undefined || params.r !== undefined;
+  const old = params.tab === undefined && choice;
+  const [tab, setTab] = useEnum<TabId>('tab', old ? 'ep' : 'ov', ['ov', 'ep', 'gpu', 'fast', 'own', 'gw']);
+  // Overview is the default, so the URL leaves it out; with a Model endpoint choice in the URL, say it outright so the link is not read as an old one.
+  const pick = (v: TabId) => (v === 'ov' && choice ? setParams({ tab: 'ov' }) : setTab(v));
   return (
-    <Tabs label="Enterprise AI topics" value={tab} tabs={TABS} onChange={setTab}>
+    <Tabs label="Enterprise AI topics" value={tab} tabs={TABS} onChange={pick}>
       {tab === 'ov' && <OverviewView />}
       {tab === 'ep' && <EndpointView />}
       {tab === 'gpu' && <GpusView />}
