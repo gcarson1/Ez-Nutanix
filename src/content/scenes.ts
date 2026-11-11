@@ -18,7 +18,19 @@ export interface Scene {
 
 export const SCENES: Scene[] = [
   // ── Enterprise AI ──
-  { path: 'ai', group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu tensor parallelism multi-gpu batch speculative decoding kv cache offload hibernation hibernate lora fine-tuning iam roles model sharing rag grounding citations' },
+  { path: 'ai', group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu replicas batch inference' },
+  { path: 'ai', params: { tab: 'gpu' }, group: 'Enterprise AI topics', label: 'GPUs', words: 'gpu memory vram mig slice tensor parallelism multi-gpu multi-node hibernation' },
+  { path: 'ai', params: { tab: 'fast' }, group: 'Enterprise AI topics', label: 'Faster answers', words: 'speed performance tokens latency time to first token ttft speculative decoding kv cache' },
+  { path: 'ai', params: { tab: 'own' }, group: 'Enterprise AI topics', label: 'Models and data', words: 'fine-tuning lora iam roles rbac model sharing rag grounding documents citations' },
+  { path: 'ai', params: { tab: 'gpu' }, group: 'GPU use', label: 'Share a GPU', words: 'mig multi-instance gpu slice vgpu small models embedding share fractional' },
+  { path: 'ai', params: { tab: 'gpu', g: 'multi' }, group: 'GPU use', label: 'Span GPUs', words: 'tensor parallelism multi-gpu multiple gpus large model' },
+  { path: 'ai', params: { tab: 'gpu', g: 'nodes' }, group: 'GPU use', label: 'Span nodes', words: 'pipeline parallelism multi-node vllm tech preview 100b frontier model' },
+  { path: 'ai', params: { tab: 'gpu', g: 'hib' }, group: 'GPU use', label: 'Hibernate', words: 'hibernation hibernate resume pause endpoint free gpu release' },
+  { path: 'ai', params: { tab: 'fast' }, group: 'Technique', label: 'Speculative decoding', words: 'draft model tokens 2.5x faster generation' },
+  { path: 'ai', params: { tab: 'fast', f: 'kv' }, group: 'Technique', label: 'KV-cache offload', words: 'kv cache key value host memory cpu ram time to first token ttft tech preview eviction' },
+  { path: 'ai', params: { tab: 'own' }, group: 'Capability', label: 'Fine-tuning', words: 'lora low-rank adaptation fine tune training nfs 8b peft' },
+  { path: 'ai', params: { tab: 'own', o: 'iam' }, group: 'Capability', label: 'Roles and sharing', words: 'iam custom roles rbac model sharing permissions access groups' },
+  { path: 'ai', params: { tab: 'own', o: 'rag' }, group: 'Capability', label: 'Grounded answers', words: 'rag retrieval documents upload citations grounding agent app sources' },
   { path: 'ai', params: { tab: 'gw' }, group: 'Enterprise AI topics', label: 'Agent Gateway', words: 'mcp model context protocol agents tools fallback rate limit api keys header-based audit' },
   { path: 'ai', group: 'Where it runs', label: 'Your data center', words: 'on premises on prem' },
   { path: 'ai', params: { w: 'cloud' }, group: 'Where it runs', label: 'Public cloud', words: 'aws azure eks aks' },

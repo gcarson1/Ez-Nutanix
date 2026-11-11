@@ -2,7 +2,7 @@
 // replicas it has, then watch the model load, apps' requests reach one endpoint and be spread over the
 // replicas, and one replica stop while the others carry on (scheduling in src/engine/ai-endpoint.ts).
 // Agent Gateway: see gateway.tsx.
-import { useEnum } from '../../../state/route';
+import { afterNextRoute, buildHash, navigate, useEnum } from '../../../state/route';
 import { useMemo } from 'preact/hooks';
 import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
 import { paced, useClock, useRestartOn } from '../../components/clock';
@@ -10,11 +10,12 @@ import { NodeFrame } from '../../components/parts';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Show, Tabs, ease, phaseAt, prog } from '../../components/show';
 import GatewayView from './gateway';
+import GpusView from './gpus';
+import { W, along, type Pt } from './kit';
+import OwnView from './own';
+import SpeedView from './speed';
 import './style.css';
 
-type Pt = [number, number];
-
-const W = 960;
 const H = 416;
 const CY = 197;
 const BX = 208;
@@ -30,9 +31,9 @@ const RG = 6;
 const POD = { dx: 10, dy: 24, w: 116, h: 28 };
 const BAR = { x0: 18, x1: 118 };
 const CHIP = { dx: 134, dy: 24, w: 226, h: 28 };
-/** Example sizes, not a spec: a 48 GB GPU; the big model takes all of it, the small one a 12 GB MIG slice. */
-const GPU_GB = 48;
-const SLICE_GB = 12;
+/** Example sizes, not a spec: an 80 GB GPU; the big model takes all of it, the small one a 20 GB MIG slice (as on the GPUs tab). */
+const GPU_GB = 80;
+const SLICE_GB = 20;
 const SMALL_Y = 344;
 const LOAD = { start: 0.3, flight: 1.5 };
 /** Model copies travel along the top of the site and down its right-hand gutter. */
@@ -42,19 +43,6 @@ const T = SERVE_TIMES;
 
 const repY = (r: number, n: number) => CY - (n * RH + (n - 1) * RG) / 2 + r * (RH + RG);
 const modelBox = (online: boolean) => (online ? { x: 16, y: 40, w: 176, h: 88 } : { x: 244, y: 46, w: 184, h: 84 });
-
-function along(pts: Pt[], f: number): Pt {
-  const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
-  let d = Math.max(0, Math.min(1, f)) * seg.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < seg.length; i++) {
-    if (d <= seg[i] || i === seg.length - 1) {
-      const k = seg[i] ? d / seg[i] : 0;
-      return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k];
-    }
-    d -= seg[i];
-  }
-  return pts[pts.length - 1];
-}
 
 /** Endpoint to a replica's work bar. */
 function fan(r: number, n: number): Pt[] {
@@ -232,41 +220,59 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
   );
 }
 
-// What else NAI 2.8 does, beyond the endpoint the picture shows (facts AI-1 to AI-10).
-const MORE: { group: string; items: { k: string; tp?: boolean; text: string }[] }[] = [
+// What else NAI does, beyond the endpoint the picture shows (facts OWN-2 and AI-1 to AI-10). `see` opens the
+// tab and choice that animate the feature.
+const MORE: { group: string; items: { k: string; tp?: boolean; text: string; see?: Record<string, string> }[] }[] = [
   {
     group: 'Serving',
     items: [
-      { k: 'Multi-GPU serving', text: 'Tensor parallelism splits a supported model across several GPUs.' },
-      { k: 'Multi-node serving', tp: true, text: 'Pipeline parallelism spreads models of 100B+ parameters across GPU nodes.' },
+      { k: 'A slice of a GPU', text: 'NVIDIA MIG slices let small models share one GPU (from NAI 2.5).', see: { tab: 'gpu' } },
+      { k: 'Multi-GPU serving', text: 'Tensor parallelism splits a supported model across several GPUs.', see: { tab: 'gpu', g: 'multi' } },
+      { k: 'Multi-node serving', tp: true, text: 'Pipeline parallelism spreads models of 100B+ parameters across GPU nodes.', see: { tab: 'gpu', g: 'nodes' } },
       { k: 'Batch inference', text: 'Enabled in NAI 2.8, alongside speculative decoding.' },
-      { k: 'Speculative decoding', text: 'A small draft model speeds up token generation, by up to 2.5x.' },
-      { k: 'KV-cache offload', tp: true, text: 'Moves the KV cache to host memory, so repeated or similar prompts get a fast first token.' },
-      { k: 'Endpoint hibernation', text: 'Frees an endpoint\u2019s GPUs but keeps its configuration, so it resumes later (from NAI 2.3).' },
+      { k: 'Speculative decoding', text: 'A small draft model speeds up token generation, by up to 2.5x.', see: { tab: 'fast' } },
+      { k: 'KV-cache offload', tp: true, text: 'Moves the KV cache to host memory, so repeated or similar prompts get a fast first token.', see: { tab: 'fast', f: 'kv' } },
+      { k: 'Endpoint hibernation', text: 'Frees an endpoint\u2019s GPUs but keeps its configuration, so it resumes later (from NAI 2.3).', see: { tab: 'gpu', g: 'hib' } },
     ],
   },
   {
     group: 'Customize and govern',
     items: [
-      { k: 'Fine-tuning with LoRA', text: 'Generally available for supported models under 8B parameters; the tuned model imports straight into NAI.' },
-      { k: 'Custom IAM roles', text: 'Predefined or custom roles limit each user to chosen actions and resources.' },
-      { k: 'Model sharing', text: 'Give chosen users or groups selected models, not the whole catalog.' },
-      { k: 'Grounded answers', text: 'The Agent app answers from documents you upload, with citations back to the source.' },
+      { k: 'Fine-tuning with LoRA', text: 'Generally available for supported models under 8B parameters; the tuned model imports straight into NAI.', see: { tab: 'own' } },
+      { k: 'Custom IAM roles', text: 'Predefined or custom roles limit each user to chosen actions and resources.', see: { tab: 'own', o: 'iam' } },
+      { k: 'Model sharing', text: 'Give chosen users or groups selected models, not the whole catalog.', see: { tab: 'own', o: 'iam' } },
+      { k: 'Grounded answers', text: 'The Agent app answers from documents you upload, with citations back to the source.', see: { tab: 'own', o: 'rag' } },
     ],
   },
 ];
 
 function MoreInNai() {
+  // A plain click opens the scene in place and moves focus to its tab, since this list is unmounted; a modified click (new tab) is left to the browser.
+  const follow = (e: MouseEvent, see: Record<string, string>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    afterNextRoute(() => document.querySelector<HTMLElement>('main [role="tab"][aria-selected="true"]')?.focus());
+    navigate('ai', see);
+  };
   return (
     <section class="ai-more">
       <h2 class="side-sec-h">More in NAI 2.8</h2>
+      <p class="ai-more-hint">Select a linked name to watch it animated.</p>
       {MORE.map((g) => (
         <div key={g.group}>
           <h3>{g.group}</h3>
           <ul>
             {g.items.map((f) => (
               <li key={f.k}>
-                <b>{f.k}</b>
+                <b>
+                  {f.see ? (
+                    <a href={buildHash('ai', f.see)} onClick={(e) => follow(e, f.see!)}>
+                      {f.k}
+                    </a>
+                  ) : (
+                    f.k
+                  )}
+                </b>
                 {f.tp && (
                   <>
                     {' '}
@@ -363,17 +369,23 @@ function EndpointView() {
   );
 }
 
-type TabId = 'ep' | 'gw';
+type TabId = 'ep' | 'gpu' | 'fast' | 'own' | 'gw';
 const TABS: { id: TabId; label: string }[] = [
   { id: 'ep', label: 'Model endpoint' },
+  { id: 'gpu', label: 'GPUs' },
+  { id: 'fast', label: 'Faster answers' },
+  { id: 'own', label: 'Models and data' },
   { id: 'gw', label: 'Agent Gateway' },
 ];
 
 export default function Ai() {
-  const [tab, setTab] = useEnum<TabId>('tab', 'ep', ['ep', 'gw']);
+  const [tab, setTab] = useEnum<TabId>('tab', 'ep', ['ep', 'gpu', 'fast', 'own', 'gw']);
   return (
     <Tabs label="Enterprise AI topics" value={tab} tabs={TABS} onChange={setTab}>
       {tab === 'ep' && <EndpointView />}
+      {tab === 'gpu' && <GpusView />}
+      {tab === 'fast' && <SpeedView />}
+      {tab === 'own' && <OwnView />}
       {tab === 'gw' && <GatewayView />}
     </Tabs>
   );

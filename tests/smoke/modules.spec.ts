@@ -347,6 +347,41 @@ test('Enterprise AI: the Agent Gateway tab routes, falls back, rate-limits and g
   expect(errors).toEqual([]);
 });
 
+test('Enterprise AI: every feature has its own animation, with tech previews named and no errors', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/ai`);
+  const tabs = page.getByRole('tablist', { name: 'Enterprise AI topics' });
+  const scenes: [tab: string, group: string, option: string, heading: RegExp, preview: boolean][] = [
+    ['GPUs', 'GPU use', 'Share a GPU', /takes a whole GPU|MIG|slice/, false],
+    ['GPUs', 'GPU use', 'Span GPUs', /one GPU|Tensor parallelism|Every GPU/, false],
+    ['GPUs', 'GPU use', 'Span nodes', /one node|Pipeline parallelism|stage|throughput/, true],
+    ['GPUs', 'GPU use', 'Hibernate', /GPU is taken|Hibernate|freed GPUs|Resume/, false],
+    ['Faster answers', 'Technique', 'Speculative decoding', /token|draft model|guess|passes/, false],
+    ['Faster answers', 'Technique', 'KV-cache offload', /notes|evicted|host memory|starts fast/, true],
+    ['Models and data', 'Capability', 'Fine-tuning', /smaller model|LoRA|metrics|imported|Serve it/, false],
+    ['Models and data', 'Capability', 'Roles and sharing', /catalog|Share only|role|refused/, false],
+    ['Models and data', 'Capability', 'Grounded answers', /training|Upload|passages|cites/, false],
+  ];
+  for (const [tab, group, option, heading, preview] of scenes) {
+    await tabs.getByRole('tab', { name: tab }).click();
+    await page.getByRole('group', { name: group }).getByRole('button', { name: option }).click();
+    await expect(page.locator('.show-main .follow-k'), option).toHaveText(heading);
+    await expect(page.locator('.show-main svg.diagram'), option).toHaveCount(1);
+    // Every step of the scene has a chip, and a preview feature says so in the picture and the numbers.
+    expect(await page.locator('.steps li').count(), option).toBeGreaterThanOrEqual(3);
+    await expect(page.locator('svg.diagram').getByText('Tech preview'), option).toHaveCount(preview ? 1 : 0);
+    if (preview) await expect(page.locator('.kpis'), option).toContainText('Tech preview');
+  }
+  // The feature list on the first tab opens the scene it names.
+  await tabs.getByRole('tab', { name: 'Model endpoint' }).click();
+  await page.getByRole('link', { name: 'Endpoint hibernation' }).click();
+  await expect(page).toHaveURL(/#\/ai\?g=hib&tab=gpu$/);
+  await expect(page.getByRole('group', { name: 'GPU use' }).getByRole('button', { name: 'Hibernate' })).toHaveAttribute('aria-pressed', 'true');
+  // The list that held the link is gone, so focus moves to the tab it opened.
+  await expect(tabs.getByRole('tab', { name: 'GPUs' })).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
 test('external storage names every array with its own technology, no picker, NetApp counted as announced, and the footer shows the release', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/partial`);
