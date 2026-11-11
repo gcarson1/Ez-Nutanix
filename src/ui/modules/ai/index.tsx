@@ -206,21 +206,8 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
   );
 }
 
-// What else NAI does, beyond the endpoint the picture shows (facts OWN-2 and AI-1 to AI-10). `see` opens the
-// tab and choice that animate the feature.
-const MORE: { group: string; items: { k: string; tp?: boolean; text: string; see?: Record<string, string> }[] }[] = [
-  {
-    group: 'Serving',
-    items: [
-      { k: 'A slice of a GPU', text: 'NVIDIA MIG slices let small models share one GPU (from NAI 2.5).', see: { tab: 'gpu' } },
-      { k: 'Multi-GPU serving', text: 'Tensor parallelism splits a supported model across several GPUs.', see: { tab: 'gpu', g: 'multi' } },
-      { k: 'Multi-node serving', tp: true, text: 'Pipeline parallelism spreads models of 100B+ parameters across GPU nodes.', see: { tab: 'gpu', g: 'nodes' } },
-      { k: 'Batch inference', text: 'Enabled in NAI 2.8, alongside speculative decoding.' },
-      { k: 'Speculative decoding', text: 'A small draft model speeds up token generation, by up to 2.5x.', see: { tab: 'fast' } },
-      { k: 'KV-cache offload', tp: true, text: 'Moves the KV cache to host memory, so repeated or similar prompts get a fast first token.', see: { tab: 'fast', f: 'kv' } },
-      { k: 'Endpoint hibernation', text: 'Frees an endpoint\u2019s GPUs but keeps its configuration, so it resumes later (from NAI 2.3).', see: { tab: 'gpu', g: 'hib' } },
-    ],
-  },
+// More that NAI 2.8 does around the endpoint (facts AI-7 to AI-10). `see` opens the tab and choice that animate it.
+const MORE: { group: string; items: { k: string; text: string; see: Record<string, string> }[] }[] = [
   {
     group: 'Customize and govern',
     items: [
@@ -251,20 +238,10 @@ function MoreInNai() {
             {g.items.map((f) => (
               <li key={f.k}>
                 <b>
-                  {f.see ? (
-                    <a href={buildHash('ai', f.see)} onClick={(e) => follow(e, f.see!)}>
-                      {f.k}
-                    </a>
-                  ) : (
-                    f.k
-                  )}
+                  <a href={buildHash('ai', f.see)} onClick={(e) => follow(e, f.see)}>
+                    {f.k}
+                  </a>
                 </b>
-                {f.tp && (
-                  <>
-                    {' '}
-                    <span class="ai-tp">Tech preview</span>
-                  </>
-                )}
                 <p>{f.text}</p>
               </li>
             ))}

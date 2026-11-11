@@ -381,11 +381,11 @@ test('Enterprise AI: every feature has its own animation, with tech previews nam
   }
   // The feature list on the first tab opens the scene it names.
   await tabs.getByRole('tab', { name: 'Model endpoint' }).click();
-  await page.getByRole('link', { name: 'Endpoint hibernation' }).click();
-  await expect(page).toHaveURL(/#\/ai\?g=hib&tab=gpu$/);
-  await expect(page.getByRole('group', { name: 'GPU use' }).getByRole('button', { name: 'Hibernate' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('link', { name: 'Grounded answers' }).click();
+  await expect(page).toHaveURL(/#\/ai\?o=rag&tab=own$/);
+  await expect(page.getByRole('group', { name: 'Capability' }).getByRole('button', { name: 'Grounded answers' })).toHaveAttribute('aria-pressed', 'true');
   // The list that held the link is gone, so focus moves to the tab it opened.
-  await expect(tabs.getByRole('tab', { name: 'GPUs' })).toBeFocused();
+  await expect(tabs.getByRole('tab', { name: 'Models and data' })).toBeFocused();
   expect(errors).toEqual([]);
 });
 
