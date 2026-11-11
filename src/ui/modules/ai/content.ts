@@ -7,6 +7,7 @@ export const content: ModuleContent = {
   summary: 'Nutanix Enterprise AI (NAI) runs large language model (LLM) inference endpoints on Kubernetes you control, in your data center or public cloud, and its Agent Gateway governs how apps and agents reach models and tools.',
   priority: 'P2',
   talk: [
+    'Overview tab, the whole product in one loop: every team wants AI on company data and finds its own way; NAI runs on Kubernetes you control; a model from its catalog becomes an endpoint with replicas on GPUs; apps call it and agents go through Agent Gateway; roles, sharing and monitoring govern it; every team ends up on one platform, licensed by GPU memory, not tokens.',
     'Most teams do not want to send sensitive prompts to a shared public service. NAI lets them run models on infrastructure they control.',
     'Pick where it runs: your data center (NKP on Nutanix), public cloud (EKS, AKS or GKE in your own account) or an air-gapped site, which means NKP in your data center with no internet and no Hugging Face.',
     'Each replica loads its own copy of the model onto its GPUs. Apps and agents call one endpoint address with an API token; role-based access control decides who creates endpoints and tokens, with GPU and model monitoring built in. A supported model can span several GPUs; spanning GPU nodes is a tech preview. Not every model needs a full GPU: from NAI 2.5 a replica can run on an NVIDIA MIG slice (or a vGPU), which suits embedding models and small language models.',
@@ -42,7 +43,8 @@ export const content: ModuleContent = {
     },
   ],
   next: [
-    'Under Where it runs, keep Your data center and set Model replicas to 2: requests spread over both, then one stops and the other keeps answering.',
+    'Play the Overview first: the whole product in six scenes, from four teams each doing AI their own way to one governed platform.',
+    'Then open Model endpoint: under Where it runs, keep Your data center and set Model replicas to 2: requests spread over both, then one stops and the other keeps answering.',
     'Set Model replicas to 1 to show the queue, and the pause when the only replica stops.',
     'Pick Air-gapped site under Where it runs: the model comes in as files, with no internet connection.',
     'Open the GPUs tab and pick Share a GPU: one small model wastes a whole GPU until MIG slices it. Then Span GPUs for a model too big for one GPU, and Hibernate to free GPUs without deleting an endpoint.',

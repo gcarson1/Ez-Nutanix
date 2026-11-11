@@ -354,6 +354,22 @@ test('Enterprise AI: the Agent Gateway tab routes, falls back, rate-limits and g
   expect(errors).toEqual([]);
 });
 
+test('Enterprise AI opens on the Overview, which ends with every team on one platform', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/ai`);
+  await expect(page.getByRole('tablist', { name: 'Enterprise AI topics' }).getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.show-main .follow-k')).toHaveText(/Every team wants AI|NAI on Kubernetes/);
+  expect(await page.locator('.steps li').count()).toBe(6);
+  await page.locator('.playbar input.scrub').evaluate((r: HTMLInputElement) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, r.max);
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('.show-main .follow-k')).toHaveText('One platform for every team');
+  await expect(page.locator('.kpis')).toContainText('4 of 4');
+  await expect(page.locator('.kpis')).toContainText('Your data center');
+  expect(errors).toEqual([]);
+});
+
 test('Enterprise AI: every feature has its own animation, with tech previews named and no errors', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto(`${FILE}#/ai`);
@@ -379,7 +395,7 @@ test('Enterprise AI: every feature has its own animation, with tech previews nam
     await expect(page.locator('svg.diagram').getByText('Tech preview'), option).toHaveCount(preview ? 1 : 0);
     if (preview) await expect(page.locator('.kpis'), option).toContainText('Tech preview');
   }
-  // The feature list on the first tab opens the scene it names.
+  // The feature list on the Model endpoint tab opens the scene it names.
   await tabs.getByRole('tab', { name: 'Model endpoint' }).click();
   await page.getByRole('link', { name: 'Grounded answers' }).click();
   await expect(page).toHaveURL(/#\/ai\?o=rag&tab=own$/);

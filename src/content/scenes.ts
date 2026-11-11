@@ -18,7 +18,8 @@ export interface Scene {
 
 export const SCENES: Scene[] = [
   // ── Enterprise AI ──
-  { path: 'ai', group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu replicas batch inference' },
+  { path: 'ai', group: 'Enterprise AI topics', label: 'Overview', words: 'nai enterprise ai private ai how it works product overview teams governance gpt-in-a-box' },
+  { path: 'ai', params: { tab: 'ep' }, group: 'Enterprise AI topics', label: 'Model endpoint', words: 'nai inference llm model serving endpoint gpu replicas batch inference' },
   { path: 'ai', params: { tab: 'gpu' }, group: 'Enterprise AI topics', label: 'GPUs', words: 'gpu memory vram mig slice tensor parallelism multi-gpu multi-node hibernation' },
   { path: 'ai', params: { tab: 'fast' }, group: 'Enterprise AI topics', label: 'Faster answers', words: 'speed performance tokens latency time to first token ttft speculative decoding kv cache' },
   { path: 'ai', params: { tab: 'own' }, group: 'Enterprise AI topics', label: 'Models and data', words: 'fine-tuning lora iam roles rbac model sharing rag grounding documents citations' },
@@ -32,12 +33,12 @@ export const SCENES: Scene[] = [
   { path: 'ai', params: { tab: 'own', o: 'iam' }, group: 'Capability', label: 'Roles and sharing', words: 'iam custom roles rbac model sharing permissions access groups' },
   { path: 'ai', params: { tab: 'own', o: 'rag' }, group: 'Capability', label: 'Grounded answers', words: 'rag retrieval documents upload citations grounding agent app sources' },
   { path: 'ai', params: { tab: 'gw' }, group: 'Enterprise AI topics', label: 'Agent Gateway', words: 'mcp model context protocol agents tools fallback rate limit api keys header-based audit' },
-  { path: 'ai', group: 'Where it runs', label: 'Your data center', words: 'on premises on prem' },
-  { path: 'ai', params: { w: 'cloud' }, group: 'Where it runs', label: 'Public cloud', words: 'aws azure eks aks' },
-  { path: 'ai', params: { w: 'airgap' }, group: 'Where it runs', label: 'Air-gapped site', words: 'airgap dark site disconnected offline' },
-  { path: 'ai', params: { r: '1' }, group: 'Model replicas', label: '1', words: 'replica scale' },
-  { path: 'ai', group: 'Model replicas', label: '2', words: 'replicas scale' },
-  { path: 'ai', params: { r: '4' }, group: 'Model replicas', label: '4', words: 'replicas scale out' },
+  { path: 'ai', params: { tab: 'ep' }, group: 'Where it runs', label: 'Your data center', words: 'on premises on prem' },
+  { path: 'ai', params: { tab: 'ep', w: 'cloud' }, group: 'Where it runs', label: 'Public cloud', words: 'aws azure eks aks' },
+  { path: 'ai', params: { tab: 'ep', w: 'airgap' }, group: 'Where it runs', label: 'Air-gapped site', words: 'airgap dark site disconnected offline' },
+  { path: 'ai', params: { tab: 'ep', r: '1' }, group: 'Model replicas', label: '1', words: 'replica scale' },
+  { path: 'ai', params: { tab: 'ep' }, group: 'Model replicas', label: '2', words: 'replicas scale' },
+  { path: 'ai', params: { tab: 'ep', r: '4' }, group: 'Model replicas', label: '4', words: 'replicas scale out' },
 
   // ── Protection & Capacity ──
   { path: 'nci/capacity', group: 'Protection topics', label: 'Copies (RF2, RF3)', words: 'replication factor redundancy factor usable capacity' },

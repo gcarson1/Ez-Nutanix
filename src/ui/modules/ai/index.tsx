@@ -1,7 +1,7 @@
-// Enterprise AI (NAI), two tabs. Model endpoint: pick where the endpoint runs and how many model
+// Enterprise AI (NAI), six tabs. Overview: see overview.tsx. Model endpoint: pick where the endpoint runs and how many model
 // replicas it has, then watch the model load, apps' requests reach one endpoint and be spread over the
 // replicas, and one replica stop while the others carry on (scheduling in src/engine/ai-endpoint.ts).
-// Agent Gateway: see gateway.tsx.
+// GPUs, Faster answers, Models and data: gpus.tsx, speed.tsx, own.tsx. Agent Gateway: see gateway.tsx.
 import { afterNextRoute, buildHash, navigate, useEnum } from '../../../state/route';
 import { useMemo } from 'preact/hooks';
 import { REPLICA_OPTS, SERVE_TIMES, SITE, WHERES, planServing, type Job, type ServePlan, type Where } from '../../../engine/ai-endpoint';
@@ -12,6 +12,7 @@ import { Choice, Kpis, Show, Tabs, ease, phaseAt, prog } from '../../components/
 import GatewayView from './gateway';
 import GpusView from './gpus';
 import { W, along, type Pt } from './kit';
+import OverviewView from './overview';
 import OwnView from './own';
 import SpeedView from './speed';
 import './style.css';
@@ -332,8 +333,9 @@ function EndpointView() {
   );
 }
 
-type TabId = 'ep' | 'gpu' | 'fast' | 'own' | 'gw';
+type TabId = 'ov' | 'ep' | 'gpu' | 'fast' | 'own' | 'gw';
 const TABS: { id: TabId; label: string }[] = [
+  { id: 'ov', label: 'Overview' },
   { id: 'ep', label: 'Model endpoint' },
   { id: 'gpu', label: 'GPUs' },
   { id: 'fast', label: 'Faster answers' },
@@ -342,9 +344,10 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 export default function Ai() {
-  const [tab, setTab] = useEnum<TabId>('tab', 'ep', ['ep', 'gpu', 'fast', 'own', 'gw']);
+  const [tab, setTab] = useEnum<TabId>('tab', 'ov', ['ov', 'ep', 'gpu', 'fast', 'own', 'gw']);
   return (
     <Tabs label="Enterprise AI topics" value={tab} tabs={TABS} onChange={setTab}>
+      {tab === 'ov' && <OverviewView />}
       {tab === 'ep' && <EndpointView />}
       {tab === 'gpu' && <GpusView />}
       {tab === 'fast' && <SpeedView />}
