@@ -16,7 +16,7 @@ import OwnView from './own';
 import SpeedView from './speed';
 import './style.css';
 
-const H = 416;
+const H = 364; // the site frame ends 28 below the last of four replicas
 const CY = 197;
 const BX = 208;
 const APPS = { x: 16, y: CY - 36, w: 176, h: 72 };
@@ -31,10 +31,8 @@ const RG = 6;
 const POD = { dx: 10, dy: 24, w: 116, h: 28 };
 const BAR = { x0: 18, x1: 118 };
 const CHIP = { dx: 134, dy: 24, w: 226, h: 28 };
-/** Example sizes, not a spec: an 80 GB GPU; the big model takes all of it, the small one a 20 GB MIG slice (as on the GPUs tab). */
+/** Example size, not a spec: an 80 GB GPU, which each replica's model takes all of. */
 const GPU_GB = 80;
-const SLICE_GB = 20;
-const SMALL_Y = 344;
 const LOAD = { start: 0.3, flight: 1.5 };
 /** Model copies travel along the top of the site and down its right-hand gutter. */
 const LOAD_Y = 58;
@@ -51,7 +49,7 @@ function fan(r: number, n: number): Pt[] {
 }
 const IN: Pt[] = [[APPS.x + APPS.w, CY], [EP_CX, CY]];
 
-/** A GPU chip: whole GPU or MIG slice, with the GPU memory allocated against its capacity. */
+/** A GPU chip, with the GPU memory allocated against its capacity. */
 function GpuChip({ x, y, kind, used, cap, off }: { x: number; y: number; kind: string; used: number; cap: number; off?: boolean }) {
   return (
     <g style={{ opacity: off ? 0.4 : 1 }}>
@@ -191,18 +189,6 @@ function Picture({ where, plan, t }: { where: Where; plan: ServePlan; t: number 
         );
       })}
 
-      {/* another endpoint: a small model on a MIG slice of a GPU */}
-      <text class="muted d-fine" x={RX} y={SMALL_Y - 6}>
-        Another endpoint: a small model that does not need a full GPU
-      </text>
-      <NodeFrame x={RX} y={SMALL_Y} w={RW} h={RH} title={`gpu-node-${n + 1}`} status={t >= loaded ? 'ready' : 'loading the model'}>
-        <rect class="ai-pod" x={RX + POD.dx} y={SMALL_Y + POD.dy} width={POD.w} height={POD.h} rx={4} />
-        <text class="d-sub" x={RX + POD.dx + 8} y={SMALL_Y + POD.dy + 13}>
-          Pod · Embedding
-        </text>
-        <GpuChip x={RX + CHIP.dx} y={SMALL_Y + CHIP.dy} kind="MIG slice" used={SLICE_GB * ease(prog(t, loaded, loaded + 0.5))} cap={GPU_GB} />
-      </NodeFrame>
-
       {/* the model copies flying in */}
       {Array.from({ length: n }, (_, r) => {
         const a = LOAD.start + r * 0.08;
@@ -297,7 +283,7 @@ function EndpointView() {
   const site = SITE[where];
   const load =
     (n === 1 ? 'The replica loads the model' : `Each of the ${n} replicas loads its own copy of the model`) +
-    (site.online ? ', downloaded from NVIDIA Inference Microservices (NIM) or Hugging Face, or uploaded by you, and takes its share of the GPU\u2019s memory.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later. A model that does not need a whole GPU can take a slice instead.');
+    (site.online ? ', downloaded from NVIDIA Inference Microservices (NIM) or Hugging Face, or uploaded by you, and takes its share of the GPU\u2019s memory.' : ' from files brought into the site. Nothing is downloaded, and nothing needs the internet later. Each replica takes its share of the GPU\u2019s memory.');
   const captions: { tone: Tone | 'ink'; k: string; text: string }[] = [
     { tone: 'ink' as const, k: 'The model loads', text: load },
     n === 1
@@ -363,7 +349,7 @@ function EndpointView() {
       <PlayBar
         clock={clock}
         label="Model endpoint animation"
-        extra={<Illus why="Simplified and compressed: real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. GPU sizes and memory figures are examples: a model needs more GPU memory at run time than its file size, and a MIG slice (or vGPU) is how a small model shares a GPU. The point is how one endpoint spreads requests over replicas." />}
+        extra={<Illus why="Simplified and compressed: real model servers work on many requests at once by batching them, a replica can span several GPUs for supported models, and times are not to scale. GPU sizes and memory figures are examples: a model needs more GPU memory at run time than its file size. The point is how one endpoint spreads requests over replicas." />}
       />
     </Show>
   );
