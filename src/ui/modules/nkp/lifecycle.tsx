@@ -3,6 +3,7 @@
 // examples; claims are in docs/facts.md (NKP-5, NKP-10 to NKP-12). Upgrading one cluster and air-gapped sites are in
 // upgrade.tsx; the fleet-wide rollout is on LCM Rolling Upgrade's Kubernetes (NKP) tab.
 import type { ComponentChildren } from 'preact';
+import { SCALE as SC, scaleState } from '../../../engine/nkp-scenes';
 import { buildHash, navigate, useEnum } from '../../../state/route';
 import { Choice, prog } from '../../components/show';
 import { Story, W, fly, pts, type Pt, type StoryStep } from '../ai/kit';
@@ -273,23 +274,7 @@ const SC_STEPS: StoryStep[] = [
     text: 'When the pods finish, the autoscaler scales the cluster back in and removes the worker that is no longer needed, so capacity follows demand in both directions.',
   },
 ];
-const SC = { arrive: [5.5, 5.9, 6.3, 6.7, 7.1], add: 10.8, ready: 12.6, land: [13.0, 13.4], leave: [16.5, 16.7, 16.9, 17.1, 17.3, 17.5], drain: 18.3, gone: 19.5 };
-
 function ScaleScene({ top }: { top: ComponentChildren }) {
-  const state = (t: number) => {
-    const arrived = SC.arrive.filter((a) => t >= a).length;
-    const landed = SC.land.filter((a) => t >= a).length;
-    const left = SC.leave.filter((a) => t >= a).length;
-    // nine to start; three arrivals fill the workers; the autoscaled worker takes the two that waited
-    const base = [3, 3, 3].map((n, i) => n + (arrived > i ? 1 : 0));
-    const w4 = landed;
-    // six pods finish: both on worker 4, then one or two from the others
-    const done = [Math.min(2, Math.max(0, left - 2)), Math.max(0, Math.min(1, left - 4)), Math.max(0, Math.min(1, left - 5)), Math.min(2, left)];
-    const pods = [base[0] - done[0], base[1] - done[1], base[2] - done[2], w4 - done[3]];
-    const waiting = Math.max(0, arrived - 3) - landed;
-    const has4 = t >= SC.add && t < SC.gone;
-    return { pods, waiting, has4, total: pods.reduce((a, b) => a + b, 0) };
-  };
   return (
     <Story
       steps={SC_STEPS}
@@ -305,7 +290,7 @@ function ScaleScene({ top }: { top: ComponentChildren }) {
         { color: 'var(--warn)', label: 'Pod waiting for room' },
       ]}
       kpis={(t) => {
-        const s = state(t);
+        const s = scaleState(t);
         return [
           { k: 'Worker nodes', v: s.has4 ? 4 : 3, sub: t >= SC.add && t < SC.ready ? 'one starting' : t >= SC.drain && t < SC.gone ? 'one being removed' : undefined },
           { k: 'Pods running', v: s.total },
@@ -315,14 +300,14 @@ function ScaleScene({ top }: { top: ComponentChildren }) {
       }}
     >
       {(t) => {
-        const s = state(t);
+        const s = scaleState(t);
         const w4: Wk | null = s.has4 ? { name: 'worker-4', state: t < SC.ready ? 'new' : t >= SC.drain ? 'leaving' : 'ok', pods: s.pods[3], opacity: t >= SC.drain ? 1 - 0.7 * prog(t, SC.drain, SC.gone) : 1 } : null;
         const acting = (t >= SC.add - 0.5 && t < SC.land[1] + 0.4) || (t >= SC.drain - 0.3 && t < SC.gone);
         return (
           <ClusterView
             label="A cluster with three workers. More pods arrive than fit, so two wait. The Cluster Autoscaler adds a fourth worker and they start there. When demand falls, it removes the extra worker."
             note={`Demand: ${s.total + s.waiting} pods`}
-            status={s.waiting ? `${s.waiting} pods waiting for room` : 'every pod is running'}
+            status={s.waiting ? `${s.waiting} ${s.waiting === 1 ? 'pod' : 'pods'} waiting for room` : 'every pod is running'}
             tone={s.waiting ? 'warn' : 'ok'}
             workers={[...[0, 1, 2].map((i): Wk => ({ name: `worker-${i + 1}`, state: 'ok', pods: s.pods[i] })), w4]}
             tray={{ label: 'Waiting for room', n: s.waiting }}
@@ -344,7 +329,7 @@ const HL_STEPS: StoryStep[] = [
   {
     tone: 'ok',
     k: 'The failed machine is replaced',
-    text: 'The cluster is still one worker short of its definition. NKP’s self-healing removes the failed machine and creates a new one, with nobody paged to rebuild it.',
+    text: 'The cluster is still one worker short of its definition. NKP’s self-healing removes the failed machine and creates a new one automatically.',
   },
 ];
 const HL = { fail: 5.6, restart: [10.6, 11.0, 11.4], remove: 15.5, add: 16.0, ready: 17.8 };
@@ -373,7 +358,7 @@ function HealScene({ top }: { top: ComponentChildren }) {
           { k: 'Workers ready', v: `${ready} of 3`, tone: ready === 3 ? 'ok' : 'bad', sub: 'three declared' },
           { k: 'Pods running', v: `${pods} of 7`, tone: pods === 7 ? 'ok' : 'bad' },
           { k: 'Failed machine', v: !failed ? 'None' : t < HL.remove ? 'Worker 2' : t < HL.ready ? 'Being replaced' : 'Replaced', tone: failed && t < HL.ready ? 'warn' : undefined },
-          { k: 'People paged', v: 0 },
+          { k: 'Replaced by', v: 'Cluster API', sub: 'automatically' },
         ];
       }}
     >
@@ -397,7 +382,7 @@ function HealScene({ top }: { top: ComponentChildren }) {
           <ClusterView
             label="A cluster with three workers. One worker fails and its pods are lost. Kubernetes restarts them on the healthy workers, then the failed machine is removed and a new worker is created so the cluster matches its definition again."
             note="Declared: 3 workers"
-            status={!failed ? '✓ healthy' : pods < 7 ? `${7 - pods} pods lost` : t < HL.ready ? 'apps back, one worker short' : '✓ healthy again'}
+            status={!failed ? '✓ healthy' : pods < 7 ? `${7 - pods} ${7 - pods === 1 ? 'pod' : 'pods'} lost` : t < HL.ready ? 'apps back, one worker short' : '✓ healthy again'}
             tone={!failed || t >= HL.ready ? 'ok' : pods < 7 ? 'bad' : 'warn'}
             workers={[{ name: 'worker-1', state: 'ok', pods: 2 + Math.min(2, r) }, w2, { name: 'worker-3', state: 'ok', pods: 2 + Math.max(0, r - 2) }, w4]}
             tray={{ label: 'Pods to restart', n: failed ? 3 - r : 0 }}

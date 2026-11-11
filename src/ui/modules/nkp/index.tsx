@@ -248,8 +248,8 @@ function NkpDiagram({ t }: { t: number }) {
 const ALSO = [
   { k: 'Cost management', text: 'Part of NKP Ultimate, reported per workspace and project.' },
   { k: 'NKP Insights CVE reports', text: 'Insights 1.9 adds reports of known vulnerabilities by image tag.' },
-  { k: 'Service mesh', text: 'For microservices that need traffic control and encryption between services.' },
-  { k: 'Editions', text: 'Starter runs on Nutanix AHV. Pro adds observability, backup and other platforms. Ultimate adds fleet management, GitOps and multitenancy.' },
+  { k: 'Service mesh', text: 'Simplifies managing microservices, with added observability and security.' },
+  { k: 'Editions', text: 'Starter is basic Kubernetes on Nutanix AHV. Pro adds observability, backup and restore, GPU support and other platforms. Ultimate adds fleet management, GitOps, cost management and multitenancy.' },
 ];
 
 function Also() {

@@ -2,6 +2,7 @@
 // places them on shared GPU nodes (KAI Scheduler, with Kubernetes Dynamic Resource Allocation), and a
 // job that needs four GPUs together waits until it can have all four. Teams, jobs and counts are
 // examples; claims are in docs/facts.md (NKP-23).
+import { GPU_JOBS as T, gpuOwners } from '../../../engine/nkp-scenes';
 import { prog } from '../../components/show';
 import { Story, W, type StoryStep } from '../ai/kit';
 import { Row } from './parts';
@@ -26,7 +27,6 @@ const STEPS: StoryStep[] = [
     text: 'These come from the curated AI application catalog in NKP 2.19 for Pro and Ultimate: KAI Scheduler, Kueue, Slurm Operator, Kubeflow Pipelines, JupyterHub and Milvus Operator. NVIDIA multi-instance GPU partitioning is not included.',
   },
 ];
-const T = { admit: [5.6, 6.2, 6.8], note: 10.6, pipe: 11.4, pipeDone: 17.2, train: 18.0 };
 const JOBS = [
   { team: 'A', t: 'Notebook', s: 'JupyterHub · 1 GPU', n: 1 },
   { team: 'B', t: 'Pipeline step', s: 'Kubeflow Pipelines · 2 GPUs', n: 2 },
@@ -36,15 +36,6 @@ const jobY = (i: number) => 44 + i * 78;
 const GPU = { x0: 664, y0: 70, w: 58, h: 58, gap: 10 };
 const gpuXY = (g: number): [number, number] => [GPU.x0 + (g % 4) * (GPU.w + GPU.gap), GPU.y0 + Math.floor(g / 4) * 112];
 const CATALOG = ['KAI Scheduler', 'Kueue', 'Slurm Operator', 'Kubeflow Pipelines', 'JupyterHub', 'Milvus Operator'];
-
-/** Who holds each of the eight GPUs at time t: existing work on three, then the three jobs. */
-function owners(t: number): (string | null)[] {
-  const g: (string | null)[] = ['busy', 'busy', 'busy', null, null, null, null, null];
-  if (t >= T.note) g[3] = 'Notebook';
-  if (t >= T.pipe && t < T.pipeDone) g[4] = g[5] = 'Pipeline';
-  if (t >= T.train) g[4] = g[5] = g[6] = g[7] = 'Training';
-  return g;
-}
 
 export default function AiPlatformView() {
   return (
@@ -61,7 +52,7 @@ export default function AiPlatformView() {
         { color: 'var(--ok)', label: 'Job running' },
       ]}
       kpis={(t) => {
-        const g = owners(t);
+        const g = gpuOwners(t);
         const used = g.filter(Boolean).length;
         const running = [t >= T.note, t >= T.pipe && t < T.pipeDone, t >= T.train].filter(Boolean).length;
         const waiting = t < T.admit[0] ? 0 : [t < T.note, t < T.pipe, t < T.train].filter(Boolean).length;
@@ -74,7 +65,7 @@ export default function AiPlatformView() {
       }}
     >
       {(t, phase) => {
-        const g = owners(t);
+        const g = gpuOwners(t);
         const state = (i: number) => {
           if (i === 0) return t >= T.note ? { l: '✓ running on 1 GPU', tone: 'ok' } : t >= T.admit[0] ? { l: 'admitted, waiting for a GPU', tone: 'warn' } : { l: 'submitted', tone: '' };
           if (i === 1)
@@ -88,7 +79,7 @@ export default function AiPlatformView() {
           return t >= T.train
             ? { l: '✓ running on 4 GPUs', tone: 'ok' }
             : t >= T.pipe
-              ? { l: 'waiting: needs 4, 2 are free', tone: 'warn' }
+              ? { l: t >= T.pipeDone ? '4 GPUs free: starting' : 'waiting: needs 4, 2 are free', tone: 'warn' }
               : t >= T.admit[2]
                 ? { l: 'admitted, waiting for GPUs', tone: 'warn' }
                 : { l: 'submitted', tone: '' };
@@ -130,7 +121,7 @@ export default function AiPlatformView() {
             </text>
             <Row x={324} y={104} label="Kueue · queues and quotas" on={phase === 1} />
             <text class="d-fine muted" x={340} y={122}>
-              Team A: 5 GPUs · Team B: 2 GPUs
+              quota per team · A: 5 GPUs, B: 2 GPUs
             </text>
             <Row x={324} y={154} label="KAI Scheduler · places GPU jobs" on={phase === 2 || (phase === 3 && t >= T.train - 0.4)} tone="ok" />
             <text class="d-fine muted" x={340} y={172}>

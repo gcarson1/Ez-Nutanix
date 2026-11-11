@@ -26,7 +26,7 @@ const STEPS: StoryStep[] = [
   {
     tone: 'ok',
     k: 'One operating model',
-    text: 'Containers run on virtual machines or natively on bare metal, and VMs sit beside them, all under one declarative Kubernetes control plane. The team learns one way of working.',
+    text: 'Containers run on virtual machines or natively on bare metal, and VMs sit beside them, all under one declarative Kubernetes control plane.',
   },
 ];
 const T = { image: [5.6, 7.4], register: [8.0, 8.6], join: [11.5, 12.3], vm: [17.6, 18.8] };
@@ -116,7 +116,7 @@ export default function DualView() {
               <Unit key={i} x={COL[0] + 14 + (i % 2) * 140} y={BODY.y + 54 + Math.floor(i / 2) * 56} title={`worker-${i + 1}`} sub="AHV VM · containers" />
             ))}
             <text class="d-fine muted" x={COL[1] + 14} y={BODY.y + 46}>
-              {phase >= 2 ? 'Workers on bare metal (NKP Metal)' : 'Physical servers'}
+              {joined(0) ? 'Workers on bare metal (NKP Metal)' : 'Physical servers'}
             </text>
             {[0, 1].map((i) => (
               <Unit
@@ -132,7 +132,7 @@ export default function DualView() {
             ))}
             {phase >= 1 && (
               <text class="d-fine muted" x={COL[1] + 14} y={BODY.y + 126}>
-                {phase >= 2 ? 'no hypervisor between Kubernetes and the hardware' : 'imaged through Foundation Central'}
+                {joined(0) ? 'running Kubernetes directly on the hardware' : 'imaged through Foundation Central'}
               </text>
             )}
 

@@ -3,7 +3,7 @@
 // internet (bundle, local registry, admission). Checks, versions and images are examples; claims are
 // in docs/facts.md (NKP-19, NKP-20).
 import type { ComponentChildren } from 'preact';
-import { prog } from '../../components/show';
+import { UPGRADE, upgradePods } from '../../../engine/nkp-scenes';
 import { Box, Cross, Story, W, fly, pts, type Pt, type StoryStep } from '../ai/kit';
 import { ClusterCard, Row, WK, Worker } from './parts';
 
@@ -21,22 +21,9 @@ const UP_STEPS: StoryStep[] = [
   { tone: 'ok', k: 'Upgraded, and nothing stopped', text: 'Every node is on the new version and all six pods are still running. Rolling the same upgrade across a whole fleet is shown on LCM Rolling Upgrade.' },
 ];
 const CHECKS = ['Registry reachable', 'Versions compatible', 'Nodes healthy'];
-const UP = { check: (i: number) => 5.0 + i * 0.9, apps: [9.4, 11], cp: (i: number) => 11.6 + i * 1.0, drain: (i: number) => 15.4 + i * 2.4, back: (i: number) => 17.0 + i * 2.4 };
+const UP = { check: (i: number) => 5.0 + i * 0.9, apps: [9.4, 11], cp: (i: number) => 11.6 + i * 1.0, drain: UPGRADE.drain, back: UPGRADE.back };
 const STAGES = ['Preflight checks', 'Platform applications', 'Control plane', 'Workers'];
 const stageX = (i: number) => 16 + i * 232;
-/** Pods on each worker as the workers are drained in turn: six in total, all the time. */
-function podsAt(t: number): number[] {
-  const p = [2, 2, 2];
-  const move = (from: number, f: number) => {
-    const n = Math.round(p[from] * f);
-    const others = [0, 1, 2].filter((k) => k !== from).sort((a, b) => p[a] - p[b]);
-    for (let k = 0; k < n; k++) p[others[k % 2]]++;
-    p[from] -= n;
-  };
-  for (let i = 0; i < 3; i++) if (t >= UP.drain(i)) move(i, prog(t, UP.drain(i), UP.drain(i) + 1));
-  return p;
-}
-
 export function UpgradeScene({ top, side }: { top: ComponentChildren; side: ComponentChildren }) {
   return (
     <Story
@@ -65,7 +52,7 @@ export function UpgradeScene({ top, side }: { top: ComponentChildren; side: Comp
     >
       {(t, phase) => {
         const stage = [t >= UP.check(2) ? 2 : phase >= 1 ? 1 : 0, t >= UP.apps[1] ? 2 : t >= UP.apps[0] ? 1 : 0, t >= UP.cp(2) ? 2 : t >= UP.cp(0) - 0.6 ? 1 : 0, t >= UP.back(2) ? 2 : t >= UP.drain(0) ? 1 : 0];
-        const pods = podsAt(t);
+        const pods = upgradePods(t);
         const cpDone = [0, 1, 2].filter((i) => t >= UP.cp(i)).length;
         return (
           <svg
@@ -116,7 +103,7 @@ export function UpgradeScene({ top, side }: { top: ComponentChildren; side: Comp
             {[0, 1, 2].map((i) => {
               const out = t >= UP.drain(i) && t < UP.back(i);
               const done = t >= UP.back(i);
-              return <Worker key={i} x={270 + i * (WK.w + 16)} y={134} name={`worker-${i + 1}`} state={out ? 'new' : 'ok'} status={out ? 'being replaced' : done ? '✓ 1.36' : '1.35'} pods={pods[i]} />;
+              return <Worker key={i} x={270 + i * (WK.w + 16)} y={134} name={`worker-${i + 1}`} state={out ? 'new' : 'ok'} status={out ? (t < UPGRADE.drained(i) ? 'draining' : 'being replaced') : done ? '✓ 1.36' : '1.35'} pods={pods[i]} />;
             })}
             <text class="d-sub ok-fill" x={270 + 3 * (WK.w + 16)} y={166} style={{ fontWeight: 600 }}>
               6 of 6 pods
@@ -141,7 +128,7 @@ const AG_STEPS: StoryStep[] = [
     k: 'A registry inside the site',
     text: 'The bundle’s images are loaded into a registry inside the site. NKP can run a highly available, Harbor-powered registry on the management cluster, as the mirror for the clusters it creates.',
   },
-  { tone: 'ok', k: 'Clusters pull from the mirror', text: 'Clusters are created and upgraded from the local mirror with no connection outside. The registry also scans images for known vulnerabilities.' },
+  { tone: 'ok', k: 'Clusters pull from the mirror', text: 'Clusters are created from the local mirror with no connection outside. The registry also scans images for known vulnerabilities.' },
   {
     tone: 'bad',
     k: 'Only checked images run',

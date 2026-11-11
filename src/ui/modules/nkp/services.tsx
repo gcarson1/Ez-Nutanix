@@ -18,7 +18,7 @@ const OB_STEPS: StoryStep[] = [
   {
     tone: 'warn',
     k: 'Insights flags a problem',
-    text: 'The NKP Insights Engine collects events and metrics from the clusters and detects anomalies of varying severity. Here it raises a warning on one cluster before anyone has opened a dashboard.',
+    text: 'The NKP Insights Engine collects events and metrics from the clusters and detects anomalies of varying severity. Here it raises a warning on one cluster.',
   },
   {
     tone: 'ok',
@@ -57,7 +57,7 @@ export function ObserveScene({ top }: { top: ComponentChildren }) {
       poster={22}
       label="Observability"
       top={top}
-      why="Example clusters, metric lines and one example warning, with times compressed. Observability is in NKP Pro and Ultimate; AI Navigator needs a Pro or Ultimate license, and its MCP server an internet-connected site."
+      why="Example clusters, metric lines and one example warning, with times compressed. Observability is in NKP Pro and Ultimate; AI Navigator’s MCP server is on by default for Pro and Ultimate licenses in internet-connected sites."
       legend={[
         { color: 'var(--ink)', label: 'A cluster’s metrics' },
         { color: 'var(--warn)', label: 'Anomaly' },
@@ -126,21 +126,20 @@ export function ObserveScene({ top }: { top: ComponentChildren }) {
               h={92}
               t="AI Navigator"
               s={t >= OB.ask ? '“Why is fin-prod restarting pods?”' : 'chatbot for best practices'}
-              state={t >= OB.answer ? '✓ points to the cause and the usual fix' : t >= OB.ask ? 'reading what you are allowed to see…' : 'ask it a question'}
+              state={t >= OB.answer ? '✓ answers with best practices' : t >= OB.ask ? 'reading what you are allowed to see…' : 'ask it a question'}
               tone={t >= OB.answer ? 'ok' : undefined}
             />
             {OB_NAMES.map((name, i) => {
               const p = fly(t, OB.up[i], OB.up[i] + 1, upPath(i));
-              const beat = (t * 1.3 + i * 0.4) % 1;
               return (
                 <g key={name}>
                   <polyline points={pts(upPath(i))} class="ai-wire" style={{ opacity: phase >= 1 ? 1 : 0.35 }} />
-                  <rect class={`nk-cl${i === 1 && alert ? '' : ''}`} x={obX(i)} y={250} width={296} height={84} rx={5} />
+                  <rect class="nk-cl" x={obX(i)} y={250} width={296} height={84} rx={5} />
                   <text class="d-label" x={obX(i) + 12} y={272} style={{ fontWeight: 600 }}>
                     {name}
                   </text>
                   <rect class="nk-chip ok" x={obX(i) + 12} y={286} width={272} height={32} rx={4} />
-                  <circle cx={obX(i) + 28 + beat * 6} cy={302} r={4} class="nk-dot" style={{ opacity: 0.4 + 0.6 * (1 - beat) }} />
+                  <circle cx={obX(i) + 28} cy={302} r={4} class="nk-dot" />
                   <text class="d-sub" x={obX(i) + 44} y={307}>
                     Prometheus · collecting metrics
                   </text>

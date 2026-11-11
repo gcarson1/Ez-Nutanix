@@ -72,7 +72,7 @@ function WorkspaceScene({ top }: { top: ComponentChildren }) {
       ]}
       kpis={(t, phase) => [
         { k: 'Clusters', v: 5 },
-        { k: 'Workspaces', v: phase >= 1 ? 2 : 0, sub: phase >= 1 ? 'Retail and Finance' : 'not grouped yet', tone: phase >= 1 ? 'ok' : 'warn' },
+        { k: 'Workspaces', v: t >= WS_AT[1] + 0.4 ? 2 : 0, sub: t >= WS_AT[1] + 0.4 ? 'Retail and Finance' : 'not grouped yet', tone: t >= WS_AT[1] + 0.4 ? 'ok' : 'warn' },
         {
           k: 'Signed in',
           v: phase === 4 ? 'Platform admin' : t >= WS_T.fin + 1 ? 'Finance team' : t >= WS_T.retail + 1 ? 'Retail team' : 'Nobody yet',
@@ -388,6 +388,7 @@ function GitOpsScene({ top }: { top: ComponentChildren }) {
             {GO_NAMES.map((name, i) => {
               const on15 = t >= GO.roll[i] + 0.9;
               const hand = i === 1 && drift;
+              const behind = committed && !on15;
               return (
                 <g key={name}>
                   <polyline points={pts(goLink(i))} class="ai-wire" />
@@ -398,9 +399,9 @@ function GitOpsScene({ top }: { top: ComponentChildren }) {
                     h={64}
                     name={name}
                     sub={hand ? 'edited by hand on the cluster' : 'in the Retail workspace'}
-                    cls={hand ? '' : 'ok'}
-                    status={hand ? '✕ differs from Git' : `✓ shop ${on15 ? '1.5' : '1.4'}`}
-                    tone={hand ? 'warn' : 'ok'}
+                    cls={hand || behind ? '' : 'ok'}
+                    status={hand ? '✕ differs from Git' : behind ? 'shop 1.4 · update on its way' : `✓ shop ${on15 ? '1.5' : '1.4'}`}
+                    tone={hand ? 'warn' : behind ? undefined : 'ok'}
                   />
                 </g>
               );

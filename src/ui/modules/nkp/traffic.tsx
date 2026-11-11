@@ -176,7 +176,7 @@ function TrafficScene({ top }: { top: ComponentChildren }) {
             {T.req.map((a, k) => {
               const p = reqPath(k % 3);
               const out = t >= a && t < a + 1.2 ? along(p, prog(t, a, a + 1.2)) : null;
-              const back = t >= a + 1.2 && t < a + 1.6 ? along(p.slice(4).reverse() as Pt[], prog(t, a + 1.2, a + 1.6)) : null;
+              const back = t >= a + 1.2 && t < a + 1.6 ? along(p.slice().reverse() as Pt[], prog(t, a + 1.2, a + 1.6)) : null;
               const q = out ?? back;
               return q && <circle key={k} cx={q[0]} cy={q[1]} r={6} class={out ? 'ai-req' : 'ai-ans'} />;
             })}
