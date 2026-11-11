@@ -41,6 +41,13 @@
 .diagram .nk-spark.hot { stroke: var(--warn); }
 .diagram .nk-vol { fill: var(--bg-3); stroke: var(--line-2); }
 .diagram .nk-copy { fill: var(--ink); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .nk-chip.now { stroke: var(--flow); stroke-width: 1.5; }
+.diagram .nk-gap { stroke: var(--warn); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.diagram .nk-rogue { fill: var(--bad); stroke: var(--bg); stroke-width: 1.5; }
+.diagram .nk-pod.db { fill: var(--ink); }
+.diagram .nk-stor { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.diagram .nk-gpu { fill: var(--bg-3); stroke: var(--line-2); }
+.diagram .nk-gpu.on { fill: var(--ink); stroke: var(--ink); }
 .nk-also ul { list-style: none; padding: 0; margin: var(--sp-2) 0 0; display: grid; gap: var(--sp-2); }
 .nk-also li { margin: 0; }
 .nk-also li b { font-size: var(--fs-14); font-weight: 600; color: var(--text); }

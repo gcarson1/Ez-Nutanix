@@ -360,23 +360,28 @@ test('Kubernetes Platform: the story is the Overview, and every part has its own
   const tabs = page.getByRole('tablist', { name: 'Kubernetes Platform topics' });
   await expect(tabs.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.show-main .follow-k')).toHaveText(/Islands|Hidden work/);
-  await expect(page.locator('.show-side')).toContainText('Also in NKP 2.19');
-  const scenes: [tab: string, group: string, option: string, heading: RegExp][] = [
+  await expect(page.locator('.show-side')).toContainText('Also in NKP');
+  const scenes: [tab: string, group: string | null, option: string, heading: RegExp][] = [
     ['Cluster lifecycle', 'Lifecycle', 'Create', /Declare the cluster|Cluster API builds it|in minutes|everywhere/],
     ['Cluster lifecycle', 'Lifecycle', 'Scale', /room to spare|Demand rises|autoscaler|Demand falls/],
+    ['Cluster lifecycle', 'Lifecycle', 'Upgrade', /One cluster|Preflight|Platform applications|Workers|Upgraded/],
     ['Cluster lifecycle', 'Lifecycle', 'Self-heal', /healthy cluster|worker fails|restarts the pods|replaced/],
-    ['Fleet', 'Fleet', 'Workspaces', /Many clusters|Workspaces group|One sign-in|Tenants/],
-    ['Fleet', 'Fleet', 'Attach a cluster', /did not create|Attach it|One view|upgrades stay/],
-    ['Fleet', 'Fleet', 'GitOps', /lives in Git|a commit|Every cluster follows|Drift/],
-    ['Day-2 services', 'Service', 'Observability', /is measured|One place|Insights|AI Navigator/],
-    ['Day-2 services', 'Service', 'Backup and recovery', /more than its data|Velero|mistake|NDK|recovers/],
+    ['Cluster lifecycle', 'Lifecycle', 'Air-gapped', /No way out|bundle|registry inside|mirror|checked images/],
+    ['Dual-native', null, '', /virtual machines|NKP Metal|Physical workers|Kubernetes APIs|One operating model/],
+    ['Fleet and tenants', 'Fleet', 'Workspaces', /Many clusters|Workspaces group|One sign-in|Tenants|Projects/],
+    ['Fleet and tenants', 'Fleet', 'Attach a cluster', /did not create|Attach it|One view|upgrades stay/],
+    ['Fleet and tenants', 'Fleet', 'GitOps', /lives in Git|a commit|Every cluster follows|Drift/],
+    ['Fleet and tenants', 'Fleet', 'Observability', /is measured|One place|Insights|AI Navigator/],
+    ['AI platform', null, '', /GPUs are scarce|queue|scheduler|four GPUs|catalog/],
+    ['Apps and data', 'Apps and data', 'Traffic and storage', /request comes in|Ingress|Tenants cannot|Nutanix CSI|Shared storage/],
+    ['Apps and data', 'Apps and data', 'Backup and recovery', /more than its data|Velero|mistake|NDK|recovers/],
   ];
   for (const [tab, group, option, heading] of scenes) {
     await tabs.getByRole('tab', { name: tab }).click();
-    await page.getByRole('group', { name: group }).getByRole('button', { name: option }).click();
-    await expect(page.locator('.show-main .follow-k'), option).toHaveText(heading);
-    await expect(page.locator('.show-main svg.diagram'), option).toHaveCount(1);
-    expect(await page.locator('.steps li').count(), option).toBeGreaterThanOrEqual(4);
+    if (group) await page.getByRole('group', { name: group }).getByRole('button', { name: option }).click();
+    await expect(page.locator('.show-main .follow-k'), `${tab} ${option}`).toHaveText(heading);
+    await expect(page.locator('.show-main svg.diagram'), `${tab} ${option}`).toHaveCount(1);
+    expect(await page.locator('.steps li').count(), `${tab} ${option}`).toBeGreaterThanOrEqual(4);
   }
   // Each scene ends on its outcome: play the last one to the end.
   await page.locator('.playbar input.scrub').evaluate((r: HTMLInputElement) => {

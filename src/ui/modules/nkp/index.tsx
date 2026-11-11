@@ -1,5 +1,6 @@
-// Kubernetes Platform (NKP), four tabs. Overview, below: "from islands to one operating model", one loop in six scenes.
-// Cluster lifecycle, Fleet and Day-2 services: lifecycle.tsx, fleet.tsx, services.tsx.
+// Kubernetes Platform (NKP), six tabs. Overview, below: "from islands to one operating model", one loop in six scenes.
+// Cluster lifecycle (lifecycle.tsx, upgrade.tsx), Dual-native (dual.tsx), Apps and data (traffic.tsx, services.tsx),
+// Fleet and tenants (fleet.tsx, services.tsx) and AI platform (aiplat.tsx).
 // Four Kubernetes environments start as islands, each run its own way; the NKP layer arrives above
 // them without replacing them; one upgrade and one policy go out from it (the attached AKS cluster
 // keeps Azure's upgrades); the platform team and a developer use the same layer; apps run
@@ -8,9 +9,11 @@ import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar } from '../../components/controls';
 import { Kpis, Show, Tabs, ease, phaseAt, prog, type Point } from '../../components/show';
 import { useEnum } from '../../../state/route';
+import AiPlatformView from './aiplat';
+import DualView from './dual';
 import FleetView from './fleet';
 import LifecycleView from './lifecycle';
-import ServicesView from './services';
+import AppsView from './traffic';
 import './style.css';
 
 const S = [0, 8, 16, 24, 33, 42];
@@ -241,19 +244,18 @@ function NkpDiagram({ t }: { t: number }) {
   );
 }
 
-// What NKP 2.19 also does that has no scene of its own (facts NKP-18).
+// What NKP also does that has no scene of its own (facts NKP-18).
 const ALSO = [
-  { k: 'Bare metal (NKP Metal)', text: 'Kubernetes directly on physical servers, imaged and registered through Foundation Central.' },
-  { k: 'VMs beside containers', text: 'AHV virtual machines, Linux and Windows, managed with Kubernetes APIs through VM Operator.' },
-  { k: 'AI and GPUs', text: 'Direct GPU access, and a curated AI catalog for Pro and Ultimate: Kubeflow Pipelines, JupyterHub, Milvus and more.' },
-  { k: 'Air-gapped sites', text: 'Production Kubernetes in isolated environments with no internet connection.' },
-  { k: 'Cost management', text: 'Part of NKP Ultimate, with fleet management, GitOps and multitenancy.' },
+  { k: 'Cost management', text: 'Part of NKP Ultimate, reported per workspace and project.' },
+  { k: 'NKP Insights CVE reports', text: 'Insights 1.9 adds reports of known vulnerabilities by image tag.' },
+  { k: 'Service mesh', text: 'For microservices that need traffic control and encryption between services.' },
+  { k: 'Editions', text: 'Starter runs on Nutanix AHV. Pro adds observability, backup and other platforms. Ultimate adds fleet management, GitOps and multitenancy.' },
 ];
 
 function Also() {
   return (
     <section class="nk-also">
-      <h2 class="side-sec-h">Also in NKP 2.19</h2>
+      <h2 class="side-sec-h">Also in NKP</h2>
       <ul>
         {ALSO.map((a) => (
           <li key={a.k}>
@@ -317,22 +319,26 @@ function OverviewView() {
   );
 }
 
-type TabId = 'ov' | 'life' | 'fleet' | 'ops';
+type TabId = 'ov' | 'life' | 'dual' | 'data' | 'fleet' | 'ai';
 const TABS: { id: TabId; label: string }[] = [
   { id: 'ov', label: 'Overview' },
   { id: 'life', label: 'Cluster lifecycle' },
-  { id: 'fleet', label: 'Fleet' },
-  { id: 'ops', label: 'Day-2 services' },
+  { id: 'dual', label: 'Dual-native' },
+  { id: 'data', label: 'Apps and data' },
+  { id: 'fleet', label: 'Fleet and tenants' },
+  { id: 'ai', label: 'AI platform' },
 ];
 
 export default function Nkp() {
-  const [tab, setTab] = useEnum<TabId>('tab', 'ov', ['ov', 'life', 'fleet', 'ops']);
+  const [tab, setTab] = useEnum<TabId>('tab', 'ov', ['ov', 'life', 'dual', 'data', 'fleet', 'ai']);
   return (
     <Tabs label="Kubernetes Platform topics" value={tab} tabs={TABS} onChange={setTab}>
       {tab === 'ov' && <OverviewView />}
       {tab === 'life' && <LifecycleView />}
+      {tab === 'dual' && <DualView />}
+      {tab === 'data' && <AppsView />}
       {tab === 'fleet' && <FleetView />}
-      {tab === 'ops' && <ServicesView />}
+      {tab === 'ai' && <AiPlatformView />}
     </Tabs>
   );
 }

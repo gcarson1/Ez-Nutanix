@@ -1,20 +1,21 @@
 // Kubernetes Platform, Cluster lifecycle tab: create a cluster from a definition (Cluster API), scale
 // it with the built-in autoscaler, and heal it when a worker fails. Names, counts and times are
-// examples; claims are in docs/facts.md (NKP-5, NKP-10 to NKP-12). The rolling Kubernetes upgrade is on
-// LCM Rolling Upgrade's Kubernetes (NKP) tab.
+// examples; claims are in docs/facts.md (NKP-5, NKP-10 to NKP-12). Upgrading one cluster and air-gapped sites are in
+// upgrade.tsx; the fleet-wide rollout is on LCM Rolling Upgrade's Kubernetes (NKP) tab.
 import type { ComponentChildren } from 'preact';
 import { buildHash, navigate, useEnum } from '../../../state/route';
 import { Choice, prog } from '../../components/show';
 import { Story, W, fly, pts, type Pt, type StoryStep } from '../ai/kit';
 import { ControlPlane, Row, WK, Worker, type WorkerState } from './parts';
+import { AirgapScene, UpgradeScene } from './upgrade';
 
 const UPGRADE = { tab: 'k8s' };
 /** The right-column pointer to the upgrade animation, which lives with the other rolling upgrades. */
 const Upgrades = (
   <section>
-    <h2 class="side-sec-h">Upgrades</h2>
+    <h2 class="side-sec-h">Fleet-wide upgrades</h2>
     <p>
-      The rolling Kubernetes upgrade across a fleet is animated on{' '}
+      Rolling one upgrade across a whole fleet, cluster by cluster, is animated on{' '}
       <a
         class="nk-link-a"
         href={buildHash('nci/lcm', UPGRADE)}
@@ -410,17 +411,21 @@ function HealScene({ top }: { top: ComponentChildren }) {
 }
 
 // ── the tab ──────────────────────────────────────────────────────────────────────────────────────
-type Life = 'create' | 'scale' | 'heal';
+type Life = 'create' | 'scale' | 'upgrade' | 'heal' | 'airgap';
 const LIVES: { value: Life; label: string }[] = [
   { value: 'create', label: 'Create' },
   { value: 'scale', label: 'Scale' },
+  { value: 'upgrade', label: 'Upgrade' },
   { value: 'heal', label: 'Self-heal' },
+  { value: 'airgap', label: 'Air-gapped' },
 ];
 
 export default function LifecycleView() {
-  const [life, setLife] = useEnum<Life>('l', 'create', ['create', 'scale', 'heal']);
+  const [life, setLife] = useEnum<Life>('l', 'create', ['create', 'scale', 'upgrade', 'heal', 'airgap']);
   const top = <Choice<Life> label="Lifecycle" value={life} onChange={setLife} options={LIVES} />;
   if (life === 'scale') return <ScaleScene key="scale" top={top} />;
+  if (life === 'upgrade') return <UpgradeScene key="upgrade" top={top} side={Upgrades} />;
+  if (life === 'airgap') return <AirgapScene key="airgap" top={top} side={Upgrades} />;
   if (life === 'heal') return <HealScene key="heal" top={top} />;
   return <CreateScene key="create" top={top} />;
 }

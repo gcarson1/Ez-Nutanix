@@ -6,9 +6,10 @@ import { useEnum } from '../../../state/route';
 import { Choice, prog } from '../../components/show';
 import { Box, Cross, Story, W, fly, pts, type Pt, type StoryStep } from '../ai/kit';
 import { ClusterCard, Row } from './parts';
+import { ObserveScene } from './services';
 
 // ── Workspaces and sign-in ───────────────────────────────────────────────────────────────────────
-const WS_AT = [0, 5, 10, 16];
+const WS_AT = [0, 5, 10, 16, 22];
 const WS_STEPS: StoryStep[] = [
   { tone: 'warn', k: 'Many clusters, many teams', text: 'Five clusters and two teams. Without grouping, every administrator sees every cluster, and who may change what has to be worked out cluster by cluster.' },
   {
@@ -22,6 +23,11 @@ const WS_STEPS: StoryStep[] = [
     text: 'People sign in through the identity provider you already have: LDAP, SAML, OIDC or GitHub. Role-based access is set per workspace and per project, so the Retail team sees and manages Retail’s clusters.',
   },
   { tone: 'ok', k: 'Tenants stay apart', text: 'The Finance team signs in the same way and gets its own workspace. Its attempt to change a Retail cluster is refused. Multitenancy is built in, with NKP Ultimate.' },
+  {
+    tone: 'ink',
+    k: 'Projects carry quotas and cost',
+    text: 'Inside a workspace, a project groups the namespaces of one application across clusters. It carries resource quotas, and cost is reported per project, so each team sees what it uses.',
+  },
 ];
 const RETAIL = [
   { name: 'retail-prod', sub: 'Nutanix (AHV)' },
@@ -54,7 +60,7 @@ function WorkspaceScene({ top }: { top: ComponentChildren }) {
     <Story
       steps={WS_STEPS}
       at={WS_AT}
-      end={22}
+      end={28}
       poster={21}
       label="Workspaces and sign-in"
       top={top}
@@ -67,14 +73,19 @@ function WorkspaceScene({ top }: { top: ComponentChildren }) {
       kpis={(t, phase) => [
         { k: 'Clusters', v: 5 },
         { k: 'Workspaces', v: phase >= 1 ? 2 : 0, sub: phase >= 1 ? 'Retail and Finance' : 'not grouped yet', tone: phase >= 1 ? 'ok' : 'warn' },
-        { k: 'Signed in', v: t >= WS_T.fin + 1 ? 'Finance team' : t >= WS_T.retail + 1 ? 'Retail team' : 'Nobody yet', sub: t >= WS_T.retail + 1 ? 'through your identity provider' : undefined },
+        {
+          k: 'Signed in',
+          v: phase === 4 ? 'Platform admin' : t >= WS_T.fin + 1 ? 'Finance team' : t >= WS_T.retail + 1 ? 'Retail team' : 'Nobody yet',
+          sub: t >= WS_T.retail + 1 ? 'through your identity provider' : undefined,
+        },
         { k: 'Requests refused', v: t >= WS_T.try + 1 ? 1 : 0, tone: t >= WS_T.try + 1 ? 'bad' : undefined },
       ]}
     >
       {(t, phase) => {
         const grouped = prog(t, WS_AT[1] + 0.4, WS_AT[1] + 1.4);
-        const who = t >= WS_T.fin + 1 ? 'fin' : t >= WS_T.retail + 1 ? 'retail' : null;
-        const refused = t >= WS_T.try + 1;
+        const project = phase === 4;
+        const who = project ? null : t >= WS_T.fin + 1 ? 'fin' : t >= WS_T.retail + 1 ? 'retail' : null;
+        const refused = t >= WS_T.try + 1 && !project;
         const dotR = fly(t, WS_T.retail, WS_T.retail + 1, signIn(0));
         const dotF = fly(t, WS_T.fin, WS_T.fin + 1, signIn(1));
         const attempt = fly(t, WS_T.try, WS_T.try + 1, TRY_PATH);
@@ -116,11 +127,27 @@ function WorkspaceScene({ top }: { top: ComponentChildren }) {
                     )}
                   </g>
                   {ws.list.map((c, i) => (
-                    <ClusterCard key={c.name} x={ws.box.x + 12} y={WS.y + 32 + i * 64} w={ws.box.w - 24} name={c.name} sub={c.sub} cls={mine ? 'ok' : ''} dim={hidden} />
+                    <ClusterCard
+                      key={c.name}
+                      x={ws.box.x + 12}
+                      y={WS.y + 32 + i * 64}
+                      w={ws.box.w - 24}
+                      name={c.name}
+                      sub={c.sub}
+                      cls={mine ? 'ok' : ''}
+                      dim={hidden}
+                      status={project && ws.k === 'retail' && i < 2 ? 'checkout · quota 8 CPU' : undefined}
+                      tone="ok"
+                    />
                   ))}
                 </g>
               );
             })}
+            {project && (
+              <text class="d-sub halo" x={WS.retail.x + 12} y={300} style={{ fontWeight: 600 }}>
+                Project checkout: 2 namespaces, one quota, cost per project
+              </text>
+            )}
             {refused && (
               <g>
                 <Cross x={WS.retail.x - 10} y={200} />
@@ -392,17 +419,19 @@ function GitOpsScene({ top }: { top: ComponentChildren }) {
 }
 
 // ── the tab ──────────────────────────────────────────────────────────────────────────────────────
-type Fleet = 'ws' | 'attach' | 'gitops';
+type Fleet = 'ws' | 'attach' | 'gitops' | 'obs';
 const FLEETS: { value: Fleet; label: string }[] = [
   { value: 'ws', label: 'Workspaces' },
   { value: 'attach', label: 'Attach a cluster' },
   { value: 'gitops', label: 'GitOps' },
+  { value: 'obs', label: 'Observability' },
 ];
 
 export default function FleetView() {
-  const [fleet, setFleet] = useEnum<Fleet>('f', 'ws', ['ws', 'attach', 'gitops']);
+  const [fleet, setFleet] = useEnum<Fleet>('f', 'ws', ['ws', 'attach', 'gitops', 'obs']);
   const top = <Choice<Fleet> label="Fleet" value={fleet} onChange={setFleet} options={FLEETS} />;
   if (fleet === 'attach') return <AttachScene key="attach" top={top} />;
   if (fleet === 'gitops') return <GitOpsScene key="gitops" top={top} />;
+  if (fleet === 'obs') return <ObserveScene key="obs" top={top} />;
   return <WorkspaceScene key="ws" top={top} />;
 }

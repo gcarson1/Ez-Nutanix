@@ -1,10 +1,9 @@
-// Kubernetes Platform, Day-2 services tab: observability across clusters (Prometheus, Thanos, Grafana,
-// NKP Insights, AI Navigator), and backup and recovery (Velero, and Nutanix Data Services for
+// Kubernetes Platform: observability across clusters, shown on the Fleet tab (Prometheus, Thanos, Grafana,
+// NKP Insights, AI Navigator), and backup and recovery, shown on the Apps and data tab (Velero, and Nutanix Data Services for
 // Kubernetes replicating an application to a second site). Clusters, the app and the alert are
 // examples; claims are in docs/facts.md (NKP-7 to NKP-9, NKP-16, NKP-17, CNA-6).
 import type { ComponentChildren } from 'preact';
-import { useEnum } from '../../../state/route';
-import { Choice, prog } from '../../components/show';
+import { prog } from '../../components/show';
 import { Box, Story, W, fly, pts, type Pt, type StoryStep } from '../ai/kit';
 
 // ── Observability ────────────────────────────────────────────────────────────────────────────────
@@ -49,7 +48,7 @@ function spark(i: number, to: number, spike: number): Pt[] {
   });
 }
 
-function ObserveScene({ top }: { top: ComponentChildren }) {
+export function ObserveScene({ top }: { top: ComponentChildren }) {
   return (
     <Story
       steps={OB_STEPS}
@@ -230,7 +229,7 @@ function Namespace({ x, y, mode }: { x: number; y: number; mode: 'run' | 'gone' 
   );
 }
 
-function ProtectScene({ top }: { top: ComponentChildren }) {
+export function ProtectScene({ top }: { top: ComponentChildren }) {
   return (
     <Story
       steps={PR_STEPS}
@@ -335,17 +334,4 @@ function ProtectScene({ top }: { top: ComponentChildren }) {
       }}
     </Story>
   );
-}
-
-// ── the tab ──────────────────────────────────────────────────────────────────────────────────────
-type Service = 'obs' | 'protect';
-const SERVICES: { value: Service; label: string }[] = [
-  { value: 'obs', label: 'Observability' },
-  { value: 'protect', label: 'Backup and recovery' },
-];
-
-export default function ServicesView() {
-  const [svc, setSvc] = useEnum<Service>('s', 'obs', ['obs', 'protect']);
-  const top = <Choice<Service> label="Service" value={svc} onChange={setSvc} options={SERVICES} />;
-  return svc === 'protect' ? <ProtectScene key="protect" top={top} /> : <ObserveScene key="obs" top={top} />;
 }
