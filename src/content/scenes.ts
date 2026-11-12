@@ -107,6 +107,7 @@ export const SCENES: Scene[] = [
 
   // ── Data Lens ──
   { path: 'datalens', group: 'Data Lens topics', label: 'Ransomware', words: 'ransomware detection block restore snapshot' },
+  { path: 'datalens', params: { tab: 'ua' }, group: 'Data Lens topics', label: 'Unusual activity', words: 'anomaly detection user behavior analytics uba baseline mass delete insider threat threshold' },
   { path: 'datalens', params: { tab: 'tier' }, group: 'Data Lens topics', label: 'Data age & tiering', words: 'smart tiering access patterns frequency hot warm cold data age auto tiering objects s3 stub' },
 
   // ── Data Path ──
@@ -219,7 +220,7 @@ export const MODULE_WORDS: Record<string, string> = {
   central: 'multi cluster management prism',
   ncm: 'ncm nutanix cloud manager',
   nkp: 'kubernetes k8s containers',
-  datalens: 'ransomware data governance audit',
+  datalens: 'ransomware anomaly detection unusual activity data governance audit',
   storage: 'nas file share unified storage',
   cnaos: 'ndk kubernetes storage containers',
   oem: 'oem hardware vendor server choice freedom nx dell xc hpe dx greenlake lenovo thinkagile hx truscale cisco compute hyperconverged fujitsu primeflex xf uscale supermicro klas ktnf pacstar vsan readynode hcl compatibility bare metal',

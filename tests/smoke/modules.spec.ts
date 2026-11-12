@@ -500,3 +500,24 @@ test('arrow keys pause and scrub the animation in steps', async ({ page }) => {
   expect(Number(await scrub.inputValue())).toBeLessThan(c);
   expect(errors).toEqual([]);
 });
+
+test('Data Lens: Unusual activity shows the fixed rule missing a mass delete and UBA flagging it', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(`${FILE}#/datalens`);
+  await page.getByRole('tab', { name: 'Unusual activity' }).click();
+  await expect(page).toHaveURL(/#\/datalens\?tab=ua$/);
+  await page.getByRole('button', { name: /One fixed rule for everyone/ }).click();
+  await page.locator('.playbar input.scrub').evaluate((r: HTMLInputElement) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, '7');
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('.kpis')).toContainText('Missed');
+  // Each step's chip lands on a picture that already matches its caption.
+  await page.getByRole('button', { name: /Ben’s deletes flagged/ }).click();
+  await expect(page.locator('.kpis')).toContainText('Flagged');
+  await expect(page.locator('.diagram')).toContainText('Anomaly · ben');
+  await page.getByRole('button', { name: /Schedules and exclusions/ }).click();
+  await expect(page.locator('.kpis')).toContainText('svc-backup');
+  await expect(page.locator('.diagram')).toContainText('Alerts today: 2');
+  expect(errors).toEqual([]);
+});

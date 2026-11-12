@@ -26,7 +26,7 @@ const MANAGE: Card[] = [
   { id: 'fed', title: 'Prism Federation', see: 'Many clusters and regions in one console', path: 'central', params: { tab: 'fed' } },
   { id: 'ncm', title: 'Cloud Manager', see: 'Anomalies, self-service, cost and compliance', path: 'ncm' },
   { id: 'nkp', title: 'Kubernetes Platform', see: 'Kubernetes clusters run one consistent way', path: 'nkp' },
-  { id: 'lens', title: 'Data Lens', see: 'Ransomware stopped on file shares; cold data tiered', path: 'datalens' },
+  { id: 'lens', title: 'Data Lens', see: 'Ransomware stopped, unusual access flagged, cold data tiered', path: 'datalens' },
 ];
 
 const SERVICES: Card[] = [

@@ -467,6 +467,21 @@ AGW-3 amended the same day: per-user limits by request header are labelled "Head
 [nai23]: https://www.nutanix.com/tech-center/blog/introducing-nutanix-enterprise-ai-23
 [nai28a]: https://next.nutanix.com/nutanix-agentic-ai-180/nutanix-enterprise-ai-nai-2-8-is-now-available-45852
 
+## 21. Data Lens anomaly detection (November 2026)
+
+The Unusual activity tab (`datalens/anomaly.tsx`, `engine/anomaly.ts`). Users, counts, the 1,000 threshold, the deviation and minimum values and the folders are examples, and the scene's note says so.
+
+| ID | Claim (as the app shows it) | What I found | Source(s) | Checked | Decision |
+|---|---|---|---|---|---|
+| DLA-1 | A fixed anomaly rule counts one kind of operation (create, delete, permission change, read) by a user or the whole file server over an interval you set, and alerts above it; recipients get an email; the dashboard names the users and the folders hit. | Blog: anomaly alerts "represent specific operations" "as executed by an individual or against the file server as a whole"; "permission changes, file deletes, file creates, etc."; "operation percentage and operation count"; "the interval for the operations"; "optionally specify email recipients"; the dashboard "shows you the users which caused the anomaly and the folders that were impacted". A community thread shows FileRead and PermissionDenied rules with a 10k threshold. | [fa-blog]; [fa-thread] | 2026-11-12 | keep |
+| DLA-2 | Fixed thresholds alert on users who are simply busy. | UBA post: static thresholds "can sometimes lead to noise, and require tuning, if certain users naturally perform high volumes of operations". | [dl-uba] | 2026-11-12 | keep |
+| DLA-3 | UBA learns each user's normal over a 30-day warmup, per operation type (creates, reads, deletes) per share, and alerts on a meaningful deviation; you tune the deviation percentage and a minimum count. | UBA post (Nutanix employee, May 4 2026, Data Lens SaaS): "a 30-day warmup period to learn the baseline behavior for users based on their operation types (creates, reads, deletes, etc.) per share"; anomalies "based on a meaningful deviation from that specific user's norm"; "configure deviation percentage and minimum thresholds". On-prem: Data Lens On-Prem 2.1, Pro, "tracks activity deviations against historical baselines". Files only: [sw-opt] footnote on Behaviour Analytics. The scene's single workday band per user is a simplification. | [dl-uba]; [dl21]; [sw-opt] | 2026-11-12 | keep (one band per user is drawn for clarity) |
+| DLA-4 | You can exclude users or shares and schedule the methods, e.g. fixed thresholds after hours and UBA in the workday. | UBA post: "exclude specific users or shares and set up monitoring schedules"; "rely on standard thresholds for non-business hours while using UBA during the workday". Whether an anomaly can also block the user is not stated, so the scene shows alerts only. | [dl-uba] | 2026-11-12 | keep |
+
+[dl-uba]: https://next.nutanix.com/data-lens-239/user-behavior-analytics-uba-based-anomaly-detection-with-nutanix-files-45552
+[fa-blog]: https://next.nutanix.com/community-blog-154/file-auditing-and-analytics-for-your-nutanix-files-enterprise-cloud-31950
+[fa-thread]: https://next.nutanix.com/installation-configuration-23/anomalies-in-file-analytics-44076
+
 ---
 
 ## Changes needed in the app

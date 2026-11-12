@@ -18,6 +18,15 @@
 .diagram .dl-dot.ok { fill: var(--ok); }
 .diagram .dl-dot.ev { fill: var(--flow); }
 
+/* Unusual activity tab (prefix da-) */
+.diagram .da-row { fill: none; stroke: var(--line-2); stroke-width: 0.75; }
+.diagram .da-bar { fill: var(--s2); }
+.diagram .da-bar.on { fill: var(--warn); }
+.diagram .da-flag { fill: var(--warn); stroke: var(--bg); stroke-width: 1; }
+.diagram .da-band { fill: var(--flow); fill-opacity: 0.18; stroke: var(--flow); stroke-width: 1.5; }
+.diagram .da-rule { stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.diagram .da-night { fill: var(--bg-3); opacity: 0.6; }
+
 /* Data age & tiering tab (prefix dt-) */
 .diagram .dt-cell { fill: var(--bg-3); stroke: var(--line-2); stroke-width: 0.75; }
 .diagram .dt-cell.hot { fill: var(--flow-bg); stroke: var(--flow); stroke-width: 1.5; }

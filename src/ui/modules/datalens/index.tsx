@@ -1,12 +1,13 @@
 // Data Lens: a ransomware attack on a file server's shares, on a loop. Data Lens spots it and
 // auto-blocks the PC right away, then the hit files come back from the last clean snapshot.
-// Logic is in engine/ransomware.ts. The Data age & tiering tab is in tiering.tsx.
+// Logic is in engine/ransomware.ts. The Unusual activity tab is in anomaly.tsx, Data age & tiering in tiering.tsx.
 import { useMemo } from 'preact/hooks';
 import { useEnum } from '../../../state/route';
 import { paced, useClock } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, Tabs, prog } from '../../components/show';
 import { Tiering } from './tiering';
+import { Anomalies } from './anomaly';
 import { FILES, PER_SHARE, SHARES, SIM, attackState, encryptTime, restoreTime, timeline, type FileState, type Phase, type Timeline } from '../../../engine/ransomware';
 import './style.css';
 
@@ -259,17 +260,20 @@ function Ransomware() {
   );
 }
 
-type TabId = 'rw' | 'tier';
+type TabId = 'rw' | 'ua' | 'tier';
 const TABS: { id: TabId; label: string }[] = [
   { id: 'rw', label: 'Ransomware' },
+  { id: 'ua', label: 'Unusual activity' },
   { id: 'tier', label: 'Data age & tiering' },
 ];
 
 export default function Datalens() {
-  const [tab, setTab] = useEnum<TabId>('tab', 'rw', ['rw', 'tier']);
+  const [tab, setTab] = useEnum<TabId>('tab', 'rw', ['rw', 'ua', 'tier']);
   return (
     <Tabs label="Data Lens topics" value={tab} tabs={TABS} onChange={setTab}>
-      {tab === 'rw' ? <Ransomware /> : <Tiering />}
+      {tab === 'rw' && <Ransomware />}
+      {tab === 'ua' && <Anomalies />}
+      {tab === 'tier' && <Tiering />}
     </Tabs>
   );
 }

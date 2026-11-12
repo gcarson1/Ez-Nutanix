@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Data Lens, Unusual activity tab:** one day of operations on a share by three users. A fixed anomaly rule alerts on a busy user and the nightly backup but misses 600 deletes; user behavior analytics learns each user’s normal over a 30-day warmup and flags the deletes; then UBA watches the workday, the fixed rule watches after hours, and the backup account is excluded.
 - **Nutanix 2.0, design system:** light theme by default, Montserrat headings and Arial text, one diagram type scale, neutral greys with one accent, shared glyphs for VMs, CVMs, drives, nodes and lettered data blocks, 160 ms ease-out motion with no pulsing or bobbing, and vendor logos (Nutanix, Dell, HPE, Lenovo, Cisco, Fujitsu, Supermicro, NetApp) on white plates.
 - **Nutanix 2.0, one page layout:** every module has its controls and picture on the left and a clickable step list, caption, key numbers and About on the right; the top bar has labeled Notes, Glossary and Shortcuts buttons, a one-line footer, and no Presets menu. On phones pictures keep a readable size and pan sideways. Reduced-motion stills show each story's outcome.
 - **Module layout, steps and caption under the picture:** the step chips and the current caption now sit under the play bar, and the key numbers, notes and About stay on the right. On wide screens the left column fits the window, so the page does not scroll the animation away: the picture shrinks to fit (never below 85%) and keeps one size while the captions change. Cloud's availability line and Move's array note moved to the right column.
