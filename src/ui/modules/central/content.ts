@@ -23,8 +23,6 @@ export const content: ModuleContent = {
     { k: 'Prism Central domains (Nutanix Central on-premises)', v: 'Up to 25 at the Dec 2025 GA' },
     { k: 'Prism Central deployment', v: '1 VM or 3-VM scale-out' },
     { k: 'Prism Central per cluster', v: 'A cluster registers to one Prism Central' },
-    { k: 'Nutanix Central SaaS GA', v: 'May 2024' },
-    { k: 'Nutanix Central on-premises GA', v: 'Dec 2025' },
   ],
   qa: [
     {

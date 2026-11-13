@@ -20,7 +20,6 @@ export const content: ModuleContent = {
     'Engines in NDB 2.11: Oracle, SQL Server, PostgreSQL (including pgvector), EDB Postgres, MySQL, MariaDB and MongoDB. Recovery, high availability (HA) and disaster recovery (DR) options differ by engine and version.',
   ],
   numbers: [
-    { k: 'Current release', v: 'NDB 2.11 (Jul 2026)' },
     { k: 'Engines', v: 'Oracle, SQL Server, PostgreSQL, EDB Postgres, MySQL, MariaDB and MongoDB' },
     { k: 'Point-in-time recovery', v: 'To the second within retention, up to the last log catch-up; details vary by engine' },
     { k: 'NDB on Nutanix Cloud Clusters (NC2)', v: 'AWS, Azure and Google Cloud' },

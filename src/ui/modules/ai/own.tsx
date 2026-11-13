@@ -56,6 +56,7 @@ function TuneScene({ top }: { top: ComponentChildren }) {
       end={28}
       poster={27}
       label="Fine-tuning"
+      release={{ v: 'NAI 2.8', sub: 'Aug 2026 · GA for models under 8B' }}
       top={top}
       why="An example job with times compressed; the loss curve and the GPU counts are illustrative. How much a tuned small model saves depends on the task and the models compared."
       legend={[
@@ -82,7 +83,6 @@ function TuneScene({ top }: { top: ComponentChildren }) {
             v: p === 0 ? 'Not started' : t < 16 ? 'In training' : t < FT.save[1] ? 'Trained' : t < FT.imp[1] ? 'Saved on NFS' : t < FT.serve[1] ? 'In NAI' : 'Serving',
             tone: t >= FT.serve[1] ? 'ok' : undefined,
           },
-          { k: 'Availability', v: 'GA', sub: 'NAI 2.8, models under 8B' },
         ];
       }}
     >

@@ -24,8 +24,6 @@ export const content: ModuleContent = {
     'On Nutanix it connects to the rest of the platform: AHV, Unified Storage, Data Services for Kubernetes and Database Service. The Kubernetes upgrade rollout itself is on LCM Rolling Upgrade, under its Kubernetes (NKP) tab.',
   ],
   numbers: [
-    { k: 'Current release', v: 'NKP 2.19 (Oct 2026) · Kubernetes 1.36 by default, 1.35 supported' },
-    { k: 'Editions', v: 'Starter · Pro · Ultimate' },
     { k: 'Starter', v: 'NCI (AHV) only; included with NCI Pro and Ultimate' },
     { k: 'Pro adds', v: 'Observability, backup and restore, GPU support, deployment beyond AHV' },
     { k: 'Ultimate adds', v: 'Fleet management, GitOps, cost management, multitenancy' },

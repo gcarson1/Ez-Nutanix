@@ -303,6 +303,7 @@ function KvScene({ top }: { top: ComponentChildren }) {
       end={28}
       poster={26.5}
       label="KV-cache offload"
+      release={{ v: 'NAI 2.8', sub: 'Aug 2026 · tech preview (local endpoints)' }}
       top={top}
       why="Example sizes: an 80 GB GPU with a 50 GB model, and three conversations whose notes take 10 GB each. Real cache sizes depend on the model and how long each conversation is. KV-cache offload is a tech preview in NAI 2.8."
       legend={[
@@ -326,11 +327,6 @@ function KvScene({ top }: { top: ComponentChildren }) {
             v: t < 2 ? 'First read' : phase === 2 ? 'Would start slow' : 'Starts fast',
             tone: t < 2 ? undefined : phase === 2 ? 'warn' : 'ok',
             sub: t < 2 ? 'no notes yet' : phase === 2 ? 'if its notes were evicted' : phase >= 3 ? 'its notes were kept' : 'its notes are in GPU memory',
-          },
-          {
-            k: 'Availability',
-            v: 'Tech preview',
-            sub: 'NAI 2.8, local endpoints',
           },
         ];
       }}

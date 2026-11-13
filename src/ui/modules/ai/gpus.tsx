@@ -70,6 +70,7 @@ function SliceScene({ top }: { top: ComponentChildren }) {
       end={22}
       poster={21}
       label="Sharing a GPU"
+      release={{ v: 'NAI 2.8', sub: 'Aug 2026 · MIG slices since NAI 2.5' }}
       top={top}
       why="Example sizes: an 80 GB GPU cut into four 20 GB slices, and example models. The slice sizes on offer depend on the GPU model, and a vGPU is another way to give a model part of a GPU."
       legend={[
@@ -100,7 +101,7 @@ function SliceScene({ top }: { top: ComponentChildren }) {
           {
             k: 'Slices',
             v: t >= SL_MIG ? `${Math.min(on.length, SLICES)} of ${SLICES} used` : 'Not sliced',
-            sub: 'MIG, from NAI 2.5',
+            sub: 'a spare slice can go to another workload',
           },
         ];
       }}
@@ -424,6 +425,7 @@ function NodesScene({ top }: { top: ComponentChildren }) {
       end={25.2}
       poster={21.2}
       label="One model across several nodes"
+      release={{ v: 'NAI 2.8', sub: 'Aug 2026 · tech preview (vLLM engine)' }}
       top={top}
       why="Example sizes and three stages; the real split depends on the model and the cluster. Times are not to scale. Multi-node serving is a tech preview in NAI 2.8."
       legend={[
@@ -448,7 +450,6 @@ function NodesScene({ top }: { top: ComponentChildren }) {
             v: inFlight,
             tone: inFlight > 1 ? 'ok' : inFlight ? 'flow' : undefined,
           },
-          { k: 'Availability', v: 'Tech preview', sub: 'NAI 2.8, vLLM engine' },
         ];
       }}
     >
@@ -579,6 +580,7 @@ function HibernateScene({ top }: { top: ComponentChildren }) {
       end={22}
       poster={21}
       label="Endpoint hibernation"
+      release={{ v: 'NAI 2.8', sub: 'Aug 2026 · hibernation since NAI 2.3' }}
       top={top}
       why="Example endpoints and sizes, with times compressed. Hibernation has been in NAI since 2.3; NAI 2.8 also lets you change a hibernated endpoint’s parameters before resuming it."
       legend={[

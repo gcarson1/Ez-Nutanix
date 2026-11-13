@@ -4,6 +4,7 @@
 import type { ComponentChildren, VNode } from 'preact';
 import { useMemo } from 'preact/hooks';
 import { paced, useClock } from '../../components/clock';
+import type { Fact } from '../../../content/types';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Kpis, Show, ease, phaseAt, prog, type KpiItem } from '../../components/show';
 
@@ -51,6 +52,8 @@ export function Story({
   legend,
   top,
   side,
+  release,
+  license,
   kpis,
   children,
 }: {
@@ -67,6 +70,9 @@ export function Story({
   top?: ComponentChildren;
   /** Extra sections for the right column, under the key numbers. */
   side?: ComponentChildren;
+  /** Replaces the page's release or license line for a feature at a different stage. */
+  release?: Fact;
+  license?: Fact;
   kpis: (t: number, phase: number) => KpiItem[];
   children: (t: number, phase: number) => VNode;
 }) {
@@ -93,6 +99,8 @@ export function Story({
       clock={clock}
       top={top}
       side={side}
+      release={release}
+      license={license}
       foot={
         <>
           <Follow tone={c.tone} k={c.k}>

@@ -20,8 +20,6 @@ export const content: ModuleContent = {
     'Sources include vSphere/ESXi, Hyper-V, AWS EC2, Azure, VMware Cloud on AWS, Azure VMware Solution, AHV and file shares; targets are AHV on-premises and NC2. Supported pairs change by Move release, so check the support matrix.',
   ],
   numbers: [
-    { k: 'Cost', v: 'No extra cost for Nutanix customers' },
-    { k: 'Current release', v: 'Move 6.3.3 (Oct 2026; for new Move deployments, not upgrades)' },
     { k: 'Targets', v: 'AHV on-premises; NC2 on AWS, Azure, Google Cloud, OVHcloud' },
     { k: 'File shares', v: 'SMB v2+, NFS v3 sources' },
   ],

@@ -632,7 +632,7 @@ function Cost() {
   const line = lines[phaseAt(COST_STARTS, t)];
   return (
     <Show clock={clock}
-      license={{ v: 'NCM Pro', sub: 'approvals, schedules: Ultimate', tip: `${TIER_TIP.Pro} Approval and scheduler policies need NCM Ultimate.` }}
+      license={{ v: 'NCM Pro', sub: 'approvals and schedules need NCM Ultimate', tip: `${TIER_TIP.Pro} Approval and scheduler policies need NCM Ultimate.` }}
       side={<Points label="How NCM stops the overspend" items={GUARDS} t={t} until={MONTH} />}
       foot={
         <>

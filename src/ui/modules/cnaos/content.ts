@@ -7,7 +7,7 @@ export const content: ModuleContent = {
   summary: 'Stateful Kubernetes apps get Nutanix storage and whole-app protection with no hypervisor, using Cloud Native AOS and Nutanix Data Services for Kubernetes (NDK). It is generally available on Amazon EKS; bare metal is early access.',
   priority: 'P2',
   facts: {
-    release: { v: '1.0.0', sub: 'Jul 2025 · Amazon EKS only' },
+    release: { v: '1.0.0', sub: 'Jul 2025 · GA on Amazon EKS only' },
     license: { v: 'Cloud Native AOS license', sub: 'AWS only in the first version' },
   },
   talk: [
@@ -20,7 +20,6 @@ export const content: ModuleContent = {
   ],
   numbers: [
     { k: 'Announced', v: 'May 2025 (.NEXT 2025)' },
-    { k: 'Release 1.0.0', v: 'Jul 2025, Amazon EKS only' },
     { k: '1.0 limits', v: 'Up to 15 worker nodes, RF2, up to 64 volumes per node' },
     { k: '1.0 storage', v: 'EBS gp3 volumes on i3en, i4i, m6id or m5d workers' },
     { k: 'DR in 1.0', v: 'Through NDK, target RPO 1 hour or more; across AWS regions and zones, and from NKP on Nutanix (AHV) to EKS' },

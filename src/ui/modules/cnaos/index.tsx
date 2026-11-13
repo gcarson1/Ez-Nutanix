@@ -374,8 +374,8 @@ export default function Cnaos() {
 
   return (
     <Show clock={clock}
-      release={on === 'metal' ? { v: 'Early access', sub: 'NKP Metal, announced Apr 2026' } : undefined}
-      license={on === 'metal' ? { v: 'NKP Pro or Ultimate', sub: 'Early access; GA targeted for the second half of 2026' } : undefined}
+      release={on === 'metal' ? { v: 'Early access', sub: 'NKP Metal, announced Apr 2026; GA targeted for the second half of 2026' } : undefined}
+      license={on === 'metal' ? { v: 'NKP Pro or Ultimate', sub: 'For NKP Metal' } : undefined}
       side={<Points label="Why customers choose it" items={points(on)} t={t}  />}
       top={
         <>
@@ -399,8 +399,7 @@ export default function Cnaos() {
           <Kpis
             items={[
               { k: 'Hypervisor', v: 'None', sub: 'AOS runs as pods' },
-              on === 'eks' ? { k: 'Disaster recovery', v: 'RPO 1 hour or more', sub: 'target, through NDK, in release 1.0' } : { k: 'Moving between sites', v: 'Planned', tone: 'warn', sub: 'listed as future development' },
-              on === 'eks' ? { k: 'Availability', v: 'GA', tone: 'ok', sub: 'release 1.0 since July 2025; up to 15 workers' } : { k: 'Availability', v: 'Early access', tone: 'warn', sub: 'GA targeted for the second half of 2026' },
+              on === 'eks' ? { k: 'Disaster recovery', v: 'RPO 1 hour or more', sub: 'target, through NDK' } : { k: 'Moving between sites', v: 'Planned', tone: 'warn', sub: 'listed as future development' },
             ]}
           />
         </>

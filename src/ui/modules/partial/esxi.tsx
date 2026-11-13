@@ -233,7 +233,7 @@ export default function EsxiOnNutanix() {
   return (
     <Show clock={clock}
       release={{ v: 'AOS 7.6', sub: 'Jul 2026 · cluster limits depend on the vSphere and AOS version' }}
-      license={{ v: 'Nutanix license', sub: 'AOS storage is included; no separate storage license', tip: 'Nutanix’s migration guide: AOS Storage functionality is included as part of NCI and NC2 and does not have to be licensed separately.' }}
+      license={{ v: 'Nutanix license', sub: 'AOS storage is included; your existing VMware licenses stay with ESXi', tip: 'Nutanix’s migration guide: AOS Storage functionality is included as part of NCI and NC2 and does not have to be licensed separately.' }}
       side={<Points label="Why customers choose it" items={POINTS[go]} t={t}  />}
       top={
         <>
@@ -263,8 +263,6 @@ export default function EsxiOnNutanix() {
                     { k: 'Before you convert', v: 'Validate', sub: 'NGT, HA and DRS, networks, delta disks' },
                   ]
                 : [
-                    { k: 'VMware license', v: 'Your own', sub: 'existing VMware licenses' },
-                    { k: 'Storage', v: 'AOS', sub: 'included with NCI', tone: 'ok' },
                     { k: 'Managed in', v: 'vCenter + Prism' },
                   ]
             }

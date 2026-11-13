@@ -21,7 +21,6 @@ export const content: ModuleContent = {
   ],
   numbers: [
     { k: 'Nodes out at once during LCM', v: '1' },
-    { k: 'Current release', v: 'LCM 3.4 · AOS 7.6 (Jul 2026) · AHV 11.2 · Prism Central pc.7.6 (patch levels vary, check the portal)' },
     { k: 'Firmware reboots on NX', v: 'BMC (baseboard management controller) 2 · BIOS and CPLD (complex programmable logic device) 3' },
     { k: 'Illustrative per-node time', v: 'AOS about 15 min · AHV about 25 min · firmware 30 to 60 min (older estimates, not official)' },
     { k: '2-node clusters', v: 'Witness required for LCM' },

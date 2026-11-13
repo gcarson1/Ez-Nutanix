@@ -21,7 +21,7 @@ export const content: ModuleContent = {
   ],
   numbers: [
     { k: 'Policy types', v: 'Application, Isolation, Quarantine (Strict or Forensic), Shared Services, VDI (virtual desktop infrastructure; by release)' },
-    { k: 'Current release', v: 'Flow Network Security Next-Gen 7.6 (Jul 2026), bundled with AOS 7.6 and Prism Central pc.7.6; adds rule-centric policies and policies by fully qualified domain name (FQDN)' },
+    { k: 'New in Next-Gen 7.6', v: 'Rule-centric policies and policies by fully qualified domain name (FQDN)' },
     { k: 'Policy states (Prism)', v: 'Saved, Monitoring, Enforced' },
     { k: 'Overlay encapsulation', v: 'Geneve between AHV hosts; VTEP (virtual tunnel endpoint) gateways use VXLAN (Virtual Extensible LAN)' },
     { k: 'Geneve overhead', v: '58 bytes per packet; Dynamic Host Configuration Protocol (DHCP) gives guests a maximum transmission unit (MTU) of 1442 (1500 less 58); the physical network needs at least 1558, ideally 9000' },

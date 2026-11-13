@@ -19,11 +19,9 @@ export const content: ModuleContent = {
     'For containerized apps there is a cloud-native path instead: NKP manages the Kubernetes fleet, and Cloud Native AOS brings AOS storage into Kubernetes. Today Cloud Native AOS is GA on Amazon EKS only.',
   ],
   numbers: [
-    { k: 'NC2 clouds (GA)', v: 'AWS, Azure, Google Cloud, OVHcloud' },
-    { k: 'NC2 on Google Cloud', v: 'GA Dec 2025 · Z3 and C4 bare metal · 17 regions at GA' },
+    { k: 'NC2 on Google Cloud', v: 'Z3 and C4 bare metal · 17 regions at GA' },
     { k: 'GC2 (Government Cloud Clusters) on AWS GovCloud (US)', v: 'Available' },
     { k: 'GC2 on AWS European Sovereign Cloud', v: 'GA Jul 2026, starting with Germany' },
-    { k: 'Cloud Native AOS', v: 'GA on Amazon EKS (1.0, Jul 2025)' },
     { k: 'Also supported on NC2', v: 'Nutanix Move and Nutanix Database Service (NDB), on AWS, Azure and Google Cloud' },
   ],
   qa: [

@@ -239,6 +239,8 @@ export default function GatewayView() {
   const logged = TRIP_PATHS.filter(({ tr }, k) => tr.log && t >= doneAt(k)).length;
   return (
     <Show clock={clock}
+      release={{ v: 'NAI 2.8', sub: 'Aug 2026 · MCP Gateway GA; header rate limits in tech preview' }}
+      license={{ v: 'NAI plus Agent Gateway', sub: 'Agent Gateway is licensed separately from NAI' }}
       foot={
         <>
           <Follow tone={c.tone} k={c.k}>

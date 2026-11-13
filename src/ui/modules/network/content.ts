@@ -25,7 +25,6 @@ export const content: ModuleContent = {
     { k: 'LACP failure detection', v: '3 missed LACP messages, about 3 s at the fast rate Prism sets' },
     { k: 'Host / CVM internal addresses (default)', v: '192.168.5.1 / 192.168.5.254 on virbr0, inside each host only' },
     { k: 'CVM MTU', v: '1500 (jumbo 9000 allowed on host NICs and guests end to end)' },
-    { k: 'Current release', v: 'AHV 11.2 · AOS 7.6 (Jul 2026)' },
   ],
   qa: [
     {

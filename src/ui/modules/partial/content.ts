@@ -24,7 +24,6 @@ export const content: ModuleContent = {
     { k: 'Array protocol', v: 'NVMe/TCP on Ethernet; PowerFlex uses Dell’s client (SDC); NetApp uses NFS' },
     { k: 'Volumes', v: 'One array volume per VM disk, with the array’s own snapshots and clones, on the generally available arrays' },
     { k: 'FlashArray cluster', v: '3 to 32 nodes, one FlashArray, new cluster only' },
-    { k: 'External storage license', v: 'NCI Compute (NCI-C), priced per core' },
     { k: 'ESXi cluster size', v: 'Up to 48 hosts (vSphere 7.0, AOS 6.8)' },
     { k: 'vSphere 8 end of general support', v: 'Oct 2027, as Nutanix states it' },
   ],

@@ -19,13 +19,11 @@ export const content: ModuleContent = {
     'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups. Lifecycle rules tier old objects to another object store or an S3-compatible endpoint, on-premises or in a public cloud; validate your release and the endpoint first.',
   ],
   numbers: [
-    { k: 'Current release', v: 'NUS 5.4, with Files 5.4 and Objects 5.4 (release notes Aug 2026)' },
     { k: 'Files HA minimum', v: '3 FSVMs; a single FSVM has no HA' },
     { k: 'Files protocols', v: 'SMB 2/3, NFS v3/v4, parallel NFS (pNFS) for HPC; encrypted NFS in 5.4' },
     { k: 'Scale', v: 'Exabyte-scale unstructured data' },
     { k: 'Objects minimum', v: '3 worker VMs; since 5.4 no load balancer VMs on supported AHV setups' },
     { k: 'Objects API', v: 'S3 (v4 signatures)' },
-    { k: 'Licensing', v: 'NUS per usable TiB: Starter (hybrid, backup and archive) or Pro' },
     { k: 'Volumes for outside hosts', v: 'Not with NCI Starter, which serves in-cluster VMs only' },
   ],
   qa: [

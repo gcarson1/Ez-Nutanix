@@ -439,10 +439,10 @@ test('Enterprise AI: every feature has its own animation, with tech previews nam
     await page.getByRole('group', { name: group }).getByRole('button', { name: option }).click();
     await expect(page.locator('.show-main .follow-k'), option).toHaveText(heading);
     await expect(page.locator('.show-main svg.diagram'), option).toHaveCount(1);
-    // Every step of the scene has a chip, and a preview feature says so in the picture and the numbers.
+    // Every step of the scene has a chip, and a preview feature says so in the picture and on the release line.
     expect(await page.locator('.steps li').count(), option).toBeGreaterThanOrEqual(3);
     await expect(page.locator('svg.diagram').getByText('Tech preview'), option).toHaveCount(preview ? 1 : 0);
-    if (preview) await expect(page.locator('.show-foot .kpis'), option).toContainText('Tech preview');
+    if (preview) await expect(page.locator('.show-facts .kpi').nth(0), option).toContainText('tech preview');
   }
   // The feature list on the Model endpoint tab opens the scene it names.
   await tabs.getByRole('tab', { name: 'Model endpoint' }).click();
@@ -553,5 +553,22 @@ test('every page opens its right pane with Release version and License needed, a
   await expect(lic).toHaveText('NKP Ultimate');
   await page.goto(`${FILE}#/nci/flow?tab=net`);
   await expect(lic).toHaveText('Listed from NCI Pro');
+  // A feature at another stage says so on the release line, once, and no key number repeats it.
+  const relSub = page.locator('.show-facts .kpi').nth(0).locator('.s');
+  for (const [q, text] of [['tab=fast&f=kv', 'tech preview'], ['tab=gpu&g=nodes', 'tech preview'], ['tab=own', 'GA for models under 8B'], ['tab=gpu&g=hib', 'since NAI 2.3'], ['tab=gpu', 'since NAI 2.5'], ['tab=gw', 'tech preview']]) {
+    await page.goto(`${FILE}#/ai?${q}`);
+    await expect(rel, q).toHaveText('NAI 2.8');
+    await expect(relSub, q).toContainText(text);
+    await expect(page.locator('.show-foot .kpis'), q).not.toContainText(/Availability|Release version|License needed|from NAI|since NAI/);
+  }
+  await page.goto(`${FILE}#/ai?tab=gw`);
+  await expect(lic).toHaveText('NAI plus Agent Gateway');
+  await page.goto(`${FILE}#/cnaos`);
+  await expect(relSub).toContainText('GA on Amazon EKS');
+  await page.goto(`${FILE}#/cnaos?on=metal`);
+  await expect(relSub).toContainText('GA targeted for the second half of 2026');
+  await page.goto(`${FILE}#/cloud?c=gcp`);
+  await expect(rel).toHaveText('NC2 on Google Cloud is GA');
+  await expect(page.getByRole('heading', { name: 'Availability' })).toHaveCount(0);
   expect(errors).toEqual([]);
 });

@@ -11,10 +11,10 @@ import './style.css';
 type Prov = 'aws' | 'azure' | 'gcp';
 type Use = 'dr' | 'burst' | 'exit';
 
-const PROV: Record<Prov, { name: string; short: string; status: string }> = {
-  aws: { name: 'Amazon Web Services', short: 'AWS', status: 'NC2 on AWS is generally available. GC2 (Government Cloud Clusters) runs on AWS GovCloud (US) and the AWS European Sovereign Cloud.' },
-  azure: { name: 'Microsoft Azure', short: 'Azure', status: 'NC2 on Azure is generally available.' },
-  gcp: { name: 'Google Cloud', short: 'Google Cloud', status: 'NC2 on Google Cloud has been generally available since Dec 9, 2025, on Z3 and C4 bare-metal instances in 17 regions at launch.' },
+const PROV: Record<Prov, { name: string; short: string; release: { v: string; sub?: string } }> = {
+  aws: { name: 'Amazon Web Services', short: 'AWS', release: { v: 'NC2 on AWS is GA', sub: 'GC2 (Government Cloud Clusters) runs on AWS GovCloud (US) and the AWS European Sovereign Cloud' } },
+  azure: { name: 'Microsoft Azure', short: 'Azure', release: { v: 'NC2 on Azure is GA' } },
+  gcp: { name: 'Google Cloud', short: 'Google Cloud', release: { v: 'NC2 on Google Cloud is GA', sub: 'Since Dec 9, 2025, on Z3 and C4 bare metal in 17 regions at launch' } },
 };
 const PROV_IDS = Object.keys(PROV) as Prov[];
 
@@ -129,7 +129,7 @@ export default function Cloud() {
   // The provider's status line stays put, so it is read once, in the first step.
   const steps = paced(
     U.phases.map((p) => p.at),
-    U.phases.map((p, k) => [p.k, p.text(P.short), k === 0 ? P.status : '']),
+    U.phases.map((p, k) => [p.k, p.text(P.short), k === 0 ? [P.release.v, P.release.sub].filter(Boolean).join('. ') + '.' : '']),
   ).map((st, k) => ({ ...st, label: U.phases[k].k }));
   const clock = useClock({ rate: 1, duration: U.end, keys: true, poster: U.phases[3].at + 1.5, steps });
   useRestartOn(clock, [prov, use]);
@@ -145,12 +145,7 @@ export default function Cloud() {
 
   return (
     <Show clock={clock}
-      side={
-        <section>
-          <h2 class="side-sec-h">Availability</h2>
-          <p>{P.status}</p>
-        </section>
-      }
+      release={P.release}
       top={
         <>
           <Choice<Prov> label="Cloud" value={prov} onChange={setProv} options={PROV_IDS.map((p) => ({ value: p, label: PROV[p].short }))} />

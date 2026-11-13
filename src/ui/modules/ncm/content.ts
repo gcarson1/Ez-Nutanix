@@ -23,7 +23,6 @@ export const content: ModuleContent = {
     { k: 'NCM components', v: 'Intelligent Operations · Self-Service · Cost Governance · Security Compliance' },
     { k: 'Self-Service & Cost Governance', v: 'From NCM Pro' },
     { k: 'Security Compliance, multi-VM blueprints, approvals', v: 'NCM Ultimate' },
-    { k: 'Current release', v: 'NCM 2.1 (Aug 2026)' },
     { k: 'NCM 2.x', v: '2.0 GA Apr 2026 · requires Nutanix Central on-premises' },
     { k: 'Small form factor (NCM 2.1)', v: '3 nodes, about 2,500 VMs' },
     { k: 'Medium form factor (NCM 2.0)', v: 'About 10,000 VMs' },
