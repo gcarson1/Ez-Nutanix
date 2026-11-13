@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Flow Network Security keeps firewall rules with each VM by its labels on every host, and Flow Virtual Networking builds virtual private clouds (VPCs) in software without touching the physical network.',
   priority: 'P0',
+  facts: {
+    release: { v: 'Next-Gen 7.6', sub: 'Flow Network Security · Jul 2026 · with AOS 7.6 and pc.7.6' },
+    license: { v: 'Confirm with Nutanix', sub: 'Microsegmentation is listed under NCI Ultimate', tip: 'Nutanix lists microsegmentation under NCI Ultimate and names a Security add-on license. Next-Gen 7.6 installs with AOS 7.6 and Prism Central pc.7.6, but Nutanix’s pages do not state its license, so confirm it. Virtual Networking has its own line on its tab.' },
+  },
   talk: [
     'Flow Network Security is a stateful, distributed firewall in AHV. Rules name categories such as AppTier: Web, not IP addresses. Next-Gen, the current generation, comes with AOS 7.6 and Prism Central pc.7.6; legacy clusters need a planned upgrade and a separate policy migration.',
     'Start in Monitor: everything still flows, and the rule-hit log shows exactly what a policy would block. Switch to Enforce once the log is clean.',
@@ -17,7 +21,7 @@ export const content: ModuleContent = {
   ],
   numbers: [
     { k: 'Policy types', v: 'Application, Isolation, Quarantine (Strict or Forensic), Shared Services, VDI (virtual desktop infrastructure; by release)' },
-    { k: 'Current release', v: 'Flow Network Security Next-Gen 7.6 (Oct 2026), bundled with AOS 7.6 and Prism Central pc.7.6; adds rule-centric policies and policies by fully qualified domain name (FQDN)' },
+    { k: 'Current release', v: 'Flow Network Security Next-Gen 7.6 (Jul 2026), bundled with AOS 7.6 and Prism Central pc.7.6; adds rule-centric policies and policies by fully qualified domain name (FQDN)' },
     { k: 'Policy states (Prism)', v: 'Saved, Monitoring, Enforced' },
     { k: 'Overlay encapsulation', v: 'Geneve between AHV hosts; VTEP (virtual tunnel endpoint) gateways use VXLAN (Virtual Extensible LAN)' },
     { k: 'Geneve overhead', v: '58 bytes per packet; Dynamic Host Configuration Protocol (DHCP) gives guests a maximum transmission unit (MTU) of 1442 (1500 less 58); the physical network needs at least 1558, ideally 9000' },

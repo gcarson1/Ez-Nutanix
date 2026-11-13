@@ -290,7 +290,6 @@ export default function ExtStorage() {
             items={[
               { k: 'Connects over', v: 'Ethernet', sub: 'each array its own protocol', tip: 'FlashArray and PowerStore use NVMe/TCP, PowerFlex uses Dell’s SDC client inside the CVM, and NetApp ONTAP uses NFS with ONTAP’s APIs.' },
               { k: 'Supported arrays', v: '4', sub: '3 generally available, NetApp announced' },
-              { k: 'Licensed as', v: 'NCI-C', sub: 'per core', tip: 'NCI Compute: AHV, Prism and DR automation, priced per core. Snapshots and clones are left to the storage array.' },
             ]}
           />
         </>

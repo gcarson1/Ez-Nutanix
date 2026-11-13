@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'The Distributed Storage Fabric (DSF) keeps VMs running and data protected through six everyday events on one 4-node cluster.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need Pro or Ultimate' },
+  },
   talk: [
     'Start with Data placement. Each node is a server running the hypervisor, the user VMs and one Controller VM (CVM). The CVMs pool every drive into one storage fabric, so there is no separate array.',
     'Every write is saved twice before it is confirmed: one copy on the VM’s own node, one on another node. That is RF2 (replication factor 2), the default.',

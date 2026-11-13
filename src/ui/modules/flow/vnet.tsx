@@ -182,6 +182,8 @@ export function VNet() {
 
   return (
     <Show clock={clock}
+      release={{ v: 'AOS 7.6', sub: 'Jul 2026 · Prism Central pc.7.6' }}
+      license={{ v: 'Listed from NCI Pro', sub: 'Overlay networking; confirm for Flow Virtual Networking' }}
       top={
         <Choice<Preset>
           label="Follow a packet"

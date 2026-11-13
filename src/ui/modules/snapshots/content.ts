@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Snapshots and clones are created almost instantly and use space only for what changes, because they copy a map of where data lives, not the data. They are local restore points, not backups.',
   priority: 'P1',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Starter or higher', sub: 'Snapshots and clones are listed in every edition' },
+  },
   talk: [
     'Tell it as an admin lives it: before patching sql-prod, a 500 GB database VM, take a snapshot. It copies the disk’s map of where data lives in the Distributed Storage Fabric (DSF), not the data, so it takes seconds and adds no space.',
     'The VM keeps writing. New writes go to new space and only the live disk’s map changes (redirect-on-write); the snapshot keeps the old data. Space grows only by what changed.',

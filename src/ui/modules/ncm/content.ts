@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Nutanix Cloud Manager (NCM) adds operations on top of the platform: anomaly detection that learns what normal looks like, self-service provisioning under quotas, cost budgets kept on-premises and security compliance checks.',
   priority: 'P1',
+  facts: {
+    release: { v: 'NCM 2.1', sub: 'Aug 2026' },
+    license: { v: 'NCM Starter to Ultimate', sub: 'Per physical core', tip: 'Self-Service and Cost Governance: Pro. Approvals, scheduling and Security Compliance: Ultimate.' },
+  },
   talk: [
     'Four parts: Intelligent Operations (AIOps), Self-Service (formerly Calm), Cost Governance (formerly Beam) and Security Compliance (formerly Security Central). From NCM 2.0 they run inside Nutanix Central on-premises instead of Prism Central, and NCM 2.1 added a smaller 3-node form factor.',
     'AIOps learns each VM’s normal range from its history instead of using a fixed threshold. In this picture a 3 a.m. spike is flagged though it stays under a 70% alarm; a busy-afternoon spike trips both.',

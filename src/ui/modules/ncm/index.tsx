@@ -40,8 +40,6 @@ const TIER_TIP = {
 
 const W = 960;
 
-/** Fact scope: the release every tab is drawn for, and why it may differ from a real deployment. */
-const SHOWN = { k: 'Shown', v: 'NCM 2.1', sub: 'release 2.1, Aug 2026' } as const;
 const REPLATFORM = ' NCM is being re-platformed, and its services are not all deployed the same way, so check what your release runs and where.';
 
 // ───────────────────────── AIOps ─────────────────────────
@@ -183,7 +181,6 @@ function AiOps() {
               { k: 'Flagged as unusual', v: flaggedNow, tone: flaggedNow ? 'bad' : 'neutral' },
               { k: `Fixed ${FIXED}% alarm fired`, v: firedNow, tone: firedNow < flaggedNow ? 'warn' : 'neutral', sub: firedNow < flaggedNow ? 'missed the 3 a.m. spike' : undefined },
               { k: 'Learned from', v: '2 weeks', sub: 'of history, per hour' },
-              SHOWN,
             ]}
           />
         </>
@@ -454,6 +451,7 @@ function SelfService() {
   const checked = t - r.at >= r.steps[0].dur;
   return (
     <Show clock={clock}
+      license={{ v: r.item.multiVm ? 'NCM Ultimate' : 'NCM Pro', tip: r.item.multiVm ? TIER_TIP.Ultimate : TIER_TIP.Pro }}
       foot={
         <>
           <Follow tone={line.tone} k={line.k}>
@@ -467,8 +465,6 @@ function SelfService() {
                   ? { k: 'Project vCPU after', v: `${r.v.after.vcpu} of ${r.p.quota.vcpu}`, tone: 'ok' }
                   : { k: 'Project vCPU left', v: `${left} of ${r.p.quota.vcpu}`, tone: 'bad', sub: `needs ${r.d.vcpu}` },
               { k: 'Approval', v: !checked ? '…' : !r.v.ok ? '—' : r.v.needsApproval ? 'Needed' : 'Not needed', sub: checked && r.v.ok && r.v.needsApproval ? `over ${r.p.approvalAbove} vCPU` : 'optional policy' },
-              { k: 'License', v: r.item.multiVm ? 'NCM Ultimate' : 'NCM Pro', tip: r.item.multiVm ? TIER_TIP.Ultimate : TIER_TIP.Pro },
-              SHOWN,
             ]}
           />
         </>
@@ -636,6 +632,7 @@ function Cost() {
   const line = lines[phaseAt(COST_STARTS, t)];
   return (
     <Show clock={clock}
+      license={{ v: 'NCM Pro', sub: 'approvals, schedules: Ultimate', tip: `${TIER_TIP.Pro} Approval and scheduler policies need NCM Ultimate.` }}
       side={<Points label="How NCM stops the overspend" items={GUARDS} t={t} until={MONTH} />}
       foot={
         <>
@@ -646,8 +643,6 @@ function Cost() {
             items={[
               { k: 'dev-test spend', v: usd(spent), tone: st === 'over' ? 'bad' : t > MONTH ? 'ok' : st === 'warn' ? 'warn' : 'neutral', sub: `of ${usd(DEV.budget)} budget` },
               { k: 'Month-end at this pace', v: usd(pace), tone: pace > DEV.budget ? 'bad' : 'ok', sub: pace > DEV.budget ? `${Math.round((pace / DEV.budget - 1) * 100)}% over budget` : 'under budget' },
-              { k: 'License', v: 'NCM Pro', sub: 'approvals, schedules: Ultimate', tip: `${TIER_TIP.Pro} Approval and scheduler policies need NCM Ultimate.` },
-              SHOWN,
             ]}
           />
         </>
@@ -895,6 +890,7 @@ function Security() {
   const { open, sc, line } = secView(base, tl, t);
   return (
     <Show clock={clock}
+      license={{ v: 'NCM Ultimate', tip: TIER_TIP.Ultimate }}
       top={
         <Choice<Base>
           label="Baseline"
@@ -912,8 +908,6 @@ function Security() {
             items={[
               { k: 'Score', v: t >= tl.scanEnd ? sc : '—', tone: t < tl.scanEnd ? 'neutral' : sc === 100 ? 'ok' : 'warn', sub: 'of 100' },
               { k: 'Open findings', v: t >= tl.scanEnd ? open : '—', tone: t < tl.scanEnd ? 'neutral' : open ? 'warn' : 'ok' },
-              { k: 'License', v: 'NCM Ultimate', tip: TIER_TIP.Ultimate },
-              SHOWN,
             ]}
           />
         </>

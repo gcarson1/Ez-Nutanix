@@ -7,3 +7,4 @@
   .hub-top { grid-template-columns: minmax(0, 1fr); }
 }
 .hub-group + .hub-group { margin-top: var(--sp-6); }
+.hub-intro .show-facts { margin-top: var(--sp-4); }

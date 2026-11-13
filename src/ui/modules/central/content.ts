@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'One console shows the health and alerts of every cluster in every region. Prism Element runs each cluster, Prism Central manages a group of clusters, and Nutanix Central federates many Prism Centrals.',
   priority: 'P1',
+  facts: {
+    release: { v: 'On-premises GA', sub: 'Dec 2025 · SaaS since May 2024; no version number' },
+    license: { v: 'Not published', sub: 'No license terms on Nutanix’s Central pages', tip: 'NCM 2.x requires the on-premises version of Nutanix Central.' },
+  },
   talk: [
     'Three levels: Prism Element is built into every cluster, Prism Central manages the clusters registered to it, and Nutanix Central sits above many Prism Central domains.',
     'Through Prism Element you see one cluster. A warning in a store in Toronto is invisible from the New York cluster, so checking five clusters means five logins.',

@@ -338,7 +338,7 @@ function ModuleView({ def }: { def: ModuleDef }) {
           </h1>
         </div>
       </header>
-      <ModuleInfo.Provider value={{ summary: c.summary }}>
+      <ModuleInfo.Provider value={{ summary: c.summary, facts: c.facts }}>
         <Component />
       </ModuleInfo.Provider>
     </div>

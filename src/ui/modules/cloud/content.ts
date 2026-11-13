@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Nutanix Cloud Clusters (NC2) runs the same Nutanix stack in AWS, Azure or Google Cloud, as a disaster-recovery site, for burst capacity or to leave a data center, all managed from Prism Central.',
   priority: 'P1',
+  facts: {
+    release: { v: 'NC2 is GA', sub: 'AWS, Azure, Google Cloud (Dec 2025) and OVHcloud' },
+    license: { v: 'NCI license', sub: 'Portable term license or pay as you go', tip: 'Cloud bare-metal instance and service costs are paid directly to the cloud provider. Confirm pay as you go with Nutanix before quoting it.' },
+  },
   talk: [
     'NC2 is the same AOS and AHV you run on-premises, on bare-metal instances in your cloud account, managed in the same Prism Central.',
     'It is generally available on AWS, Azure, Google Cloud (since December 2025) and OVHcloud. Regions, bare-metal types and some features differ by cloud and release.',

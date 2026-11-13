@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Platform services',
   summary: 'Project Beacon is a direction, not a product: build an app once, run it anywhere with the same data services. Its first outcome is Cloud Native AOS with Nutanix Data Services for Kubernetes (NDK).',
   priority: 'P2',
+  facts: {
+    release: { v: 'No release', sub: 'A direction; its pieces ship on their own' },
+    license: { v: 'None', sub: 'Not a product; each piece is licensed on its own' },
+  },
   talk: [
     'Say it plainly up front: Project Beacon is a vision Nutanix announced in 2023, not something you can buy.',
     'The idea: developers build an app once and run it anywhere, and the data services (storage, databases, protection) come along with it.',

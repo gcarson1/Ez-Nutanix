@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Nutanix Unified Storage (NUS) is fast, exabyte-scale unstructured storage: Files (SMB, NFS and parallel NFS for HPC), Volumes (iSCSI) and Objects (S3) from the Distributed Storage Fabric (DSF) that runs your VMs, so one platform is protected, sized and upgraded the same way.',
   priority: 'P1',
+  facts: {
+    release: { v: 'NUS 5.4', sub: 'Files 5.4 · Objects 5.4 · release notes Aug 2026' },
+    license: { v: 'NUS Starter or Pro', sub: 'Per usable TiB. Starter is for hybrid, backup and archive' },
+  },
   talk: [
     'One fabric, three access methods: Files for shares, Volumes for block, Objects for S3. All three inherit the DSF’s copies, self-healing and data efficiency.',
     'Position it as fast, exabyte-scale storage for unstructured data. Files: a set of file server VMs (FSVMs) presents one namespace. Scale out with more FSVMs or up with bigger ones; clients keep the same path. For HPC, parallel NFS (pNFS) lets clients read and write across many FSVMs at once.',
@@ -15,7 +19,7 @@ export const content: ModuleContent = {
     'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups. Lifecycle rules tier old objects to any S3-compatible store, on-premises or in a public cloud.',
   ],
   numbers: [
-    { k: 'Current release', v: 'NUS 5.4 (Jul 2026), with Files 5.4 and Objects 5.4' },
+    { k: 'Current release', v: 'NUS 5.4, with Files 5.4 and Objects 5.4 (release notes Aug 2026)' },
     { k: 'Files HA minimum', v: '3 FSVMs; a single FSVM has no HA' },
     { k: 'Files protocols', v: 'SMB 2/3, NFS v3/v4, parallel NFS (pNFS) for HPC; encrypted NFS in 5.4' },
     { k: 'Scale', v: 'Exabyte-scale unstructured data' },

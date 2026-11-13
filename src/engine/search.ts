@@ -172,6 +172,7 @@ export function buildIndex(modules: SearchModule[], scenes: Scene[], moduleWords
           field(1, c.tag),
           field(1.5, c.summary, true),
           ...c.talk.map((t) => field(0.8, t, true)),
+          field(0.8, `Release version: ${c.facts.release.v} ${c.facts.release.sub ?? ''} License needed: ${c.facts.license.v} ${c.facts.license.sub ?? ''}`, true),
           ...c.numbers.map((n) => field(0.8, `${n.k}: ${n.v}`, true)),
           ...c.qa.map((x) => field(0.8, `${x.q} ${x.a}`, true)),
         ],

@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Platform services',
   summary: 'Stateful Kubernetes apps get Nutanix storage and whole-app protection with no hypervisor, using Cloud Native AOS and Nutanix Data Services for Kubernetes (NDK). It is generally available on Amazon EKS; bare metal is early access.',
   priority: 'P2',
+  facts: {
+    release: { v: '1.0.0', sub: 'Jul 2025 · Amazon EKS only' },
+    license: { v: 'Cloud Native AOS license', sub: 'AWS only in the first version' },
+  },
   talk: [
     'The one message: stateful Kubernetes apps get the same Nutanix storage and data protection on Amazon EKS that they get on-premises, with no hypervisor, and they can be protected and replicated as whole apps.',
     'Step 1: AOS, the storage engine under every Nutanix cluster, runs as a pod on each EKS worker and pools the workers’ EBS gp3 volumes. There is no Controller VM (CVM) and no hypervisor to run.',

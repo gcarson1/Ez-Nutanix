@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Protection policies decide how much data a failover can lose, from hours with asynchronous replication to none with Metro Availability, and recovery plans start the apps at another site in order.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Starter to Ultimate', sub: 'Async is listed in every edition; NearSync, Sync and Metro need more', tip: 'Async replication is listed in every edition. Synchronous replication and Metro Availability need NCI Ultimate, or NCI Pro with the Advanced Replication add-on. NearSync is listed under NCI Ultimate; confirm whether the Pro add-on covers it.' },
+  },
   talk: [
     'Protection is policy-based: you set a recovery point objective (RPO), assign VMs to the policy with categories, and the platform picks the replication tier.',
     'Three choices on screen: Async (RPO target of 1 hour or more), NearSync / Sync (1 to 15 minutes, or RPO 0 for sites under 5 ms round trip) and Metro Availability (RPO 0 with automatic failover).',

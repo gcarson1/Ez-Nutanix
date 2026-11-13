@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Nutanix folds a three-tier design of servers, a storage area network (SAN) and a storage array into one node, then grows a cluster node by node: each adds compute, drives and its own storage controller, with one storage pool and one Prism.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI', sub: 'AOS and AHV: any edition (Starter, Pro, Ultimate)' },
+  },
   talk: [
     'Start with the design most customers run today: servers on top-of-rack Ethernet switches for VM and management traffic, plus a Fibre Channel SAN with two switches and a dual-controller array, each with its own console and skills. Adding a host touches all three tiers.',
     'Then the fold: the array’s controllers become the CVM, software on every node, the drive shelves become local NVMe or SSD drives and three consoles become Prism. Nodes use top-of-rack Ethernet switches, 10 Gbps or faster, which now carry storage traffic too, with no SAN.', // HCI-7, HCI-16

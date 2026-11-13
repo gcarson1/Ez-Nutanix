@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Remote and branch offices (ROBO) and edge sites run on one, two or three nodes, all managed from one Prism Central. Each size survives different failures.',
   priority: 'P1',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · two nodes can grow to three from 7.6' },
+    license: { v: 'NCI-Edge or NCI', sub: 'NCI-Edge: per VM, up to 25 VMs and 5 nodes a cluster. NCI: per core' },
+  },
   talk: [
     'Start with the trade-off: fewer nodes cost less and fit in a closet, but each size survives different things.',
     'One node: the cheapest option, with lowered resiliency. A drive failure can be rebuilt inside the node, but a node outage is site downtime, so plan backup or replication.',

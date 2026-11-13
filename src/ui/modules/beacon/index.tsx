@@ -144,7 +144,6 @@ export default function Beacon() {
           </Follow>
           <Kpis
             items={[
-              { k: 'Can you buy Beacon?', v: 'No', tone: 'warn', sub: 'it is a direction' },
               { k: 'Pieces shipping', v: shipping.length, tone: shipping.length ? 'ok' : undefined, sub: shipping.map((p) => p.short).join(', ') || '—' },
               { k: 'Early access', v: early.length, sub: early.map((p) => p.short).join(', ') || '—' },
             ]}

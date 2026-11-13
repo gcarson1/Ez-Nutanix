@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Central',
   summary: 'Data Lens spots ransomware and unusual access on Nutanix Files and Objects and can block the offending user or client. On Files it also restores affected files from a clean snapshot, and it tracks access patterns to tier cold data to cheaper storage automatically.',
   priority: 'P2',
+  facts: {
+    release: { v: 'Data Lens 2.1', sub: 'On-Prem, Aug 2026 · SaaS runs separately' },
+    license: { v: 'Starter or Pro', sub: 'Per usable TiB; Pro adds behavior-based detection', tip: 'Priced per usable TiB, On-Prem or SaaS. Pro adds behavior-based ransomware and anomaly detection and automated recovery; Starter has basic signatures and blocking.' },
+  },
   talk: [
     'Unstructured data is where ransomware hurts most: shared drives that many users can write to. Data Lens reads the file activity on the share. Known strains match its signature list; Pro adds behavior analytics that flag a strain nobody has seen before.',
     'User behavior analytics (UBA) compares each user with their own past activity, so one user changing files at an abnormal rate stands out.',

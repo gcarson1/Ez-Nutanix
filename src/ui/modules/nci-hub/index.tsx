@@ -1,6 +1,7 @@
 // NCI hub (N2-021): the intro beside a "what's in a node" cutaway, then the sub-modules in four
 // labeled groups.
 import { Icon } from '../../components/Icon';
+import { ProductFacts } from '../../components/show';
 import './style.css';
 import { go } from '../../shell/nav';
 import { MODULES } from '../registry';
@@ -97,6 +98,7 @@ export default function NciHub() {
         <div class="hub-intro">
           <p class="hub-lede">{content.summary}</p>
           <p class="field-note">Every node runs the hypervisor, the user VMs and one Controller VM (CVM). The CVM talks to the node’s drives directly, and all CVMs together form the cluster’s storage controller.</p>
+          <ProductFacts release={content.facts.release} license={content.facts.license} />
         </div>
         <figure class="hub-node" aria-labelledby="hub-node-h">
           <figcaption class="side-sec-h" id="hub-node-h">

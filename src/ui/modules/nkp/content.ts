@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Central',
   summary: 'Nutanix Kubernetes Platform (NKP) turns Kubernetes clusters that are each run their own way into one operating model, wherever they run: lifecycle, security, observability, GitOps, data protection and fleet management from one place.',
   priority: 'P2',
+  facts: {
+    release: { v: 'NKP 2.19', sub: 'Oct 2026 · Kubernetes 1.36 by default' },
+    license: { v: 'Starter, Pro, Ultimate', sub: 'Fleet, GitOps and cost need Ultimate; observability and backup need Pro', tip: 'Starter is for AHV only. Priced per physical core on bare metal and per vCPU on VMs.' },
+  },
   talk: [
     'Kubernetes is the orchestration layer; NKP is the operating platform around it. It grew out of the D2iQ Kubernetes Platform, which Nutanix acquired in late 2023.',
     'Start with the islands: on Nutanix, VMware and each public cloud, every cluster tends to get its own upgrade process, monitoring, security and ticket queue. The same work repeats everywhere, so every cluster becomes its own project.',

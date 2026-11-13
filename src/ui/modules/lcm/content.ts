@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Life Cycle Manager (LCM) updates AOS, AHV, firmware and tools one node at a time while workloads keep running, checking that data is fully protected before each step. Kubernetes clusters on NKP get the same one-node-at-a-time treatment.',
   priority: 'P0',
+  facts: {
+    release: { v: 'LCM 3.4', sub: 'with AOS 7.6 (Jul 2026) · AHV 11.2 · pc.7.6' },
+    license: { v: 'NCI', sub: 'LCM is listed as part of NCI', tip: 'Nutanix lists LCM among NCI’s management features. The Kubernetes (NKP) tab shows its own license.' },
+  },
   talk: [
     'One tool for software and firmware: LCM finds what is installed, shows what is available and orders the updates for you.',
     'Nothing runs until the pre-checks pass: health, data protection, free room for VMs and connectivity. If the cluster is already degraded, LCM does not start.',
@@ -17,7 +21,7 @@ export const content: ModuleContent = {
   ],
   numbers: [
     { k: 'Nodes out at once during LCM', v: '1' },
-    { k: 'Current release', v: 'LCM 3.4 · AOS 7.6 · AHV 11.2 · Prism Central pc.7.6 (Oct 2026; patch levels vary, check the portal)' },
+    { k: 'Current release', v: 'LCM 3.4 · AOS 7.6 (Jul 2026) · AHV 11.2 · Prism Central pc.7.6 (patch levels vary, check the portal)' },
     { k: 'Firmware reboots on NX', v: 'BMC (baseboard management controller) 2 · BIOS and CPLD (complex programmable logic device) 3' },
     { k: 'Illustrative per-node time', v: 'AOS about 15 min · AHV about 25 min · firmware 30 to 60 min (older estimates, not official)' },
     { k: '2-node clusters', v: 'Witness required for LCM' },

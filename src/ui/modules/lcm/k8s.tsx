@@ -227,6 +227,8 @@ export function K8sUpgrade() {
 
   return (
     <Show clock={clock}
+      release={{ v: 'NKP 2.19', sub: 'Oct 2026 · Kubernetes 1.36 by default' }}
+      license={{ v: 'NKP Ultimate', sub: 'Fleet management is an Ultimate feature' }}
       top={
         <Choice<Run>
           label="What happens"

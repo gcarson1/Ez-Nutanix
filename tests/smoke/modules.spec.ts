@@ -388,7 +388,7 @@ test('Kubernetes Platform: the story is the Overview, and every part has its own
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, r.max);
     r.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  await expect(page.locator('.kpis')).toContainText('Running at site B');
+  await expect(page.locator('.show-foot .kpis')).toContainText('Running at site B');
   // The lifecycle tab points to the upgrade animation instead of repeating it.
   await tabs.getByRole('tab', { name: 'Cluster lifecycle' }).click();
   await page.getByRole('link', { name: /LCM Rolling Upgrade/ }).click();
@@ -407,8 +407,8 @@ test('Enterprise AI opens on the Overview, which ends with every team on one pla
     r.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await expect(page.locator('.show-main .follow-k')).toHaveText('One platform for every team');
-  await expect(page.locator('.kpis')).toContainText('4 of 4');
-  await expect(page.locator('.kpis')).toContainText('Your data center');
+  await expect(page.locator('.show-foot .kpis')).toContainText('4 of 4');
+  await expect(page.locator('.show-foot .kpis')).toContainText('Your data center');
   // A link from before the Overview still opens Model endpoint with its choice picked.
   await page.goto(`${FILE}#/ai?w=cloud`);
   await expect(page.getByRole('tablist', { name: 'Enterprise AI topics' }).getByRole('tab', { name: 'Model endpoint' })).toHaveAttribute('aria-selected', 'true');
@@ -442,7 +442,7 @@ test('Enterprise AI: every feature has its own animation, with tech previews nam
     // Every step of the scene has a chip, and a preview feature says so in the picture and the numbers.
     expect(await page.locator('.steps li').count(), option).toBeGreaterThanOrEqual(3);
     await expect(page.locator('svg.diagram').getByText('Tech preview'), option).toHaveCount(preview ? 1 : 0);
-    if (preview) await expect(page.locator('.kpis'), option).toContainText('Tech preview');
+    if (preview) await expect(page.locator('.show-foot .kpis'), option).toContainText('Tech preview');
   }
   // The feature list on the Model endpoint tab opens the scene it names.
   await tabs.getByRole('tab', { name: 'Model endpoint' }).click();
@@ -511,13 +511,47 @@ test('Data Lens: Unusual activity shows the fixed rule missing a mass delete and
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, '7');
     r.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  await expect(page.locator('.kpis')).toContainText('Missed');
+  await expect(page.locator('.show-foot .kpis')).toContainText('Missed');
   // Each step's chip lands on a picture that already matches its caption.
   await page.getByRole('button', { name: /Ben’s deletes flagged/ }).click();
-  await expect(page.locator('.kpis')).toContainText('Flagged');
+  await expect(page.locator('.show-foot .kpis')).toContainText('Flagged');
   await expect(page.locator('.diagram')).toContainText('Anomaly · ben');
   await page.getByRole('button', { name: /Schedules and exclusions/ }).click();
-  await expect(page.locator('.kpis')).toContainText('svc-backup');
+  await expect(page.locator('.show-foot .kpis')).toContainText('svc-backup');
   await expect(page.locator('.diagram')).toContainText('Alerts today: 2');
+  expect(errors).toEqual([]);
+});
+
+const ALL_PAGES = ['nci', 'nci/hci', 'nci/cluster', 'nci/datapath', 'nci/capacity', 'nci/snapshots', 'nci/failures', 'nci/lcm', 'nci/network', 'nci/flow', 'nci/security', 'nci/dr', 'nci/move', 'nci/edge', 'central', 'ncm', 'nkp', 'datalens', 'storage', 'cnaos', 'ndb', 'ai', 'beacon', 'cloud', 'oem', 'partial'];
+
+test('every page opens its right pane with Release version and License needed, and a Cloud Manager scene shows its own license', async ({ page }) => {
+  const errors = watchErrors(page);
+  for (const path of ALL_PAGES) {
+    await page.goto(`${FILE}#/${path}`);
+    const facts = page.locator('.show-facts .kpi');
+    await expect(facts, path).toHaveCount(2);
+    await expect(facts.nth(0).locator('.k'), path).toHaveText('Release version');
+    await expect(facts.nth(1).locator('.k'), path).toHaveText('License needed');
+    await expect(facts.nth(0).locator('.v'), path).not.toHaveText('');
+    await expect(facts.nth(1).locator('.v'), path).not.toHaveText('');
+  }
+  await page.goto(`${FILE}#/ncm`);
+  await expect(page.locator('.show-facts .kpi').nth(1).locator('.v')).toHaveText('NCM Starter to Ultimate');
+  await page.getByRole('tab', { name: 'Security' }).click();
+  await expect(page.locator('.show-facts .kpi').nth(1).locator('.v')).toHaveText('NCM Ultimate');
+  // A tab or choice that needs something different shows its own lines.
+  const lic = page.locator('.show-facts .kpi').nth(1).locator('.v');
+  const rel = page.locator('.show-facts .kpi').nth(0).locator('.v');
+  await page.goto(`${FILE}#/partial?tab=esxi`);
+  await expect(lic).toHaveText('Nutanix license');
+  await page.goto(`${FILE}#/partial`);
+  await expect(lic).toHaveText('NCI-C');
+  await page.goto(`${FILE}#/cnaos?on=metal`);
+  await expect(rel).toHaveText('Early access');
+  await expect(lic).toHaveText('NKP Pro or Ultimate');
+  await page.goto(`${FILE}#/nci/lcm?tab=k8s`);
+  await expect(lic).toHaveText('NKP Ultimate');
+  await page.goto(`${FILE}#/nci/flow?tab=net`);
+  await expect(lic).toHaveText('Listed from NCI Pro');
   expect(errors).toEqual([]);
 });

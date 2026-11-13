@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Data stays available through a node failure, and through a block or rack failure with awareness on, while the cluster heals itself. Replication factor (RF2, RF3), erasure coding (EC-X) and block or rack awareness set the capacity cost.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Starter or higher', sub: 'Erasure coding, RF3 and block or rack awareness: Pro or Ultimate' },
+  },
   talk: [
     'Each shape is a piece of data. RF2 writes two copies of it, each on a different node; RF3 writes three. No node ever holds two copies of the same piece.',
     'When a node fails, every piece still has a copy on a healthy node, so nothing is lost and VMs keep running.',

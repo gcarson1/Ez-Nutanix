@@ -355,12 +355,6 @@ export default function OverviewView() {
           },
           { k: 'Teams on one platform', v: `${on} of 4`, tone: on === 4 ? 'ok' : undefined },
           { k: 'Endpoint replicas', v: LANDED.filter((a) => t >= a).length, sub: 'one endpoint, one address' },
-          {
-            k: 'Licensed by',
-            v: sc === 0 ? 'Each team its own way' : 'GPU memory',
-            sub: sc === 0 ? undefined : 'not by tokens',
-            tip: 'NAI is metered by aggregate GPU memory, or by vCPUs on clusters without GPUs; pricing is based on infrastructure, not tokens.',
-          },
         ];
       }}
     >

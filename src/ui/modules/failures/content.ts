@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'An 8-node cluster keeps data available through a failed drive, Controller VM (CVM), node, or a block with block awareness on, and heals itself. Two nodes failing at once show where three copies (RF3) are needed.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need Pro or Ultimate' },
+  },
   talk: [
     'Start with Node. Walk the steps above the picture: the node fails, high availability (HA) instantly restarts its VMs on other nodes with free memory (the time after that is each guest OS booting), and every surviving node re-creates the missing copies at once.',
     'Point at the lines under the nodes: every node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',

@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Infrastructure',
   summary: 'Two ways to start with part of Nutanix: run AHV and Prism on compute-only nodes with the storage array you already own, or keep VMware ESXi as the hypervisor on Nutanix nodes and storage.',
   priority: 'P1',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · FlashArray needs AOS 7.5 and AHV 11 or later' },
+    license: { v: 'NCI-C', sub: 'NCI Compute, priced per core', tip: 'NCI Compute: AHV, Prism and DR automation, priced per core. Snapshots and clones are left to the storage array.' },
+  },
   talk: [
     'Not every customer wants to replace hypervisor, storage and management at once. This page shows the two partial starting points, and why each one appeals.',
     'External storage: keep the array. AHV compute-only nodes reach Everpure FlashArray or Dell PowerStore over NVMe/TCP, Dell PowerFlex through Dell’s own client, and NetApp ONTAP, which is only announced, over NFS.',

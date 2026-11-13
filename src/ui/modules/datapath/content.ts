@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Every acknowledged write already has all its copies on different nodes, and most reads are answered on the VM’s own server. One write and one read are followed step by step through the cluster.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Starter or higher', sub: 'RF3 needs Pro or Ultimate' },
+  },
   talk: [
     'Every node runs a Controller VM (CVM). The VM’s I/O goes to the CVM on its own node first, so the first hop never crosses the network.',
     'A write is acknowledged only after all copies exist: 2 copies on 2 nodes with replication factor 2 (RF2), 3 copies on 3 nodes with RF3. That is why a node failure does not lose acknowledged data.',

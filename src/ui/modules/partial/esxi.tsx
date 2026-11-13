@@ -232,6 +232,8 @@ export default function EsxiOnNutanix() {
 
   return (
     <Show clock={clock}
+      release={{ v: 'AOS 7.6', sub: 'Jul 2026 · cluster limits depend on the vSphere and AOS version' }}
+      license={{ v: 'Nutanix license', sub: 'AOS storage is included; no separate storage license', tip: 'Nutanix’s migration guide: AOS Storage functionality is included as part of NCI and NC2 and does not have to be licensed separately.' }}
       side={<Points label="Why customers choose it" items={POINTS[go]} t={t}  />}
       top={
         <>

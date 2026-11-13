@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Nutanix Move brings VMs from VMware, Hyper-V, AWS and Azure to Nutanix, on-premises or in Nutanix Cloud Clusters (NC2), copying while the VM runs so downtime is only a short cutover.',
   priority: 'P1',
+  facts: {
+    release: { v: 'Move 6.3.3', sub: 'Oct 2026 · for new deployments, not upgrades' },
+    license: { v: 'No extra cost', sub: 'Included for Nutanix customers' },
+  },
   talk: [
     'Move is included at no extra cost for Nutanix customers and has been around for about ten years, so it is a well-trodden path.',
     'Three phases: a seed copy while users keep working, incremental syncs that carry only changes, then a cutover.',

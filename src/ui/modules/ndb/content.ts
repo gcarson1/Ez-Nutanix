@@ -7,6 +7,10 @@ export const content: ModuleContent = {
   summary:
     'Nutanix Database Service (NDB) makes database provisioning, protection, cloning and patching self-service. Its Time Machine combines snapshots with captured transaction logs to recover or clone to a precise point in time.',
   priority: 'P1',
+  facts: {
+    release: { v: 'NDB 2.11', sub: 'Jul 2026' },
+    license: { v: 'NDB, per core', sub: 'No editions; per cluster or per VM', tip: 'Per physical cluster: all its cores, unlimited VMs. Per VM: the vCPUs NDB manages, with NCI licensed separately. The two can be mixed.' },
+  },
   talk: [
     'Start with the pain: a dropped table, a test team waiting days for a copy, patch nights for dozens of databases.',
     'Time Machine: recover to one minute before the mistake. NDB uses the nearest earlier snapshot and replays transaction logs to that point.',

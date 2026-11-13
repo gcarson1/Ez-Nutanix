@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Infrastructure',
   summary: 'Standard servers become one cluster: the AHV hypervisor, a storage controller on every node, software-defined networking and security, and built-in disaster recovery.',
   priority: 'P0',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2 · Prism Central pc.7.6' },
+    license: { v: 'NCI', sub: 'Starter, Pro or Ultimate, by feature' },
+  },
   talk: [
     'Start at the bottom: in the standard design, ordinary servers with local drives and no separate storage array or SAN.',
     'Every node runs a Controller VM. Together the CVMs are the storage controller, so performance and capacity grow a node at a time.',

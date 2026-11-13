@@ -6,13 +6,29 @@
 import { createContext, Fragment, toChildArray, type ComponentChildren, type VNode } from 'preact';
 import { useContext, useEffect, useId, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Clock } from './clock';
+import type { Fact } from '../../content/types';
 import { Follow, Seg, Tip, type SegOption, type Tone } from './controls';
 import { Icon } from './Icon';
 
 /** The open module's summary, set by the shell, shown at the foot of the right column. */
-export const ModuleInfo = createContext<{ summary: string } | null>(null);
+export const ModuleInfo = createContext<{ summary: string; facts: { release: Fact; license: Fact } } | null>(null);
 
-export function Show({ top, children, foot, side, clock }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren; side?: ComponentChildren; clock?: Clock }) {
+/** The two facts every page carries, always first in the right pane. */
+export function ProductFacts({ release, license }: { release: Fact; license: Fact }) {
+  return (
+    <div class="show-facts">
+      <Kpis
+        items={[
+          { k: 'Release version', v: release.v, sub: release.sub, tip: release.tip },
+          { k: 'License needed', v: license.v, sub: license.sub, tip: license.tip },
+        ]}
+      />
+    </div>
+  );
+}
+
+/** `release` and `license` replace the page's facts for a tab or scene that needs something more specific. */
+export function Show({ top, children, foot, side, clock, release, license }: { top?: ComponentChildren; children: ComponentChildren; foot?: ComponentChildren; side?: ComponentChildren; clock?: Clock; release?: Fact; license?: Fact }) {
   const info = useContext(ModuleInfo);
   const root = useRef<HTMLDivElement>(null);
   const main = useRef<HTMLDivElement>(null);
@@ -68,6 +84,7 @@ export function Show({ top, children, foot, side, clock }: { top?: ComponentChil
         )}
       </div>
       <aside class="show-side" aria-label="Details" ref={aside} onScroll={() => syncSide(root.current, aside.current)}>
+        {info && <ProductFacts release={release ?? info.facts.release} license={license ?? info.facts.license} />}
         {rest.length > 0 && <div class="show-foot">{rest}</div>}
         {side}
         {info && (

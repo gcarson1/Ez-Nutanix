@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Hardware platforms',
   summary: 'Nutanix is software, so you choose the hardware: Nutanix NX nodes, or OEM platforms from Dell, HPE, Lenovo, Cisco, Fujitsu and Supermicro, servers through resellers, hardware you already own, or a public cloud. The platform runs the same way on every one.',
   priority: 'P1',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · check each vendor’s compatibility list' },
+    license: { v: 'NCI license', sub: 'Nutanix software on any platform; confirm with the OEM', tip: 'Buying models include HPE GreenLake, Lenovo TruScale and Fujitsu uSCALE.' },
+  },
   talk: [
     'Lead with freedom of choice: Nutanix Cloud Platform is software. AOS, AHV, Prism, Flow and DR are the same whichever server they run on.',
     'The OEM platforms: Dell XC, HPE DX, Lenovo ThinkAgile HX, Cisco Compute Hyperconverged, Fujitsu PRIMEFLEX XF and Supermicro Hyperconverged Optimized, besides Nutanix’s own NX nodes. Customers can keep the vendor they already buy from, including its buying models such as HPE GreenLake, Lenovo TruScale or Fujitsu uSCALE.',

@@ -6,6 +6,10 @@ export const content: ModuleContent = {
   tag: 'Nutanix Cloud Infrastructure',
   summary: 'Encryption at rest keeps a stolen drive unreadable, with keys held by the cluster or by your own key server. It does not protect against an attacker inside a running VM.',
   priority: 'P1',
+  facts: {
+    release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
+    license: { v: 'NCI Pro or Ultimate', sub: 'For encryption at rest (Pro since NCI 7.3)', tip: 'Data-at-rest encryption and the native key manager are in NCI Pro from NCI 7.3 and in Ultimate. Nutanix’s pages do not state a license for security profiles, drive-level encryption or external key managers.' },
+  },
   talk: [
     'Start with the threat. Encryption at rest protects drives and nodes that leave your control: stolen, sent back for repair or thrown away. It does nothing against an attacker inside a running VM.',
     'Two ways to encrypt: software encryption in AOS on ordinary drives, which Nutanix positions for most cases, or self-encrypting drives (SEDs) when policy requires hardware encryption. They can be layered (dual encryption).',
