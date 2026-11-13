@@ -16,7 +16,7 @@ export const content: ModuleContent = {
     'Unusual activity tab: a fixed anomaly rule (more than so many operations in an interval) alerts on users who are simply busy and misses a mass delete that stays under the number. UBA learns each user’s normal over a 30-day warmup, per operation type and per share, and flags a meaningful deviation from it; you tune the deviation percentage and a minimum count, exclude users or shares, and schedule when each method watches.',
     'Watch the alert fire and the client get blocked automatically, seconds after the attack starts, so only a slice of the share is hit.',
     'Recovery comes from snapshots the client cannot touch: one action restores the affected files to the last clean version. Be clear about the recovery point: edits made after that snapshot are lost.',
-    'Data age & tiering tab: from each file’s access pattern Data Lens sorts it hot, warm or cold, levels you define. When the data is old enough and the file server passes its capacity threshold, Smart Tiering moves cold data to Nutanix Objects, AWS S3, Azure Blob or Wasabi in its time window; a stub stays so users read the file inline at the same path.',
+    'Data age & tiering tab: from each file’s access pattern Data Lens sorts it hot, warm or cold, levels you define. When the data is old enough and the file server passes its capacity threshold, Smart Tiering moves cold data to compatible Nutanix Objects, AWS S3, Azure Blob or Wasabi storage in its time window; a stub stays so users read the file inline at the same path.',
     'It runs as SaaS or fully on-premises, including air-gapped sites, since Data Lens 2.0. On-Prem 2.1 added Nutanix Objects, UBA and finer role-based access control.',
   ],
   numbers: [
@@ -27,7 +27,7 @@ export const content: ModuleContent = {
     { k: 'Starter vs Pro', v: 'Starter: signatures and blocking. Pro: behavior-based detection, UBA, permission reports' },
     { k: 'Files only', v: 'Behavior analytics (UBA) and automated recovery' },
     { k: 'UBA anomaly detection', v: '30-day warmup per user, operation type and share; announced for SaaS May 2026, On-Prem Pro in 2.1' },
-    { k: 'Smart Tiering targets', v: 'Nutanix Objects, AWS S3, Azure Blob, Wasabi; metadata and a stub stay in the share' },
+    { k: 'Smart Tiering targets', v: 'Compatible Nutanix Objects, AWS S3, Azure Blob and Wasabi storage; metadata and a stub stay in the share' },
   ],
   qa: [
     {

@@ -414,10 +414,10 @@ function objectsCap(d: number): Cap {
   const today = Math.min(YEAR, d);
   const split = tierSplit((TOTAL_TB * today) / YEAR, DAYS, today);
   return d >= YEAR
-    ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob and other S3 clouds also work as targets; reading a tiered object back is slower, and from a public cloud it may cost egress.` }
+    ? { tone: 'ok', k: 'After one year', text: `${Math.round(split.localTB)} TB of recent data stays on the cluster and ${Math.round(split.remoteTB)} TB sits on the cheaper store. AWS S3, Azure Blob or another S3-compatible endpoint can be the target, depending on release and endpoint. Reading a tiered object back retrieves it from the tiering target; any request, retrieval or transfer charges depend on the provider, tier, region and account terms.` }
     : today < DAYS
       ? { tone: 'ink', k: 'The bucket fills', text: 'Apps and backup software write objects over the S3 API, and the bucket fills up on the cluster. This bucket has one example lifecycle rule; no object moves until it is older than the rule says.' }
-      : { tone: 'flow', k: 'Old objects move', text: `The example lifecycle rule on this bucket has Objects move only the rows older than ${DAYS} days to a cheaper S3-compatible store, in your data center or a public cloud. Newer rows stay put. The bucket keeps the metadata of the moved objects. Tiering is set per bucket, so not every bucket does this.` };
+      : { tone: 'flow', k: 'Old objects move', text: `The example lifecycle rule on this bucket has Objects move only the rows older than ${DAYS} days to a cheaper object store or S3-compatible endpoint, in your data center or a public cloud. Newer rows stay put. The bucket keeps the metadata of the moved objects. Tiering is set per bucket, so not every bucket does this.` };
 }
 const OBJECT_STEPS = stepsFrom(YEAR + 30, objectsCap);
 

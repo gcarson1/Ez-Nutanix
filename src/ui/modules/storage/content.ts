@@ -16,7 +16,7 @@ export const content: ModuleContent = {
     'Position it as fast, exabyte-scale storage for unstructured data. Files: a set of file server VMs (FSVMs) presents one namespace. Scale out with more FSVMs or up with bigger ones; clients keep the same path. For HPC, parallel NFS (pNFS) lets clients read and write across many FSVMs at once.',
     'Fail an FSVM: a survivor takes over its volume group and IP address, folders stay reachable and the original takes them back when it returns.',
     'Volumes: hosts log in to one Data Services IP and are redirected to a healthy Controller VM (CVM), so path failover does not depend on client multipathing.',
-    'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups. Lifecycle rules tier old objects to any S3-compatible store, on-premises or in a public cloud.',
+    'Objects: S3-compatible buckets on at least three worker VMs, with WORM and Object Lock for immutable backups. Lifecycle rules tier old objects to another object store or an S3-compatible endpoint, on-premises or in a public cloud; validate your release and the endpoint first.',
   ],
   numbers: [
     { k: 'Current release', v: 'NUS 5.4, with Files 5.4 and Objects 5.4 (release notes Aug 2026)' },

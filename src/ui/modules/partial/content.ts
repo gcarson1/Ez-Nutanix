@@ -15,7 +15,7 @@ export const content: ModuleContent = {
     'External storage: keep the array. AHV compute-only nodes reach Everpure FlashArray or Dell PowerStore over NVMe/TCP, Dell PowerFlex through Dell’s own client, and NetApp ONTAP, which is only announced, over NFS.',
     'The value is reuse and independent scaling: leave vSphere without a storage refresh, add compute without buying storage and keep Prism, Flow Network Security and DR orchestration on top. Licensing is per core, as Nutanix Cloud Infrastructure (NCI) Compute.',
     'ESXi on Nutanix: keep vSphere. vCenter, vMotion, HA and DRS keep working, while a Controller VM (CVM) on every host owns the drives and pools them into one datastore. No SAN to run, and existing VMware licenses stay.',
-    'It is also a stepping stone. Switch to “Convert to AHV later”: hosts change hypervisor one at a time in place, or teams move with Nutanix Move or a DR failover. Replication already works between ESXi and AHV clusters.',
+    'It is also a stepping stone. Switch to “Convert to AHV later”: hosts change hypervisor one at a time in place (Nutanix Move’s In-Place Cluster Conversion), or teams move VMs to a new AHV cluster with Nutanix Move or a DR failover. Conversion has requirements that depend on your versions, so validate them first. Cross-hypervisor disaster recovery already works between ESXi and AHV clusters, within its requirements.',
     'Be precise on availability: NetApp ONTAP was announced in April 2026 and is not generally available yet, FlashArray needs a new Nutanix cluster, and Flow and Nutanix Cloud Clusters (NC2) need AHV.',
   ],
   numbers: [

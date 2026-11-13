@@ -209,7 +209,7 @@ function AiOps() {
 
 // ───────────────────────── Self-Service ─────────────────────────
 // One project, four requests in a row: one goes straight through, one is held by the optional
-// approval policy, one is over the quota and sent back, and the same app re-ordered smaller fits.
+// approval policy, one is over the quota and blocked, and the same app re-ordered smaller fits.
 // The requests, project and quota math are in engine/ncm.ts (SS_REQUESTS, runRequests); a unit
 // test keeps their outcomes matched to these cards.
 const APP_ROLES = ['Balancer', 'Web', 'App', 'Database'];
@@ -322,7 +322,7 @@ function Provision({ i, t }: { i: number; t: number }) {
   );
 
   return (
-    <svg class="diagram" viewBox={`0 0 ${W} 310`} role="img" aria-label={`Request ${i + 1} of ${RUN.length} from project ${p.label}: ${item.label} at size ${r.size}. ${v.ok ? `It fits the quota${v.needsApproval ? ', the optional approval policy holds it for an admin,' : ' and skips the optional approval,'} and it is created.` : 'It is over the quota and sent back with the reason.'}`}>
+    <svg class="diagram" viewBox={`0 0 ${W} 310`} role="img" aria-label={`Request ${i + 1} of ${RUN.length} from project ${p.label}: ${item.label} at size ${r.size}. ${v.ok ? `It fits the quota${v.needsApproval ? ', the optional approval policy holds it for an admin,' : ' and skips the optional approval,'} and it is created.` : 'It is over the quota: Prism Central blocks the provisioning action and shows the violation details and the reason.'}`}>
       <defs>
         <marker id="ss-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M0 0 L10 5 L0 10 z" class="ss-mk" />
@@ -351,7 +351,7 @@ function Provision({ i, t }: { i: number; t: number }) {
         </text>
       </g>
 
-      {box('req', 'App team', `project ${p.label}`, sentBack ? '✕ Sent back' : r.order, sentBack ? 'bad-fill' : 'muted')}
+      {box('req', 'App team', `project ${p.label}`, sentBack ? '✕ Blocked' : r.order, sentBack ? 'bad-fill' : 'muted')}
       {box('chk', 'Quota and policy', 'checked first', checked ? (v.ok ? '✓ Fits the quota' : '✕ Over the quota') : checking ? 'Checking…' : 'Waiting', checked ? (v.ok ? 'ok-fill' : 'bad-fill') : checking ? 'ncm-ink' : 'muted')}
 
       {/* the cluster where the project's VMs land */}
@@ -433,7 +433,7 @@ function ssLine(r: Run, id: ProvStep['id']): Line {
     create: { tone: 'flow', k: 'Deploying on the cluster', text: `The blueprint is deploying ${n} on the cluster, already inside the project${r.v.needsApproval ? '' : ', with no approval step and no ticket'}.` },
     config: { tone: 'flow', k: 'Install tasks run', text: 'Install and configuration tasks from the blueprint run inside the VMs.' },
     ready: { tone: 'ok', k: `${item.multiVm ? 'App' : 'VM'} is ready`, text: `The team gets a working ${item.multiVm ? 'application' : 'VM'} inside its quota, with owner, project and categories already set.` },
-    refused: { tone: 'bad', k: 'Sent back with the reason', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. It is refused before anything is created, and the reason goes back to the team: order a smaller size, free up VMs, or ask for a bigger quota.` },
+    refused: { tone: 'bad', k: 'Blocked, with the reason', text: `${p.label} has ${left} vCPU left and the app needs ${d.vcpu}. The quota check fails, so Prism Central blocks the provisioning action before anything is created and shows a notification with the violation details and the reason. Order a smaller size, free up VMs, or ask for a bigger quota.` },
   };
   return L[id];
 }

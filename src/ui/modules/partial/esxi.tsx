@@ -30,9 +30,9 @@ const STAY_CAP = [
 ];
 const CONV_CAP = (i: number) =>
   i === 0
-    ? 'This cluster runs ESXi on Nutanix today: vCenter manages the VMs and the CVMs serve the storage. For an in-place conversion, vCenter has to run outside the cluster.'
+    ? 'This cluster runs ESXi on Nutanix today: vCenter manages the VMs and the CVMs serve the storage.'
     : i < 5
-      ? 'Prism converts the hosts one at a time, in a rolling fashion. The storage layer runs independently of the hypervisor, so the CVMs and the data on the drives stay where they are.'
+      ? 'The conversion converts the hosts one at a time, in a rolling fashion. The storage layer runs independently of the hypervisor, so the CVMs and the data on the drives stay where they are.'
       : 'The cluster now runs AHV, which comes with Nutanix at no extra cost, and features that need AHV become available, such as Flow Virtual Networking and Flow Network Security.';
 
 const POINTS: Record<Go, Point[]> = {
@@ -44,7 +44,7 @@ const POINTS: Record<Go, Point[]> = {
   conv: [
     { k: 'Start on ESXi', by: 'No big-bang migration', text: 'Move onto Nutanix with vSphere first, and change the hypervisor later, on your own schedule.', tone: 'ink', at: 0 },
     { k: 'Same nodes, same data', by: 'In-place conversion', text: 'The hardware and the storage layer stay; only the hypervisor changes, one host at a time.', tone: 'flow', at: CONV[1] },
-    { k: 'Drop the ESXi license', by: 'AHV included', text: 'AHV comes at no extra cost. DR sites can run AHV even before you convert, since replication works between ESXi and AHV clusters.', tone: 'ok', at: CONV[5] },
+    { k: 'Drop the ESXi license', by: 'AHV included', text: 'AHV comes at no extra cost. DR sites can run AHV even before you convert, since cross-hypervisor disaster recovery works between ESXi and AHV clusters, within its requirements.', tone: 'ok', at: CONV[5] },
   ],
 };
 
@@ -241,7 +241,7 @@ export default function EsxiOnNutanix() {
             label="Path"
             value={go}
             onChange={setGo}
-            why={conv ? 'In-place conversion has strict prerequisites; many teams use Move or a DR failover to a new AHV cluster instead.' : null}
+            why={conv ? 'Conversion has requirements (NGT, ESXi HA and DRS, networks, delta disks) that depend on your AOS, Prism, ESXi and Move versions: validate them first.' : null}
             options={[
               { value: 'stay', label: 'Stay on ESXi' },
               { value: 'conv', label: 'Convert to AHV later' },
@@ -260,7 +260,7 @@ export default function EsxiOnNutanix() {
                 ? [
                     { k: 'Hosts on AHV', v: `${onAhv} of 4`, tone: onAhv === 4 ? 'ok' : undefined },
                     { k: 'Storage', v: 'Unchanged', sub: 'same CVMs and drives' },
-                    { k: 'vCenter', v: 'Outside', sub: 'the cluster, for the conversion' },
+                    { k: 'Before you convert', v: 'Validate', sub: 'NGT, HA and DRS, networks, delta disks' },
                   ]
                 : [
                     { k: 'VMware license', v: 'Your own', sub: 'existing VMware licenses' },
@@ -286,7 +286,7 @@ export default function EsxiOnNutanix() {
       <PlayBar
         clock={clock}
         label="ESXi on Nutanix animation"
-        extra={<Illus why={conv ? 'Timing is compressed. A real conversion has strict prerequisites, checked against the Compatibility Matrix, and runs for much longer; how VMs move between hypervisors is not shown.' : 'Simplified and compressed: host and VM counts are an example, and an upgrade plays in seconds. Which ESXi versions are qualified depends on the AOS release; check the Compatibility Matrix.'} />}
+        extra={<Illus why={conv ? 'Timing is compressed. A real conversion has requirements and limitations that depend on your AOS, Prism, ESXi and Move versions, checked against the Compatibility Matrix and Nutanix’s conversion guide, and it runs for much longer; how VMs move between hypervisors is not shown.' : 'Simplified and compressed: host and VM counts are an example, and an upgrade plays in seconds. Which ESXi versions are qualified depends on the AOS release; check the Compatibility Matrix.'} />}
       />
     </Show>
   );

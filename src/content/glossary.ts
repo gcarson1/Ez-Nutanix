@@ -66,7 +66,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   { term: 'HBA', full: 'Host bus adapter', def: 'The card in a server that connects it to a Fibre Channel storage network.' },
   { term: 'LUN', full: 'Logical unit number', def: 'A slice of an array’s storage that hosts see as one disk.' },
   { term: 'Fibre Channel', def: 'The specialized storage network a traditional SAN runs on, with its own switches, cabling and skills.' },
-  { term: 'Zoning / LUN masking', def: 'SAN settings that decide which hosts reach which array ports (zoning, on the switches) and which LUNs they see (masking, on the array).' },
+  { term: 'Zoning / LUN masking', def: 'SAN settings. Zoning decides which host adapters (HBAs) can connect to which storage ports; LUN masking decides which hosts can see which LUNs. Both are generally set on the SAN switches, the storage array and/or the HBA.' },
   { term: 'Prism', def: 'The Nutanix management console: Prism Element is built into every cluster, and Prism Central manages many clusters.' },
   { term: 'Content cache', def: 'The read cache in each CVM’s memory (the Nutanix Bible calls it the unified cache). Data read once is kept briefly; data read again stays longer.' },
   { term: 'Extent store', def: 'Where data lives long term, on each node’s drives. The OpLog drains into it, and large sequential writes go straight to it.' },

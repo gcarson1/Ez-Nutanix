@@ -146,7 +146,7 @@ export function provSteps(item: CatalogItem, needsApproval: boolean): ProvStep[]
 
 /** The steps a request goes through: refused at the policy check, or provisioned. */
 export function requestSteps(item: CatalogItem, v: Verdict): ProvStep[] {
-  if (!v.ok) return [{ id: 'policy', label: 'Check quota and policy', dur: 2 }, { id: 'refused', label: 'Sent back with the reason', dur: 3 }];
+  if (!v.ok) return [{ id: 'policy', label: 'Check quota and policy', dur: 2 }, { id: 'refused', label: 'Blocked, with the reason', dur: 3 }];
   return provSteps(item, v.needsApproval);
 }
 

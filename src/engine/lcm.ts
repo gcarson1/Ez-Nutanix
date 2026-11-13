@@ -181,7 +181,7 @@ export function preChecks(cfg: LcmConfig): PreCheck[] {
       name: 'test_ahv_entering_mm_pinned_vms',
       label: 'Non-migratable VMs handled',
       ok: true,
-      detail: 'Pinned, RF1 and agent VMs cannot live-migrate. On AHV, LCM shuts them down and restarts them afterward. This scenario has none.',
+      detail: 'Pinned and RF1 VMs cannot live-migrate; on AHV they are powered off during maintenance mode, and passthrough or other non-migratable VMs may need power-off or separate handling. This scenario has none.',
     });
     const need = (cfg.memLoadPct * n) / (n - 1);
     checks.push({

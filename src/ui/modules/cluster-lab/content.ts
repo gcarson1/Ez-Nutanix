@@ -29,7 +29,7 @@ export const content: ModuleContent = {
   qa: [
     {
       q: 'Are we exposed while a node is in maintenance?',
-      a: 'With two copies, data that had a copy on that node has only one copy online until the node is back. That is why LCM takes one node down at a time and waits for full protection before moving on. RF3 keeps three copies if you want headroom during that window. VMs pinned to a host, or stored on single-copy (RF1) storage, may not be able to move live and may need to be shut down instead.',
+      a: 'With two copies, data that had a copy on that node has only one copy online until the node is back. That is why LCM takes one node down at a time and waits for full protection before moving on. RF3 keeps three copies if you want headroom during that window. During AHV node maintenance, VMs that can be migrated are live migrated; pinned and RF1 VMs are powered off, and passthrough or other non-migratable VMs may need power-off or separate handling.',
     },
     {
       q: 'Is a VM slower right after it moves?',

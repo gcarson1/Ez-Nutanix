@@ -33,7 +33,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Do our VMs go down?',
-      a: 'Not on a cluster of three or more nodes: VMs live-migrate off each host before it goes into maintenance. VMs that cannot migrate (pinned, RF1 or agent VMs) are shut down by LCM and restarted afterward. On a single-node cluster you shut VMs down first, because there is nowhere to move them.',
+      a: 'Not on a cluster of three or more nodes: VMs live-migrate off each host before it goes into maintenance. Pinned and RF1 VMs are powered off during maintenance mode, and passthrough or other non-migratable VMs may need power-off or separate handling. On a single-node cluster you shut VMs down first, because there is nowhere to move them.',
     },
     {
       q: 'How long will it take for our cluster?',
