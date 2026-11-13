@@ -154,7 +154,7 @@ function Files() {
           {Array.from({ length: n }, (_, i) => {
             const isDown = down && i === failed;
             const x = fx(i);
-            const ip = i === survivor && k > 0.5 ? `IP .${11 + i} + .${11 + failed}` : isDown ? 'IP moved away' : `IP .${11 + i}`;
+            const ip = i === survivor && k > 0.5 ? `IP .${11 + i} + .${11 + failed}` : isDown ? (ha && k > 0.5 ? 'IP moved away' : 'IP unreachable') : `IP .${11 + i}`;
             return (
               <g key={i}>
                 <path d={`M${W / 2} ${NS.y + NS.h} V ${FS_Y - 18} H ${x + colW / 2} V ${FS_Y}`} fill="none" class={isDown ? 'bad-stroke' : 'line'} stroke-dasharray={isDown ? '4 4' : undefined} />

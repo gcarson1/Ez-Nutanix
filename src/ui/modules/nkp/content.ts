@@ -40,7 +40,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Do we have to run it on Nutanix infrastructure?',
-      a: 'No. Starter is for NCI (AHV). Pro and Ultimate also deploy on vSphere, on bare metal and in public cloud. NKP Metal, for bare-metal servers deployed by Foundation and updated by LCM, is in early access, and its nodes can be deployed with Fibre Channel storage.',
+      a: 'No. Starter is for NCI (AHV). Pro and Ultimate also deploy on vSphere, on bare metal and in public cloud. NKP Metal, for bare-metal servers deployed by Foundation and updated by LCM, was introduced with NKP 2.19 in October 2026; confirm its support status with Nutanix.',
     },
   ],
   next: [

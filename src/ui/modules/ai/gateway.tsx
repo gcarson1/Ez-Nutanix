@@ -122,7 +122,7 @@ function Item({ x, y, label, on, tone = 'flow' }: { x: number; y: number; label:
   return (
     <g>
       <circle cx={x + 5} cy={y + 8} r={4.5} class={on ? `ai-dot on ${tone}` : 'ai-dot'} />
-      <text x={x + 16} y={y + 12} class={`${on ? undefined : 'muted'} d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
+      <text x={x + 16} y={y + 12} class={`${on ? '' : 'muted '}d-fine`} style={{ fontWeight: on ? 600 : 400 }}>
         {label}
       </text>
     </g>
@@ -143,7 +143,7 @@ function GatewayDiagram({ t }: { t: number }) {
   const looping = t >= 12.2 && t < 15.2;
 
   return (
-    <svg class="diagram ai-svg gw-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Apps and agents call one Agent Gateway. Its unified endpoint routes model requests by policy (semantic routing) to an NAI endpoint, a remote NAI cluster or an external provider, falls back when one fails and rate-limits a runaway agent. Its MCP Gateway adds API keys, enforces tool permissions and logs every tool call.">
+    <svg class="diagram ai-svg gw-dia" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Apps and agents call one Agent Gateway. Its unified endpoint routes model requests by policy (semantic routing, planned for NAI 2.10) to an NAI endpoint, a remote NAI cluster or an external provider, falls back when one fails and rate-limits a runaway agent. Its MCP Gateway adds API keys, enforces tool permissions and logs every tool call.">
       {/* wires */}
       {AGENTS.map((_, i) => (
         <g key={i}>
@@ -175,9 +175,9 @@ function GatewayDiagram({ t }: { t: number }) {
       <text x={GW.x + 14} y={82} class="muted d-sub">
         one standard API for every model
       </text>
-      <Item x={GW.x + 14} y={116} label="Semantic routing" on={phase === 1} />
-      <Item x={GW.x + 148} y={116} label="Fallback" on={down} tone="warn" />
-      <Item x={GW.x + 14} y={140} label="Rate limit per client" on={denyNow} tone="bad" />
+      <Item x={GW.x + 14} y={116} label="Semantic routing (planned)" on={phase === 1} />
+      <Item x={GW.x + 14} y={140} label="Fallback" on={down} tone="warn" />
+      <Item x={GW.x + 14} y={164} label="Rate limit per client" on={denyNow} tone="bad" />
       <text class="d-label" x={GW.x + 14} y={208} style={{ fontWeight: 600 }}>
         MCP Gateway
       </text>

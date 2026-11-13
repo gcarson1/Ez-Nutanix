@@ -156,7 +156,7 @@ function base(fill: number, rf: RF): Base {
   return b;
 }
 
-const NORMAL = 0.4;
+export const NORMAL = 0.4;
 const NEARLY_FULL = 0.85;
 
 /** The node that fails in single-node stories: no Zookeeper role, so the story stays about data. */
@@ -395,12 +395,12 @@ export function defFor(id: GId, copies: Copies = 2): GDef {
         steps: [
           { at: 0, label: 'Cluster healthy', text: 'Eight nodes in four blocks. Every piece of data has two copies, on different nodes.' },
           { at: 2, label: `${v} fails`, text: `${v} loses power. Its ${vmCount} VMs stop and the copies on its drives go offline.` },
-          { at: 5.5, label: 'VMs restart', text: 'High availability (HA) instantly restarts those VMs on other nodes with free memory; the rest is each guest OS booting.' },
+          { at: 5.5, label: 'VMs restart', text: 'High availability (HA) automatically restarts those VMs on other nodes with free memory, once the host is declared failed (about 60 s); the rest is each guest OS booting.' },
           { at: 9.6, label: 'Copies re-created', text: 'Every surviving node re-creates some of the missing copies, all at the same time.' },
           { at: 15, label: 'Fully protected', text: 'Every piece of data has two copies again. Nobody had to step in.' },
         ],
         outcome: [
-          { tone: 'ok', text: 'VMs restarted instantly on other nodes' },
+          { tone: 'ok', text: 'VMs restarted automatically on other nodes' },
           { tone: 'ok', text: 'No data lost or unavailable' },
           { tone: 'ok', text: 'Back to two copies on its own' },
         ],

@@ -64,12 +64,15 @@ describe('timeline replay', () => {
     const big = createCluster({ nodes: 32, vms: 128, seed: 3 });
     const tl = new Timeline(big, [{ t: 60, k: 'fail', f: { kind: 'node', node: 7 } }]);
     tl.extend(4 * 3600);
-    const t0 = performance.now();
-    const seeks = 60;
-    for (let k = 0; k < seeks; k++) tl.at(((k * 7919) % 144) * 100);
-    const per = (performance.now() - t0) / seeks;
-    // one checkpoint interval (30 ticks) at most per seek; generous bound for slow CI
-    expect(per).toBeLessThan(40);
+    // Counts ticks, not milliseconds, so a loaded runner cannot make it flake: a seek replays at most
+    // one checkpoint interval (30 ticks) from the nearest checkpoint.
+    let worst = 0;
+    for (let k = 0; k < 60; k++) {
+      const before = tl.ticksRun;
+      tl.at(((k * 7919) % 144) * 100);
+      worst = Math.max(worst, tl.ticksRun - before);
+    }
+    expect(worst).toBeLessThanOrEqual(tl.every);
   });
 });
 

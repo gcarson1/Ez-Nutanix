@@ -2,8 +2,6 @@
 .gx > .stage { padding-top: var(--sp-5); }
 
 
-.gx-rail .gx-why { margin-top: var(--sp-2); font-size: var(--fs-14); color: var(--text-2); line-height: 1.5; }
-.gx-rail .gx-setup { margin-top: var(--sp-2); font-size: var(--fs-13); color: var(--muted); line-height: 1.5; }
 
 .gx-legend { margin-top: var(--sp-2); }
 .gx-legend span { display: inline-flex; align-items: center; gap: var(--sp-1h); }

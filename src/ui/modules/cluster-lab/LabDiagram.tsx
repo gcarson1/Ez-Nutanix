@@ -155,7 +155,7 @@ function Node({ n, look, tiles, failed, tag, rebuilding, dim, hover }: { n: numb
             <Drive x={dx} y={dy + DRIVE_Y} w={DW} h={DRIVE_H} state={isFailed ? 'down' : undefined} />
             {isFailed && <path class="dl-x bad" d={`M${dx + 14} ${dy + DRIVE_Y + 8} L${dx + DW - 14} ${dy + DISK_H - 8} M${dx + DW - 14} ${dy + DRIVE_Y + 8} L${dx + 14} ${dy + DISK_H - 8}`} />}
             {list.slice(0, TILE_CAP).map((tl, i) => (
-              <g key={tl.id} class={dim(tl.vm) ? 'dl-dimmed' : undefined} onPointerEnter={() => hover(tl.vm)} onPointerLeave={() => hover(null)}>
+              <g key={tl.id} class={dim(tl.vm) ? 'dl-dimmed' : undefined} onPointerEnter={(e) => e.pointerType !== 'touch' && hover(tl.vm)} onPointerLeave={(e) => e.pointerType !== 'touch' && hover(null)}>
                 <DataBlock
                   x={dx + 2 + ((i % TCOLS) + 0.5) * pitchX}
                   y={dy + DRIVE_Y + 5 + (Math.floor(i / TCOLS) + 0.5) * pitchY}
@@ -186,7 +186,7 @@ function Vm({ vm, dim, hl, hover }: { vm: VmF; dim: boolean; hl: boolean; hover:
     trail = `M${a.x + VW / 2} ${a.y + VH / 2} Q${c.x + VW / 2} ${c.y + VH / 2} ${b.x + VW / 2} ${b.y + VH / 2}`;
   }
   return (
-    <g class={dim ? 'dl-dimmed' : undefined} onPointerEnter={() => hover(vm.id)} onPointerLeave={() => hover(null)}>
+    <g class={dim ? 'dl-dimmed' : undefined} onPointerEnter={(e) => e.pointerType !== 'touch' && hover(vm.id)} onPointerLeave={(e) => e.pointerType !== 'touch' && hover(null)}>
       {trail && <path class={`dl-trail ${vm.look}`} d={trail} />}
       <VmBox x={p.x} y={p.y} w={VW} h={VH} name={vm.label} state={VM_STATE[vm.look]} hl={hl} />
     </g>

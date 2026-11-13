@@ -197,12 +197,40 @@ describe('failure mid-upgrade: LCM pauses instead of compounding', () => {
   });
 });
 
+describe('a node fails while its VMs are returning home', () => {
+  it('queued moves to the failed node are retargeted, so no VM sits on a node that is out', () => {
+    const cfg = base({ nodes: 5, rf: 3, vms: 20, selected: ['ahv'], memLoadPct: 40 });
+    const ret = simulateLcm(cfg).segs.find((s) => s.phase === 'return-vms')!;
+    const failAt = ret.start + (ret.end - ret.start) * 0.4;
+    const sim = simulateLcm({ ...cfg, fail: { at: failAt, node: ret.node }, repairAt: failAt + 300 });
+    // Where each VM is at time t: the destination of every move that has finished.
+    const where = (t: number) => {
+      const at = [...sim.homes];
+      for (const m of [...sim.moves].sort((a, b) => a.t0 - b.t0)) if (m.t1 <= t) at[m.vm] = m.to;
+      return at;
+    };
+    for (const s of sim.segs) {
+      if (!s.out || s.phase === 'resync') continue;
+      const onOut = where((s.start + s.end) / 2).filter((node) => node === s.node).length;
+      expect(onOut, `${s.phase} on node ${s.node}: VMs still on the node that is out`).toBe(0);
+    }
+    // Each move starts where the VM is.
+    const at = [...sim.homes];
+    for (const m of [...sim.moves].sort((a, b) => a.t0 - b.t0)) {
+      expect(m.from, `vm ${m.vm} starts its move where it is`).toBe(at[m.vm]);
+      at[m.vm] = m.to;
+    }
+  });
+});
+
 describe('small clusters', () => {
   it('1-node: firmware is dropped, and guest VMs must be shut down first', () => {
     const r = resolveSelection(['aos', 'ahv', 'bios'], 1);
     expect(r.selected).toEqual(['aos', 'ahv']);
     expect(r.dropped.map((d) => d.id)).toEqual(['bios']);
     expect(canStart(base({ nodes: 1, selected: ['aos'] })).ok).toBe(false);
+    // Foundation and NCC take no node down, so a single node needs no shut-down VMs for them.
+    expect(canStart(base({ nodes: 1, selected: ['foundation', 'ncc'] })).ok).toBe(true);
     const sim = simulateLcm(base({ nodes: 1, vms: 4, selected: ['aos', 'ahv'], vmsShutDown: true }));
     expect(sim.blocked).toBe(false);
     const mid = lcmStateAt(sim, sim.visits[0].outStart + 10);

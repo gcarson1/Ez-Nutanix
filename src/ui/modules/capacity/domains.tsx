@@ -171,7 +171,7 @@ export function DomainsView() {
   const kind = plan.groupKind;
   const failedName = `${kind === 'rack' ? 'Rack' : 'Block'} ${plan.failedGroup + 1}`;
   const lost = plan.unavailable.length;
-  const VM_LINE = { tone: 'flow' as const, k: 'VMs restart elsewhere', text: `High availability (HA) instantly restarts ${failedName}’s VMs on nodes in the other ${kind}s, with no one paged; the rest is each guest OS booting.` };
+  const VM_LINE = { tone: 'flow' as const, k: 'VMs restart elsewhere', text: `High availability (HA) automatically restarts ${failedName}’s VMs on nodes in the other ${kind}s, once the host is declared failed (about 60 s); the rest is each guest OS booting.` };
   const backLine = () => ({ tone: 'ok' as const, k: `The ${kind} comes back`, text: `${failedName} is back up and its nodes rejoin the cluster. Every piece already has its two copies again, so nothing waits on it.` });
 
   const captions: Record<Awareness, { tone: Tone | 'ink'; k: string; text: string }[]> = {
@@ -226,7 +226,7 @@ export function DomainsView() {
           <Kpis
             items={[
               { k: `Survives a whole ${kind}`, v: lost ? 'No' : 'Yes', tone: lost ? 'bad' : 'ok' },
-              { k: 'VMs running', v: `${t >= tl.fail && t < tl.vms ? vmTotal - vmDown : vmTotal} of ${vmTotal}`, tone: t >= tl.fail && t < tl.vms ? 'bad' : t >= tl.vms ? 'ok' : undefined, sub: t >= tl.vms ? 'restarted instantly by HA' : undefined },
+              { k: 'VMs running', v: `${t >= tl.fail && t < tl.vms ? vmTotal - vmDown : vmTotal} of ${vmTotal}`, tone: t >= tl.fail && t < tl.vms ? 'bad' : t >= tl.vms ? 'ok' : undefined, sub: t >= tl.vms ? 'restarted automatically by HA' : undefined },
               { k: 'Unavailable during the failure', v: `${lost} of ${plan.pieces}`, sub: 'pieces', tone: lost ? 'bad' : 'ok' },
               third,
             ]}

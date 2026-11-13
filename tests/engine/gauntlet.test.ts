@@ -1,6 +1,7 @@
 // Failure Gauntlet: each scripted failure must stay true to the engine at every frame.
 import { describe, it, expect } from 'vitest';
-import { defFor, frameAt, plan, victim, doublePair, IDS, G_NODES, G_SLOTS, DRIVE_SLOTS, PER_BLOCK, type GFrame, type GId, type Copies } from '../../src/ui/modules/failures/scenarios';
+import { cfgFor, defFor, frameAt, plan, victim, doublePair, IDS, G_NODES, G_SLOTS, DRIVE_SLOTS, NORMAL, PER_BLOCK, type GFrame, type GId, type Copies } from '../../src/ui/modules/failures/scenarios';
+import { createCluster } from '../../src/engine/cluster';
 
 const itemOf = (id: string) => Number(id.split('.')[0]);
 const nodeOf = (disk: string) => Number(disk.split('.')[0]);
@@ -126,5 +127,9 @@ describe('outcomes follow the engine', () => {
   it('uses the same victim across stories and keeps it off the Zookeeper nodes', () => {
     expect(victim()).toBeGreaterThanOrEqual(0);
     expect(victim()).toBeLessThan(G_NODES);
+    // The gauntlet cluster runs Zookeeper on some nodes, and the victim is not one of them.
+    const s0 = createCluster(cfgFor(NORMAL, 2));
+    expect(s0.nodes.some((n) => n.zk)).toBe(true);
+    expect(s0.nodes[victim()].zk).toBe(false);
   });
 });

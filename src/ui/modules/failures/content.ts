@@ -11,7 +11,7 @@ export const content: ModuleContent = {
     license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need NCI Pro or Ultimate' },
   },
   talk: [
-    'Start with Node. Walk the steps above the picture: the node fails, high availability (HA) instantly restarts its VMs on other nodes with free memory (the time after that is each guest OS booting), and every surviving node re-creates the missing copies at once.',
+    'Start with Node. Walk the steps above the picture: the node fails, high availability (HA) automatically restarts its VMs on other nodes with free memory, once the host is declared failed (about 60 s) (the time after that is each guest OS booting), and every surviving node re-creates the missing copies at once.',
     'Point at the lines under the nodes: every node copies some of the missing data at the same time. That many-to-many rebuild is why it gets faster as the cluster grows, unlike a rebuild into one spare drive.',
     'Controller VM: nothing restarts. The host keeps its VMs and their I/O goes to other CVMs over the network until the CVM is back.',
     'Now the honest part: pick Two nodes. With two copies (RF2), pieces that had both copies on those nodes go red until a node returns; switch Copies to RF3 and the same failure is survived.',
@@ -36,7 +36,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Will my VMs go down if a node fails?',
-      a: 'The VMs on that node stop and are restarted instantly by HA on other hosts, as soon as the host is declared failed, so they see a reboot. VMs on other nodes keep running. By default restarts are best effort; turning on HA memory reservation holds back enough memory to guarantee them, which costs some usable memory.',
+      a: 'The VMs on that node stop and are restarted automatically by HA on other hosts once the host is declared failed (about 60 s), so they see a reboot. VMs on other nodes keep running. By default restarts are best effort; turning on HA memory reservation holds back enough memory to guarantee them, which costs some usable memory.',
     },
   ],
   next: [

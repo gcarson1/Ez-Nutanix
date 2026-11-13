@@ -133,6 +133,11 @@ function hasHostBatch(selected: CompId[]) {
   return selected.some((c) => COMP[c].scope === 'host');
 }
 
+/** True when any selected update restarts a CVM or a host (AOS, AHV, firmware), so a node goes out. Foundation and NCC take none. */
+function takesNodeDown(selected: CompId[]) {
+  return selected.some((c) => COMP[c].scope !== 'cluster');
+}
+
 export function preChecks(cfg: LcmConfig): PreCheck[] {
   const sel = resolveSelection(cfg.selected, cfg.nodes).selected;
   const n = cfg.nodes;
@@ -207,7 +212,7 @@ export function preChecks(cfg: LcmConfig): PreCheck[] {
         : 'No Witness is registered. On a two-node cluster LCM and every node-maintenance workflow require one.',
     });
   }
-  if (n === 1) {
+  if (n === 1 && takesNodeDown(sel)) {
     checks.push({
       id: 'vmsoff',
       name: 'Guest VMs shut down',
@@ -575,9 +580,14 @@ function buildMoves(sim: LcmSim, fail: { at: number; node: number } | null, repa
       for (const m of sim.moves) {
         if (m.to === e.node && m.t0 < e.t && m.t1 > e.t) m.t1 = e.t; // in flight: lands, then restarts
         if (m.to === e.node && m.t0 >= e.t) {
-          // not started yet: retarget to another live node
-          const alt = Array.from({ length: n }, (_, i) => i).find((i) => i !== e.node && i !== m.from);
-          if (alt !== undefined) m.to = alt;
+          // not started yet: retarget to another live node that is not out for maintenance when the move runs,
+          // and keep `loc` in step so later evacuations and returns see where the VM really is
+          const nodes = Array.from({ length: n }, (_, i) => i);
+          const alt = nodes.find((i) => i !== e.node && i !== m.from && !outAt(m.t0).includes(i)) ?? nodes.find((i) => i !== e.node && i !== m.from);
+          if (alt !== undefined) {
+            m.to = alt;
+            loc[m.vm] = alt;
+          }
         }
       }
       // recompute loc at e.t from the moves so far

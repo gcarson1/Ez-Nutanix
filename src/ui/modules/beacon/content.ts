@@ -1,4 +1,5 @@
 import type { ModuleContent } from '../../../content/types';
+import { NKP_METAL } from '../../../content/status';
 
 export const content: ModuleContent = {
   path: 'beacon',
@@ -14,8 +15,8 @@ export const content: ModuleContent = {
     'Say it plainly up front: Project Beacon is a vision Nutanix announced in 2023, not something you can buy.',
     'The idea: developers build an app once and run it anywhere, and the data services (storage, databases, protection) come along with it.',
     'Let the timeline run, and say its dates are history and announced plans, not commitments. 2023: the idea, with databases as a service first. 2024: cloud-native storage for Kubernetes added.',
-    '2025: Cloud Native AOS, the first concrete product. 2026: bare metal through NKP Metal, in early access with GA targeted for the second half of 2026.',
-    'Read the cards as they appear: the green ones ship today, the amber one is early access, and the band across the top is still only a direction.',
+    `2025: Cloud Native AOS, the first concrete product. 2026: bare metal through NKP Metal, ${NKP_METAL.intro}; ${NKP_METAL.confirm}.`,
+    'Read the cards as they appear: the green ones ship today, the amber one needs its status confirmed, and the band across the top is still only a direction.',
     'Use it to explain why Cloud Native AOS, NDK and NKP fit together, not as a roadmap promise.',
   ],
   numbers: [
@@ -23,7 +24,7 @@ export const content: ModuleContent = {
     { k: 'Expanded', v: 'May 2024: cloud-native block and file storage' },
     { k: 'NDK', v: 'GA Mar 2024; NDK 2.3 in Aug 2026' },
     { k: 'First product', v: 'Cloud Native AOS, May 2025 (1.0 on EKS, Jul 2025)' },
-    { k: 'NKP Metal', v: 'Early access Apr 2026; GA targeted for the second half of 2026 (a plan, not a commitment)' },
+    { k: 'NKP Metal', v: 'Announced as early access Apr 2026; introduced with NKP 2.19 in Oct 2026' },
   ],
   qa: [
     {

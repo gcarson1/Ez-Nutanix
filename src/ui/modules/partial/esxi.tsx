@@ -167,7 +167,7 @@ function EsxiDiagram({ go, t }: { go: Go; t: number }) {
             <rect x={x + 12} y={HOST_Y + 92} width={IN_W} height={20} class="es-hv" />
             {h.ahv > 0 && <rect x={x + 12} y={HOST_Y + 92} width={IN_W * h.ahv} height={20} class="es-hv ahv" />}
             {h.upgrading >= 0 && <rect x={x + 12} y={HOST_Y + 92} width={IN_W * h.upgrading} height={20} class="es-hv up" />}
-            <text x={x + 20} y={HOST_Y + 106} class={`${h.ahv >= 0.5 ? 'es-on-ink' : undefined} d-sub`} style={{ fontWeight: 600 }}>
+            <text x={x + 20} y={HOST_Y + 106} class={`${h.ahv >= 0.5 ? 'es-on-ink ' : ''}d-sub`} style={{ fontWeight: 600 }}>
               {h.ahv >= 0.5 ? 'Nutanix AHV' : h.upgrading >= 0 ? 'Upgrading ESXi' : 'VMware ESXi'}
             </text>
             {/* drives, passed through to the CVM */}

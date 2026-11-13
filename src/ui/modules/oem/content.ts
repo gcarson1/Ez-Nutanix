@@ -35,7 +35,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'What about Kubernetes straight on bare metal?',
-      a: 'That is NKP Metal, in early access with GA targeted for the second half of 2026. Its named hardware partners at launch are Cisco, Lenovo and Supermicro, and its nodes can be deployed with Fibre Channel storage; see Cloud Native AOS and Kubernetes Platform.',
+      a: 'That is NKP Metal, introduced with NKP 2.19 in October 2026; confirm its support status with Nutanix. Its named hardware partners at launch are Cisco, Lenovo and Supermicro; see Cloud Native AOS and Kubernetes Platform.',
     },
   ],
   next: [

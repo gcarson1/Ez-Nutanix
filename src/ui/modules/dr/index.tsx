@@ -183,7 +183,7 @@ function Sites({ s, t }: { s: DrScene; t: number }) {
       class="diagram dr-svg"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label={`Two sites, each with three VMs: db01, app01 and web01. A protection policy sets how Site A replicates to Site B (${tierWord}). The recovery plan at Site B starts the VMs in stages: 1 Database, 2 App, 3 Web. ${s.event === 'planned' ? 'A planned failover moves the apps to Site B with no data lost.' : `Site A is lost; ${s.lost ? `${s.lost} recent writes are lost and` : 'nothing is lost and'} the apps start at Site B.`}`}
+      aria-label={`Two sites, each with three VMs: db01, app01 and web01. A protection policy sets how Site A replicates to Site B (${tierWord}). The recovery plan at Site B starts the VMs in stages: 1 Database, 2 App, 3 Web. ${s.event === 'planned' ? 'A planned failover moves the apps to Site B with no data lost.' : `Site A is lost; ${s.lost ? `${plural(s.lost, 'recent write', 'recent writes')} ${s.lost === 1 ? 'is' : 'are'} lost and` : 'nothing is lost and'} the apps start at Site B.`}`}
     >
       <defs>
         <marker id="dr-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">

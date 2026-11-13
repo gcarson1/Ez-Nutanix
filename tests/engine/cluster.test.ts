@@ -147,7 +147,7 @@ describe('failure and self-healing', () => {
     expect(deriveStatus(s).items.under).toBe(0);
   });
 
-  it('reports cannot self-heal when survivors are too few', () => {
+  it('a node plus a drive lost on 3 nodes leaves nothing more tolerable, and the cluster is still rebuilding', () => {
     let s = createCluster({ nodes: 3, fillPct: 40, seed: 1 });
     s = applyFailure(s, { kind: 'node', node: 0 });
     s = applyFailure(s, { kind: 'disk', disk: '1.0' });
@@ -155,6 +155,7 @@ describe('failure and self-healing', () => {
     const st = deriveStatus(s);
     // two survivors can hold RF2 again, but the zookeeper/metadata layer can't be fully restored
     expect(st.tolerable).toBe(0);
+    expect(st.selfHeal.state).toBe('rebuilding');
   });
 
   it('reports cannot self-heal when capacity is insufficient', () => {

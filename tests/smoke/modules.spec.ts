@@ -231,6 +231,9 @@ test('scenario state round-trips through the URL', async ({ page }) => {
   await page.goto(`${FILE}#/nci/capacity?nodes=12&rf=3&ft=3`);
   await page.reload();
   expect(page.url()).toContain('nodes=12');
+  // The controls come back from the URL: 12 nodes and RF3 are pressed after the reload.
+  await expect(page.getByRole('group', { name: 'Nodes' }).getByRole('button', { name: '12', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: /RF3/ }).first()).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('group', { name: 'Nodes' }).getByRole('button', { name: '8', exact: true }).click();
   await expect.poll(() => page.url()).toContain('nodes=8');
 });
@@ -547,7 +550,7 @@ test('every page opens its right pane with Release version and License needed, a
   await page.goto(`${FILE}#/partial`);
   await expect(lic).toHaveText('NCI-C (NCI Compute)');
   await page.goto(`${FILE}#/cnaos?on=metal`);
-  await expect(rel).toHaveText('Early access');
+  await expect(rel).toHaveText('NKP 2.19');
   await expect(lic).toHaveText('NKP Pro or Ultimate');
   await page.goto(`${FILE}#/nci/lcm?tab=k8s`);
   await expect(lic).toHaveText('NKP Ultimate');
@@ -566,7 +569,7 @@ test('every page opens its right pane with Release version and License needed, a
   await page.goto(`${FILE}#/cnaos`);
   await expect(relSub).toContainText('GA on Amazon EKS');
   await page.goto(`${FILE}#/cnaos?on=metal`);
-  await expect(relSub).toContainText('GA targeted for the second half of 2026');
+  await expect(relSub).toContainText('confirm its support status');
   await page.goto(`${FILE}#/cloud?c=gcp`);
   await expect(rel).toHaveText('NC2 on Google Cloud is GA');
   await expect(page.getByRole('heading', { name: 'Availability' })).toHaveCount(0);

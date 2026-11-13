@@ -1,10 +1,11 @@
 import type { ModuleContent } from '../../../content/types';
+import { NKP_METAL } from '../../../content/status';
 
 export const content: ModuleContent = {
   path: 'cnaos',
   title: 'Cloud Native AOS',
   tag: 'Platform services',
-  summary: 'Stateful Kubernetes apps get Nutanix storage and whole-app protection with no hypervisor, using Cloud Native AOS and Nutanix Data Services for Kubernetes (NDK). It is generally available on Amazon EKS; bare metal is early access.',
+  summary: 'Stateful Kubernetes apps get Nutanix storage and whole-app protection with no hypervisor, using Cloud Native AOS and Nutanix Data Services for Kubernetes (NDK). It is generally available on Amazon EKS; bare metal comes through NKP Metal, so confirm that status with Nutanix.',
   priority: 'P2',
   facts: {
     release: { v: '1.0.0', sub: 'Jul 2025 · GA on Amazon EKS only' },
@@ -16,7 +17,7 @@ export const content: ModuleContent = {
     'Steps 2 and 3: a database pod writes, and every block lands on two workers (replication factor 2, RF2). When a worker fails, the second copies are still there and Kubernetes restarts the database on another worker with its data.',
     'Steps 4 and 5: Nutanix Data Services for Kubernetes (NDK) snapshots the whole app, resources and data together, and replicates it to another AWS region or zone. Apps on NKP in your data center can fail over to EKS.',
     'Why customers care: a cloud provider’s database service only runs in that cloud and is managed apart from the app. With Cloud Native AOS the database stays in Kubernetes, on storage the team knows, protected together with the app.',
-    'Be precise on availability: release 1.0.0 (July 2025) is Amazon EKS only, with limits that belong to that release. Bare metal comes through NKP Metal, in early access, with GA targeted for the second half of 2026.',
+    `Be precise on availability: release 1.0.0 (July 2025) is Amazon EKS only, with limits that belong to that release. Bare metal comes through NKP Metal, ${NKP_METAL.intro}; ${NKP_METAL.confirm}.`,
   ],
   numbers: [
     { k: 'Announced', v: 'May 2025 (.NEXT 2025)' },
@@ -35,13 +36,13 @@ export const content: ModuleContent = {
     },
     {
       q: 'Can we run it on our own bare-metal servers today?',
-      a: 'Not as a generally available product. NKP Metal, announced as early access in April 2026 with GA targeted for the second half of 2026, offers Cloud Native AOS as a storage option. NKP 2.19 (October 2026) introduces NKP Metal, but its release notes do not say it has left early access. NKP Pro and Ultimate can already run Kubernetes on pre-provisioned bare metal, with Nutanix storage through a CSI driver.',
+      a: `Not confirmed as a generally available product. NKP Metal, announced as early access in April 2026, offers Cloud Native AOS as a storage option and was ${NKP_METAL.intro}; Nutanix’s NKP 2.19 pages label it neither early access nor generally available, so ${NKP_METAL.confirm}. NKP Pro and Ultimate can already run Kubernetes on pre-provisioned bare metal, with Nutanix storage through a CSI driver.`,
     },
   ],
   next: [
     'Under Kubernetes runs on, keep Amazon EKS and let the loop play: AOS lands as a pod on each worker and the database writes two copies of every block.',
     'Watch a worker fail and the database restart on another, then NDK snapshot and replicate the whole app.',
-    'Switch Kubernetes runs on to Bare metal (NKP Metal) to show the same storage on your own servers, and say it is early access.',
+    'Switch Kubernetes runs on to Bare metal (NKP Metal) to show the same storage on your own servers, and say to confirm its support status with Nutanix.',
     'Then open Kubernetes Platform for the clusters this runs on, or Project Beacon for the story behind it.',
   ],
   then: ['nkp', 'beacon'],

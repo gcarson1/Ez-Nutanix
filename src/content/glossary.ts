@@ -1,4 +1,6 @@
 // Glossary drawer entries. Plain-English first; written for this explorer (not copied from docs).
+import { NKP_METAL } from './status';
+
 export interface GlossaryEntry {
   term: string;
   full?: string;
@@ -52,7 +54,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   { term: 'NAI', full: 'Nutanix Enterprise AI', def: 'Nutanix software for deploying and managing AI model inference endpoints on Kubernetes.' },
   { term: 'NCI', full: 'Nutanix Cloud Infrastructure', def: 'The infrastructure layer: AOS storage, the AHV hypervisor, Flow networking and security, and disaster recovery.' },
   { term: 'NIM', full: 'NVIDIA Inference Microservices', def: 'NVIDIA’s packaged, optimized model containers, which Nutanix Enterprise AI can deploy.' },
-  { term: 'NKP Metal', def: 'The NKP option for running Kubernetes directly on bare-metal servers, without a hypervisor; in early access.' },
+  { term: 'NKP Metal', def: `The NKP option for running Kubernetes directly on bare-metal servers, without a hypervisor; ${NKP_METAL.intro}.` },
   { term: 'Nutanix Central', def: 'The console above many Prism Central instances: one place to see and manage every region and site. Offered as SaaS and on-premises.' },
   { term: 'NUS', full: 'Nutanix Unified Storage', def: 'Files, Objects and Volumes on one platform: file shares, S3-compatible object storage and block storage over iSCSI.' },
   { term: 'ROBO', full: 'Remote office / branch office', def: 'Small sites away from the data center, often run on one-, two- or three-node clusters.' },

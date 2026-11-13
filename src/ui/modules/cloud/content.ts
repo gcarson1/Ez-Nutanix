@@ -1,4 +1,5 @@
 import type { ModuleContent } from '../../../content/types';
+import { NKP_METAL } from '../../../content/status';
 
 export const content: ModuleContent = {
   path: 'cloud',
@@ -35,7 +36,7 @@ export const content: ModuleContent = {
     },
     {
       q: 'Can we use Cloud Native AOS on AKS or GKE?',
-      a: 'Not confirmed today. Cloud Native AOS 1.0 is generally available on Amazon EKS. Bare-metal support is tied to NKP Metal, which is in early access with GA targeted for the second half of 2026. Check current status before planning.',
+      a: `Not confirmed today. Cloud Native AOS 1.0 is generally available on Amazon EKS. Bare-metal support is tied to NKP Metal, which was ${NKP_METAL.intro}; ${NKP_METAL.confirm}. Check current status before planning.`,
     },
   ],
   next: [

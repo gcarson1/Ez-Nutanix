@@ -224,6 +224,8 @@ export class Timeline {
   readonly samples: Sample[];
   private front: Cursor;
   private last: Cursor | null = null;
+  /** Simulation ticks run so far, for tests that bound the work a seek does. */
+  ticksRun = 0;
 
   constructor(
     readonly initial: ClusterState,
@@ -287,6 +289,7 @@ export class Timeline {
       while (i < n && this.sorted[i].t <= s.time + 1e-9) s = this.sorted[i++].apply(s);
       s = tick(s, this.step);
       ticks++;
+      this.ticksRun++;
       if (record) {
         const k = Math.round(s.time / this.step);
         if (k % this.sampleEvery === 0) this.samples.push(sampleOf(s));

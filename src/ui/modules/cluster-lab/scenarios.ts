@@ -641,11 +641,11 @@ export const SCENARIOS: Record<ScenarioId, ScenarioDef> = {
     steps: [
       { at: 0, label: 'Cluster healthy', text: 'A healthy cluster: every piece of data has two copies, on different nodes.' },
       { at: 2, label: 'Node 2 fails', text: 'Node 2 loses power. Its 4 VMs stop and the copies on its drives go offline.' },
-      { at: 5.5, label: 'VMs restart', text: 'High availability (HA) instantly restarts those VMs on other nodes with free memory; the rest is each guest OS booting.' },
+      { at: 5.5, label: 'VMs restart', text: 'High availability (HA) automatically restarts those VMs on other nodes with free memory, once the host is declared failed (about 60 s); the rest is each guest OS booting.' },
       { at: 10, label: 'Copies re-created', text: 'At the same time, Nodes 1, 3 and 4 all re-create the missing copies, in parallel: each sends copies it holds and takes in new ones, so no single node does the rebuild.' },
       { at: 15.5, label: 'Fully protected', text: 'Every piece of data has two copies again, without anyone stepping in.' },
     ],
-    why: 'Recovery is automatic. HA restarts the VMs instantly, and full protection returns on its own, before anyone repairs the failed node.',
+    why: 'Recovery is automatic. HA restarts the VMs automatically once the host is declared failed (about 60 s), and full protection returns on its own, before anyone repairs the failed node.',
     legend: [
       { look: 'copy', label: 'Copy of a piece of data' },
       { look: 'single', label: 'Only one copy online' },

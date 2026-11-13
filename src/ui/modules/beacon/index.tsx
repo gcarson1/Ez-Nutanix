@@ -32,10 +32,10 @@ const YEARS: { year: string; title: string; tone: Tone | 'ink'; text: string; pi
   },
   {
     year: '2026',
-    title: 'NKP Metal enters early access',
+    title: 'NKP Metal arrives in NKP 2.19',
     tone: 'warn',
-    text: 'Nutanix still presents Beacon as a vision, and the newest Beacon item on its page is dated May 2024. The direction carries on in NKP Metal, Kubernetes and Cloud Native AOS on bare metal, in early access with GA targeted for the second half of 2026.',
-    piece: { name: 'NKP Metal', short: 'NKP Metal', status: 'Early access', tone: 'warn', sub: 'Kubernetes and Cloud Native AOS on bare metal · GA targeted for the second half of 2026' },
+    text: 'Nutanix still presents Beacon as a vision, and the newest Beacon item on its page is dated May 2024. The direction carries on in NKP Metal, Kubernetes and Cloud Native AOS on bare metal: announced as early access in April 2026 and introduced with NKP 2.19 in October. Nutanix’s 2.19 pages label it neither early access nor generally available, so confirm its support status.',
+    piece: { name: 'NKP Metal', short: 'NKP Metal', status: 'In NKP 2.19', tone: 'warn', sub: 'Kubernetes and Cloud Native AOS on bare metal · confirm its support status' },
   },
 ];
 
@@ -70,7 +70,7 @@ function Timeline({ t, now }: { t: number; now: number }) {
   let x = 24;
   for (let i = 0; i < YEARS.length; i++) x += (XC[i] - x) * ease(prog(t, AT[i] - MOVE, AT[i]));
   return (
-    <svg class="diagram bc-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Project Beacon from 2023 to 2026: a vision of building an app once and running it anywhere. Delivered along the way: NDB and NDK (shipping), Cloud Native AOS (GA on Amazon EKS) and NKP Metal (early access). Beacon itself is not a product.">
+    <svg class="diagram bc-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Project Beacon from 2023 to 2026: a vision of building an app once and running it anywhere. Delivered along the way: NDB and NDK (shipping), Cloud Native AOS (GA on Amazon EKS) and NKP Metal (in NKP 2.19). Beacon itself is not a product.">
       <rect class="bc-band" x={1} y={12} width={W - 2} height={80} />
       <text x={22} y={36} class="warn-fill d-sub" style={{ fontWeight: 600 }}>
         ◇ THE VISION · NOT A PRODUCT YOU CAN BUY
@@ -145,7 +145,7 @@ export default function Beacon() {
           <Kpis
             items={[
               { k: 'Pieces shipping', v: shipping.length, tone: shipping.length ? 'ok' : undefined, sub: shipping.map((p) => p.short).join(', ') || '—' },
-              { k: 'Early access', v: early.length, sub: early.map((p) => p.short).join(', ') || '—' },
+              { k: 'Confirm status', v: early.length, sub: early.map((p) => p.short).join(', ') || '—' },
             ]}
           />
         </>
@@ -157,7 +157,7 @@ export default function Beacon() {
       <Legend
         items={[
           { color: 'var(--ok)', label: 'Shipping' },
-          ...(YEARS.slice(0, now + 1).some((v) => v.piece.tone === 'warn') ? [{ color: 'var(--warn)', label: 'Early access', dashed: true }] : []),
+          ...(YEARS.slice(0, now + 1).some((v) => v.piece.tone === 'warn') ? [{ color: 'var(--warn)', label: 'Confirm status', dashed: true }] : []),
         ]}
       />
       <PlayBar clock={clock} label="Beacon timeline animation" extra={<Illus why="Four years are compressed into seconds, with one delivered piece shown per year. The dates are history and announced plans, not product commitments. Each product’s own release notes say what ships today." />} />

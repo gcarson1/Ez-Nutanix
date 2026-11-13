@@ -263,7 +263,7 @@ export function K8sUpgrade() {
       <PlayBar
         clock={clock}
         label="Fleet upgrade animation"
-        extra={<Illus why="NKP runs this rollout through Cluster API, not LCM; with NKP Metal (early access), LCM also updates firmware and the operating system on bare-metal Kubernetes nodes. Example versions and timings. Fleet management is in NKP Ultimate. Upgrading a canary first, then waves, is a common practice shown as an example. Inside a cluster, a new node joins before an old one leaves, as in a Cluster API rolling update." />}
+        extra={<Illus why="NKP runs this rollout through Cluster API, not LCM; with NKP Metal (introduced with NKP 2.19), LCM also updates firmware and the operating system on bare-metal Kubernetes nodes. Example versions and timings. Fleet management is in NKP Ultimate. Upgrading a canary first, then waves, is a common practice shown as an example. Inside a cluster, a new node joins before an old one leaves, as in a Cluster API rolling update." />}
       />
     </Show>
   );

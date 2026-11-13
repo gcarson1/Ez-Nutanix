@@ -555,6 +555,9 @@ export function App() {
  * match; the arrows move focus through the box and the rows in the order they are shown.
  */
 function Jump({ onClose }: { onClose: () => void }) {
+  const input = useRef<HTMLInputElement>(null);
+  // Focus the filter once, when the dialog opens; a re-render must not pull focus back from a result row.
+  useEffect(() => input.current?.focus(), []);
   const [q, setQ] = useState('');
   const box = useRef<HTMLDivElement>(null);
   const s = q.trim().toLowerCase();
@@ -580,7 +583,7 @@ function Jump({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Jump to a module" onClose={onClose}>
       <div class="modal-sec jump" ref={box} onKeyDown={onKey}>
-        <input class="input" type="search" placeholder="Type to filter" aria-label="Filter modules" value={q} ref={(el) => el?.focus()} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
+        <input class="input" type="search" placeholder="Type to filter" aria-label="Filter modules" value={q} ref={input} onInput={(e) => setQ((e.target as HTMLInputElement).value)} />
         {groups.map((g) => (
           <div key={g} class="jump-group">
             <h3 class="eyebrow">{g ? findModule(g)?.content.title : 'Platform'}</h3>

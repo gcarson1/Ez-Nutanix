@@ -1,12 +1,13 @@
 // Cloud Native AOS: Nutanix storage and data protection for Kubernetes apps, with no hypervisor
 // underneath. One loop on one cluster: AOS runs as a pod on every worker, keeps two copies of each
 // write, rides out a worker failure, then NDK snapshots the whole app and replicates it for DR.
-// Pick Amazon EKS (generally available) or bare metal (NKP Metal, early access). Claims:
+// Pick Amazon EKS (generally available) or bare metal (NKP Metal, introduced with NKP 2.19). Claims:
 // docs/facts.md section 10.
 import { useEnum } from '../../../state/route';
 import { paced, useClock, useRestartOn } from '../../components/clock';
 import { Follow, Illus, Legend, PlayBar, type Tone } from '../../components/controls';
 import { Choice, Kpis, Points, Show, ease, flowDots, phaseAt, prog, type Point } from '../../components/show';
+import { NKP_METAL } from '../../../content/status';
 import './style.css';
 
 type On = 'eks' | 'metal';
@@ -205,7 +206,7 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
               return (
                 <g key={j}>
                   <rect x={podX(w, j)} y={POD_Y} width={p.w} height={POD_H} rx={3} class={cls} />
-                  <text x={podX(w, j) + p.w / 2} y={POD_Y + 17} text-anchor="middle" class={`${db ? undefined : 'muted'} d-sub`} style={{ fontWeight: db ? 600 : 400 }}>
+                  <text x={podX(w, j) + p.w / 2} y={POD_Y + 17} text-anchor="middle" class={`${db ? '' : 'muted '}d-sub`} style={{ fontWeight: db ? 600 : 400 }}>
                     {p.label}
                   </text>
                 </g>
@@ -343,11 +344,11 @@ function CnDiagram({ on, t }: { on: On; t: number }) {
 
 function DrBox({ y, k, warn, head, sub, foot, sel }: { y: number; k: number; warn: boolean; head: string; sub: string; foot: string; sel?: boolean }) {
   const on = k > 0;
-  const txt = on ? undefined : 'faint';
+  const txt = on ? '' : 'faint ';
   return (
     <g>
       <rect x={DR_X} y={y} width={DR_W} height={BOX_H} class={on ? `node-box${warn ? ' warn' : sel ? ' sel' : ''}` : 'frame-dash'} rx={6} />
-      <text x={DR_X + 14} y={y + 22} class={`${txt} d-label`} style={{ fontWeight: 600 }}>
+      <text x={DR_X + 14} y={y + 22} class={`${txt}d-label`} style={{ fontWeight: 600 }}>
         {head}
       </text>
       <text x={DR_X + 14} y={y + 40} class={`${on ? 'muted' : 'faint'} d-sub`}>
@@ -374,7 +375,7 @@ export default function Cnaos() {
 
   return (
     <Show clock={clock}
-      release={on === 'metal' ? { v: 'Early access', sub: 'NKP Metal, announced Apr 2026; GA targeted for the second half of 2026' } : undefined}
+      release={on === 'metal' ? NKP_METAL.release : undefined}
       license={on === 'metal' ? { v: 'NKP Pro or Ultimate', sub: 'For NKP Metal' } : undefined}
       side={<Points label="Why customers choose it" items={points(on)} t={t}  />}
       top={
@@ -383,7 +384,7 @@ export default function Cnaos() {
             label="Kubernetes runs on"
             value={on}
             onChange={setOn}
-            why={on === 'eks' ? 'Azure AKS and Google GKE are not confirmed yet.' : 'Early access; GA is targeted for the second half of 2026.'}
+            why={on === 'eks' ? 'Azure AKS and Google GKE are not confirmed yet.' : `Introduced with NKP 2.19; ${NKP_METAL.confirm}.`}
             options={[
               { value: 'eks', label: 'Amazon EKS' },
               { value: 'metal', label: 'Bare metal (NKP Metal)' },
@@ -419,7 +420,7 @@ export default function Cnaos() {
       <PlayBar
         clock={clock}
         label="Cloud Native AOS animation"
-        extra={<Illus why={metal ? 'Simplified and compressed: three servers, one database and three blocks stand in for a real cluster. NKP Metal is early access, so the two copies follow release 1.0 on Amazon EKS, and moving between sites is planned.' : 'Simplified and compressed: three workers, one database and three blocks stand in for a real cluster. Where AOS places each copy depends on the cluster.'} />}
+        extra={<Illus why={metal ? 'Simplified and compressed: three servers, one database and three blocks stand in for a real cluster. NKP Metal is new in NKP 2.19, so the two copies follow release 1.0 on Amazon EKS, and moving between sites is planned.' : 'Simplified and compressed: three workers, one database and three blocks stand in for a real cluster. Where AOS places each copy depends on the cluster.'} />}
       />
     </Show>
   );

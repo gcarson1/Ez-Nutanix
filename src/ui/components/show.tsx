@@ -4,7 +4,7 @@
 // the module adds (`side`), and the module's own summary. Below 1100 px wide the right column
 // drops under the left one.
 import { createContext, Fragment, toChildArray, type ComponentChildren, type VNode } from 'preact';
-import { useContext, useEffect, useId, useLayoutEffect, useRef } from 'preact/hooks';
+import { useContext, useId, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Clock } from './clock';
 import type { Fact } from '../../content/types';
 import { Follow, Seg, Tip, type SegOption, type Tone } from './controls';
@@ -65,11 +65,26 @@ export function Show({ top, children, foot, side, clock, release, license }: { t
   // tall as the space under the top bar and its picture shrinks to fit, and the right one scrolls
   // inside itself when it is longer. Measure where the layout starts on the page, and mark the
   // right column while it scrolls: a fade at the bottom until the end, and a tab stop for the keyboard.
-  useLayoutEffect(() => syncSide(root.current, aside.current));
-  useEffect(() => {
+  // Not on every render (the clock re-renders about 60 times a second): once on mount, then when the
+  // window, the page, the layout or the right column's contents change size.
+  useLayoutEffect(() => {
     const sync = () => syncSide(root.current, aside.current);
+    sync();
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(sync) : null;
+    const watch = () => {
+      if (!ro) return;
+      ro.disconnect();
+      for (const el of [root.current, aside.current, document.body, ...Array.from(aside.current?.children ?? [])]) if (el) ro.observe(el);
+    };
+    watch();
+    const mo = typeof MutationObserver === 'function' && aside.current ? new MutationObserver(watch) : null;
+    if (mo && aside.current) mo.observe(aside.current, { childList: true });
     window.addEventListener('resize', sync);
-    return () => window.removeEventListener('resize', sync);
+    return () => {
+      window.removeEventListener('resize', sync);
+      ro?.disconnect();
+      mo?.disconnect();
+    };
   }, []);
   return (
     <div class="show" ref={root}>

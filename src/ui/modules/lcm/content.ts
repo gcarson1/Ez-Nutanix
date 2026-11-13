@@ -17,7 +17,7 @@ export const content: ModuleContent = {
     'AOS updates are lighter: only the Controller VM (CVM) restarts. Its host’s storage traffic goes to the other CVMs for a moment, and the VMs never move.',
     'Pick “A node fails mid-upgrade”: nothing warns you first. HA restarts the failed node’s VMs and copies rebuild at once. LCM finishes its current node, then holds until the repaired node’s data has caught up.',
     'Point at VM downtime: on three or more nodes a planned upgrade keeps it at none. Total time grows with node count because nodes go one at a time. Timeline times are illustrative, not official.',
-    'Kubernetes (NKP) tab: NKP rolls a Kubernetes upgrade across the fleet, a canary first, and inside each cluster a new node joins before an old one drains and leaves. With NKP Metal (early access), LCM itself also patches the OS and firmware of bare-metal Kubernetes nodes.',
+    'Kubernetes (NKP) tab: NKP rolls a Kubernetes upgrade across the fleet, a canary first, and inside each cluster a new node joins before an old one drains and leaves. With NKP Metal (introduced with NKP 2.19), LCM itself also patches the OS and firmware of bare-metal Kubernetes nodes.',
   ],
   numbers: [
     { k: 'Nodes out at once during LCM', v: '1' },
