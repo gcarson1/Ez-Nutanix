@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P2',
   facts: {
     release: { v: 'Data Lens 2.1', sub: 'On-Prem, Aug 2026 · SaaS runs separately' },
-    license: { v: 'Data Lens Starter or Pro', sub: 'Per usable TiB; Data Lens Pro adds behavior-based detection', tip: 'Priced per usable TiB, On-Prem or SaaS. Pro adds behavior-based ransomware and anomaly detection and automated recovery; Starter has basic signatures and blocking.' },
+    license: { v: 'Data Lens Starter or Pro', sub: 'Its own tiers, per usable TiB, for use with NUS', tip: 'Nutanix’s software options page lists Data Lens with its own Starter and Pro tiers (On-Prem or SaaS), priced per usable TiB, and says it is available for both NUS Pro and NUS Starter. It is not shown as part of NUS’s own license; confirm any bundling with Nutanix. Data Lens Pro adds behavior-based ransomware and anomaly detection and automated recovery; Starter has basic signatures and blocking.' },
   },
   talk: [
     'Unstructured data is where ransomware hurts most: shared drives that many users can write to. Data Lens reads the file activity on the share. Known strains match its signature list; Pro adds behavior analytics that flag a strain nobody has seen before.',
