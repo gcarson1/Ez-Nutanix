@@ -3,9 +3,29 @@ on:
   push:
     branches: [main]
   pull_request:
+# Least privilege for every job; the deploy job asks for more below.
+permissions:
+  contents: read
+# A newer push to the same branch or pull request replaces a run still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
+  # Dev-tool advisories fail this job but do not block the deploy: the shipped file holds only preact and lucide-preact.
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=optional --audit-level=high
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,6 +35,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Warn if the committed dist/index.html is stale
+        run: git diff --quiet -- dist/index.html || echo "::warning file=dist/index.html::The committed dist/index.html differs from a fresh build. Run npm run build and commit it."
       - run: npx playwright install --with-deps chromium
       - run: npm run smoke
       - uses: actions/upload-artifact@v4
@@ -30,6 +52,7 @@ jobs:
     if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write

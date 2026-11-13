@@ -21,7 +21,7 @@ npm run typecheck  # tsc --noEmit on its own
 
 `npm run smoke` needs a browser: `npx playwright install chromium`, or set `PW_CHROMIUM` to an existing Chromium binary.
 
-Send `dist/index.html` to customers as is. It opens from disk in any current browser. `dist/` is not committed; CI builds it, uploads it as an artifact, and on every push to `main` publishes it to GitHub Pages (see [CI](#ci)).
+Send `dist/index.html` to customers as is. It opens from disk in any current browser. The built file is committed (although `dist/` is in `.gitignore`) so it can be sent without a build: run `npm run build` and commit it with each change, and stage it with `git add -u dist`. CI also builds its own copy, warns if the committed one is stale, uploads it as an artifact, and on every push to `main` publishes it to GitHub Pages (see [CI](#ci)). The file carries a Content-Security-Policy that blocks network access, so it cannot send anything anywhere.
 
 ## What is in it
 
@@ -121,11 +121,11 @@ New claims need a source in `docs/facts.md`; choices made where the brief left r
 
 ## CI
 
-`.github/workflows/ci.yml` runs on pushes to `main` and on pull requests: `npm ci`, `npm test`, `npm run build`, install Chromium, `npm run smoke`, then upload `dist/index.html` as an artifact. On a push to `main` the tested build is also deployed to GitHub Pages. Pull requests never deploy.
+`.github/workflows/ci.yml` runs on pushes to `main` and on pull requests, with read-only permissions, time limits, and a newer push replacing a run still going. The `build` job runs `npm ci`, `npm test`, `npm run build`, a warning if the committed `dist/index.html` is stale, installs Chromium, runs `npm run smoke`, then uploads `dist/index.html` as an artifact. A separate `audit` job runs `npm audit --audit-level=high`; it can fail without blocking the deploy, since the shipped file holds only preact and lucide-preact. On a push to `main` the tested build is also deployed to GitHub Pages. Pull requests never deploy. Dependabot proposes npm and GitHub Actions updates weekly.
 
 ## Known limitations
 
-- Data is a representative sample of a few hundred items, not real extents; timings and throughput are illustrative assumptions, not measurements.
+- Data is a representative sample of a few dozen items at most, not real extents; timings and throughput are illustrative assumptions, not measurements.
 - Behavior, limits and requirements vary by AOS version, hypervisor, hardware and license. The About dialog says so, and its summary shows when you hover About in the footer.
 - Facts were last checked against Nutanix sources on the date in `src/config.json`; product versions move on after that. Some sources (the portal documentation) could not be read directly, so `docs/facts.md` records what each claim rests on.
 - On wide screens the left column (picture, steps, caption) fits the window and the picture shrinks to fit, but never below 85% of its size. On a window shorter than about 860 px (for example 1280x720) the page scrolls a little instead (decision 55).
