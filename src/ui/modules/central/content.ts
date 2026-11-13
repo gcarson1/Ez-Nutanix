@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   facts: {
     release: { v: 'On-premises GA', sub: 'Dec 2025 · SaaS since May 2024; no version number' },
-    license: { v: 'Not published', sub: 'No license terms on Nutanix’s Central pages', tip: 'NCM 2.x requires the on-premises version of Nutanix Central.' },
+    license: { v: 'Nutanix Central: not published', sub: 'No license terms on Nutanix’s Central pages', tip: 'NCM 2.x requires the on-premises version of Nutanix Central.' },
   },
   talk: [
     'Three levels: Prism Element is built into every cluster, Prism Central manages the clusters registered to it, and Nutanix Central sits above many Prism Central domains.',

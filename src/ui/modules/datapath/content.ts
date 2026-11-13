@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
-    license: { v: 'NCI Starter or higher', sub: 'RF3 needs Pro or Ultimate' },
+    license: { v: 'NCI Starter or higher', sub: 'RF3 needs NCI Pro or Ultimate' },
   },
   talk: [
     'Every node runs a Controller VM (CVM). The VM’s I/O goes to the CVM on its own node first, so the first hop never crosses the network.',

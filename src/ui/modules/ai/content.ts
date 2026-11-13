@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P2',
   facts: {
     release: { v: 'NAI 2.8', sub: 'Aug 2026' },
-    license: { v: 'By GPU memory', sub: 'vCPUs on clusters without GPUs. Agent Gateway is licensed separately' },
+    license: { v: 'NAI, by GPU memory', sub: 'vCPUs on clusters without GPUs. Agent Gateway is licensed separately' },
   },
   talk: [
     'Overview tab, the whole product in one loop: every team wants AI on company data and finds its own way; NAI runs on Kubernetes you control; a model from its catalog becomes an endpoint with replicas on GPUs; apps call it and agents go through Agent Gateway; roles, sharing and monitoring govern it; every team ends up on one platform, licensed by GPU memory, not tokens.',

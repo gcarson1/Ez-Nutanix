@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · FlashArray needs AOS 7.5 and AHV 11 or later' },
-    license: { v: 'NCI-C', sub: 'NCI Compute, priced per core', tip: 'NCI Compute: AHV, Prism and DR automation, priced per core. Snapshots and clones are left to the storage array.' },
+    license: { v: 'NCI-C (NCI Compute)', sub: 'NCI Compute, priced per core', tip: 'NCI Compute: AHV, Prism and DR automation, priced per core. Snapshots and clones are left to the storage array.' },
   },
   talk: [
     'Not every customer wants to replace hypervisor, storage and management at once. This page shows the two partial starting points, and why each one appeals.',

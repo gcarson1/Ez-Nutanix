@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2 · Prism Central pc.7.6' },
-    license: { v: 'NCI', sub: 'Starter, Pro or Ultimate, by feature' },
+    license: { v: 'NCI Starter, Pro or Ultimate', sub: 'By feature; each page says which' },
   },
   talk: [
     'Start at the bottom: in the standard design, ordinary servers with local drives and no separate storage array or SAN.',

@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
-    license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need Pro or Ultimate' },
+    license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need NCI Pro or Ultimate' },
   },
   talk: [
     'Start with Node. Walk the steps above the picture: the node fails, high availability (HA) instantly restarts its VMs on other nodes with free memory (the time after that is each guest OS booting), and every surviving node re-creates the missing copies at once.',

@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'LCM 3.4', sub: 'with AOS 7.6 (Jul 2026) · AHV 11.2 · pc.7.6' },
-    license: { v: 'NCI', sub: 'LCM is listed as part of NCI', tip: 'Nutanix lists LCM among NCI’s management features. The Kubernetes (NKP) tab shows its own license.' },
+    license: { v: 'NCI Starter, Pro or Ultimate', sub: 'LCM is listed as part of NCI', tip: 'Nutanix lists LCM among NCI’s management features. The Kubernetes (NKP) tab shows its own license.' },
   },
   talk: [
     'One tool for software and firmware: LCM finds what is installed, shows what is available and orders the updates for you.',

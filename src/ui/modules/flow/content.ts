@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'Next-Gen 7.6', sub: 'Flow Network Security · Jul 2026 · with AOS 7.6 and pc.7.6' },
-    license: { v: 'Confirm with Nutanix', sub: 'Microsegmentation is listed under NCI Ultimate', tip: 'Nutanix lists microsegmentation under NCI Ultimate and names a Security add-on license. Next-Gen 7.6 installs with AOS 7.6 and Prism Central pc.7.6, but Nutanix’s pages do not state its license, so confirm it. Virtual Networking has its own line on its tab.' },
+    license: { v: 'Confirm with Nutanix', sub: 'Flow Network Security: microsegmentation is listed under NCI Ultimate', tip: 'Nutanix lists microsegmentation under NCI Ultimate and names a Security add-on license. Next-Gen 7.6 installs with AOS 7.6 and Prism Central pc.7.6, but Nutanix’s pages do not state its license, so confirm it. Virtual Networking has its own line on its tab.' },
   },
   talk: [
     'Flow Network Security is a stateful, distributed firewall in AHV. Rules name categories such as AppTier: Web, not IP addresses. Next-Gen, the current generation, comes with AOS 7.6 and Prism Central pc.7.6; legacy clusters need a planned upgrade and a separate policy migration.',

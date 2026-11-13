@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
-    license: { v: 'NCI Starter or higher', sub: 'Snapshots and clones are listed in every edition' },
+    license: { v: 'NCI Starter or higher', sub: 'Snapshots and clones are listed in every NCI edition' },
   },
   talk: [
     'Tell it as an admin lives it: before patching sql-prod, a 500 GB database VM, take a snapshot. It copies the disk’s map of where data lives in the Distributed Storage Fabric (DSF), not the data, so it takes seconds and adds no space.',

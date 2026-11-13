@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   facts: {
     release: { v: 'Move 6.3.3', sub: 'Oct 2026 · for new deployments, not upgrades' },
-    license: { v: 'No extra cost', sub: 'Included for Nutanix customers' },
+    license: { v: 'Nutanix Move: no extra cost', sub: 'Included for Nutanix customers' },
   },
   talk: [
     'Move is included at no extra cost for Nutanix customers and has been around for about ten years, so it is a well-trodden path.',

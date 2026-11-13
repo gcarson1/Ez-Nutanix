@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AHV 11.2', sub: 'with AOS 7.6 (Jul 2026)' },
-    license: { v: 'NCI', sub: 'AHV bonds and virtual switches: any edition', tip: 'AHV networking comes with AHV. Flow Virtual Networking has its own page.' },
+    license: { v: 'NCI Starter, Pro or Ultimate', sub: 'AHV bonds and virtual switches: any edition', tip: 'AHV networking comes with AHV. Flow Virtual Networking has its own page.' },
   },
   talk: [
     'Every host runs its own Open vSwitch (OVS), but you do not manage them one by one: Prism treats them as one virtual switch, vs0, and rolls changes out host by host.',

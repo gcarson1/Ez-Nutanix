@@ -545,7 +545,7 @@ test('every page opens its right pane with Release version and License needed, a
   await page.goto(`${FILE}#/partial?tab=esxi`);
   await expect(lic).toHaveText('Nutanix license');
   await page.goto(`${FILE}#/partial`);
-  await expect(lic).toHaveText('NCI-C');
+  await expect(lic).toHaveText('NCI-C (NCI Compute)');
   await page.goto(`${FILE}#/cnaos?on=metal`);
   await expect(rel).toHaveText('Early access');
   await expect(lic).toHaveText('NKP Pro or Ultimate');

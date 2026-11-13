@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
-    license: { v: 'NCI Starter or higher', sub: 'Erasure coding, RF3 and block or rack awareness: Pro or Ultimate' },
+    license: { v: 'NCI Starter or higher', sub: 'Erasure coding, RF3 and block or rack awareness need NCI Pro or Ultimate' },
   },
   talk: [
     'Each shape is a piece of data. RF2 writes two copies of it, each on a different node; RF3 writes three. No node ever holds two copies of the same piece.',

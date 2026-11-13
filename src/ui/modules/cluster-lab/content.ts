@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
-    license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need Pro or Ultimate' },
+    license: { v: 'NCI Starter or higher', sub: 'RF3 and block or rack awareness need NCI Pro or Ultimate' },
   },
   talk: [
     'Start with Data placement. Each node is a server running the hypervisor, the user VMs and one Controller VM (CVM). The CVMs pool every drive into one storage fabric, so there is no separate array.',

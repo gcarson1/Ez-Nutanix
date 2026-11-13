@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P0',
   facts: {
     release: { v: 'AOS 7.6', sub: 'Jul 2026 · AHV 11.2' },
-    license: { v: 'NCI', sub: 'AOS and AHV: any edition (Starter, Pro, Ultimate)' },
+    license: { v: 'NCI Starter, Pro or Ultimate', sub: 'AOS and AHV: any edition' },
   },
   talk: [
     'Start with the design most customers run today: servers on top-of-rack Ethernet switches for VM and management traffic, plus a Fibre Channel SAN with two switches and a dual-controller array, each with its own console and skills. Adding a host touches all three tiers.',

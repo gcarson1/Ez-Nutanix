@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P2',
   facts: {
     release: { v: 'NKP 2.19', sub: 'Oct 2026 · Kubernetes 1.36 by default' },
-    license: { v: 'Starter, Pro, Ultimate', sub: 'Fleet, GitOps and cost need Ultimate; observability and backup need Pro', tip: 'Starter is for AHV only. Priced per physical core on bare metal and per vCPU on VMs.' },
+    license: { v: 'NKP Starter, Pro or Ultimate', sub: 'Fleet, GitOps and cost need NKP Ultimate; observability and backup need NKP Pro', tip: 'Starter is for AHV only. Priced per physical core on bare metal and per vCPU on VMs.' },
   },
   talk: [
     'Kubernetes is the orchestration layer; NKP is the operating platform around it. It grew out of the D2iQ Kubernetes Platform, which Nutanix acquired in late 2023.',

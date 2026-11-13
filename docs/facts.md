@@ -481,7 +481,7 @@ The Unusual activity tab (`datalens/anomaly.tsx`, `engine/anomaly.ts`). Users, c
 
 ## 22. Release version and license on every page (November 2026)
 
-Every page opens its right pane with two fixed lines, "Release version" and "License needed" (`facts` in each module's `content.ts`; a scene may replace the license line, as the Cloud Manager scenes do). Short value on top, detail under it or in its tooltip. Where Nutanix's public pages say nothing, the line says so instead of guessing.
+Every page opens its right pane with two fixed lines, "Release version" and "License needed" (`facts` in each module's `content.ts`; a scene may replace the license line, as the Cloud Manager scenes do). Short value on top, detail under it or in its tooltip. Each license line names the product with its tiers ("NKP Starter, Pro or Ultimate", "Data Lens Starter or Pro", "NCI Starter or higher"), never the tiers alone. Where Nutanix's public pages say nothing, the line says so instead of guessing.
 
 | ID | Claim (as the app shows it) | What I found | Source(s) | Checked | Decision |
 |---|---|---|---|---|---|

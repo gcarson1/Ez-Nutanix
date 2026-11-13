@@ -9,7 +9,7 @@ export const content: ModuleContent = {
   priority: 'P1',
   facts: {
     release: { v: 'NUS 5.4', sub: 'Files 5.4 · Objects 5.4 · release notes Aug 2026' },
-    license: { v: 'NUS Starter or Pro', sub: 'Per usable TiB. Starter is for hybrid, backup and archive' },
+    license: { v: 'NUS Starter or Pro', sub: 'Per usable TiB. NUS Starter is for hybrid, backup and archive' },
   },
   talk: [
     'One fabric, three access methods: Files for shares, Volumes for block, Objects for S3. All three inherit the DSF’s copies, self-healing and data efficiency.',

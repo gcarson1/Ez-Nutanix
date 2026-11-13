@@ -8,7 +8,7 @@ export const content: ModuleContent = {
   priority: 'P2',
   facts: {
     release: { v: 'No release', sub: 'A direction; its pieces ship on their own' },
-    license: { v: 'None', sub: 'Not a product; each piece is licensed on its own' },
+    license: { v: 'No Beacon license', sub: 'Not a product; each piece is licensed on its own' },
   },
   talk: [
     'Say it plainly up front: Project Beacon is a vision Nutanix announced in 2023, not something you can buy.',
