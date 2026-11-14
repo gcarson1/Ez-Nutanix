@@ -26,7 +26,7 @@ The landing page reproduces the "One Platform For All Apps, Data & AI Anywhere" 
 
 - Brand / structure: `--ink` `#7855fa` (dark) / `#6a45f0` (light), with `--ink-soft`, `--ink-line` and `--ink-fg` (purple used as text on the page background).
 - Status, always paired with an icon and a word: `--ok` healthy, `--warn` degraded or rebuilding, `--bad` failed or data at risk, `--flow` data in motion. Each has a `-bg` tint.
-- Neutrals: `--bg`, `--bg-2`, `--bg-3`, `--sel`, `--line`, `--line-2`, `--text`, `--text-2`, `--muted`, `--faint`, `--track`, `--s2`, `--s3`.
+- Neutrals: `--bg`, `--bg-2`, `--bg-3`, `--sel`, `--line`, `--line-2`, `--text`, `--text-2`, `--muted`, `--faint`, `--track`, `--s2`, `--s3`. Text tokens (`--muted`, `--faint`, `--ok`, `--warn`, `--bad`, `--flow`) should reach 4.5:1 on the page and card greys; the axe sweep in `tests/smoke/a11y.spec.ts` checks it on every page and tab at 1440 px.
 
 ## Type, space and motion
 

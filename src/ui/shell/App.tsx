@@ -337,10 +337,17 @@ function ModuleView({ def }: { def: ModuleDef }) {
             {c.title}
           </h1>
         </div>
+        <button type="button" class="btn print-btn" onClick={() => window.print()} title="Print this page, or save it as a PDF to leave behind">
+          <Icon name="printer" />
+          Print
+        </button>
       </header>
       <ModuleInfo.Provider value={{ summary: c.summary, facts: c.facts }}>
         <Component />
       </ModuleInfo.Provider>
+      <p class="print-foot">
+        Nutanix Architecture Explorer, version {VERSION.slice(1)}. Facts checked on {CONFIG.factsCheckedOn}. {CONFIG.disclaimer}
+      </p>
     </div>
   );
 }
@@ -380,6 +387,22 @@ export function App() {
     } catch {
       /* storage unavailable */
     }
+  }, [theme]);
+
+  // Paper is white: print in the light theme, then put the chosen theme back.
+  useEffect(() => {
+    const before = () => {
+      document.documentElement.dataset.theme = 'light';
+    };
+    const after = () => {
+      document.documentElement.dataset.theme = theme;
+    };
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+    };
   }, [theme]);
 
   useEffect(() => {

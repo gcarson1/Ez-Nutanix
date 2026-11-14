@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'preact';
-import { RAMP, SECS_PER_WORD, paced, rateAt, readSecs, realLength, stepsFrom, words } from '../../src/ui/components/clock';
+import { RAMP, SECS_PER_WORD, paced, rateAt, readSecs, realLength, stepSpeech, stepsFrom, words } from '../../src/ui/components/clock';
 import { FLOW_SPEED, flowDots, pathLength } from '../../src/ui/components/show';
 
 describe('reading time', () => {
@@ -13,9 +13,9 @@ describe('reading time', () => {
   });
   it('merges a step whose caption repeats the one before', () => {
     expect(paced([0, 2, 4, 6], ['a b', 'a  b', 'c', 'a b'])).toEqual([
-      { at: 0, read: 2 * SECS_PER_WORD, label: 'a b' },
-      { at: 4, read: SECS_PER_WORD, label: 'c' },
-      { at: 6, read: 2 * SECS_PER_WORD, label: 'a b' },
+      { at: 0, read: 2 * SECS_PER_WORD, label: 'a b', text: 'a b' },
+      { at: 4, read: SECS_PER_WORD, label: 'c', text: 'c' },
+      { at: 6, read: 2 * SECS_PER_WORD, label: 'a b', text: 'a b' },
     ]);
   });
   it('labels a [heading, text] step with its heading', () => {
@@ -25,10 +25,43 @@ describe('reading time', () => {
     const cap = (t: number) => (t < 3.3 ? { k: 'First', text: 'one two' } : { k: 'Second', text: 'three' });
     const s = stepsFrom(10, cap);
     expect(s).toHaveLength(2);
-    expect(s[0]).toEqual({ at: 0, read: 3 * SECS_PER_WORD, label: 'First' });
+    expect(s[0]).toEqual({ at: 0, read: 3 * SECS_PER_WORD, label: 'First', text: 'one two', head: true });
     expect(s[1].label).toBe('Second');
     expect(s[1].at).toBeCloseTo(3.3, 3);
     expect(s[1].read).toBeCloseTo(2 * SECS_PER_WORD);
+  });
+});
+
+describe('step captions', () => {
+  it('splits a [heading, text] caption, so the heading is not said twice', () => {
+    const [a, b] = paced([0, 3], [['Node fails', 'It goes down.'], ['2024', 'Kubernetes storage joins', 'In May 2024 the vision widened.']]);
+    expect(a).toMatchObject({ label: 'Node fails', text: 'It goes down.', head: true });
+    expect(b).toMatchObject({ label: '2024 · Kubernetes storage joins', text: 'In May 2024 the vision widened.', head: true });
+    expect(stepSpeech(a)).toBe('Node fails. It goes down.');
+    expect(stepSpeech(b)).toBe('2024 · Kubernetes storage joins. In May 2024 the vision widened.');
+  });
+  it('keeps a one-string caption whole, with no separate heading', () => {
+    const [s] = paced([0], ['At 3 a.m. the spike is flagged.']);
+    expect(s.head).toBeUndefined();
+    expect(stepSpeech(s)).toBe('At 3 a.m. the spike is flagged.');
+  });
+  it('speaks only the heading when a step has no text', () => {
+    expect(stepSpeech({ at: 0, read: 0, label: 'Done', head: true })).toBe('Done');
+  });
+});
+
+describe('rateAt caching', () => {
+  it('gives the same speeds on a repeated call, and re-sorts when the duration changes', () => {
+    const steps = [
+      { at: 6, read: 0 },
+      { at: 0, read: 1 },
+      { at: 4, read: 8 },
+    ];
+    const first = [1, 5, 11].map((t) => rateAt(t, 1, steps, 12));
+    expect([1, 5, 11].map((t) => rateAt(t, 1, steps, 12))).toEqual(first);
+    // A shorter loop drops the step at 6, so the speed there is full again.
+    expect(rateAt(5, 1, steps, 5.5)).toBeLessThan(1);
+    expect(rateAt(5, 1, steps, 3)).toBe(1);
   });
 });
 

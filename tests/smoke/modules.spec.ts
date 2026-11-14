@@ -1,18 +1,8 @@
 // Opens the built file, then every module, and checks it renders with no console errors.
 import { test, expect, type Page } from '@playwright/test';
 import { pathToFileURL } from 'node:url';
-import { resolve, join } from 'node:path';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
-
-// Module paths and titles, read from each module's content.ts (no app code is imported).
-const DIR = resolve('src/ui/modules');
-const MODULES = readdirSync(DIR)
-  .filter((d) => existsSync(join(DIR, d, 'content.ts')))
-  .map((d) => {
-    const src = readFileSync(join(DIR, d, 'content.ts'), 'utf8');
-    const get = (k: string) => (src.match(new RegExp(`\\b${k}:\\s*(['"])(.*?)\\1`)) || [])[2] ?? '';
-    return { content: { path: get('path'), title: get('title') } };
-  });
+import { resolve } from 'node:path';
+import { MODULES } from './module-list';
 
 const FILE = pathToFileURL(resolve('dist/index.html')).href;
 
@@ -124,10 +114,11 @@ for (const m of MODULES) {
     await page.goto(`${FILE}#/${m.content.path}`);
     await expect(page.locator('.mod-head h1')).toHaveText(m.content.title);
     await expect(page.locator('.mod svg.diagram').first()).toBeVisible();
-    // Animations autoplay: let them run, scrub one if there is a scrub bar, and check for errors.
-    await page.waitForTimeout(1500);
+    // Animations autoplay: wait until the clock has moved on, scrub one if there is a scrub bar, and check for errors.
     const scrub = page.locator('.playbar input.scrub').first();
     if (await scrub.count()) {
+      const max = Number(await scrub.getAttribute('max'));
+      await expect.poll(async () => Number(await scrub.inputValue()), { message: 'the clock advances', timeout: 15000 }).toBeGreaterThanOrEqual(Math.min(1.5, max * 0.1));
       await scrub.fill('0');
       await expect(page.locator('.playbar .pbtn').first()).toHaveAttribute('aria-label', 'Play');
     }
@@ -574,4 +565,111 @@ test('every page opens its right pane with Release version and License needed, a
   await expect(rel).toHaveText('NC2 on Google Cloud is GA');
   await expect(page.getByRole('heading', { name: 'Availability' })).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('the guided tour takes focus, keeps it, and gives it back', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto(FILE);
+  const start = page.getByRole('button', { name: 'Take the tour' });
+  await start.click();
+  const card = page.getByRole('dialog', { name: 'Guided tour' });
+  await expect(card).toBeFocused();
+  const inside = () => page.evaluate(() => !!document.querySelector('.tour-card')?.contains(document.activeElement));
+  // Back is disabled on the first step, and a disabled button cannot keep focus: the card takes it.
+  await card.getByRole('button', { name: 'Next' }).click();
+  await card.getByRole('button', { name: 'Back' }).click();
+  expect(await inside(), 'focus returns to the card when Back is disabled on step 1').toBe(true);
+  // Through every step with the Next button, focus stays in the card.
+  for (let i = 0; i < 12 && (await card.getByRole('button', { name: 'Next' }).count()); i++) {
+    await card.getByRole('button', { name: 'Next' }).click();
+    expect(await inside(), 'focus stays in the tour card').toBe(true);
+  }
+  await expect(card.getByRole('button', { name: /Open Nutanix Cloud Infrastructure/ })).toBeVisible();
+  expect(await inside(), 'focus is in the card on the last step').toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Take the tour' })).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test('a screen reader hears the step you move to once, and not the loop playing by itself', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.clock.install();
+  await page.goto(`${FILE}#/nci/hci`);
+  const said = page.locator('.show-under .step-said');
+  await expect(said).toHaveText('');
+  // The caption is not a second live region on a page with a clock.
+  await expect(page.locator('.show-under .follow')).not.toHaveAttribute('role', 'status');
+  // Let the loop play through several steps by itself: nothing is spoken.
+  await page.clock.runFor(40_000);
+  await expect(page.locator('.steps li.now .n')).not.toHaveText('1');
+  await expect(said, 'silent while the loop plays').toHaveText('');
+  // Jump to a step: its heading and caption are spoken once, the heading not repeated.
+  await page.locator('.steps li button').nth(1).click();
+  await expect(said).toContainText(/^Step 2 of \d+: \S/);
+  expect(await said.textContent()).not.toMatch(/^Step \d+ of \d+: (.{6,}?)\. \1/);
+  await page.locator('.steps li button').nth(2).click();
+  await expect(said).toContainText(/^Step 3 of \d+: \S/);
+  // A three-part caption (year, title, text) is not repeated either.
+  await page.goto(`${FILE}#/beacon`);
+  await page.locator('.steps li button').nth(1).click();
+  await expect(page.locator('.show-under .step-said')).toContainText(/^Step 2 of \d+: 2024/);
+  const beacon = (await page.locator('.show-under .step-said').textContent()) ?? '';
+  expect(beacon.match(/Kubernetes storage joins/g)?.length, 'the title is said once').toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('printing holds the outcome frame and puts the page back afterwards', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('nax-theme', 'dark'));
+  await page.goto(`${FILE}#/nci/hci`);
+  const html = page.locator('html');
+  const scrub = page.locator('.playbar input.scrub');
+  const playBtn = page.locator('.playbar .pbtn').first();
+  const said = page.locator('.show-under .step-said');
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  // Paused in the first step: printing shows the outcome (the last step) in the light theme, and Cancel or Print puts it all back.
+  await playBtn.click();
+  await expect(playBtn).toHaveAttribute('aria-label', 'Play');
+  await scrub.evaluate((r: HTMLInputElement) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(r, '1');
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const before = Number(await scrub.inputValue());
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  await expect.poll(async () => Number(await scrub.inputValue())).toBeGreaterThan(before);
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  await expect.poll(async () => Number(await scrub.inputValue())).toBe(before);
+  await expect(playBtn).toHaveAttribute('aria-label', 'Play');
+  await expect(said, 'neither move is spoken as a step').toHaveText('');
+  // Printing while the animation plays: it plays again afterwards.
+  await playBtn.click();
+  await expect(playBtn).toHaveAttribute('aria-label', 'Pause');
+  await page.evaluate(() => window.dispatchEvent(new Event('beforeprint')));
+  await expect(playBtn).toHaveAttribute('aria-label', 'Play');
+  await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await expect(playBtn).toHaveAttribute('aria-label', 'Pause');
+  await expect(said).toHaveText('');
+});
+
+test('a printed page is a leave-behind: the picture, every step, the key numbers, the About text and the caveats', async ({ page }) => {
+  // The width a sheet of paper gives (Letter or A4 with margins), not the 1600 px of the other tests.
+  await page.setViewportSize({ width: 794, height: 1123 });
+  await page.goto(`${FILE}#/nci/flow?tab=net`);
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
+  await expect(page.locator('.print-steps')).toBeHidden();
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('.print-steps')).toBeVisible();
+  expect(await page.locator('.print-steps li').count()).toBeGreaterThanOrEqual(3);
+  for (const hidden of ['.bar', '.steps', '.print-btn', '.playbar .pbtn', '.playbar input.scrub']) await expect(page.locator(hidden).first(), hidden).toBeHidden();
+  for (const shown of ['.mod-head h1', '.show-stage svg.diagram', '.show-facts', '.show-foot .kpis', '.side-about', '.illus-note', '.print-foot']) await expect(page.locator(shown).first(), shown).toBeVisible();
+  // Which tab it is, and the disclaimer a customer must see with a simplified picture.
+  await expect(page.getByRole('tab', { name: 'Virtual Networking' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Network Security' })).toBeHidden();
+  await expect(page.locator('.print-foot')).toContainText(/Facts checked on.*Illustrative visualization/s);
+  await expect(page.locator('.illus-note').first()).toContainText('Illustrative:');
+  // Nothing is clipped at paper width.
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector('.show-main .diagram-scroll')!).maskImage)).toBe('none');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
 });

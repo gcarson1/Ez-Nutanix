@@ -121,6 +121,8 @@ export function Landing() {
   const [tour, setTour] = useState<number | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
+  const startBtn = useRef<HTMLButtonElement>(null);
+  const touring = useRef(false);
 
   // Before paint, so the card never shows over the part it is about to describe.
   useLayoutEffect(() => {
@@ -151,6 +153,20 @@ export function Landing() {
     return () => window.removeEventListener('resize', onResize);
   }, [tour]);
 
+  // Focus: into the card when the tour starts and whenever a step change dropped it (Back is disabled on the
+  // first step, and a disabled button cannot keep focus), and back to "Take the tour" when it ends, so a
+  // keyboard user never loses their place.
+  useEffect(() => {
+    if (tour !== null) {
+      touring.current = true;
+      const c = card.current;
+      if (c && !c.contains(document.activeElement)) c.focus({ preventScroll: true });
+    } else if (touring.current) {
+      touring.current = false;
+      startBtn.current?.focus({ preventScroll: true });
+    }
+  }, [tour]);
+
   useEffect(() => {
     if (tour === null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -172,7 +188,7 @@ export function Landing() {
         <div class="hm-head">
           <h1 class="hm-title">One platform for all apps, data and AI, anywhere</h1>
           {tour === null && (
-            <button type="button" class="btn tour-btn" onClick={() => setTour(0)}>
+            <button type="button" class="btn tour-btn" ref={startBtn} onClick={() => setTour(0)}>
               <Icon name="compass" />
               Take the tour
             </button>
@@ -240,7 +256,7 @@ export function Landing() {
       </div>
 
       {step && tour !== null && (
-        <div class="tour-card" ref={card} role="dialog" aria-label="Guided tour" aria-live="polite">
+        <div class="tour-card" ref={card} role="dialog" aria-label="Guided tour" aria-live="polite" tabIndex={-1}>
           <div class="eyebrow">
             Guided tour <span class="n">{tour + 1} / {TOUR.length}</span>
           </div>

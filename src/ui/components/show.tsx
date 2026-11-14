@@ -3,9 +3,9 @@
 // caption (the `Follow` in `foot`). On the right: the rest of `foot` (key numbers), anything else
 // the module adds (`side`), and the module's own summary. Below 1100 px wide the right column
 // drops under the left one.
-import { createContext, Fragment, toChildArray, type ComponentChildren, type VNode } from 'preact';
-import { useContext, useId, useLayoutEffect, useRef } from 'preact/hooks';
-import type { Clock } from './clock';
+import { cloneElement, createContext, Fragment, toChildArray, type ComponentChildren, type VNode } from 'preact';
+import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { stepSpeech, type Clock } from './clock';
 import type { Fact } from '../../content/types';
 import { Follow, Seg, Tip, type SegOption, type Tone } from './controls';
 import { Icon } from './Icon';
@@ -36,9 +36,70 @@ export function Show({ top, children, foot, side, clock, release, license }: { t
   // `foot` is usually <><Follow/><Kpis/></>: the caption goes under the picture, the rest to the right.
   const parts = toChildArray(foot).flatMap((c) => ((c as VNode).type === Fragment ? toChildArray((c as VNode<{ children?: ComponentChildren }>).props.children) : [c]));
   const isCaption = (c: unknown) => (c as VNode | null)?.type === Follow;
-  const caption = parts.filter(isCaption);
+  // With a clock the caption changes by itself every few seconds; the step summary below speaks instead, and only when someone moves to a step.
+  const caption = parts.filter(isCaption).map((c) => (clock ? cloneElement(c as VNode<{ live?: boolean }>, { live: false }) : c));
   const rest = parts.filter((c) => !isCaption(c));
   const steps = clock && <StepList clock={clock} />;
+  // For screen readers: say the step (heading and caption) when someone moves to it (a chip, an arrow key,
+  // the scrubber), not while the loop plays by itself, which would talk over the page every few seconds.
+  // This is the only live region for a page with a clock. It starts silent.
+  const [said, setSaid] = useState('');
+  const lastStep = useRef(clock?.step?.index);
+  const stepIndex = clock?.step?.index;
+  useEffect(() => {
+    if (stepIndex === lastStep.current) return;
+    lastStep.current = stepIndex;
+    const st = stepIndex !== undefined ? clock?.steps?.[stepIndex - 1] : undefined;
+    setSaid(clock && !clock.playing && st && clock.step ? `Step ${stepIndex} of ${clock.step.count}: ${stepSpeech(st)}` : '');
+  }, [stepIndex]);
+  // Printing: hold the outcome frame so the leave-behind shows the finished picture, then put the presenter
+  // back where they were (same moment, playing or paused). Neither move is spoken as a step.
+  const printClock = useRef(clock);
+  printClock.current = clock;
+  const held = useRef<{ t: number; playing: boolean } | null>(null);
+  useEffect(() => {
+    const stepAt = (c: Clock, t: number) => (c.steps?.length ? Math.max(1, c.steps.filter((s) => s.at <= t + 1e-9).length) : undefined);
+    const before = () => {
+      const c = printClock.current;
+      if (!c || held.current) return;
+      held.current = { t: c.t, playing: c.playing };
+      c.pause();
+      if (c.poster !== undefined) {
+        c.seek(c.poster);
+        lastStep.current = stepAt(c, c.poster);
+      }
+    };
+    const after = () => {
+      const c = printClock.current;
+      const h = held.current;
+      if (!c || !h) return;
+      held.current = null;
+      c.seek(h.t);
+      lastStep.current = stepAt(c, h.t);
+      if (h.playing) c.play();
+    };
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+    };
+  }, []);
+  // The printed leave-behind lists every step; it is hidden on screen (see app.css).
+  const printSteps = useMemo(() => {
+    const list = clock?.steps;
+    if (!list || !list.some((s) => s.text)) return null;
+    return (
+      <section class="print-steps" aria-hidden="true">
+        <h2>What happens</h2>
+        <ol>
+          {list.map((s, k) => (
+            <li key={`${s.at}-${k}`}>{s.head ? <><b>{s.label}</b> {s.text}</> : s.text}</li>
+          ))}
+        </ol>
+      </section>
+    );
+  }, [clock?.steps]);
   // Each picture's viewBox width, for the phone rule in app.css that keeps 11 px diagram text from
   // rendering under 10 px (N2-014). Cheap enough to run after every render; viewBoxes can change.
   // Also mark the pictures that are one SVG straight in the stage: on wide screens those shrink to
@@ -95,8 +156,14 @@ export function Show({ top, children, foot, side, clock, release, license }: { t
           <div class="show-under">
             {steps}
             {caption}
+            {steps && (
+              <div class="sr-only step-said" role="status" aria-live="polite" aria-atomic="true">
+                {said}
+              </div>
+            )}
           </div>
         )}
+        {printSteps}
       </div>
       <aside class="show-side" aria-label="Details" ref={aside} onScroll={() => syncSide(root.current, aside.current)}>
         {info && <ProductFacts release={release ?? info.facts.release} license={license ?? info.facts.license} />}

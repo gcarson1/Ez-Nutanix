@@ -2,16 +2,11 @@
 // (src/content/scenes.ts) stays in step with the tabs and choices the pages actually show.
 import { test, expect, type Page } from '@playwright/test';
 import { pathToFileURL } from 'node:url';
-import { resolve, join } from 'node:path';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { PATHS } from './module-list';
 import { SCENES } from '../../src/content/scenes';
 
 const FILE = pathToFileURL(resolve('dist/index.html')).href;
-const DIR = resolve('src/ui/modules');
-const PATHS = readdirSync(DIR)
-  .filter((d) => existsSync(join(DIR, d, 'content.ts')))
-  .map((d) => (readFileSync(join(DIR, d, 'content.ts'), 'utf8').match(/\bpath:\s*'(.*?)'/) || [])[1])
-  .filter((p): p is string => !!p);
 
 function watchErrors(page: Page) {
   const errors: string[] = [];

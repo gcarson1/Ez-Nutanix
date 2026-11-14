@@ -33,6 +33,7 @@ import {
   Play,
   Plus,
   Power,
+  Printer,
   Puzzle,
   Radio,
   RefreshCw,
@@ -54,6 +55,7 @@ import {
 const I: Record<string, LucideIcon> = {
   back: ChevronLeft,
   play: Play,
+  printer: Printer,
   pause: Pause,
   book: BookOpen,
   podium: Mic,

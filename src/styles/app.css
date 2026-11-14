@@ -67,7 +67,10 @@ body { min-height: 100vh; }
 
 /* ── module frame ─────────────────────────────────────────────────── */
 .mod { max-width: var(--wide); margin: 0 auto; padding: var(--sp-3) var(--gutter) var(--sp-12); }
-.mod-head { margin-bottom: var(--sp-2); }
+.mod-head { margin-bottom: var(--sp-2); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+.print-btn { flex: none; height: 1.75rem; padding-top: 0; padding-bottom: 0; }
+@media (max-width: 600px) { .print-btn { display: none; } }
+.print-steps, .print-foot, .illus-note { display: none; }
 .mod-head h1:focus { outline: none; }
 .mod-head h1 { font-size: var(--fs-24); }
 .mod-head p { margin-top: var(--sp-2); color: var(--muted); max-width: var(--measure); font-size: var(--fs-15); }
@@ -428,7 +431,25 @@ body { min-height: 100vh; }
   .bar-div { display: none; }
 }
 @media print {
-  .bar, .foot-bar, .playbar, .drawer { display: none !important; }
+  /* A leave-behind: the title, the finished picture, every step's caption, the key numbers and the About text. */
+  .bar, .foot-bar, .drawer, .steps, .print-btn, .tour-btn, .sr-only, [role='tab'][aria-selected='false'] { display: none !important; }
+  /* The play bar's controls go; its illustrative note stays, and the page's disclaimer is printed at the end. */
+  .playbar { display: block !important; padding: 0; border: 0; }
+  .playbar > :not(.illus-note) { display: none !important; }
+  .illus-note { display: block; margin-top: var(--sp-2); font-size: var(--fs-12); line-height: 1.45; color: var(--muted); }
+  .print-foot { display: block; margin-top: var(--sp-6); padding-top: var(--sp-3); border-top: 1px solid var(--line-2); font-size: var(--fs-11); line-height: 1.5; color: var(--muted); }
+  body { background: #fff; color: #000; }
+  .show { display: block !important; height: auto !important; }
+  .show-main { height: auto !important; }
+  .show-side { position: static !important; max-height: none !important; overflow: visible !important; -webkit-mask-image: none !important; mask-image: none !important; }
+  .show-under > .follow { display: none; }
+  .diagram-scroll { overflow: visible !important; -webkit-mask-image: none !important; mask-image: none !important; }
+  .diagram-scroll > .diagram { min-width: 0 !important; max-width: 100%; }
+  .print-steps { display: block; margin-top: var(--sp-4); break-inside: avoid; }
+  .print-steps h2 { font-size: var(--fs-14); margin-bottom: var(--sp-2); }
+  .print-steps ol { margin: 0; padding-left: 1.25rem; font-size: var(--fs-13); line-height: 1.45; }
+  .print-steps li { margin-bottom: var(--sp-1h); }
+  .show-side > * { break-inside: avoid; }
 }
 
 /* ── shell additions ──────────────────────────────────────────────── */

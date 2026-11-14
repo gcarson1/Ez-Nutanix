@@ -26,7 +26,7 @@
   --text: #f3f4f6;
   --text-2: #d5d8de;
   --muted: #a3a9b4;
-  --faint: #737a86;
+  --faint: #8a919c; /* 4.6:1 or better on the dark greys (WCAG AA); was #737a86, 4.2:1 */
   --track: #2c3038;
   --s2: #7f8796;
   --s3: #3a404c;
@@ -150,7 +150,7 @@
   --text: #111318;
   --text-2: #3a3f4a;
   --muted: #5f6673;
-  --faint: #8d94a0;
+  --faint: #646b78; /* 4.6:1 or better on the page and card greys (WCAG AA); was #8d94a0, 2.8:1 */
   --track: #e3e6eb;
   --s2: #8a92a0;
   --s3: #d5d9e0;
@@ -164,7 +164,7 @@
   --part-cvm: #4c5fd5;
   --part-data: #8a93a6;
 
-  --ok: #13803f;
+  --ok: #12783a; /* 4.8:1 or better on the page, card and selection greys (WCAG AA); was #13803f */
   --ok-bg: #effbf3;
   --warn: #a35a00;
   --warn-bg: #fff7e8;

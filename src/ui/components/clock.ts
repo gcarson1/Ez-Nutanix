@@ -6,7 +6,7 @@
 // played. Space toggles whichever clock registered last. The clock never stops between
 // steps: a step whose caption needs longer to read than the step lasts plays slower instead,
 // at least `SECS_PER_WORD` real seconds per word, easing into and out of the slower speed.
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
 type Handler = { toggle: () => void; nudge: (dir: -1 | 1, toStep: boolean) => void };
 const stack: Handler[] = [];
@@ -84,6 +84,15 @@ export interface Step {
   read: number;
   /** Short heading shown in the step list beside the picture. */
   label?: string;
+  /** The caption as plain text, for the printed leave-behind and the spoken step summary. With `head`, it is the caption after its heading. */
+  text?: string;
+  /** True when `label` is a heading of its own, so `text` does not repeat it. A caption given as one string has no separate heading. */
+  head?: true;
+}
+
+/** What a step reads as, with its heading first and never said twice. */
+export function stepSpeech(s: Step): string {
+  return s.head ? [s.label, s.text].filter(Boolean).join('. ') : s.text ?? s.label ?? '';
 }
 
 /** Reading time the clock allows for every word of a step's caption. */
@@ -118,6 +127,14 @@ function labelOf(x: unknown): string {
   return cut > 0 && cut < 60 ? p.slice(0, cut) : p.slice(0, 60);
 }
 
+const squash = (s: string) => s.replace(/\s+/g, ' ').trim();
+
+/** A [heading, text] (or [a, b, text]) caption split into its heading and the rest; a plain string keeps all its text. */
+function splitCaption(x: unknown): { text: string; head?: true } {
+  if (!Array.isArray(x)) return { text: squash(plain(x)) };
+  return { text: squash(plain(x.slice(x.length > 2 ? 2 : 1))), head: true };
+}
+
 /**
  * Steps from their start times and each one's caption (a string, or several parts). A step
  * whose caption is the same as the one before it continues that step, so the reading time
@@ -127,8 +144,8 @@ export function paced(at: readonly number[], text: readonly unknown[]): Step[] {
   const out: Step[] = [];
   let prev: string | null = null;
   at.forEach((a, i) => {
-    const p = plain(text[i]).replace(/\s+/g, ' ').trim();
-    if (p !== prev) out.push({ at: a, read: readSecs(p), label: labelOf(text[i]) });
+    const p = squash(plain(text[i]));
+    if (p !== prev) out.push({ at: a, read: readSecs(p), label: labelOf(text[i]), ...splitCaption(text[i]) });
     prev = p;
   });
   return out;
@@ -157,7 +174,7 @@ export function stepsFrom(duration: number, caption: (t: number) => { k: string;
       }
       at = hi;
     }
-    out.push({ at, read: readSecs(c.k, c.text), label: c.k });
+    out.push({ at, read: readSecs(c.k, c.text), label: c.k, text: squash(plain(c.text)) || undefined, head: true });
     prev = c.k;
   }
   return out;
@@ -172,9 +189,20 @@ export const RAMP = 0.8;
  * time. The speed changes gradually around a slow step, never faster inside one, so the picture
  * keeps moving and slows down or speeds up smoothly.
  */
+// rateAt runs every animation frame (and 2000 times per realLength), so a step list is filtered and
+// sorted once and remembered for as long as the same array and duration are used.
+const SORTED = new WeakMap<readonly Step[], { duration: number; list: Step[] }>();
+function sortedSteps(steps: readonly Step[], duration: number): Step[] {
+  const hit = SORTED.get(steps);
+  if (hit && hit.duration === duration) return hit.list;
+  const list = steps.filter((s) => s.at < duration).sort((a, b) => a.at - b.at);
+  SORTED.set(steps, { duration, list });
+  return list;
+}
+
 export function rateAt(t: number, rate: number, steps: readonly Step[] = [], duration = Infinity): number {
   let r = rate;
-  const sorted = steps.filter((s) => s.at < duration).sort((a, b) => a.at - b.at);
+  const sorted = sortedSteps(steps, duration);
   for (let i = 0; i < sorted.length; i++) {
     const a = sorted[i].at;
     const b = i + 1 < sorted.length ? sorted[i + 1].at : duration;
@@ -241,11 +269,27 @@ export interface Clock {
   step?: { index: number; count: number };
   /** The steps inside one loop, with their headings, for the step list. */
   steps?: readonly Step[];
+  /** The frame that tells the story's outcome (reduced motion starts here; printing seeks to it). */
+  poster?: number;
   /** Pause and move a fortieth of the loop, or to the previous or next step's start. */
   nudge: (dir: -1 | 1, toStep?: boolean) => void;
 }
 
+/**
+ * The same step list while its contents are the same. Most views build theirs with `paced()` in render, so a
+ * new array arrives every frame; keeping the first one lets the sorted-steps cache and the memos below hold.
+ */
+function useStableSteps(steps: readonly Step[] | undefined): readonly Step[] | undefined {
+  const prev = useRef(steps);
+  const p = prev.current;
+  const same = p === steps || (!!p && !!steps && p.length === steps.length && steps.every((s, i) => s.at === p[i].at && s.read === p[i].read && s.label === p[i].label && s.text === p[i].text && s.head === p[i].head));
+  if (!same) prev.current = steps;
+  return prev.current;
+}
+
 export function useClock(opts: ClockOptions): Clock {
+  const stable = useStableSteps(opts.steps);
+  if (stable !== opts.steps) opts = { ...opts, steps: stable };
   const auto = opts.autoplay !== false && !prefersReducedMotion();
   const t0 = auto ? 0 : opts.poster ?? 0;
   const [t, setT] = useState(t0);
@@ -289,13 +333,16 @@ export function useClock(opts: ClockOptions): Clock {
     return () => cancelAnimationFrame(raf);
   }, [playing]);
 
-  const ats = (opts.steps ?? []).map((x) => x.at).filter((a) => opts.duration === undefined || a < opts.duration);
+  // The step list inside one loop; the clock re-renders every frame, the list only when its inputs change.
+  const inLoop = useMemo(() => (opts.steps ?? []).filter((x) => opts.duration === undefined || x.at < opts.duration), [opts.steps, opts.duration]);
+  const ats = inLoop.map((x) => x.at);
   const api: Clock = {
     t,
     playing,
     duration: opts.duration,
     step: ats.length ? { index: Math.max(1, ats.filter((a) => a <= t + 1e-9).length), count: ats.length } : undefined,
-    steps: (opts.steps ?? []).filter((x) => opts.duration === undefined || x.at < opts.duration),
+    steps: inLoop,
+    poster: opts.poster,
     play: () => {
       const d = ref.current.opts.duration;
       if (d !== undefined && ref.current.t >= d) set(0);

@@ -79,12 +79,16 @@ export function Tip({ text, detail, children, align }: { text: string; detail?: 
 /** A small info button that explains how the picture is simplified. */
 export function Illus({ why }: { why: string }) {
   return (
-    <Tip text={why} align="right">
-      <span class="illus">
-        <Icon name="info" />
-        <span class="sr-only">About this illustration</span>
-      </span>
-    </Tip>
+    <>
+      <Tip text={why} align="right">
+        <span class="illus">
+          <Icon name="info" />
+          <span class="sr-only">About this illustration</span>
+        </span>
+      </Tip>
+      {/* Printed pages have no hover: the same note is printed under the picture (see app.css). */}
+      <span class="illus-note">Illustrative: {why}</span>
+    </>
   );
 }
 
@@ -210,10 +214,11 @@ export function Stat({ k, v, tip, tone }: { k: string; v: ComponentChildren; tip
   );
 }
 
-export function Follow({ tone, k, children }: { tone?: Tone | 'ink'; k: string; children: ComponentChildren }) {
+/** The caption. It is a live region (announced when it changes) unless `live` is false: a page with a clock turns that off and speaks the step itself. */
+export function Follow({ tone, k, children, live }: { tone?: Tone | 'ink'; k: string; children: ComponentChildren; live?: boolean }) {
   const cls = tone === 'ok' ? 'good' : tone === 'bad' ? 'bad' : tone ?? '';
   return (
-    <div class={`follow ${cls}`} role="status">
+    <div class={`follow ${cls}`} role={live === false ? undefined : 'status'}>
       <div class="follow-k">{k}</div>
       {children}
     </div>

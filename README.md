@@ -109,7 +109,7 @@ src/
   styles/        tokens, base, app layer
   config.json    title, credits, disclaimer, facts-checked date
 tests/engine/    engine invariants and content checks (Vitest)
-tests/smoke/     open the built file from disk, walk the modules, tour and search (Playwright)
+tests/smoke/     open the built file from disk, walk the modules, tour and search, and scan every page in both themes with axe-core (Playwright)
 scripts/         check-build.mjs, the post-build size and no-network gate
 docs/            facts.md (claims and sources), decisions.md, design-tokens.md, DESIGN-SYSTEM.md,
                  NUTANIX-2.0-PLAN.md, MASTER_PROMPT.md, research/
