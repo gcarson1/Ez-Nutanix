@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "lucide-preact": "^1.61.0",
-    "preact": "^10.29.8"
+    "preact": "^11.2.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
