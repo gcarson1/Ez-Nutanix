@@ -44,7 +44,7 @@ jobs:
           name: nutanix-architecture-explorer
           path: dist/index.html
       - if: github.event_name == 'push'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
   # Publishes the tested build to GitHub Pages; pull requests never reach it.
