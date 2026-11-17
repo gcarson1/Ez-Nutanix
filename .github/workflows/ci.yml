@@ -39,7 +39,7 @@ jobs:
         run: git diff --quiet -- dist/index.html || echo "::warning file=dist/index.html::The committed dist/index.html differs from a fresh build. Run npm run build and commit it."
       - run: npx playwright install --with-deps chromium
       - run: npm run smoke
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: nutanix-architecture-explorer
           path: dist/index.html
